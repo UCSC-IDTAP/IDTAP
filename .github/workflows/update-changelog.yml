@@ -51,10 +51,12 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 22.9.0
+      - name: Install pnpm
+        run: npm install -g pnpm
       - name: Install dependencies
-        run: npm install
+        run: pnpm install
       - name: Build
-        run: npm run build
+        run: pnpm run build
 
       - name: Set up SSH agent
         uses: webfactory/ssh-agent@v0.5.3
