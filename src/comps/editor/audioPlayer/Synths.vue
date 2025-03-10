@@ -439,21 +439,22 @@ export default defineComponent({
       synth.intSitarGainNode.connect(synth.capture, 0, 0);
       synth.intChikariGainNode.connect(synth.capture, 0, 1);
       synth.capture.port.onmessage = e => {
+        const realNow = now();
         const sitarArr = new Float32Array(e.data[0]);
-          const sr = props.ac.sampleRate;
-          const sitarBuffer = props.ac.createBuffer(1, sitarArr.length, sr);
-          sitarBuffer.copyToChannel(sitarArr, 0);
-          const chikariArr = new Float32Array(e.data[1]);
-          const chikariBuffer = props.ac.createBuffer(1, chikariArr.length, sr);
-          chikariBuffer.copyToChannel(chikariArr, 0);
-          let offset = now() - endRecTime.value;
-          if (offset < 0) offset = 0;
-          synth.sitarLoopSourceNode.buffer = sitarBuffer;
-          synth.sitarLoopSourceNode.start(now(), offset);
-          synth.sitarLoopSourceNode.playing = true;
-          synth.chikariLoopSourceNode.buffer = chikariBuffer;
-          synth.chikariLoopSourceNode.start(now(), offset);
-          synth.chikariLoopSourceNode.playing = true;
+        const sr = props.ac.sampleRate;
+        const sitarBuffer = props.ac.createBuffer(1, sitarArr.length, sr);
+        sitarBuffer.copyToChannel(sitarArr, 0);
+        const chikariArr = new Float32Array(e.data[1]);
+        const chikariBuffer = props.ac.createBuffer(1, chikariArr.length, sr);
+        chikariBuffer.copyToChannel(chikariArr, 0);
+        let offset = realNow - endRecTime.value;
+        if (offset < 0) offset = 0;
+        synth.sitarLoopSourceNode.buffer = sitarBuffer;
+        synth.sitarLoopSourceNode.start(realNow, offset);
+        synth.sitarLoopSourceNode.playing = true;
+        synth.chikariLoopSourceNode.buffer = chikariBuffer;
+        synth.chikariLoopSourceNode.start(realNow, offset);
+        synth.chikariLoopSourceNode.playing = true;
       }
     };
     const initializeSarangiCapture = (synth: SarangiSynthType) => {
@@ -463,14 +464,15 @@ export default defineComponent({
       emptyGainNode.connect(synth.capture, 0, 1);
       synth.capture.port.onmessage = e => {
         console.log('received message for instrument', synth.idx);
+        const realNow = now();
         const arr = new Float32Array(e.data[0]);
         const sr = props.ac.sampleRate;
         const buffer = props.ac.createBuffer(1, arr.length, sr);
         buffer.copyToChannel(arr, 0);
-        let offset = now() - endRecTime.value;
+        let offset = realNow - endRecTime.value;
         if (offset < 0) offset = 0;
         synth.sarangiLoopSourceNode.buffer = buffer;
-        synth.sarangiLoopSourceNode.start(now(), offset);
+        synth.sarangiLoopSourceNode.start(realNow, offset);
         synth.sarangiLoopSourceNode.playing = true;
       }
     };
@@ -478,14 +480,15 @@ export default defineComponent({
       synth.envGain.connect(synth.capture, 0, 0);
       synth.capture.port.onmessage = e => {
         console.log('received message for instrument', synth.idx);
+        const realNow = now();
         const arr = new Float32Array(e.data[0]);
         const sr = props.ac.sampleRate;
         const buffer = props.ac.createBuffer(1, arr.length, sr);
         buffer.copyToChannel(arr, 0);
-        let offset = now() - endRecTime.value;
+        let offset = realNow - endRecTime.value;
         if (offset < 0) offset = 0;
         synth.klattLoopSourceNode.buffer = buffer;
-        synth.klattLoopSourceNode.start(now(), offset);
+        synth.klattLoopSourceNode.start(realNow, offset);
         synth.klattLoopSourceNode.playing = true;
       }
     };
@@ -587,11 +590,12 @@ export default defineComponent({
       }
     }
     const playSitarTrajs = (synth: SitarSynthType) => {
+      const realNow = now();
       // gains
-      synth.intSitarGainNode.gain.setValueAtTime(0, now());
-      synth.intSitarGainNode.gain.linearRampToValueAtTime(1, now() + lagTime);
-      synth.intChikariGainNode.gain.setValueAtTime(0, now());
-      synth.intChikariGainNode.gain.linearRampToValueAtTime(1, now() + lagTime);
+      synth.intSitarGainNode.gain.setValueAtTime(0, realNow);
+      synth.intSitarGainNode.gain.linearRampToValueAtTime(1, realNow + lagTime);
+      synth.intChikariGainNode.gain.setValueAtTime(0, realNow);
+      synth.intChikariGainNode.gain.linearRampToValueAtTime(1, realNow + lagTime);
       // trajs
       const trajs = props.piece.allTrajectories(synth.idx);
       const starts = getStarts(trajs.map(t => t.durTot));
@@ -601,16 +605,18 @@ export default defineComponent({
       remainingTrajs.forEach((traj, tIdx) => {
         const i = tIdx + startIdx;
         if (traj.id !== 12) {
-          const startTime = now() + starts[i] - props.curPlayTime;
+          const startTime = realNow + starts[i] - props.curPlayTime;
           playSitarArticulations(traj, startTime, synth.sitarNode);
           playSitarFreqContour(traj, startTime, synth, i === 0);
         }
       });
       // chikaris
+      
       props.piece.phraseGrid[synth.idx].forEach((phrase: Phrase, pIdx: number) => {
         Object.keys(phrase.chikaris).forEach((key) => {
-          const time = now() + phrase.startTime! + Number(key) - props.curPlayTime;
-          if (time >= now()) {
+          const time = realNow + phrase.startTime! + Number(key) - props.curPlayTime;
+          console.log('later now', realNow);
+          if (time >= realNow) {
             sendBurst({ 
               when: time, 
               to: synth.chikariNode, 
@@ -653,8 +659,9 @@ export default defineComponent({
       }
     };
     const playSarangiTrajs = (synth: SarangiSynthType) => {
-      synth.intGain.gain.setValueAtTime(0, now());
-      synth.intGain.gain.linearRampToValueAtTime(1, now() + lagTime);
+      const realNow = now();
+      synth.intGain.gain.setValueAtTime(0, realNow);
+      synth.intGain.gain.linearRampToValueAtTime(1, realNow + lagTime);
       const trajs = props.piece.allTrajectories(synth.idx);
       const starts = getStarts(trajs.map(t => t.durTot));
       const ends = getEnds(trajs.map(t => t.durTot));
@@ -663,7 +670,7 @@ export default defineComponent({
       remainingTrajs.forEach((traj, tIdx) => {
         const i = tIdx + startIdx;
         if (traj.id !== 12) {
-          const st = now() + starts[i] - props.curPlayTime;
+          const st = realNow + starts[i] - props.curPlayTime;
           const lastTraj = remainingTrajs[tIdx - 1];
           const fromSil = tIdx === 0 || !lastTraj || lastTraj.id === 12;
           const last = tIdx === remainingTrajs.length - 1;
@@ -725,8 +732,9 @@ export default defineComponent({
       synth.node.flutterLevel!.setValueAtTime(0.15, startTime);
     };
     const playKlattTrajs = (synth: KlattSynthType) => {
-      synth.intGain.gain.setValueAtTime(0, now());
-      synth.intGain.gain.linearRampToValueAtTime(1, now() + lagTime);
+      const realNow = now();
+      synth.intGain.gain.setValueAtTime(0, realNow);
+      synth.intGain.gain.linearRampToValueAtTime(1, realNow + lagTime);
       const trajs = props.piece.allTrajectories(synth.idx);
       const starts = getStarts(trajs.map(t => t.durTot));
       const startIdx = starts.findIndex(s => s >= props.curPlayTime);
@@ -734,7 +742,7 @@ export default defineComponent({
       remainingTrajs.forEach((traj, tIdx) => {
         const i = tIdx + startIdx;
         if (traj.id !== 12) {
-          const st = now() + starts[i] - props.curPlayTime;
+          const st = realNow + starts[i] - props.curPlayTime;
           const lastTraj = remainingTrajs[tIdx - 1];
           const fromSil = tIdx === 0 || !lastTraj || lastTraj.id === 12;
           const last = tIdx === remainingTrajs.length - 1;
@@ -757,20 +765,21 @@ export default defineComponent({
       })
     };
     const cancelSitarTrajs = (synth: SitarSynthType) => {
-      synth.intChikariGainNode.gain.cancelScheduledValues(now());
-      synth.intSitarGainNode.gain.cancelScheduledValues(now());
-      synth.extChikariGainNode.gain.cancelScheduledValues(now());
-      synth.extSitarGainNode.gain.cancelScheduledValues(now());
-      synth.intSitarGainNode.gain.setValueAtTime(1, now());
-      synth.intSitarGainNode.gain.linearRampToValueAtTime(0, now() + lagTime);
-      synth.intChikariGainNode.gain.setValueAtTime(1, now());
-      synth.intChikariGainNode.gain.linearRampToValueAtTime(0, now() + lagTime);
-      synth.sitarNode.cutoff!.cancelScheduledValues(now());
+      const realNow = now();
+      synth.intChikariGainNode.gain.cancelScheduledValues(realNow);
+      synth.intSitarGainNode.gain.cancelScheduledValues(realNow);
+      synth.extChikariGainNode.gain.cancelScheduledValues(realNow);
+      synth.extSitarGainNode.gain.cancelScheduledValues(realNow);
+      synth.intSitarGainNode.gain.setValueAtTime(1, realNow);
+      synth.intSitarGainNode.gain.linearRampToValueAtTime(0, realNow + lagTime);
+      synth.intChikariGainNode.gain.setValueAtTime(1, realNow);
+      synth.intChikariGainNode.gain.linearRampToValueAtTime(0, realNow + lagTime);
+      synth.sitarNode.cutoff!.cancelScheduledValues(realNow);
       cancelBursts();
       const freq = synth.sitarNode.frequency!;
       const lpFreq = synth.lpNode.frequency!;
-      freq.cancelScheduledValues(now());
-      lpFreq.cancelScheduledValues(now());
+      freq.cancelScheduledValues(realNow);
+      lpFreq.cancelScheduledValues(realNow);
     };
     const cancelSarangiTrajs = (synth:SarangiSynthType) => {
       const when = now();
@@ -864,20 +873,21 @@ export default defineComponent({
       synth.chikariLoopGainNode.gain.setValueAtTime(1, end);
     };
     const stopRecordingSitar = (synth: SitarSynthType) => {
+      const realNow = now()
       const sBufNode = synth.sitarLoopSourceNode;
       const cBufNode = synth.chikariLoopSourceNode;
       const sGainNode = synth.sitarLoopGainNode;
       const cGainNode = synth.chikariLoopGainNode;
       if (sBufNode.playing && cBufNode.playing) {
         // turn gain off
-        sGainNode.gain.setValueAtTime(1, now());
-        sGainNode.gain.linearRampToValueAtTime(0, now() + lagTime);
-        cGainNode.gain.setValueAtTime(1, now());
-        cGainNode.gain.linearRampToValueAtTime(0, now() + lagTime);
+        sGainNode.gain.setValueAtTime(1, realNow);
+        sGainNode.gain.linearRampToValueAtTime(0, realNow + lagTime);
+        cGainNode.gain.setValueAtTime(1, realNow);
+        cGainNode.gain.linearRampToValueAtTime(0, realNow + lagTime);
 
         // stop buffers
-        sBufNode.stop(now() + lagTime);
-        cBufNode.stop(now() + lagTime);
+        sBufNode.stop(realNow + lagTime);
+        cBufNode.stop(realNow + lagTime);
 
         // disconnect, reset, and reconnect
         sBufNode.onended = () => {
@@ -908,15 +918,16 @@ export default defineComponent({
     };
     const stopRecordingSarangi = (synth: SarangiSynthType) => {
       console.log('stopping recording sarangi')
+      const realNow = now()
       const bufNode = synth.sarangiLoopSourceNode;
       const gainNode = synth.sarangiLoopGainNode;
       if (bufNode.playing) {
         // turn gain off
-        gainNode.gain.setValueAtTime(1, now());
-        gainNode.gain.linearRampToValueAtTime(0, now() + lagTime);
+        gainNode.gain.setValueAtTime(1, realNow);
+        gainNode.gain.linearRampToValueAtTime(0, realNow + lagTime);
 
         // stop buffer
-        bufNode.stop(now() + lagTime);
+        bufNode.stop(realNow + lagTime);
 
         // disconnect, reset, and reconnect
         bufNode.onended = () => {
@@ -939,15 +950,16 @@ export default defineComponent({
       synth.klattLoopGainNode.gain.setValueAtTime(1, end);
     };
     const stopRecordingKlatt = (synth: KlattSynthType) => {
+      const realNow = now()
       const bufNode = synth.klattLoopSourceNode;
       const gainNode = synth.klattLoopGainNode;
       if (bufNode.playing) {
         // turn gain off
-        gainNode.gain.setValueAtTime(1, now());
-        gainNode.gain.linearRampToValueAtTime(0, now() + lagTime);
+        gainNode.gain.setValueAtTime(1, realNow);
+        gainNode.gain.linearRampToValueAtTime(0, realNow + lagTime);
 
         // stop buffer
-        bufNode.stop(now() + lagTime);
+        bufNode.stop(realNow + lagTime);
 
         // disconnect, reset, and reconnect
         bufNode.onended = () => {
@@ -963,15 +975,16 @@ export default defineComponent({
     watch(
       () => props.instTracks.map(t => t.sounding), 
       (newVal, oldVal) => {
+        const realNow = now();
         for (let i = 0; i < newVal.length; i++) {
           if (newVal[i] !== oldVal[i]) {
             const node = synths[i].sonifyNode;
             if (newVal[i]) {
-              node.gain.setValueAtTime(0, now());
-              node.gain.linearRampToValueAtTime(1, now() + lagTime);
+              node.gain.setValueAtTime(0, realNow);
+              node.gain.linearRampToValueAtTime(1, realNow + lagTime);
             } else {
-              node.gain.setValueAtTime(1, now());
-              node.gain.linearRampToValueAtTime(0, now() + lagTime);
+              node.gain.setValueAtTime(1, realNow);
+              node.gain.linearRampToValueAtTime(0, realNow + lagTime);
             }
           }
         }
