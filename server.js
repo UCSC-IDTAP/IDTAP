@@ -14,6 +14,7 @@ const { OAuth2Client } = require('google-auth-library');
 require('dotenv').config();
 const console = require('console');
 const { $push } = require('mongo-dot-notation');
+const { gatherDatabaseInfo } = require('./services/dbStats.js');
 
 async function exists (path) {  
   try {
