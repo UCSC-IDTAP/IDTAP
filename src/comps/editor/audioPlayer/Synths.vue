@@ -463,7 +463,6 @@ export default defineComponent({
       emptyGainNode.gain.value = 0;
       emptyGainNode.connect(synth.capture, 0, 1);
       synth.capture.port.onmessage = e => {
-        console.log('received message for instrument', synth.idx);
         const realNow = now();
         const arr = new Float32Array(e.data[0]);
         const sr = props.ac.sampleRate;
@@ -479,7 +478,6 @@ export default defineComponent({
     const initializeKlattCapture = (synth: KlattSynthType) => {
       synth.envGain.connect(synth.capture, 0, 0);
       synth.capture.port.onmessage = e => {
-        console.log('received message for instrument', synth.idx);
         const realNow = now();
         const arr = new Float32Array(e.data[0]);
         const sr = props.ac.sampleRate;
@@ -615,7 +613,6 @@ export default defineComponent({
       props.piece.phraseGrid[synth.idx].forEach((phrase: Phrase, pIdx: number) => {
         Object.keys(phrase.chikaris).forEach((key) => {
           const time = realNow + phrase.startTime! + Number(key) - props.curPlayTime;
-          console.log('later now', realNow);
           if (time >= realNow) {
             sendBurst({ 
               when: time, 
@@ -905,7 +902,6 @@ export default defineComponent({
       }
     }
     const recordSarangi = (synth: SarangiSynthType, start: number, end: number) => {
-      console.log('recording sarangi')
       const bufSize = (end - start) * props.ac.sampleRate;
       synth.capture.bufferSize!.setValueAtTime(bufSize, now());
       synth.capture.active!.setValueAtTime(1, start);
@@ -917,7 +913,6 @@ export default defineComponent({
       synth.sarangiLoopGainNode.gain.setValueAtTime(1, end);
     };
     const stopRecordingSarangi = (synth: SarangiSynthType) => {
-      console.log('stopping recording sarangi')
       const realNow = now()
       const bufNode = synth.sarangiLoopSourceNode;
       const gainNode = synth.sarangiLoopGainNode;
