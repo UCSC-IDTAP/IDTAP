@@ -1,6 +1,9 @@
 # Changelog
 
 
+* Fix: fixes windows but with animated playhead [3475f0c] (Jon Myers)
+### 2025-03-12
+
 * Fix: addresses bugs with playback timing, especially chikari and plucks being late. [2dcf234] (Jon Myers)
 * feat: Visibility settings can now be saved via Display Settings [a8c5fcb] (Jon Myers)
 * feat: moved visibility controls away from upper right and into "imaging and color controls" [fce3f98] (Jon Myers)
