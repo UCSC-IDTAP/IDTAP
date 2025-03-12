@@ -11,7 +11,7 @@
         :opacity='playing && isBlock ? 0.5 : 1'
         :height='height'
         :fill='playheadColor'
-        :style='playheadStyle'
+        
       ></rect>
     </svg>
     <div class='emptyOverlay' ref='emptyOverlay'></div>
@@ -534,12 +534,12 @@ export default defineComponent({
         selectedTrajs.value[0] : 
         undefined;
     });
-    const playheadStyle = computed(() => {
-      return {
-        zIndex: 1000,
-        // filter: 'blur(2px) drop-shadow(0 0 10px rgba(0, 0, 0, 0.8))',
-      }
-    });
+    // const playheadStyle = computed(() => {
+    //   return {
+    //     zIndex: 1000,
+    //     // filter: 'blur(2px) drop-shadow(0 0 10px rgba(0, 0, 0, 0.8))',
+    //   }
+    // });
     const targetPlayheadX = computed(() => {
       return props.xScale(props.currentTime)
     });
@@ -1081,25 +1081,6 @@ export default defineComponent({
       return current + (target - current) * smoothing;
     }
     let playheadAnimation: Animation | undefined = undefined;
-    const movePlayhead = () => {
-      const now = performance.now() / 1000;
-      const elapsed = now - playheadRealStartTime;
-      let musicTime = playheadMusicStartTime + elapsed;      
-      if (everyOther) {
-        if (looping) {
-          while (musicTime > regionEndX.value!) {
-            musicTime -= (regionEndX.value! - regionStartX.value!);
-          }
-        }
-        const xPosition = props.xScale(musicTime);
-        playhead.value!.style.transform = `translateX(${xPosition}px)`;
-        lastUpdateTime = now;
-      }
-      everyOther = !everyOther;
-      if (musicTime < props.piece.durTot! && movingPlayhead) {
-        requestAnimationFrame(movePlayhead)
-      }
-    }
 
     const replaceSilenceWithConnection = (
         silentTraj: Trajectory, 
@@ -1200,6 +1181,7 @@ export default defineComponent({
 
       } else {
         if (props.playheadAnimation === PlayheadAnimations.Animated) {
+          gsap.killTweensOf(playhead.value);
           gsapTween = gsap.fromTo(playhead.value!, {
             x: playheadStartPxl
           }, {
@@ -1256,12 +1238,12 @@ export default defineComponent({
     const updatePlayheadPosition = (time: number) => {
       if (!props.playing) {
         const pxlX = props.xScale(time);
-        playhead.value!.style.transform = `translateX(${pxlX}px)`;
+        playhead.value!.setAttribute('transform',`matrix(1, 0, 0, 1, ${pxlX}, 0)`);
         smoothPositionX = pxlX;
         currentSec.value = Math.floor(time);
       } else if (props.playheadAnimation === PlayheadAnimations.Block) {
         const pxlX = props.xScale(time);
-        playhead.value!.style.transform = `translateX(${pxlX}px)`;
+        playhead.value!.setAttribute('transform',`matrix(1, 0, 0, 1, ${pxlX}, 0)`);
         smoothPositionX = pxlX;
 
       } else {
@@ -5660,7 +5642,7 @@ export default defineComponent({
       regionStartX,
       regionEndX,
       playhead,
-      playheadStyle,
+      // playheadStyle,
       autoWindowOpen,
       autoTrajs,
       autoWindowX,
