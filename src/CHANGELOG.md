@@ -1,6 +1,7 @@
 # Changelog
 
 
+* fix: sharing transcription link now working correctly [ce15305] (Jon Myers)
 * Feat: Imaging and Color Controls has been renamed to Transcription and Graphic Controls [75bb998] (Jon Myers)
 * Fix: Scrolling playhead timing fixed on windows [450a204] (Jon Myers)
 ### 2025-03-13
