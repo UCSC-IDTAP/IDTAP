@@ -97,7 +97,6 @@ import {
 } from '@/ts/types.ts';
 import { Meter, Pulse } from '@/js/meter.ts';
 import ContextMenu from'@/comps/ContextMenu.vue';
-import { gsap } from 'gsap';
 
 export default defineComponent({
   name: 'TranscriptionLayer',
@@ -357,7 +356,6 @@ export default defineComponent({
     const goToHours = ref<string>('0');
     const goToMinutes = ref<string>('00');
     const controlled = ref<boolean>(false);
-    let gsapTween: gsap.core.Tween | undefined = undefined;
     let playheadLineIdx = 0;
     let justDeletedPhraseDiv = false;
     const dragDotColor = 'purple';
@@ -1142,84 +1140,6 @@ export default defineComponent({
       renderTraj(newTraj);
       emit('unsavedChanges', true);
     }
-
-    // const startPlayingTransition = () => {
-    //   console.log('starting playing transition at: ', performance.now()/1000)
-    //   movingPlayhead = true;
-    //   playheadMusicStartTime = props.currentTime;
-    //   playheadStartPxl = props.xScale(props.currentTime);
-    //   if (props.loop && regionEndPxl.value !== undefined && playheadStartPxl < regionEndPxl.value) {
-    //     if (playheadStartPxl > regionStartPxl.value!) {
-    //       emit('update:currentTime', regionStartX.value!);
-    //       playheadStartPxl = regionStartPxl.value!;
-    //       playheadMusicStartTime = regionStartX.value!;
-    //       nextTick(() => {
-    //         playheadStartPxl = regionStartPxl.value!;
-    //         if (props.playheadAnimation === PlayheadAnimations.Animated) {
-    //           gsapTween = gsap.fromTo(playhead.value!, {
-    //             x: playheadStartPxl
-    //           }, {
-    //             x: regionEndPxl.value!,
-    //             duration: (regionEndX.value! - regionStartX.value!),
-    //             ease: 'linear',
-    //             repeat: -1,
-    //           })
-    //         }
-    //       })
-    //     } else {
-    //       if (props.playheadAnimation === PlayheadAnimations.Animated) {
-    //         gsapTween = gsap.fromTo(playhead.value!, {
-    //           x: playheadStartPxl
-    //         }, {
-    //           x: regionEndPxl.value!,
-    //           duration: (regionEndX.value! - props.currentTime),
-    //           ease: 'linear',
-    //           onComplete: () => {
-    //             gsapTween = gsap.fromTo(playhead.value!, {
-    //               x: regionStartPxl.value!
-    //             }, {
-    //               x: regionEndPxl.value!,
-    //               duration: (regionEndX.value! - regionStartX.value!),
-    //               ease: 'linear',
-    //               repeat: -1,
-    //             })
-    //           }
-    //         })
-    //       }
-    //     }
-
-    //   } else {
-    //     if (props.playheadAnimation === PlayheadAnimations.Animated) {
-    //       console.log('scheduling gsap animation at: ', performance.now()/1000)
-    //       // gsap.killTweensOf(playhead.value);
-    //       gsapTween = gsap.fromTo(playhead.value!, {
-    //         x: playheadStartPxl
-    //       }, {
-    //         x: props.xScale(props.piece.durTot!),
-    //         duration: (props.piece.durTot! - props.currentTime),
-    //         ease: 'linear',
-    //         immediateRender: true
-    //       })
-    //     }
-    //   }
-    // };
-
-    // const stopPlayingTransition = () => {
-    //   if (props.playheadAnimation === PlayheadAnimations.Animated) {
-    //     return gsapTween?.kill();
-    //   }
-    //   updatePlayheadPosition(props.currentTime);
-    //   litTrajs.value.forEach((litTraj, idx) => {
-    //     if (litTraj !== undefined) {
-    //       const track = props.piece.trackFromTraj(litTraj);
-    //       const selector = `.traj.uId${litTraj.uniqueId}`;
-    //       d3.selectAll(selector)
-    //         .attr('stroke', props.instTracks[track].color)
-    //       d3.selectAll(selector + '.pluck')
-    //         .attr('fill', props.instTracks[track].color)
-    //     }
-    //   })
-    // };
 
     const startPlayingTransition = () => {
       // Only animate if playheadAnimation is Animated; otherwise, update playhead position immediately.
@@ -5639,7 +5559,6 @@ export default defineComponent({
     };
 
     onMounted(() => {
-      gsap.ticker.fps(fps);
       if (tranSvg.value) {
         setUpSvg();
         resetTranscription();

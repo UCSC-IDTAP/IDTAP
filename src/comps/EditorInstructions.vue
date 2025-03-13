@@ -34,7 +34,7 @@
             <li><a href="#download-data">Download Data</a></li>
             <li><a href="#meter-controls">Meter Controls</a></li>
             <li><a href="#label-editor">Label Editor</a></li>
-            <li><a href="#imaging-and-color-controls">Imaging and Color Controls</a></li>
+            <li><a href="#transcription-and-graphic-controls">Transcription and Graphic Controls</a></li>
           </ol>
         </li>
         <li><a href="#keyboard-shortcuts-and-tips">Keyboard Shortcuts and Tips</a></li>
@@ -698,11 +698,11 @@
         </li>
       </ul>
 
-      <h3 id="imaging-and-color-controls">8.6 Imaging and Color Controls</h3>
+      <h3 id="transcription-and-graphic-controls">8.6 Transcription and Graphic Controls</h3>
       <p><strong>Icon</strong>: Bar graph with control knobs.</p>
-      <p><strong>Accessing Imaging and Color Controls:</strong></p>
+      <p><strong>Accessing Transcription and Graphic Controls:</strong></p>
       <ul>
-        <li>Click on the <strong>Imaging and Color Controls</strong> icon.</li>
+        <li>Click on the <strong>Transcription and Graphic Controls</strong> icon.</li>
       </ul>
       <p><strong>Adjusting Visual Settings:</strong></p>
       <h4>Spectrogram</h4>

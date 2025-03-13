@@ -804,7 +804,7 @@ export default defineComponent({
       selectedControlsMode: ControlsMode.Synthesis,
       controlsHoverTimeout: undefined,
       controlsTexts: {
-        specImg: 'Imaging and Color Controls',
+        specImg: 'Transcription and Graphic Controls',
         tagsImg: 'Label Editor',
         meterImg: 'Meter Controls',
         downloadImg: 'Download Data',
