@@ -1,6 +1,9 @@
 # Changelog
 
 
+* Fix: Scrolling playhead timing fixed on windows [450a204] (Jon Myers)
+### 2025-03-13
+
 * Fix: fixes windows but with animated playhead [3475f0c] (Jon Myers)
 ### 2025-03-12
 
