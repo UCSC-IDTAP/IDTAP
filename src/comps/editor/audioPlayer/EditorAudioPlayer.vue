@@ -1192,7 +1192,7 @@ export default defineComponent({
     },
 
     shareLink() {
-      let link = `https://swara.studio/editor?id=${this.id}`;
+      let link = `https://swara.studio/editor?id=${this.piece._id}`;
       if (this.startAtCurrentTime) {
         let rounded = Math.round(this.getCurTime());
         link += `&t=${rounded}`;
