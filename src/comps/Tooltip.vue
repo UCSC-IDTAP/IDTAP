@@ -87,7 +87,7 @@ export default defineComponent({
   border: 1px solid black;
   padding: 5px;
   z-index: 100;
-  max-width: 200px;
+  max-width: 220px;
   max-height: 50px;
   width: auto;
   height: auto;
