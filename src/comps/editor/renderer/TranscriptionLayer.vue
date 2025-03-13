@@ -92,7 +92,8 @@ import {
   LabelEditorOptions,
   StrokeNicknameType,
   BolDisplayType,
-  CollectionType
+  CollectionType,
+  APType
 } from '@/ts/types.ts';
 import { Meter, Pulse } from '@/js/meter.ts';
 import ContextMenu from'@/comps/ContextMenu.vue';
@@ -275,7 +276,11 @@ export default defineComponent({
     editableCols: {
       type: Object as PropType<CollectionType[]>,
       required: true
-    }
+    },
+    audioPlayerRef: {
+      type: Object as PropType<APType>,
+      required: true
+    },
   },
   emits: [
     'update:TrajSelStatus',
@@ -370,18 +375,20 @@ export default defineComponent({
     let playheadMusicStartTime = 0;
     let playheadStartPxl = 0;
     let lastUpdateTime = 0;
-    let movingPlayhead = false;
+    
     const fps = 30;
     const frameDur = 1 / fps;
     let everyOther = true;
     let looping = false;
     let smoothPositionX = 0;
 
+    let animationFrameId: number | null = null;
+    let movingPlayhead = false;
+    let currentX = 0;
+
     const isBlock = computed(() => {
       return props.playheadAnimation === PlayheadAnimations.Block;
     })
-
-
 
     const emptyDivIdxMap = new Map<HTMLDivElement, number>();
     const maxEmptyDivWidth = props.clientWidth;
@@ -1060,14 +1067,15 @@ export default defineComponent({
       d3.selectAll('.bolsG')
         .style('opacity', Number(newVal))
     });
-    watch(() => props.playing, newVal => {
-      if (newVal) {
-        // updatePlayheadPosition();
-        startPlayingTransition();
-      } else {
-        stopPlayingTransition();
-      }
-    });
+    // watch(() => props.playing, newVal => {
+    //   if (newVal) {
+    //     console.log('triggering watcher at: ', performance.now()/1000)
+    //     // updatePlayheadPosition();
+    //     startPlayingTransition();
+    //   } else {
+    //     stopPlayingTransition();
+    //   }
+    // });
 
     const goToTime = () => {
       goToTimeModal.value = false;
@@ -1135,61 +1143,139 @@ export default defineComponent({
       emit('unsavedChanges', true);
     }
 
-    const startPlayingTransition = () => {
-      movingPlayhead = true;
-      playheadMusicStartTime = props.currentTime;
-      playheadStartPxl = props.xScale(props.currentTime);
-      if (props.loop && regionEndPxl.value !== undefined && playheadStartPxl < regionEndPxl.value) {
-        if (playheadStartPxl > regionStartPxl.value!) {
-          emit('update:currentTime', regionStartX.value!);
-          playheadStartPxl = regionStartPxl.value!;
-          playheadMusicStartTime = regionStartX.value!;
-          nextTick(() => {
-            playheadStartPxl = regionStartPxl.value!;
-            if (props.playheadAnimation === PlayheadAnimations.Animated) {
-              gsapTween = gsap.fromTo(playhead.value!, {
-                x: playheadStartPxl
-              }, {
-                x: regionEndPxl.value!,
-                duration: (regionEndX.value! - regionStartX.value!),
-                ease: 'linear',
-                repeat: -1,
-              })
-            }
-          })
-        } else {
-          if (props.playheadAnimation === PlayheadAnimations.Animated) {
-            gsapTween = gsap.fromTo(playhead.value!, {
-              x: playheadStartPxl
-            }, {
-              x: regionEndPxl.value!,
-              duration: (regionEndX.value! - props.currentTime),
-              ease: 'linear',
-              onComplete: () => {
-                gsapTween = gsap.fromTo(playhead.value!, {
-                  x: regionStartPxl.value!
-                }, {
-                  x: regionEndPxl.value!,
-                  duration: (regionEndX.value! - regionStartX.value!),
-                  ease: 'linear',
-                  repeat: -1,
-                })
-              }
-            })
-          }
-        }
+    // const startPlayingTransition = () => {
+    //   console.log('starting playing transition at: ', performance.now()/1000)
+    //   movingPlayhead = true;
+    //   playheadMusicStartTime = props.currentTime;
+    //   playheadStartPxl = props.xScale(props.currentTime);
+    //   if (props.loop && regionEndPxl.value !== undefined && playheadStartPxl < regionEndPxl.value) {
+    //     if (playheadStartPxl > regionStartPxl.value!) {
+    //       emit('update:currentTime', regionStartX.value!);
+    //       playheadStartPxl = regionStartPxl.value!;
+    //       playheadMusicStartTime = regionStartX.value!;
+    //       nextTick(() => {
+    //         playheadStartPxl = regionStartPxl.value!;
+    //         if (props.playheadAnimation === PlayheadAnimations.Animated) {
+    //           gsapTween = gsap.fromTo(playhead.value!, {
+    //             x: playheadStartPxl
+    //           }, {
+    //             x: regionEndPxl.value!,
+    //             duration: (regionEndX.value! - regionStartX.value!),
+    //             ease: 'linear',
+    //             repeat: -1,
+    //           })
+    //         }
+    //       })
+    //     } else {
+    //       if (props.playheadAnimation === PlayheadAnimations.Animated) {
+    //         gsapTween = gsap.fromTo(playhead.value!, {
+    //           x: playheadStartPxl
+    //         }, {
+    //           x: regionEndPxl.value!,
+    //           duration: (regionEndX.value! - props.currentTime),
+    //           ease: 'linear',
+    //           onComplete: () => {
+    //             gsapTween = gsap.fromTo(playhead.value!, {
+    //               x: regionStartPxl.value!
+    //             }, {
+    //               x: regionEndPxl.value!,
+    //               duration: (regionEndX.value! - regionStartX.value!),
+    //               ease: 'linear',
+    //               repeat: -1,
+    //             })
+    //           }
+    //         })
+    //       }
+    //     }
 
-      } else {
-        if (props.playheadAnimation === PlayheadAnimations.Animated) {
-          gsap.killTweensOf(playhead.value);
-          gsapTween = gsap.fromTo(playhead.value!, {
-            x: playheadStartPxl
-          }, {
-            x: props.xScale(props.piece.durTot!),
-            duration: (props.piece.durTot! - props.currentTime),
-            ease: 'linear',
-          })
+    //   } else {
+    //     if (props.playheadAnimation === PlayheadAnimations.Animated) {
+    //       console.log('scheduling gsap animation at: ', performance.now()/1000)
+    //       // gsap.killTweensOf(playhead.value);
+    //       gsapTween = gsap.fromTo(playhead.value!, {
+    //         x: playheadStartPxl
+    //       }, {
+    //         x: props.xScale(props.piece.durTot!),
+    //         duration: (props.piece.durTot! - props.currentTime),
+    //         ease: 'linear',
+    //         immediateRender: true
+    //       })
+    //     }
+    //   }
+    // };
+
+    // const stopPlayingTransition = () => {
+    //   if (props.playheadAnimation === PlayheadAnimations.Animated) {
+    //     return gsapTween?.kill();
+    //   }
+    //   updatePlayheadPosition(props.currentTime);
+    //   litTrajs.value.forEach((litTraj, idx) => {
+    //     if (litTraj !== undefined) {
+    //       const track = props.piece.trackFromTraj(litTraj);
+    //       const selector = `.traj.uId${litTraj.uniqueId}`;
+    //       d3.selectAll(selector)
+    //         .attr('stroke', props.instTracks[track].color)
+    //       d3.selectAll(selector + '.pluck')
+    //         .attr('fill', props.instTracks[track].color)
+    //     }
+    //   })
+    // };
+
+    const startPlayingTransition = () => {
+      // Only animate if playheadAnimation is Animated; otherwise, update playhead position immediately.
+      if (props.playheadAnimation !== PlayheadAnimations.Animated) {
+        updatePlayheadPosition(props.currentTime);
+        return;
+      }
+      movingPlayhead = true;
+      const startTime = props.audioPlayerRef.regionSpeedOn ? 
+          props.audioPlayerRef.getStretchedCurTime() :
+          props.audioPlayerRef.getCurTime();
+      currentX = props.xScale(startTime);
+      playheadMusicStartTime = startTime;
+      const animate = () => {
+        if (!movingPlayhead) return;
+        let curTime = props.audioPlayerRef.regionSpeedOn ? 
+          props.audioPlayerRef.getStretchedCurTime() :
+          props.audioPlayerRef.getCurTime();
+
+        let targetX = props.xScale(curTime);
+        if (
+          props.loop &&
+          regionEndPxl.value !== undefined &&
+          regionStartPxl.value !== undefined &&
+          regionEndX.value !== undefined &&
+          regionStartX.value !== undefined
+        ) {
+          const regionStart = regionStartX.value; 
+          const regionEnd = regionEndX.value;    
+          const regionDuration = regionEnd - regionStart;
+          if (curTime >= regionEnd) {
+            curTime = regionStart + (curTime - regionEnd);
+          }
+          targetX =
+            regionStartPxl.value +
+            ((curTime - regionStart) / regionDuration) *
+              (regionEndPxl.value - regionStartPxl.value);
         }
+        currentX += (targetX - currentX) * 0.7;
+        playhead.value!.setAttribute('transform', `translate(${currentX}, 0)`);
+        animationFrameId = requestAnimationFrame(animate);
+      };
+
+      animate();
+    };
+
+    const stopPlayingTransition = () => {
+      // Only perform animated stop if playheadAnimation is Animated; otherwise, update playhead immediately.
+      if (props.playheadAnimation !== PlayheadAnimations.Animated) {
+        updatePlayheadPosition(props.currentTime);
+        return;
+      }
+      movingPlayhead = false;
+      if (animationFrameId !== null) {
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
       }
     };
 
@@ -1217,23 +1303,6 @@ export default defineComponent({
       return leftTime + halfTime;
      
     }
-
-    const stopPlayingTransition = () => {
-      if (props.playheadAnimation === PlayheadAnimations.Animated) {
-        return gsapTween?.kill();
-      }
-      updatePlayheadPosition(props.currentTime);
-      litTrajs.value.forEach((litTraj, idx) => {
-        if (litTraj !== undefined) {
-          const track = props.piece.trackFromTraj(litTraj);
-          const selector = `.traj.uId${litTraj.uniqueId}`;
-          d3.selectAll(selector)
-            .attr('stroke', props.instTracks[track].color)
-          d3.selectAll(selector + '.pluck')
-            .attr('fill', props.instTracks[track].color)
-        }
-      })
-    };
 
     const updatePlayheadPosition = (time: number) => {
       if (!props.playing) {
@@ -5658,6 +5727,8 @@ export default defineComponent({
       goToMinutes,
       goToTime,
       controlled,
+      startPlayingTransition,
+      stopPlayingTransition,
     }
   }
 })

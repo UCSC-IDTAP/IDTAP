@@ -50,6 +50,7 @@
       :queryTime='queryTime'
       :editableCols='editableCols'
       :scaleSystem='scaleSystem'
+      :audioPlayerRef='$refs.audioPlayer as APType'
       @zoomInY='zoomInY'
       @zoomOutY='zoomOutY'
       @zoomInX='zoomInX'
@@ -276,6 +277,8 @@
   @update:showMeter='showMeter = $event'
   @update:showPhonemes='showPhonemes = $event'
   @update:showPhraseDivs='viewPhrases = $event'
+  @startPlayingTransition='handleStartPlayingTransition'
+  @stopPlayingTransition='handleStopPlayingTransition'
   />
   <ContextMenu 
     :x='contextMenuX'
@@ -366,16 +369,11 @@ import {
 } from '@/js/serverCalls.ts';
 import { Meter, Pulse } from '@/js/meter.ts';
 import EditorAudioPlayer from '@/comps/editor/audioPlayer/EditorAudioPlayer.vue';
-import MeterControls from '@/comps/editor/audioPlayer/MeterControls.vue';
 import TrajSelectPanel from '@/comps/editor/TrajSelectPanel.vue';
 import ContextMenu from'@/comps/ContextMenu.vue';
-import LabelEditor from '@/comps/editor/LabelEditor.vue';
 import instructionsText from '@/assets/texts/editor_instructions.html?raw';
 import AutomationWindow from '@/comps/editor/AutomationWindow.vue';
 import Renderer from '@/comps/editor/Renderer.vue';
-import TranscriptionLayer from '@/comps/editor/renderer/TranscriptionLayer.vue';
-import SpectrogramLayer from '@/comps/editor/renderer/SpectrogramLayer.vue';
-import YAxis from '@/comps/editor/renderer/YAxis.vue';
 import Tooltip from '@/comps/Tooltip.vue';
 import Synths from '@/comps/editor/audioPlayer/Synths.vue';
 import AddToCollection from '@/comps/AddToCollection.vue';
@@ -398,6 +396,14 @@ import {
   LabelEditorOptions,
   TooltipData,
   CollectionType,
+  TSPType,
+  RendererType,
+  APType,
+  TLayerType,
+  SLayerType,
+  YAxisType,
+  LabelEditorType,
+  MeterControlsType,
 } from '@/ts/types';
 import { 
   EditorMode, 
@@ -476,15 +482,6 @@ function findClosestStartTimeAfter(startTimes: number[], timepoint: number) {
   }
   return closestIndex;
 }
-
-type TSPType = InstanceType<typeof TrajSelectPanel>;
-type RendererType = InstanceType<typeof Renderer>;
-type APType = InstanceType<typeof EditorAudioPlayer>;
-type TLayerType = InstanceType<typeof TranscriptionLayer>;
-type SLayerType = InstanceType<typeof SpectrogramLayer>;
-type YAxisType = InstanceType<typeof YAxis>;
-type LabelEditorType = InstanceType<typeof LabelEditor>;
-type MeterControlsType = InstanceType<typeof MeterControls>;
 
 type EditorDataType = {
   piece: Piece,
@@ -1189,6 +1186,18 @@ export default defineComponent({
   },
 
   methods: {
+
+    handleStartPlayingTransition() {
+      const r = this.$refs.renderer as RendererType;
+      const tLayer = r.transcriptionLayer as TLayerType;
+      tLayer.startPlayingTransition();
+    },
+
+    handleStopPlayingTransition() {
+      const r = this.$refs.renderer as RendererType;
+      const tLayer = r.transcriptionLayer as TLayerType;
+      tLayer.stopPlayingTransition();
+    },
 
     async closeAddToCollection() {
       this.showAddToCollection = false;

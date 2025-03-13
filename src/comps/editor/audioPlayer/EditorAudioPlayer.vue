@@ -134,7 +134,7 @@
       :recGainVal='recGain'
       :hasRecording='hasRecording'
       @update:transposition='transposition = Number($event)'
-      @update:regionSpeed='regionSpeed = $event'
+      @update:regionSpeed='regionSpeed = Number($event)'
       @update:regionSpeedOn='regionSpeedOn = $event'
       @toggleShift='toggleShift'
       @update:shiftOn='shiftOn = $event'
@@ -1172,7 +1172,7 @@ export default defineComponent({
         return this.pausedAt;
       } else if (this.playing) {
         if (this.startingDelta === undefined) {
-          throw new Error('startingDelta is undefined')
+          return 0
         }
         if (this.loop && this.startingDelta < this.loopEnd!) {
           const dur = this.loopEnd! - this.loopStart!;
@@ -1786,6 +1786,8 @@ export default defineComponent({
     },
 
     playStretched() {
+      this.playing = true;
+      this.$emit('startPlayingTransition')
       const offset = (this.parentCurrentTime - this.regionStartTime!);
       console.log('playing stretched, offset: ', offset)
       const scaledOffset = offset / (2 ** this.regionSpeed);
@@ -1806,7 +1808,6 @@ export default defineComponent({
           this.$emit('currentTimeEmit', this.getStretchedCurTime());
         }
       })
-      this.playing = true;
       this.pausedAt = 0;
       this.startedAt = this.now() - scaledOffset;
     },
@@ -1833,17 +1834,21 @@ export default defineComponent({
     },
 
     stopStretched() {
+      this.playing = false;
+      this.$emit('stopPlayingTransition')
       if (this.sourceNode) {
         this.sourceNode.stop(this.now());
         this.sourceNode.disconnect();
         this.sourceNode = null;
       }
-      this.playing = false;
     },
 
     play() {
+      this.playing = true;
+      
       const offset = this.pausedAt;
       this.startingDelta = this.pausedAt;
+      this.$emit('startPlayingTransition')
       this.sourceNode = this.ac!.createBufferSource();
       this.sourceNode.connect(this.gainNode!);
       this.sourceNode.buffer = this.audioBuffer!;
@@ -1864,10 +1869,12 @@ export default defineComponent({
       }
       this.startedAt = this.now() - offset;
       this.pausedAt = 0;
-      this.playing = true;
+      
     },
 
     stop() {
+      this.playing = false;
+      this.$emit('stopPlayingTransition')
       if (this.sourceNode) {
         this.sourceNode.disconnect();
         this.sourceNode.stop(this.now());
@@ -1879,7 +1886,7 @@ export default defineComponent({
       }
       this.pausedAt = 0;
       this.startedAt = 0;
-      this.playing = false;
+      
     },
 
     pause() {
@@ -1948,6 +1955,8 @@ export default defineComponent({
           scaledElapsed = scaledElapsed % tot;
         }
         out = scaledElapsed + this.regionStartTime;
+      } else {
+        out = 0;
       }
       return out
     },
@@ -1970,7 +1979,8 @@ export default defineComponent({
       if (this.noAudio) {
         this.progress = this.getCurTime() / this.piece.durTot!;
       } else {
-        this.progress = this.getCurTime() / this.audioBuffer!.duration;
+        const curTime = this.regionSpeedOn ? this.getStretchedCurTime() : this.getCurTime();
+        this.progress = curTime / this.audioBuffer!.duration;
       }
       const pbi = document.querySelector('.progBarInner') as HTMLDivElement;
       const pbo = document.querySelector('.progBarOuter') as HTMLDivElement;
@@ -1981,7 +1991,8 @@ export default defineComponent({
         this.updateProgress();
         this.updateFormattedCurrentTime();
         this.updateFormattedTimeLeft();
-        this.$emit('currentTimeEmit', this.getCurTime());
+        const curTime = this.regionSpeedOn ? this.getStretchedCurTime() : this.getCurTime();
+        this.$emit('currentTimeEmit', curTime);
       this.requestId = undefined;
       this.startPlayCursorAnimation();
     },
@@ -2136,21 +2147,23 @@ export default defineComponent({
       }
     },
     updateFormattedCurrentTime(ct?: number) {
-      const st = structuredTime(ct ? ct : this.getCurTime());
+      const curTime = this.regionSpeedOn ? this.getStretchedCurTime() : this.getCurTime();
+      const st = structuredTime(ct ? ct : curTime);
       const ms = st.minutes + ':' + st.seconds;
       this.formattedCurrentTime = st.hours !== '0' ? ms : st.hours + ':' + ms;
     },
     updateFormattedTimeLeft(ct?: number) {
+      const curTime = this.regionSpeedOn ? this.getStretchedCurTime() : this.getCurTime();
       if (this.audioBuffer && isNaN(this.audioBuffer.duration)) {
         return '00:00';
       } else {
         let ut;
         if (!this.noAudio) {
           const buf = this.audioBuffer!;
-          ut = Number(buf.duration) - Number(ct ? ct : this.getCurTime());
+          ut = Number(buf.duration) - Number(ct ? ct : curTime);
         } else {
           const dt = Number(this.piece.durTot);
-          ut = dt - Number(ct ? ct : this.getCurTime());
+          ut = dt - Number(ct ? ct : curTime);
         }
         
         const st = structuredTime(ut);

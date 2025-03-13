@@ -130,6 +130,7 @@
               :preZoomPlayheadPxl='preZoomPlayheadPxl'
               :preZoomMiddleTime='preZoomMiddleTime'
               :editableCols='editableCols'
+              :audioPlayerRef='audioPlayerRef'
               @update:prevMeter='$emit("update:prevMeter", $event)'
               @update:selectedMode='$emit("update:selectedMode", $event)'
               @unsavedChanges='$emit("unsavedChanges", $event)'
@@ -200,7 +201,8 @@ import {
   InstrumentTrackType, 
   ContextMenuOptionType,
   TransMetadataType,
-  CollectionType
+  CollectionType,
+  APType
 } from '@/ts/types.ts';
 import { 
   EditorMode, 
@@ -406,6 +408,10 @@ export default defineComponent({
     },
     scaleSystem: {
       type: String as PropType<ScaleSystem>,
+      required: true
+    },
+    audioPlayerRef: {
+      type: Object as PropType<APType>,
       required: true
     }
   },

@@ -12,6 +12,15 @@ import {
 } from 'd3';
 
 import { Instrument, PlayheadAnimations, ScaleSystem } from '@/ts/enums';
+import TrajSelectPanel from '@/comps/editor/TrajSelectPanel.vue';
+import Renderer from '@/comps/editor/Renderer.vue';
+import EditorAudioPlayer from '@/comps/editor/audioPlayer/EditorAudioPlayer.vue';
+import TranscriptionLayer from '@/comps/editor/renderer/TranscriptionLayer.vue';
+import SpectrogramLayer from '@/comps/editor/renderer/SpectrogramLayer.vue';
+import YAxis from '@/comps/editor/renderer/YAxis.vue';
+import LabelEditor from '@/comps/editor/LabelEditor.vue';
+import MeterControls from '@/comps/editor/audioPlayer/MeterControls.vue';
+
 
 type CollectionType = {
   _id?: string;
@@ -1098,6 +1107,15 @@ type BurstOption = {
   amp?: number
 }
 
+type TSPType = InstanceType<typeof TrajSelectPanel>;
+type RendererType = InstanceType<typeof Renderer>;
+type APType = InstanceType<typeof EditorAudioPlayer>;
+type TLayerType = InstanceType<typeof TranscriptionLayer>;
+type SLayerType = InstanceType<typeof SpectrogramLayer>;
+type YAxisType = InstanceType<typeof YAxis>;
+type LabelEditorType = InstanceType<typeof LabelEditor>;
+type MeterControlsType = InstanceType<typeof MeterControls>;
+
 export type { 
   CollectionType, 
   UserType, 
@@ -1191,5 +1209,13 @@ export type {
   BurstOption,
   BoolObj,
   RuleSetType,
+  TSPType,
+  RendererType,
+  APType,
+  TLayerType,
+  SLayerType,
+  YAxisType,
+  LabelEditorType,
+  MeterControlsType,
 };
 
