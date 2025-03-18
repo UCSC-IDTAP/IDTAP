@@ -1,5 +1,5 @@
 import { MongoClient } from 'mongodb';
-import { gatherDatabaseInfo } from './dbStats.js';
+import { gatherDatabaseInfo, gatherTranscriptionDurations } from './dbStats.js';
 
 // Replace with your local MongoDB connection string and database name
 const settings = 'retryWrites=true&w=majority';
@@ -21,6 +21,10 @@ async function test() {
     const db = client.db('swara');
     const stats = await gatherDatabaseInfo(db);
     console.log('Database Stats:', stats);
+
+    // Get per-transcription duration information
+    const transcriptionDurations = await gatherTranscriptionDurations(db);
+    console.log('Transcription Durations:', transcriptionDurations);
   } catch (error) {
     console.error('Error while testing:', error);
   } finally {

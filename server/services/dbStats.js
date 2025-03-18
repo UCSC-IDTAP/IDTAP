@@ -70,3 +70,38 @@ export async function gatherDatabaseInfo(db) {
   }
 }
 
+export async function gatherTranscriptionDurations(db) {
+  try {
+    const transcriptions = db.collection('transcriptions');
+ 
+    const durationInfo = await transcriptions.aggregate([
+      { $project: { title: 1, phraseGrid: 1 } },
+      { $unwind: "$phraseGrid" },
+      { $unwind: "$phraseGrid" },
+      { $unwind: "$phraseGrid.trajectoryGrid" },
+      { $unwind: "$phraseGrid.trajectoryGrid" },
+      { $group: {
+          _id: "$_id",
+          title: { $first: "$title" },
+          totalDuration: { $sum: "$phraseGrid.trajectoryGrid.durTot" },
+          totalTranscribedDurationExcludingLongSilence: { $sum: {
+            $cond: [
+              { $and: [
+                { $or: [ { $eq: ["$phraseGrid.trajectoryGrid.id", 12] }, { $eq: ["$phraseGrid.trajectoryGrid.id", "12"] } ] },
+                { $gt: ["$phraseGrid.trajectoryGrid.durTot", 10] }
+              ]},
+              0,
+              "$phraseGrid.trajectoryGrid.durTot"
+            ]
+          } }
+      }},
+      { $sort: { totalTranscribedDurationExcludingLongSilence: -1 } }
+    ]).toArray();
+ 
+    return durationInfo;
+  } catch (error) {
+    console.error(error);
+    throw new Error('Error while gathering per-transcription duration information');
+  }
+}
+
