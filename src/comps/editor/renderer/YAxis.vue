@@ -116,6 +116,9 @@ export default defineComponent({
         else if (props.scaleSystem === ScaleSystem.PitchClass) return p.octavedChroma
         else if (props.scaleSystem === ScaleSystem.Cents) return p.a440CentsDeviation
         else if (props.scaleSystem === ScaleSystem.SargamCents) return p.octavedSargamLetterWithCents
+        else if (props.scaleSystem === ScaleSystem.SolfegeCents) return p.octavedSolfegeLetterWithCents
+        else if (props.scaleSystem === ScaleSystem.PitchClassCents) return p.octavedChromaWithCents
+        else if (props.scaleSystem === ScaleSystem.MovableCCents) return p.movableCCentsDeviation
         else throw new Error('Invalid scale system');
       });
     });

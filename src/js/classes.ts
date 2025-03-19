@@ -525,10 +525,11 @@ class Pitch {
 
   get octavedSargamLetterWithCents() {
     let out = this.octavedSargamLetter;
-    const cents = this.logOffset * 1200
-    const sign = cents > 0 ? '+' : '-';
+    const etFreq = this.fundamental * 2 ** (this.chroma / 12) * 2 ** this.oct;
+    const cents = 1200 * Math.log2(this.frequency / etFreq);
+    const sign = cents >= 0 ? '+' : '-';
     const absCents = Math.abs(cents);
-    const centsStr = ' (' + sign + absCents.toString() + '\u00A2)';
+    const centsStr = ' (' + sign + Math.round(absCents).toString() + '\u00A2)';
     return out + centsStr 
   }
 
@@ -550,6 +551,16 @@ class Pitch {
     return s
   }
 
+  get octavedSolfegeLetterWithCents() {
+    let out = this.octavedSolfegeLetter;
+    const etFreq = this.fundamental * 2 ** (this.chroma / 12) * 2 ** this.oct;
+    const cents = 1200 * Math.log2(this.frequency / etFreq);
+    const sign = cents >= 0 ? '+' : '-';
+    const absCents = Math.abs(cents);
+    const centsStr = ' (' + sign + Math.round(absCents).toString() + '\u00A2)';
+    return out + centsStr 
+  }
+
   get octavedChroma() {
     let s = String(this.chroma)
     if (this.oct === -2) {
@@ -566,6 +577,16 @@ class Pitch {
       s = s + '\u20DB'
     }
     return s
+  }
+
+  get octavedChromaWithCents() {
+    let out = this.octavedChroma;
+    const etFreq = this.fundamental * 2 ** (this.chroma / 12) * 2 ** this.oct;
+    const cents = 1200 * Math.log2(this.frequency / etFreq);
+    const sign = cents >= 0 ? '+' : '-';
+    const absCents = Math.abs(cents);
+    const centsStr = ' (' + sign + Math.round(absCents).toString() + '\u00A2)';
+    return out + centsStr 
   }
 
 
@@ -607,6 +628,16 @@ class Pitch {
     let pitch = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G',
       'G#', 'A', 'A#', 'B'][pitchIdx];
     return `${pitch}${oct} (${sign}${cents}\u00A2)`
+  }
+
+  get movableCCentsDeviation(): string {
+    let pitch = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G',
+      'G#', 'A', 'A#', 'B'][this.chroma];
+    const etFreq = this.fundamental * 2 ** (this.chroma / 12) * 2 ** this.oct;
+    const cents = 1200 * Math.log2(this.frequency / etFreq);
+    const sign = cents >= 0 ? '+' : '-';
+    const absCents = Math.abs(cents);
+    return `${pitch} (${sign}${Math.round(absCents)}\u00A2)`
   }
 
   get chroma() {
