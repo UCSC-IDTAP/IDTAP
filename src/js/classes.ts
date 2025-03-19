@@ -3577,6 +3577,16 @@ class Raga {
     } else {
       this.ratios = ratios
     }
+
+    // set tuning from ratios
+    this.ratios.forEach((ratio, rIdx) => {
+      const tuningKeys = this.ratioIdxToTuningTuple(rIdx);
+      if (tuningKeys[0] === 'sa' || tuningKeys[0] === 'pa') {
+        this.tuning[tuningKeys[0]] = ratio
+      } else {
+        (this.tuning[tuningKeys[0]] as NumObj)[tuningKeys[1]!] = ratio
+      }
+    })
   }
 
   get sargamLetters() {
