@@ -781,7 +781,10 @@ type MelographData = {
 }
 
 type SargamDisplayType = { 
-  sargam: string, 
+  sargam: string,
+  solfege: string,
+  pitchClass: string,
+  westernPitch: string,
   time: number, 
   logFreq: number,
   uId: string,

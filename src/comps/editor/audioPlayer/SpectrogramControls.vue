@@ -143,7 +143,7 @@
           />
         </div>
         <div class='row'>
-          <label for='sargamToggle'>Sargam</label>
+          <label for='sargamToggle'>Pitch Labels</label>
           <input 
             id='sargamToggle' 
             type='checkbox'

@@ -60,6 +60,19 @@ enum ScaleSystem {
   MovableCCents = 'Movable C Pitch + Cents',
 }
 
+enum SargamRepresentation {
+  Sargam = 'Sargam',
+  Solfege = 'Solfege',
+  PitchClass = 'Pitch Class',
+  WesternPitch = 'Western Pitch',
+}
+
+enum PhonemeRepresentation {
+  IPA = 'IPA',
+  Devanagari = 'Devanagari',
+  Latin = 'English',
+}
+
 
 
 export {
@@ -69,4 +82,6 @@ export {
   ControlsMode,
   PlayheadAnimations,
   ScaleSystem,
+  SargamRepresentation,
+  PhonemeRepresentation
 }

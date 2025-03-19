@@ -630,6 +630,12 @@ class Pitch {
     return `${pitch}${oct} (${sign}${cents}\u00A2)`
   }
 
+  get westernPitch(): string {
+    let pitch = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G',
+      'G#', 'A', 'A#', 'B'][this.chroma];
+    return `${pitch}`
+  }
+
   get movableCCentsDeviation(): string {
     let pitch = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G',
       'G#', 'A', 'A#', 'B'][this.chroma];
@@ -3114,7 +3120,10 @@ class Piece {
               sargam: t.pitches[tpIdx].sargamLetter,
               time: tp,
               uId: t.uniqueId!,
-              track: inst
+              track: inst,
+              solfege: t.pitches[tpIdx].solfegeLetter,
+              pitchClass: t.pitches[tpIdx].chroma.toString(),
+              westernPitch: t.pitches[tpIdx].westernPitch,
             })
           };
           lastPitch = {

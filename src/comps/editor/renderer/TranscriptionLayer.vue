@@ -93,8 +93,12 @@ import {
   StrokeNicknameType,
   BolDisplayType,
   CollectionType,
-  APType
+  APType,
 } from '@/ts/types.ts';
+import { 
+  PhonemeRepresentation,
+  SargamRepresentation
+} from '@/ts/enums.ts';
 import { Meter, Pulse } from '@/js/meter.ts';
 import ContextMenu from'@/comps/ContextMenu.vue';
 
@@ -166,7 +170,11 @@ export default defineComponent({
       required: true
     },
     phonemeRepresentation: {
-      type: String,
+      type: String as PropType<PhonemeRepresentation>,
+      required: true
+    },
+    sargamRepresentation: {
+      type: String as PropType<SargamRepresentation>,
       required: true
     },
     instTracks: {
@@ -653,6 +661,19 @@ export default defineComponent({
       d3.selectAll('.Latin')
         .attr('opacity', opacities[2])
     });
+    watch(() => props.sargamRepresentation, () => {
+      const opacities = Object.values(SargamRepresentation).map(c => {
+        return c === props.sargamRepresentation ? 1 : 0;
+      });
+      d3.selectAll('.sargamLabel.sargam')
+        .attr('opacity', opacities[0])
+      d3.selectAll('.sargamLabel.solfege')
+        .attr('opacity', opacities[1])
+      d3.selectAll('.sargamLabel.pitchClass')
+        .attr('opacity', opacities[2])
+      d3.selectAll('.sargamLabel.westernPitch')
+        .attr('opacity', opacities[3])
+    })
     watch(selectedTrajs, (newVal, oldVal) => {
       oldVal.forEach(traj => {
         if (!newVal.includes(traj)) {
@@ -1701,6 +1722,10 @@ export default defineComponent({
           { x: 5, y: -15 },
           { x: 5, y: 15 }
         ]
+      const choices = Object.values(SargamRepresentation);
+      const opacities = choices.map(c => {
+        return c === props.sargamRepresentation ? 1 : 0;
+      });
       const track = props.piece.trackFromTrajUId(s.uId);
       const trackG = tracks[track];
       const g = trackG.select('.sargamG');
@@ -1712,7 +1737,39 @@ export default defineComponent({
         .attr('dominant-baseline', 'middle')
         .attr('font-size', 14)
         .attr('fill', 'black')
-        .attr('class', `sargamLabel uId${s.uId}`)
+        .attr('class', `sargamLabel sargam uId${s.uId}`)
+        .attr('opacity', opacities[0])
+      g.append('text')
+        .text(s.solfege)
+        .attr('x', x + positions[s.pos!].x)
+        .attr('y', y + positions[s.pos!].y)
+        .attr('text-anchor', 'middle')
+        .attr('dominant-baseline', 'middle')
+        .attr('font-size', 14)
+        .attr('fill', 'black')
+        .attr('class', `sargamLabel solfege uId${s.uId}`)
+        .attr('opacity', opacities[1])
+      g.append('text')
+        .text(s.pitchClass)
+        .attr('x', x + positions[s.pos!].x)
+        .attr('y', y + positions[s.pos!].y)
+        .attr('text-anchor', 'middle')
+        .attr('dominant-baseline', 'middle')
+        .attr('font-size', 14)
+        .attr('fill', 'black')
+        .attr('class', `sargamLabel pitchClass uId${s.uId}`)
+        .attr('opacity', opacities[2])
+      g.append('text')
+        .text(s.westernPitch)
+        .attr('x', x + positions[s.pos!].x)
+        .attr('y', y + positions[s.pos!].y)
+        .attr('text-anchor', 'middle')
+        .attr('dominant-baseline', 'middle')
+        .attr('font-size', 14)
+        .attr('fill', 'black')
+        .attr('class', `sargamLabel westernPitch uId${s.uId}`)
+        .attr('opacity', opacities[3])
+      
     };
 
     const refreshBol = (b: BolDisplayType) => {

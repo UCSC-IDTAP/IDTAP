@@ -23,6 +23,7 @@
       :showSargamLines='showSargamLines'
       :showPhonemes='showPhonemes'
       :phonemeRepresentation='phonemeRepresentation'
+      :sargamRepresentation='sargamRepresentation'
       :instTracks='instTracks'
       :selectedMode='selectedMode'
       :showPhraseDivs='viewPhrases'
@@ -410,7 +411,9 @@ import {
   Instrument, 
   ControlsMode, 
   PlayheadAnimations,
-  ScaleSystem 
+  ScaleSystem,
+  SargamRepresentation,
+  PhonemeRepresentation
 } from '@/ts/enums';
 const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
 
@@ -535,7 +538,8 @@ type EditorDataType = {
   playerHeight: number,
   oldHeight?: number,
   leftTime: number,
-  phonemeRepresentation: string,
+  phonemeRepresentation: PhonemeRepresentation,
+  sargamRepresentation: SargamRepresentation,
   controlsHeight: number,
   unsavedChanges: boolean,
   selMeterColor: string,
@@ -706,7 +710,8 @@ export default defineComponent({
       playerHeight: 100,
       oldHeight: undefined,
       leftTime: 0,
-      phonemeRepresentation: 'English',
+      phonemeRepresentation: PhonemeRepresentation.Latin,
+      sargamRepresentation: SargamRepresentation.Sargam,
       controlsHeight: 200,
       unsavedChanges: false,
       selMeterColor: '#3dcc63',
@@ -1021,6 +1026,22 @@ export default defineComponent({
   },
 
   watch: {
+
+    scaleSystem(ss) {
+      if (ss === ScaleSystem.Sargam || ss === ScaleSystem.SargamCents) {
+        this.sargamRepresentation = SargamRepresentation.Sargam;
+      } else if (ss === ScaleSystem.Solfege || ss === ScaleSystem.SolfegeCents) {
+        this.sargamRepresentation = SargamRepresentation.Solfege;
+      } else if (
+        ss === ScaleSystem.PitchClass || 
+        ss === ScaleSystem.PitchClassCents ||
+        ss === ScaleSystem.Cents
+      ) {
+        this.sargamRepresentation = SargamRepresentation.PitchClass;
+      } else if (ss === ScaleSystem.MovableCCents) {
+        this.sargamRepresentation = SargamRepresentation.WesternPitch;
+      }
+    },
 
     loop() {
       const ap = this.$refs.audioPlayer as APType;

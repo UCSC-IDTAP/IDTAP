@@ -104,6 +104,7 @@
               :showSargamLines='showSargamLines'
               :showPhonemes='showPhonemes'
               :phonemeRepresentation='phonemeRepresentation'
+              :sargamRepresentation='sargamRepresentation'
               :instTracks='instTracks'
               :selectedMode='selectedMode'
               :showPhraseDivs='showPhraseDivs'
@@ -208,7 +209,9 @@ import {
   EditorMode, 
   Instrument, 
   PlayheadAnimations, 
-  ScaleSystem 
+  ScaleSystem,
+  PhonemeRepresentation,
+  SargamRepresentation,
 } from '@/ts/enums.ts';
 import { BrowserInfo } from 'detect-browser';
 import ContextMenu from '@/comps/ContextMenu.vue';
@@ -299,7 +302,7 @@ export default defineComponent({
       required: true
     },
     phonemeRepresentation: {
-      type: String,
+      type: String as PropType<PhonemeRepresentation>,
       required: true
     },
     instTracks: {
@@ -412,6 +415,10 @@ export default defineComponent({
     },
     audioPlayerRef: {
       type: Object as PropType<APType>,
+      required: true
+    },
+    sargamRepresentation: {
+      type: String as PropType<SargamRepresentation>,
       required: true
     }
   },
