@@ -54,6 +54,9 @@ enum ScaleSystem {
   Solfege = 'Solfege',
   PitchClass = 'Pitch Class',
   Cents = 'Cents',
+  SargamCents = 'Sargam + Cents',
+  SolfegeCents = 'Solfege + Cents',
+  PitchClassCents = 'Pitch Class + Cents',
 }
 
 

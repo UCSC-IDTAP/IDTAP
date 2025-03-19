@@ -115,6 +115,7 @@ export default defineComponent({
         else if (props.scaleSystem === ScaleSystem.Solfege) return p.octavedSolfegeLetter
         else if (props.scaleSystem === ScaleSystem.PitchClass) return p.octavedChroma
         else if (props.scaleSystem === ScaleSystem.Cents) return p.a440CentsDeviation
+        else if (props.scaleSystem === ScaleSystem.SargamCents) return p.octavedSargamLetterWithCents
         else throw new Error('Invalid scale system');
       });
     });

@@ -1090,7 +1090,13 @@ export default defineComponent({
   computed: {
 
     yAxWidth() {
-      return this.scaleSystem === ScaleSystem.Cents ? 70 : 30;
+      const wides = [
+        ScaleSystem.Cents, 
+        ScaleSystem.SargamCents, 
+        ScaleSystem.SolfegeCents,
+        ScaleSystem.PitchClassCents
+      ]
+      return wides.includes(this.scaleSystem) ? 70 : 30;
     },
     hasRecording() {
       return this.audioDBDoc !== undefined;

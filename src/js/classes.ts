@@ -18,6 +18,8 @@ import {
   BolDisplayType,
   RuleSetType,
   BoolObj,
+  NumObj,
+  TuningType
 } from '@/ts/types.ts';
 import { Instrument } from '@/ts/enums.ts';
 import { closeTo, getClosest, isUpperCase } from '@/ts/utils.ts';
@@ -519,6 +521,15 @@ class Pitch {
       s = s + '\u20DB'
     }
     return s
+  }
+
+  get octavedSargamLetterWithCents() {
+    let out = this.octavedSargamLetter;
+    const cents = this.logOffset * 1200
+    const sign = cents > 0 ? '+' : '-';
+    const absCents = Math.abs(cents);
+    const centsStr = ' (' + sign + absCents.toString() + '\u00A2)';
+    return out + centsStr 
   }
 
   get octavedSolfegeLetter() {
@@ -3510,9 +3521,31 @@ class Section {
   }
 }
 
-type NumObj = { [key: string]: number };
-type TuningType = { [key: string]: number | NumObj };
 
+const etTuning: TuningType = {
+  sa: 2 ** (0 / 12),
+  re: {
+    lowered: 2 ** (1 / 12),
+    raised: 2 ** (2 / 12)
+  },
+  ga: {
+    lowered: 2 ** (3 / 12),
+    raised: 2 ** (4 / 12)
+  },
+  ma: {
+    lowered: 2 ** (5 / 12),
+    raised: 2 ** (6 / 12)
+  },
+  pa: 2 ** (7 / 12),
+  dha: {
+    lowered: 2 ** (8 / 12),
+    raised: 2 ** (9 / 12)
+  },
+  ni: {
+    lowered: 2 ** (10 / 12),
+    raised: 2 ** (11 / 12)
+  }
+};
 
 class Raga {
   name: string;
@@ -3526,40 +3559,19 @@ class Raga {
     fundamental = 261.63,
     ruleSet = yamanRuleSet,
     ratios = undefined,
+    tuning = undefined
   }: {
     name?: string,
     fundamental?: number,
     ruleSet?: RuleSetType,
-    ratios?: number[]
+    ratios?: number[],
+    tuning?: TuningType
   } = {}) {
 
     this.name = name;
     this.ruleSet = ruleSet;
     this.fundamental = fundamental;
-    this.tuning = {
-      sa: 2 ** (0 / 12),
-      re: {
-        lowered: 2 ** (1 / 12),
-        raised: 2 ** (2 / 12)
-      },
-      ga: {
-        lowered: 2 ** (3 / 12),
-        raised: 2 ** (4 / 12)
-      },
-      ma: {
-        lowered: 2 ** (5 / 12),
-        raised: 2 ** (6 / 12)
-      },
-      pa: 2 ** (7 / 12),
-      dha: {
-        lowered: 2 ** (8 / 12),
-        raised: 2 ** (9 / 12)
-      },
-      ni: {
-        lowered: 2 ** (10 / 12),
-        raised: 2 ** (11 / 12)
-      }
-    };
+    this.tuning = tuning ? tuning : etTuning;
     if (ratios === undefined || ratios.length !== this.ruleSetNumPitches)  {
       this.ratios = this.setRatios(this.ruleSet)
     } else {
@@ -3675,11 +3687,11 @@ class Raga {
     const sargam = Object.keys(ruleSet);
     const ratios: number[] = [];
     sargam.forEach(s => {
-      if (typeof(this.tuning[s]) === 'number' && ruleSet[s]) {
-        ratios.push(this.tuning[s] as number);
+      if (typeof(etTuning[s]) === 'number' && ruleSet[s]) {
+        ratios.push(etTuning[s] as number);
       } else {
         const ruleSet = this.ruleSet[s] as BoolObj;
-        const tuning = this.tuning[s] as NumObj;
+        const tuning = etTuning[s] as NumObj;
         if (ruleSet.lowered) ratios.push(tuning.lowered);
         if (ruleSet.raised) ratios.push(tuning.raised);
       }
@@ -3876,11 +3888,34 @@ class Raga {
     })
   }
 
+  ratioIdxToTuningTuple(idx: number): [string, string | undefined] {
+    const noteMapping: Array<[string, string | undefined]> = [];
+    const sargamKeys = ["sa", "re", "ga", "ma", "pa", "dha", "ni"];
+    sargamKeys.forEach(key => {
+      if (typeof this.ruleSet[key] === "object") {
+        if (this.ruleSet[key].lowered) {
+          noteMapping.push([key, "lowered"]);
+        }
+        if (this.ruleSet[key].raised) {
+          noteMapping.push([key, "raised"]);
+        }
+      } else {
+        if (this.ruleSet[key]) {
+          noteMapping.push([key, undefined]);
+        }
+      }
+    });
+    return noteMapping[idx];
+  }
+
+  
+
   toJSON() {
     return {
       name: this.name,
       fundamental: this.fundamental,
       ratios: this.ratios,
+      tuning: this.tuning,
     }
   }
 }

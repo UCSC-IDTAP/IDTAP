@@ -219,7 +219,7 @@
               max='50' 
               step='1' 
               v-model='centDevs[sIdx]'
-              @input='updateTuning(sIdx)'
+              @input='updateTuning(sIdx)' 
               @change='instantiateTuning'
             />
           </div>
@@ -424,6 +424,7 @@ import {
   SitarSynthType,
   SarangiSynthType,
   KlattSynthType, 
+  NumObj
 } from '@/ts/types.ts';
 
 // External Libraries
@@ -1445,6 +1446,14 @@ export default defineComponent({
       this.centDevs = this.centDevs.map(() => 0);
       const ratios = this.initFreqs.map(if_ => if_ / this.raga!.fundamental);
       this.raga!.ratios = ratios;
+      this.raga!.ratios.forEach((ratio, rIdx) => {
+        const tuningKeys = this.raga!.ratioIdxToTuningTuple(rIdx);
+        if (tuningKeys[0] === 'sa' || tuningKeys[0] === 'pa') {
+          this.raga!.tuning[tuningKeys[0]] = ratio;
+        } else {
+          (this.raga!.tuning[tuningKeys[0]] as NumObj)[tuningKeys[1]!] = ratio;
+        }
+      })
       this.$emit('updateSargamLinesEmit')
       this.instantiateTuning();
       this.tuningSines.forEach((oscNode, i) => {
@@ -1474,6 +1483,12 @@ export default defineComponent({
       const newFreq = initFreq * 2 ** (this.centDevs[sIdx] / 1200);
       const newRatio = newFreq / this.raga!.fundamental;
       this.raga!.ratios[sIdx] = newRatio;
+      const tuningKeys = this.raga!.ratioIdxToTuningTuple(sIdx);
+      if (tuningKeys[0] === 'sa' || tuningKeys[0] === 'pa') {
+        this.raga!.tuning[tuningKeys[0]] = newRatio;
+      } else {
+        (this.raga!.tuning[tuningKeys[0]] as NumObj)[tuningKeys[1]!] = newRatio;
+      }
       oscNode.frequency.linearRampToValueAtTime(newFreq, endTime);
       this.$emit('updateSargamLinesEmit');
       this.$emit('unsavedChangesEmit', true);
