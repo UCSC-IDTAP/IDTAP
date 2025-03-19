@@ -196,7 +196,7 @@
           ${["", "last"][Number(sIdx === sargam.length-1)]} \
           ${["", "first"][Number(sIdx === 0)]}
         `' 
-        v-for='(s, sIdx) in sargam' 
+        v-for='(s, sIdx) in tuningDisplayLabels' 
         :key='s'>
         <div class='sargamLetter'>
           {{s}}
@@ -485,6 +485,9 @@ type EditorAudioPlayerData = {
   showLabelControls: boolean;
   showSpecControls: boolean;
   sargam: string[];
+  solfege: string[];
+  pitchClasses: string[];
+  westernPitches: string[];
   centDevs: number[];
   tuningGains: number[];
   srgmLtrHeight: number;
@@ -717,6 +720,9 @@ export default defineComponent({
       showLabelControls: false,
       showSpecControls: false,
       sargam: [],
+      solfege: [],
+      pitchClasses: [],
+      westernPitches: [],
       centDevs: [],
       tuningGains: [],
       srgmLtrHeight: 30,
@@ -1199,6 +1205,23 @@ export default defineComponent({
         link += `&t=${rounded}`;
       }
       return link
+    },
+
+    tuningDisplayLabels() {
+      const ss = this.scaleSystem;
+      if (ss === ScaleSystem.Sargam || ss === ScaleSystem.SargamCents) {
+        return this.sargam;
+      } else if (ss === ScaleSystem.Solfege || ss === ScaleSystem.SolfegeCents) {
+        return this.solfege;
+      } else if (
+        ss === ScaleSystem.PitchClass || 
+        ss === ScaleSystem.PitchClassCents ||
+        ss === ScaleSystem.Cents
+      ) {
+        return this.pitchClasses;
+      } else if (ss === ScaleSystem.MovableCCents) {
+        return this.westernPitches;
+      }
     }
   },
   methods: {
@@ -1723,6 +1746,10 @@ export default defineComponent({
         return this.raga!.fundamental * ratio
       })
       this.sargam = this.raga.sargamLetters;
+      this.solfege = this.raga.solfegeStrings;
+      this.pitchClasses = this.raga.pcStrings;
+      this.westernPitches = this.raga.westernPitchStrings;
+
       this.centDevs = this.currentFreqs.map((cf, i) => {
         return 1200 * Math.log2(cf / this.initFreqs[i]);
       })

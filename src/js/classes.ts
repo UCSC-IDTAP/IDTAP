@@ -665,11 +665,6 @@ class Pitch {
   }
 }
 
-// type ArtNameType = (
-//   'pluck' | 'hammer-off' | 'hammer-on' | 'slide' | 'dampen' | 'consonant'
-// )
-// type StrokeNicknameType = "d" | "r" | "da" | "ra" | "di" | "ri"
-
 class Articulation {
   name: ArtNameType;
   stroke: string | undefined;
@@ -3633,6 +3628,35 @@ class Raga {
       }
     });
     return sl
+  }
+
+  get solfegeStrings() {
+    const pitches = this.getPitches({ low: this.fundamental, high: this.fundamental * 1.999})
+    return pitches.map(p => p.solfegeLetter)
+  }
+  
+  get pcStrings() {
+    const pitches = this.getPitches({ low: this.fundamental, high: this.fundamental * 1.999})
+    return pitches.map(p => p.chroma.toString())
+  }
+
+  get westernPitchStrings() {
+    const westernPitches = [
+      'C',
+      'C#',
+      'D',
+      'D#',
+      'E',
+      'F',
+      'F#',
+      'G',
+      'G#',
+      'A',
+      'A#',
+      'B'
+    ]
+    const pitches = this.getPitches({ low: this.fundamental, high: this.fundamental * 1.999})
+    return pitches.map(p => westernPitches[p.chroma])
   }
 
   get ruleSetNumPitches() {
