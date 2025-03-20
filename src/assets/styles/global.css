@@ -1,0 +1,8 @@
+@font-face {
+	font-family: 'Bravura';
+	src: url('https://cdn.jsdelivr.net/npm/@vexflow-fonts/bravura/bravura.woff2') format('woff2');
+}
+@font-face {
+	font-family: 'Academico';
+	src: url('https://cdn.jsdelivr.net/npm/@vexflow-fonts/academico/academico.woff2') format('woff2');
+}

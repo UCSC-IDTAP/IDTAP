@@ -169,6 +169,16 @@
             />
           <label for='dataChoice2'>xlsx</label>
         </div>
+        <div class='dataChoice'>
+          <input 
+            type='radio' 
+            id='dataChoice3' 
+            name='dataType' 
+            value='tuning'
+            v-model='dataChoice'
+            />
+          <label for='dataChoice3'>staff tuning</label>
+        </div>
       </fieldset>
       <button @click='handleDownload'>Download</button>
     </div>
@@ -363,6 +373,7 @@
 import { defineComponent, PropType } from 'vue';
 import { BrowserInfo, detect } from 'detect-browser';
 import { drag as d3Drag, select as d3Select } from 'd3';
+import * as VF from 'vexflow'
 
 // Components
 import SpectrogramControls from '@/comps/editor/audioPlayer/SpectrogramControls.vue';
@@ -414,6 +425,7 @@ import {
  } from '@/ts/enums.ts';
 import { AudioWorklet } from '@/audio-worklet';
 import { excelData, jsonData } from '@/js/serverCalls.ts';
+import { tuningData } from '@/ts/tuningData.ts';
 import { Meter } from '@/js/meter.ts';
 import { 
   RecType, 
@@ -2274,6 +2286,8 @@ export default defineComponent({
         excelData(this.piece._id!)
       } else if (this.dataChoice === 'json') {
         jsonData(this.piece._id!)
+      } else if (this.dataChoice === 'tuning') {
+        tuningData(this.piece.raga!)
       }
     },
     preventSpace(e: MouseEvent) {
@@ -2602,7 +2616,7 @@ export default defineComponent({
   right: 0px;
   bottom: v-bind(playerHeight + 'px');
   background-color: #202621;
-  width: 200px;
+  width: 250px;
   height: v-bind(controlsHeight + 'px');;
   border-bottom: 1px solid black;
   color: white;

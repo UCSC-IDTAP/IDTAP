@@ -589,6 +589,14 @@ class Pitch {
     return out + centsStr 
   }
 
+  get centsString() {
+    const etFreq = this.fundamental * 2 ** (this.chroma / 12) * 2 ** this.oct;
+    const cents = 1200 * Math.log2(this.frequency / etFreq);
+    const sign = cents >= 0 ? '+' : '-';
+    const absCents = Math.abs(cents);
+    const centsStr = sign + Math.round(absCents).toString() + '\u00A2';
+    return centsStr
+  }
 
   get numberedPitch(): number { 
     // something like a midi pitch, but centered on 0 instead of 60

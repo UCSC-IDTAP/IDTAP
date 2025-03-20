@@ -128,6 +128,9 @@ importers:
       uuid:
         specifier: ^9.0.0
         version: 9.0.1
+      vexflow:
+        specifier: ^5.0.0
+        version: 5.0.0
       vue:
         specifier: ^3.4.38
         version: 3.5.13(typescript@5.8.2)
@@ -2773,6 +2776,9 @@ packages:
   uuid@9.0.1:
     resolution: {integrity: sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA==}
     hasBin: true
+
+  vexflow@5.0.0:
+    resolution: {integrity: sha512-rjB7TV4ygKE5Fl3W5OlG+0dHv22CFufUJdMG6oNgvcn0zp34u+sOboZsadQXnF1O3tZ3myXThaUIaLkJlpNM2Q==}
 
   vite-hot-client@0.2.4:
     resolution: {integrity: sha512-a1nzURqO7DDmnXqabFOliz908FRmIppkBKsJthS8rbe8hBEXwEwe4C3Pp33Z1JoFCYfVL4kTOMLKk0ZZxREIeA==}
@@ -5744,6 +5750,8 @@ snapshots:
   util-deprecate@1.0.2: {}
 
   uuid@9.0.1: {}
+
+  vexflow@5.0.0: {}
 
   vite-hot-client@0.2.4(vite@6.2.0(@types/node@22.13.8)):
     dependencies:
