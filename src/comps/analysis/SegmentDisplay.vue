@@ -21,6 +21,7 @@ import { defineComponent, PropType } from 'vue';
 import { Trajectory, Piece, Phrase, Pitch, linSpace } from '@/js/classes.ts';
 import { QueryAnswerType, ContextMenuOptionType } from '@/ts/types.ts';
 import { Instrument } from '@/ts/enums.ts';
+import { PhonemeRepresentation } from '@/ts/enums.ts';
 
 import * as d3 from 'd3';
 
@@ -49,7 +50,7 @@ type SegmentDisplayDataType = {
   visiblePitches?: Pitch[],
   divsPerPxl: number,
   defs?: d3.Selection<SVGDefsElement, unknown, null, any>,
-  phonemeRepresentation: 'IPA' | 'Devanagari' | 'English',
+  phonemeRepresentation: PhonemeRepresentation,
   contextMenuX: number,
   contextMenuY: number,
   contextMenuClosed: boolean,
@@ -89,7 +90,7 @@ export default defineComponent({
       visiblePitches: [],
       divsPerPxl: 4,
       defs: undefined,
-      phonemeRepresentation: 'English',
+      phonemeRepresentation: PhonemeRepresentation.Latin,
       contextMenuX: 0,
       contextMenuY: 0,
       contextMenuClosed: true,
@@ -655,11 +656,12 @@ export default defineComponent({
         const withC = traj.startConsonant !== undefined;
         const art = withC ? traj.articulations['0.00'] : undefined;
         let text: string;
-        if (this.phonemeRepresentation === 'IPA') {
+        const pr = this.phonemeRepresentation;
+        if (pr === PhonemeRepresentation.IPA) {
           text = withC ? art!.ipa + ' ' + traj.vowelIpa : traj.vowelIpa!;
-        } else if (this.phonemeRepresentation === 'Devanagari') {
+        } else if (pr === PhonemeRepresentation.Devanagari) {
           text = withC ? art!.hindi + ' ' + traj.vowelHindi : traj.vowelHindi!;
-        } else if (this.phonemeRepresentation === 'English') {
+        } else if (pr === PhonemeRepresentation.Latin) {
           text = withC ?
             art!.engTrans + ' ' + traj.vowelEngTrans :
             traj.vowelEngTrans!;
@@ -689,11 +691,12 @@ export default defineComponent({
           const summedMargins = this.innerMargin.top + this.titleMargin;
           const yPos = this.yScale!(yVal) + summedMargins;
           let text: string;
-          if (this.phonemeRepresentation === 'IPA') {
+          const pr = this.phonemeRepresentation;
+          if (pr === PhonemeRepresentation.IPA) {
             text = arts['1.00'].ipa!;
-          } else if (this.phonemeRepresentation === 'Devanagari') {
+          } else if (pr === PhonemeRepresentation.Devanagari) {
             text = arts['1.00'].hindi!;
-          } else if (this.phonemeRepresentation === 'English') {
+          } else if (pr === PhonemeRepresentation.Latin) {
             text = arts['1.00'].engTrans!;
           }
           this.svg?.append('text')

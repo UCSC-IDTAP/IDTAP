@@ -781,7 +781,10 @@ type MelographData = {
 }
 
 type SargamDisplayType = { 
-  sargam: string, 
+  sargam: string,
+  solfege: string,
+  pitchClass: string,
+  westernPitch: string,
   time: number, 
   logFreq: number,
   uId: string,
@@ -1116,6 +1119,9 @@ type YAxisType = InstanceType<typeof YAxis>;
 type LabelEditorType = InstanceType<typeof LabelEditor>;
 type MeterControlsType = InstanceType<typeof MeterControls>;
 
+type NumObj = { [key: string]: number };
+type TuningType = { [key: string]: number | NumObj };
+
 export type { 
   CollectionType, 
   UserType, 
@@ -1217,5 +1223,7 @@ export type {
   YAxisType,
   LabelEditorType,
   MeterControlsType,
+  NumObj,
+  TuningType,
 };
 

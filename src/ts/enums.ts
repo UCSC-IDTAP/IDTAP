@@ -53,7 +53,24 @@ enum ScaleSystem {
   Sargam = 'Sargam',
   Solfege = 'Solfege',
   PitchClass = 'Pitch Class',
-  Cents = 'Cents',
+  Cents = 'Fixed A440 Pitch + Cents',
+  SargamCents = 'Sargam + Cents',
+  SolfegeCents = 'Solfege + Cents',
+  PitchClassCents = 'Pitch Class + Cents',
+  MovableCCents = 'Movable C Pitch + Cents',
+}
+
+enum SargamRepresentation {
+  Sargam = 'Sargam',
+  Solfege = 'Solfege',
+  PitchClass = 'Pitch Class',
+  WesternPitch = 'Western Pitch',
+}
+
+enum PhonemeRepresentation {
+  IPA = 'IPA',
+  Devanagari = 'Devanagari',
+  Latin = 'English',
 }
 
 
@@ -65,4 +82,6 @@ export {
   ControlsMode,
   PlayheadAnimations,
   ScaleSystem,
+  SargamRepresentation,
+  PhonemeRepresentation
 }

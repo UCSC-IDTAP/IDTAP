@@ -4,6 +4,7 @@ import router from './router';
 import { createStore } from 'vuex';
 import vue3GoogleLogin from 'vue3-google-login';
 import VueCookies from 'vue-cookies';
+import './assets/styles/global.css';
 
 const store = createStore({
   state() {
@@ -57,6 +58,24 @@ const store = createStore({
     }
   }
 })
+
+// const loadFont = (name: string, url: string): Promise<void> => {
+//   const font = new FontFace(name, `url(${url}) format('woff2')`);
+//   return font.load().then((loadedFont) => {
+//     (document.fonts as any).add(loadedFont);
+//     console.log(`${name} loaded successfully`);
+//   }).catch((error) => {
+//     console.error(`Failed to load ${name}:`, error);
+//   });
+// };
+
+// Promise.all([
+//   loadFont('Bravura', 'https://cdn.jsdelivr.net/npm/@vexflow-fonts/bravura/bravura.woff2'),
+//   loadFont('Academico', 'https://cdn.jsdelivr.net/npm/@vexflow-fonts/academico/academico.woff2')
+// ]).then(() => {
+//   console.log('All fonts loaded!');
+//   // Now you can safely call your tuningData() function
+// });
 
 // for event bus
 import mitt from 'mitt';

@@ -18,6 +18,8 @@ import {
   BolDisplayType,
   RuleSetType,
   BoolObj,
+  NumObj,
+  TuningType
 } from '@/ts/types.ts';
 import { Instrument } from '@/ts/enums.ts';
 import { closeTo, getClosest, isUpperCase } from '@/ts/utils.ts';
@@ -521,6 +523,16 @@ class Pitch {
     return s
   }
 
+  get octavedSargamLetterWithCents() {
+    let out = this.octavedSargamLetter;
+    const etFreq = this.fundamental * 2 ** (this.chroma / 12) * 2 ** this.oct;
+    const cents = 1200 * Math.log2(this.frequency / etFreq);
+    const sign = cents >= 0 ? '+' : '-';
+    const absCents = Math.abs(cents);
+    const centsStr = ' (' + sign + Math.round(absCents).toString() + '\u00A2)';
+    return out + centsStr 
+  }
+
   get octavedSolfegeLetter() {
     let s = this.solfegeLetter;
     if (this.oct === -2) {
@@ -537,6 +549,16 @@ class Pitch {
       s = s + '\u20DB'
     }
     return s
+  }
+
+  get octavedSolfegeLetterWithCents() {
+    let out = this.octavedSolfegeLetter;
+    const etFreq = this.fundamental * 2 ** (this.chroma / 12) * 2 ** this.oct;
+    const cents = 1200 * Math.log2(this.frequency / etFreq);
+    const sign = cents >= 0 ? '+' : '-';
+    const absCents = Math.abs(cents);
+    const centsStr = ' (' + sign + Math.round(absCents).toString() + '\u00A2)';
+    return out + centsStr 
   }
 
   get octavedChroma() {
@@ -557,6 +579,24 @@ class Pitch {
     return s
   }
 
+  get octavedChromaWithCents() {
+    let out = this.octavedChroma;
+    const etFreq = this.fundamental * 2 ** (this.chroma / 12) * 2 ** this.oct;
+    const cents = 1200 * Math.log2(this.frequency / etFreq);
+    const sign = cents >= 0 ? '+' : '-';
+    const absCents = Math.abs(cents);
+    const centsStr = ' (' + sign + Math.round(absCents).toString() + '\u00A2)';
+    return out + centsStr 
+  }
+
+  get centsString() {
+    const etFreq = this.fundamental * 2 ** (this.chroma / 12) * 2 ** this.oct;
+    const cents = 1200 * Math.log2(this.frequency / etFreq);
+    const sign = cents >= 0 ? '+' : '-';
+    const absCents = Math.abs(cents);
+    const centsStr = sign + Math.round(absCents).toString() + '\u00A2';
+    return centsStr
+  }
 
   get numberedPitch(): number { 
     // something like a midi pitch, but centered on 0 instead of 60
@@ -598,6 +638,22 @@ class Pitch {
     return `${pitch}${oct} (${sign}${cents}\u00A2)`
   }
 
+  get westernPitch(): string {
+    let pitch = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G',
+      'G#', 'A', 'A#', 'B'][this.chroma];
+    return `${pitch}`
+  }
+
+  get movableCCentsDeviation(): string {
+    let pitch = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G',
+      'G#', 'A', 'A#', 'B'][this.chroma];
+    const etFreq = this.fundamental * 2 ** (this.chroma / 12) * 2 ** this.oct;
+    const cents = 1200 * Math.log2(this.frequency / etFreq);
+    const sign = cents >= 0 ? '+' : '-';
+    const absCents = Math.abs(cents);
+    return `${pitch} (${sign}${Math.round(absCents)}\u00A2)`
+  }
+
   get chroma() {
     let np = this.numberedPitch;
     while (np < 0) {
@@ -622,11 +678,6 @@ class Pitch {
     }
   }
 }
-
-// type ArtNameType = (
-//   'pluck' | 'hammer-off' | 'hammer-on' | 'slide' | 'dampen' | 'consonant'
-// )
-// type StrokeNicknameType = "d" | "r" | "da" | "ra" | "di" | "ri"
 
 class Articulation {
   name: ArtNameType;
@@ -3077,7 +3128,10 @@ class Piece {
               sargam: t.pitches[tpIdx].sargamLetter,
               time: tp,
               uId: t.uniqueId!,
-              track: inst
+              track: inst,
+              solfege: t.pitches[tpIdx].solfegeLetter,
+              pitchClass: t.pitches[tpIdx].chroma.toString(),
+              westernPitch: t.pitches[tpIdx].westernPitch,
             })
           };
           lastPitch = {
@@ -3510,9 +3564,31 @@ class Section {
   }
 }
 
-type NumObj = { [key: string]: number };
-type TuningType = { [key: string]: number | NumObj };
 
+const etTuning: TuningType = {
+  sa: 2 ** (0 / 12),
+  re: {
+    lowered: 2 ** (1 / 12),
+    raised: 2 ** (2 / 12)
+  },
+  ga: {
+    lowered: 2 ** (3 / 12),
+    raised: 2 ** (4 / 12)
+  },
+  ma: {
+    lowered: 2 ** (5 / 12),
+    raised: 2 ** (6 / 12)
+  },
+  pa: 2 ** (7 / 12),
+  dha: {
+    lowered: 2 ** (8 / 12),
+    raised: 2 ** (9 / 12)
+  },
+  ni: {
+    lowered: 2 ** (10 / 12),
+    raised: 2 ** (11 / 12)
+  }
+};
 
 class Raga {
   name: string;
@@ -3526,45 +3602,34 @@ class Raga {
     fundamental = 261.63,
     ruleSet = yamanRuleSet,
     ratios = undefined,
+    tuning = undefined
   }: {
     name?: string,
     fundamental?: number,
     ruleSet?: RuleSetType,
-    ratios?: number[]
+    ratios?: number[],
+    tuning?: TuningType
   } = {}) {
 
     this.name = name;
     this.ruleSet = ruleSet;
     this.fundamental = fundamental;
-    this.tuning = {
-      sa: 2 ** (0 / 12),
-      re: {
-        lowered: 2 ** (1 / 12),
-        raised: 2 ** (2 / 12)
-      },
-      ga: {
-        lowered: 2 ** (3 / 12),
-        raised: 2 ** (4 / 12)
-      },
-      ma: {
-        lowered: 2 ** (5 / 12),
-        raised: 2 ** (6 / 12)
-      },
-      pa: 2 ** (7 / 12),
-      dha: {
-        lowered: 2 ** (8 / 12),
-        raised: 2 ** (9 / 12)
-      },
-      ni: {
-        lowered: 2 ** (10 / 12),
-        raised: 2 ** (11 / 12)
-      }
-    };
+    this.tuning = tuning ? tuning : etTuning;
     if (ratios === undefined || ratios.length !== this.ruleSetNumPitches)  {
       this.ratios = this.setRatios(this.ruleSet)
     } else {
       this.ratios = ratios
     }
+
+    // set tuning from ratios
+    this.ratios.forEach((ratio, rIdx) => {
+      const tuningKeys = this.ratioIdxToTuningTuple(rIdx);
+      if (tuningKeys[0] === 'sa' || tuningKeys[0] === 'pa') {
+        this.tuning[tuningKeys[0]] = ratio
+      } else {
+        (this.tuning[tuningKeys[0]] as NumObj)[tuningKeys[1]!] = ratio
+      }
+    })
   }
 
   get sargamLetters() {
@@ -3580,6 +3645,35 @@ class Raga {
       }
     });
     return sl
+  }
+
+  get solfegeStrings() {
+    const pitches = this.getPitches({ low: this.fundamental, high: this.fundamental * 1.999})
+    return pitches.map(p => p.solfegeLetter)
+  }
+  
+  get pcStrings() {
+    const pitches = this.getPitches({ low: this.fundamental, high: this.fundamental * 1.999})
+    return pitches.map(p => p.chroma.toString())
+  }
+
+  get westernPitchStrings() {
+    const westernPitches = [
+      'C',
+      'C#',
+      'D',
+      'D#',
+      'E',
+      'F',
+      'F#',
+      'G',
+      'G#',
+      'A',
+      'A#',
+      'B'
+    ]
+    const pitches = this.getPitches({ low: this.fundamental, high: this.fundamental * 1.999})
+    return pitches.map(p => westernPitches[p.chroma])
   }
 
   get ruleSetNumPitches() {
@@ -3675,11 +3769,11 @@ class Raga {
     const sargam = Object.keys(ruleSet);
     const ratios: number[] = [];
     sargam.forEach(s => {
-      if (typeof(this.tuning[s]) === 'number' && ruleSet[s]) {
-        ratios.push(this.tuning[s] as number);
+      if (typeof(etTuning[s]) === 'number' && ruleSet[s]) {
+        ratios.push(etTuning[s] as number);
       } else {
         const ruleSet = this.ruleSet[s] as BoolObj;
-        const tuning = this.tuning[s] as NumObj;
+        const tuning = etTuning[s] as NumObj;
         if (ruleSet.lowered) ratios.push(tuning.lowered);
         if (ruleSet.raised) ratios.push(tuning.raised);
       }
@@ -3876,11 +3970,34 @@ class Raga {
     })
   }
 
+  ratioIdxToTuningTuple(idx: number): [string, string | undefined] {
+    const noteMapping: Array<[string, string | undefined]> = [];
+    const sargamKeys = ["sa", "re", "ga", "ma", "pa", "dha", "ni"];
+    sargamKeys.forEach(key => {
+      if (typeof this.ruleSet[key] === "object") {
+        if (this.ruleSet[key].lowered) {
+          noteMapping.push([key, "lowered"]);
+        }
+        if (this.ruleSet[key].raised) {
+          noteMapping.push([key, "raised"]);
+        }
+      } else {
+        if (this.ruleSet[key]) {
+          noteMapping.push([key, undefined]);
+        }
+      }
+    });
+    return noteMapping[idx];
+  }
+
+  
+
   toJSON() {
     return {
       name: this.name,
       fundamental: this.fundamental,
       ratios: this.ratios,
+      tuning: this.tuning,
     }
   }
 }

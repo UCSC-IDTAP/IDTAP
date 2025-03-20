@@ -169,6 +169,16 @@
             />
           <label for='dataChoice2'>xlsx</label>
         </div>
+        <div class='dataChoice'>
+          <input 
+            type='radio' 
+            id='dataChoice3' 
+            name='dataType' 
+            value='tuning'
+            v-model='dataChoice'
+            />
+          <label for='dataChoice3'>staff tuning</label>
+        </div>
       </fieldset>
       <button @click='handleDownload'>Download</button>
     </div>
@@ -196,7 +206,7 @@
           ${["", "last"][Number(sIdx === sargam.length-1)]} \
           ${["", "first"][Number(sIdx === 0)]}
         `' 
-        v-for='(s, sIdx) in sargam' 
+        v-for='(s, sIdx) in tuningDisplayLabels' 
         :key='s'>
         <div class='sargamLetter'>
           {{s}}
@@ -219,7 +229,7 @@
               max='50' 
               step='1' 
               v-model='centDevs[sIdx]'
-              @input='updateTuning(sIdx)'
+              @input='updateTuning(sIdx)' 
               @change='instantiateTuning'
             />
           </div>
@@ -363,6 +373,7 @@
 import { defineComponent, PropType } from 'vue';
 import { BrowserInfo, detect } from 'detect-browser';
 import { drag as d3Drag, select as d3Select } from 'd3';
+import * as VF from 'vexflow'
 
 // Components
 import SpectrogramControls from '@/comps/editor/audioPlayer/SpectrogramControls.vue';
@@ -414,6 +425,7 @@ import {
  } from '@/ts/enums.ts';
 import { AudioWorklet } from '@/audio-worklet';
 import { excelData, jsonData } from '@/js/serverCalls.ts';
+import { tuningData } from '@/ts/tuningData.ts';
 import { Meter } from '@/js/meter.ts';
 import { 
   RecType, 
@@ -424,6 +436,7 @@ import {
   SitarSynthType,
   SarangiSynthType,
   KlattSynthType, 
+  NumObj
 } from '@/ts/types.ts';
 
 // External Libraries
@@ -484,6 +497,9 @@ type EditorAudioPlayerData = {
   showLabelControls: boolean;
   showSpecControls: boolean;
   sargam: string[];
+  solfege: string[];
+  pitchClasses: string[];
+  westernPitches: string[];
   centDevs: number[];
   tuningGains: number[];
   srgmLtrHeight: number;
@@ -716,6 +732,9 @@ export default defineComponent({
       showLabelControls: false,
       showSpecControls: false,
       sargam: [],
+      solfege: [],
+      pitchClasses: [],
+      westernPitches: [],
       centDevs: [],
       tuningGains: [],
       srgmLtrHeight: 30,
@@ -1198,6 +1217,23 @@ export default defineComponent({
         link += `&t=${rounded}`;
       }
       return link
+    },
+
+    tuningDisplayLabels() {
+      const ss = this.scaleSystem;
+      if (ss === ScaleSystem.Sargam || ss === ScaleSystem.SargamCents) {
+        return this.sargam;
+      } else if (ss === ScaleSystem.Solfege || ss === ScaleSystem.SolfegeCents) {
+        return this.solfege;
+      } else if (
+        ss === ScaleSystem.PitchClass || 
+        ss === ScaleSystem.PitchClassCents ||
+        ss === ScaleSystem.Cents
+      ) {
+        return this.pitchClasses;
+      } else if (ss === ScaleSystem.MovableCCents) {
+        return this.westernPitches;
+      }
     }
   },
   methods: {
@@ -1445,6 +1481,14 @@ export default defineComponent({
       this.centDevs = this.centDevs.map(() => 0);
       const ratios = this.initFreqs.map(if_ => if_ / this.raga!.fundamental);
       this.raga!.ratios = ratios;
+      this.raga!.ratios.forEach((ratio, rIdx) => {
+        const tuningKeys = this.raga!.ratioIdxToTuningTuple(rIdx);
+        if (tuningKeys[0] === 'sa' || tuningKeys[0] === 'pa') {
+          this.raga!.tuning[tuningKeys[0]] = ratio;
+        } else {
+          (this.raga!.tuning[tuningKeys[0]] as NumObj)[tuningKeys[1]!] = ratio;
+        }
+      })
       this.$emit('updateSargamLinesEmit')
       this.instantiateTuning();
       this.tuningSines.forEach((oscNode, i) => {
@@ -1474,6 +1518,12 @@ export default defineComponent({
       const newFreq = initFreq * 2 ** (this.centDevs[sIdx] / 1200);
       const newRatio = newFreq / this.raga!.fundamental;
       this.raga!.ratios[sIdx] = newRatio;
+      const tuningKeys = this.raga!.ratioIdxToTuningTuple(sIdx);
+      if (tuningKeys[0] === 'sa' || tuningKeys[0] === 'pa') {
+        this.raga!.tuning[tuningKeys[0]] = newRatio;
+      } else {
+        (this.raga!.tuning[tuningKeys[0]] as NumObj)[tuningKeys[1]!] = newRatio;
+      }
       oscNode.frequency.linearRampToValueAtTime(newFreq, endTime);
       this.$emit('updateSargamLinesEmit');
       this.$emit('unsavedChangesEmit', true);
@@ -1708,6 +1758,10 @@ export default defineComponent({
         return this.raga!.fundamental * ratio
       })
       this.sargam = this.raga.sargamLetters;
+      this.solfege = this.raga.solfegeStrings;
+      this.pitchClasses = this.raga.pcStrings;
+      this.westernPitches = this.raga.westernPitchStrings;
+
       this.centDevs = this.currentFreqs.map((cf, i) => {
         return 1200 * Math.log2(cf / this.initFreqs[i]);
       })
@@ -2232,6 +2286,8 @@ export default defineComponent({
         excelData(this.piece._id!)
       } else if (this.dataChoice === 'json') {
         jsonData(this.piece._id!)
+      } else if (this.dataChoice === 'tuning') {
+        tuningData(this.piece.raga!)
       }
     },
     preventSpace(e: MouseEvent) {
@@ -2560,7 +2616,7 @@ export default defineComponent({
   right: 0px;
   bottom: v-bind(playerHeight + 'px');
   background-color: #202621;
-  width: 200px;
+  width: 250px;
   height: v-bind(controlsHeight + 'px');;
   border-bottom: 1px solid black;
   color: white;

@@ -20,6 +20,9 @@ export default defineConfig(({ command }) => {
     build: {
       sourcemap: true,
     },
+    optimizeDeps: {
+      include: ['vexflow']
+    },
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "./src"),
