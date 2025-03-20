@@ -1,6 +1,16 @@
 # Changelog
 
 
+* feat: added ability to download "staff tuning", to show cents offset of tuning system on stave with C as tonic [c40beab] (Jon Myers)
+### 2025-03-20
+
+* Feat: scale system designation now is implemented in visibility of "Pitch Label" (formerly "Sargam") [2066007] (Jon Myers)
+* Feat: implemented scale systems in tuning controls [a143341] (Jon Myers)
+### 2025-03-19
+
+* Feat: added a number of scale systems with cents deviations and implemented them in YAxis labeling [7b09b05] (Jon Myers)
+### 2025-03-18
+
 * fix: sharing transcription link now working correctly [ce15305] (Jon Myers)
 * Feat: Imaging and Color Controls has been renamed to Transcription and Graphic Controls [75bb998] (Jon Myers)
 * Fix: Scrolling playhead timing fixed on windows [450a204] (Jon Myers)
