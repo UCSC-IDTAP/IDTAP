@@ -348,7 +348,13 @@ import {
   nextTick
 } from 'vue';
 import { getWorker, resetWorker } from '@/ts/workers/workerManager.ts'
-import { CMap, InstrumentTrackType, DisplaySettings } from '@/ts/types.ts';
+import { 
+  CMap, 
+  InstrumentTrackType, 
+  DisplaySettings,
+  ExcerptRange,
+  ProcessMessage
+} from '@/ts/types.ts';
 import { PlayheadAnimations, ScaleSystem } from '@/ts/enums';
 import SwatchSelect from '@/comps/SwatchSelect.vue';
 import {
@@ -525,6 +531,14 @@ export default defineComponent({
       type: Boolean,
       required: true
     },
+    excerptRange: {
+      type: Object as PropType<ExcerptRange>,
+      required: false
+    },
+    durTot: {
+      type: Number,
+      required: true
+    }
   },
   emits: [
     'update:backgroundColor',
@@ -889,7 +903,7 @@ export default defineComponent({
       const logSa = Math.log2(props.saFreq);
       const low = logSa - lowOctOffset.value;
       const high = logSa + highOctOffset.value;
-      const processOptions = {
+      const processOptions: ProcessMessage = {
         type: 'initial',
         logMin: low,
         logMax: high,
@@ -898,6 +912,12 @@ export default defineComponent({
         newVerbose: false,
         newPower: intensityPower.value,
         newCMap: cMapName.value
+      }
+      if (props.excerptRange !== undefined) {
+        const normedStart = props.excerptRange.start / props.durTot;
+        const normedEnd = props.excerptRange.end / props.durTot;
+        processOptions.normedStart = normedStart;
+        processOptions.normedEnd = normedEnd;
       }
       if (spectrogramWorker === undefined) return;
       spectrogramWorker.postMessage({

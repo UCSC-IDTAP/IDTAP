@@ -425,6 +425,7 @@ type RecType = {
   dateModified: string | Date,
   userID: string,
   title?: string,
+  excerptRange?: ExcerptRange,
 }
 
 type AudioEventType = {
@@ -767,6 +768,8 @@ interface ProcessMessage {
   newCMap?: CMap;
   audioID?: string;
   newVerbose?: boolean;
+  normedStart?: number; // (0 - 1)
+  normedEnd?: number; // (0 - 1)
 }
 
 interface WorkerMessage {
@@ -1122,6 +1125,11 @@ type MeterControlsType = InstanceType<typeof MeterControls>;
 type NumObj = { [key: string]: number };
 type TuningType = { [key: string]: number | NumObj };
 
+type ExcerptRange = {
+  start: number,
+  end: number,
+}
+
 export type { 
   CollectionType, 
   UserType, 
@@ -1225,5 +1233,6 @@ export type {
   MeterControlsType,
   NumObj,
   TuningType,
+  ExcerptRange,
 };
 

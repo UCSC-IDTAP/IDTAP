@@ -327,6 +327,8 @@
       :showMeter='showMeter'
       :showPhonemes='showPhonemes'
       :showPhraseDivs='showPhraseDivs'
+      :excerptRange='excerptRange'
+      :durTot='audioDBDoc ? audioDBDoc.duration : piece.durTot!'
       @specCanvas='handleSpecCanvas'
       @update:backgroundColor='$emit("update:backgroundColor", $event)'
       @update:axisColor='$emit("update:axisColor", $event)'
@@ -436,7 +438,8 @@ import {
   SitarSynthType,
   SarangiSynthType,
   KlattSynthType, 
-  NumObj
+  NumObj,
+  ExcerptRange,
 } from '@/ts/types.ts';
 
 // External Libraries
@@ -1037,6 +1040,10 @@ export default defineComponent({
       type: Boolean,
       required: true
     },
+    excerptRange: {
+      type: Object as PropType<ExcerptRange>,
+      required: false
+    },
   },
 
   components: {
@@ -1094,7 +1101,8 @@ export default defineComponent({
   watch: {
     async audioSource(newSrc) {
       this.loading = true;
-      this.audioBuffer = await this.getAudio(newSrc, false);
+      console.log(this.excerptRange)
+      this.audioBuffer = await this.getAudio(newSrc, false, this.excerptRange);
       this.loading = false;
       if (this.regionStartTime && this.regionEndTime) this.updateStretchBuf();
       this.pausedAt = this.parentCurrentTime;
@@ -1773,7 +1781,11 @@ export default defineComponent({
       return roles.indexOf(musician.role);
     },
 
-    async getAudio(filepath: string, verbose: boolean) {
+    async getAudio(
+      filepath: string, 
+      verbose: boolean, 
+      excerptRange: ExcerptRange | undefined = undefined
+    ) {
       try {
         const start = await performance.now();
         const res = await fetch(filepath);
@@ -1785,6 +1797,26 @@ export default defineComponent({
         const audioBuffer = await this.ac!.decodeAudioData(arrayBuffer);
         const endpoint = (await performance.now()) - start;
         if (verbose) console.log('done: ', endpoint / 1000);
+        if (excerptRange !== undefined) {
+          const startSample = Math.round(
+            excerptRange.start * this.ac!.sampleRate
+          );
+          const endSample = Math.round(
+            excerptRange.end * this.ac!.sampleRate
+          );
+          const newAudioBuffer = this.ac!.createBuffer(
+            audioBuffer.numberOfChannels,
+            endSample - startSample,
+            audioBuffer.sampleRate
+          );
+          for (let i = 0; i < audioBuffer.numberOfChannels; i++) {
+            newAudioBuffer.copyToChannel(
+              audioBuffer.getChannelData(i).slice(startSample, endSample),
+              i
+            );
+          }
+          return newAudioBuffer;
+        }
         return audioBuffer;
       } catch (err) {
         console.log(err);
