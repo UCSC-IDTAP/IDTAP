@@ -344,9 +344,10 @@ import {
   computed,
   watch,
   onMounted,
+  onUnmounted,
   nextTick
 } from 'vue';
-import { getWorker } from '@/ts/workers/workerManager.ts'
+import { getWorker, resetWorker } from '@/ts/workers/workerManager.ts'
 import { CMap, InstrumentTrackType, DisplaySettings } from '@/ts/types.ts';
 import { PlayheadAnimations, ScaleSystem } from '@/ts/enums';
 import SwatchSelect from '@/comps/SwatchSelect.vue';
@@ -1149,7 +1150,9 @@ export default defineComponent({
       } catch (e) {
         console.error(e);
       }
-
+    })
+    onUnmounted(() => {
+      resetWorker()
     })
     
     
