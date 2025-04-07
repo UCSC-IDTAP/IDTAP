@@ -367,8 +367,8 @@ packages:
     peerDependencies:
       '@babel/core': ^7.0.0-0
 
-  '@babel/runtime@7.26.9':
-    resolution: {integrity: sha512-aA63XwOkcl4xxQa3HjPMqOP6LiK0ZDv3mUPYEFXkpHbaFjtGggE1A61FjFzJnB+p7/oy2gA8E+rcBNl/zC1tMg==}
+  '@babel/runtime@7.27.0':
+    resolution: {integrity: sha512-VtPOkrdPHZsKc/clNqyi9WUA8TINkZ4cGk63UUE3u4pmB2k+ZMQRDuIOagv8UVd6j7k0T3+RRIb7beKTebNbcw==}
     engines: {node: '>=6.9.0'}
 
   '@babel/template@7.27.0':
@@ -1177,8 +1177,8 @@ packages:
   audio-waveform-svg-path@1.0.2:
     resolution: {integrity: sha512-dxOHwFmnkPwlXzilfME1tHw9M53/tDCYmy/ke4FEnsHnQYMMQGnRVa8XJo7I52TupfC8gwAI2mIsM97+CaJl9A==}
 
-  automation-events@7.1.6:
-    resolution: {integrity: sha512-FKPJIC5cW6vfrRnGivAzGxCaRDAdRApBJF5OaKssJtTyX8MoJjNhRcLszt/QaN2Ss4OV3kgWmYwDYaMyD6MUQw==}
+  automation-events@7.1.9:
+    resolution: {integrity: sha512-nIcJo3WeNtB16TSIK2D5Ldy/5eErzmXSuOlK979sYtIQQT++iFfj/1PMjFH1XEvtqCO0+KNUEEIJ+O0l4BtncQ==}
     engines: {node: '>=18.2.0'}
 
   axios@1.8.2:
@@ -3198,7 +3198,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@babel/runtime@7.26.9':
+  '@babel/runtime@7.27.0':
     dependencies:
       regenerator-runtime: 0.14.1
     optional: true
@@ -4062,9 +4062,9 @@ snapshots:
 
   audio-waveform-svg-path@1.0.2: {}
 
-  automation-events@7.1.6:
+  automation-events@7.1.9:
     dependencies:
-      '@babel/runtime': 7.26.9
+      '@babel/runtime': 7.27.0
       tslib: 2.8.1
     optional: true
 
@@ -5593,8 +5593,8 @@ snapshots:
 
   standardized-audio-context@25.3.77:
     dependencies:
-      '@babel/runtime': 7.26.9
-      automation-events: 7.1.6
+      '@babel/runtime': 7.27.0
+      automation-events: 7.1.9
       tslib: 2.8.1
     optional: true
 
