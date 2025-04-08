@@ -3499,6 +3499,7 @@ class Piece {
       durArrayGrid: this.durArrayGrid,
       sectionStartsGrid: this.sectionStartsGrid,
       sectionCatGrid: this.sectionCatGrid,
+      excerptRange: this.excerptRange,
     }
   }
 }

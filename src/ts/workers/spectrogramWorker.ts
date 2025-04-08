@@ -467,7 +467,6 @@ self.onmessage = async (e: MessageEvent<WorkerMessage>) => {
       try {
         let start = normedStart === undefined ? 0 : normedStart;
         let end = normedEnd === undefined ? 1 : normedEnd;
-        console.log(start, end)
         await initialize(audioID, logMin, logMax, start, end);
       } catch (e) {
         console.error(e);

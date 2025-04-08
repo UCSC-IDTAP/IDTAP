@@ -119,7 +119,13 @@
       </div>
       <div class='formRow'>
         <label>Number of Instruments</label>
-        <input type='number' v-model='instrumentationLength'/>
+        <input 
+          class='numInstruments'
+          type='number' 
+          v-model='instrumentationLength' 
+          min='1' 
+          max='4'
+          />
       </div>
       <div class='formRow tall' v-if='instrumentation'>
         <label>Instrumentation</label>
@@ -132,6 +138,67 @@
             </select>
           </div>
         </div>
+      </div>
+      <div class='formRow' v-if='recordingChosen'>
+        <label class='ragaLabel'>Excerpt</label>
+        <input class='ragaCheck' type='checkbox' v-model='excerpt'>
+        <input 
+          type='number' 
+          class='time'
+          v-model.number='startHours' 
+          min='0' 
+          max='3'
+          placeholder='H'
+          :disabled='!excerpt'
+          @change='updateErrors'
+          />
+        <span>:</span>
+        <input 
+          type='text'
+          class='timeInput' 
+          v-model='formattedStartMinute' 
+          placeholder='MM'
+          :disabled='!excerpt'
+          @change='updateErrors'
+          />
+        <span>:</span>
+        <input 
+          class='timeInput'
+          type='text'
+          v-model='formattedStartSecond'
+          :disabled='!excerpt'
+          @change='updateErrors'
+          />
+        <span>to</span>
+        <input 
+          type='number' 
+          class='timeInput'
+          v-model.number='endHours' 
+          min='0'
+          max='3'
+          placeholder='H'
+          :disabled='!excerpt'
+          @change='updateErrors'
+          />
+        <span>:</span>
+        <input 
+          type='text'
+          class='timeInput' 
+          v-model.number='formattedEndMinute' 
+          placeholder='MM'
+          :disabled='!excerpt'
+          @change='updateErrors'
+          />
+        <span>:</span>
+        <input 
+          type='text'
+          class='timeInput' 
+          v-model.number='formattedEndSecond'  
+          placeholder='SS'
+          :disabled='!excerpt'
+          @change='updateErrors'
+          />
+
       </div>
       <div class='buttonRow'>
         <div class='buttonCol'>
@@ -264,6 +331,7 @@ import {
   RulesType,
 } from '@/ts/types.ts'
 import { Instrument } from '@/ts/enums.ts'
+
 type NewPieceRegistrarDataType = {
   title?: string;
   transcriber?: string;
@@ -295,6 +363,13 @@ type NewPieceRegistrarDataType = {
   allUsers: UserType[];
   aeDisabled: boolean;
   recDisabled: boolean;
+  excerpt: boolean;
+  startHours: number;
+  startMinute: number;
+  startSecond: number;
+  endHours: number;
+  endMinute: number;
+  endSecond: number;
 }
 import cloneDeep from 'lodash/cloneDeep';
 
@@ -386,7 +461,14 @@ export default defineComponent({
       errors: [],
       allUsers: [],
       aeDisabled: false,
-      recDisabled: false
+      recDisabled: false,
+      excerpt: false,
+      startHours: 0,
+      startMinute: 0,
+      startSecond: 0,
+      endHours: 0,
+      endMinute: 0,
+      endSecond: 0,
     }
   },
   
@@ -426,6 +508,114 @@ export default defineComponent({
           this.instrumentation = this.instrumentation.slice(0, newVal)
         }
       }
+    },
+    formattedStartSecond: {
+      get(): string {
+        return this.startSecond.toString().padStart(2, '0')
+      },
+      set(newVal: string) {
+        const parsed = parseInt(newVal, 10);
+        if (isNaN(parsed)) {
+          this.startSecond = 0;
+        } else if (parsed < 0) {
+          this.startSecond = 0;
+        } else if (parsed > 59) {
+          this.startSecond = 59;
+        } else {
+          this.startSecond = parsed;
+        }
+      }
+    },
+    formattedStartMinute: {
+      get(): string {
+        return this.startMinute.toString().padStart(2, '0')
+      },
+      set(newVal: string) {
+        const parsed = parseInt(newVal, 10);
+        if (isNaN(parsed)) {
+          this.startMinute = 0;
+        } else if (parsed < 0) {
+          this.startMinute = 0;
+        } else if (parsed > 59) {
+          this.startMinute = 59;
+        } else {
+          this.startMinute = parsed;
+        }
+      }
+    },
+    formattedEndMinute: {
+      get(): string {
+        return this.endMinute.toString().padStart(2, '0')
+      },
+      set(newVal: string) {
+        const parsed = parseInt(newVal, 10);
+        if (isNaN(parsed)) {
+          this.endMinute = 0;
+        } else if (parsed < 0) {
+          this.endMinute = 0;
+        } else if (parsed > 59) {
+          this.endMinute = 59;
+        } else {
+          this.endMinute = parsed;
+        }
+      }
+    },
+    formattedEndSecond: {
+      get(): string {
+        return this.endSecond.toString().padStart(2, '0')
+      },
+      set(newVal: string) {
+        const parsed = parseInt(newVal, 10);
+        if (isNaN(parsed)) {
+          this.endSecond = 0;
+        } else if (parsed < 0) {
+          this.endSecond = 0;
+        } else if (parsed > 59) {
+          this.endSecond = 59;
+        } else {
+          this.endSecond = parsed;
+        }
+      }
+    },
+    recordingDuration() {
+      if (this.recording && typeof this.recording === 'object') {
+        return this.recording.duration
+      } else if (this.recording && typeof this.recording === 'string') {
+        const rec = this.allEvents[this.aeIdx!].recordings[this.recording as number];
+        return rec.duration
+      } else {
+        return 0
+      }
+    },
+    excerptStartTime() {
+      let val = 3600 * this.startHours + 60 * this.startMinute + this.startSecond;
+      if (val > this.recordingDuration) {
+        val = this.recordingDuration
+      }
+      this.startHours = Math.floor(val / 3600);
+      this.startMinute = Math.floor((val % 3600) / 60);
+      this.startSecond = Math.floor(val % 60);
+      return val
+    },
+    excerptEndTime() {
+      let val = 3600 * this.endHours + 60 * this.endMinute + this.endSecond;
+      if (val > this.recordingDuration) {
+        val = this.recordingDuration
+      }
+      this.endHours = Math.floor(val / 3600);
+      this.endMinute = Math.floor((val % 3600) / 60);
+      this.endSecond = Math.floor(val % 60);
+      return val
+    },
+    recordingChosen() {
+      const bool = this.recording !== undefined && this.recording !== null
+      if (bool) {
+        const dur = this.recordingDuration;
+        this.endHours = Math.floor(dur / 3600);
+        this.endMinute = Math.floor((dur % 3600) / 60);
+        this.endSecond = Math.floor(dur % 60);
+      }
+      return bool
     }
   },
     
@@ -476,6 +666,10 @@ export default defineComponent({
         const instrumentation = this.getInstrumentation();
         this.instrumentation = this.filterInstrumentation(instrumentation);
       }
+      
+      // leading if necessary
+
+      
     } catch (err) {
       console.log(err)
     } 
@@ -607,6 +801,12 @@ export default defineComponent({
         this.errors.push('The following instruments are not allowed: ' + 
           wrongInstrumentation.join(', '))
       }
+      if (this.excerpt) {
+        if (this.excerptStartTime >= this.excerptEndTime) {
+          console.log('in here')
+          this.errors.push('Excerpt start time must be before end time')
+        }
+      }
     },
 
     async clonePiece() {
@@ -737,7 +937,11 @@ export default defineComponent({
             instrumentation: Instrument[],
             soloist?: string,
             soloInstrument?: string,
-            fundamental?: number
+            fundamental?: number,
+            excerptRange?: {
+              start: number,
+              end: number
+            }
           };
         if (this.noAE) {
           if (this.noRec) {
@@ -796,6 +1000,12 @@ export default defineComponent({
             newPieceInfo.audioID = rec.audioFileId;
             const oct = this.instrumentation[0] === Instrument.Vocal_M ? 1 : 2;
             newPieceInfo.fundamental = oct * rec.saEstimate * 2 ** rec.octOffset
+          }
+        }
+        if (this.excerpt) {
+          newPieceInfo.excerptRange = {
+            start: this.excerptStartTime,
+            end: this.excerptEndTime
           }
         }
         this.$emit('newPieceInfoEmit', newPieceInfo)
@@ -1063,7 +1273,8 @@ select {
   border-radius: 5px;
   color: white;
   width: v-bind(modalWidth+'px');
-  height: v-bind(modalHeight+'px')
+  height: v-bind(modalHeight+'px');
+  z-index: 2;
 }
 
 .raagEditorBox label {
@@ -1128,4 +1339,26 @@ button {
   margin: 0px;
 }
 
+.timeInput {
+  max-width: 25px;
+}
+
+input.time::-webkit-outer-spin-button,
+input.time::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* For Firefox */
+input.time[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.selectCol {
+  max-width: 200px;
+}
+
+.numInstruments {
+  max-width: 30px;
+}
 </style>

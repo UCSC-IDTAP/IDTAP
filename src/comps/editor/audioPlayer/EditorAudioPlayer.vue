@@ -1101,7 +1101,6 @@ export default defineComponent({
   watch: {
     async audioSource(newSrc) {
       this.loading = true;
-      console.log(this.excerptRange)
       this.audioBuffer = await this.getAudio(newSrc, false, this.excerptRange);
       this.loading = false;
       if (this.regionStartTime && this.regionEndTime) this.updateStretchBuf();

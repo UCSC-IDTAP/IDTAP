@@ -567,6 +567,7 @@ type RagaNewPieceInfoType = {
   given_name?: string;
   name?: string;
   fundamental?: number;
+  excertRange?: ExcerptRange;
 }
 
 type RagaSeedType = {
