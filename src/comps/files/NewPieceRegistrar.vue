@@ -141,7 +141,12 @@
       </div>
       <div class='formRow' v-if='recordingChosen'>
         <label class='ragaLabel'>Excerpt</label>
-        <input class='ragaCheck' type='checkbox' v-model='excerpt'>
+        <input 
+          class='ragaCheck' 
+          type='checkbox' 
+          v-model='excerpt'
+          :disabled='cloning'
+          >
         <input 
           type='number' 
           class='time'
