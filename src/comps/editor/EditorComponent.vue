@@ -236,6 +236,7 @@
   :showMeter='showMeter'
   :showPhonemes='showPhonemes'
   :showPhraseDivs='viewPhrases'
+  :excerptRange='excerptRange'
   @resizeHeightEmit='resizeHeight'
   @currentTimeEmit='setCurrentTime'
   @updateSargamLinesEmit='updateSargamLines'
@@ -651,6 +652,7 @@ type EditorDataType = {
   editableCols: CollectionType[],
   showRemoveFromCollection: boolean,
   scaleSystem: ScaleSystem,
+  excerptRange?: ExcerptRange,
 }
 
 export { findClosestStartTime }
@@ -818,6 +820,7 @@ export default defineComponent({
       editableCols: [],
       showRemoveFromCollection: false,
       scaleSystem: ScaleSystem.Sargam,
+      excerptRange: undefined,
     }
   },
   setup() {
@@ -913,14 +916,16 @@ export default defineComponent({
       }
       this.browser = detect() as BrowserInfo;
       if (piece.audioID) {
+        this.excerptRange = piece.excerptRange;
         this.audioSource = this.browser.name === 'safari' ?
           `https://swara.studio/audio/mp3/${piece.audioID}.mp3` :
           `https://swara.studio/audio/opus/${piece.audioID}.opus`;        
         this.audioDBDoc = await getAudioRecording(piece.audioID);
         this.melographJSON = await getMelographJSON(piece.audioID);
         this.durTot = this.audioDBDoc!.duration;
-        // if pieceDurTot is less than this, add silent phrase to make the two 
-        // the same
+        if (this.excerptRange !== undefined) {
+          this.durTot = this.excerptRange.end - this.excerptRange.start;
+        }
       } else {
         this.durTot = piece.durTot!;
       }

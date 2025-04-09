@@ -19,7 +19,7 @@ import {
 } from 'vue';
 import * as d3 from 'd3';
 import { getMelographJSON } from '@/js/serverCalls.ts';
-import { MelographData } from '@/ts/types.ts';
+import { MelographData, ExcerptRange } from '@/ts/types.ts';
 
 export default defineComponent({
   name: 'MelographLayer',
@@ -51,6 +51,10 @@ export default defineComponent({
     yScale: {
       type: Function as PropType<d3.ScaleLinear<number, number>>,
       required: true
+    },
+    excerptRange: {
+      type: Object as PropType<ExcerptRange>,
+      required: false
     }
   },
   setup(props) {
@@ -100,8 +104,24 @@ export default defineComponent({
           .x(d => props.xScale(d[0]))
           .y(d => props.yScale(d[1]))
           .curve(d3.curveMonotoneX);
-        data.data_chunks.forEach((chunk, i) => {
-          const start = data.time_chunk_starts[i];
+        let data_chunks = data.data_chunks;
+        let time_chunk_starts = data.time_chunk_starts;
+        if (props.excerptRange !== undefined) {
+          console.log('transforming data')
+          const start = props.excerptRange.start;
+          const end = props.excerptRange.end;
+          const timeStarts = data.time_chunk_starts;
+          let startIndex = timeStarts.findIndex(t => t >= start);
+          if (startIndex === -1) startIndex = 0;
+          let endIndex = timeStarts.reduce((lastIdx, t, idx) => t <= end ? idx : lastIdx, -1);
+          if (endIndex === -1) endIndex = timeStarts.length - 1;
+          data_chunks = data.data_chunks.slice(startIndex, endIndex + 1);
+          time_chunk_starts = data.time_chunk_starts
+            .slice(startIndex, endIndex + 1)
+            .map(t => t - start);
+        }
+        data_chunks.forEach((chunk, i) => {
+          const start = time_chunk_starts[i];
           const increment = data.time_increment;
           const drawData = chunk.map((val, j) => {
             return [start + j * increment, Math.log2(val)]

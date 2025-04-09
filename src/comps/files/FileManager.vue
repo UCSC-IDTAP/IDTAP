@@ -866,7 +866,6 @@ export default defineComponent({
           ];
           npi.family_name = this.$store.state.lastName;
           npi.given_name = this.$store.state.firstName;
-
           this.createNewPiece(npi as RagaNewPieceInfoType);
         }
       } catch (err) {
@@ -1147,6 +1146,7 @@ export default defineComponent({
   position: fixed;
   left: v-bind(modalLeft + 'px');
   top: v-bind(modalTop + 'px');
+  z-index: 2;
 }
 
 .titleModal {

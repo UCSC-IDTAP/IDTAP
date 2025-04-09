@@ -260,6 +260,8 @@ const initialize = async (
     audioID: string, 
     logMin: number, 
     logMax: number,
+    start: number,
+    end: number,
   ) => {
   const dir = 'https://swara.studio/spec_data/';
   const dataUrl = dir + audioID + '/spec_data.gz';
@@ -273,6 +275,10 @@ const initialize = async (
   }
   const f32ExtData = new Float32Array(extData!);
   initData = ndarray(f32ExtData, extDataShape!);
+  const totalColumns = initData.shape[1];
+  const colStart = Math.floor(totalColumns * start);
+  const colEnd = Math.ceil(totalColumns * end);
+  initData = initData.lo(0, colStart).hi(initData.shape[0], colEnd - colStart);
   crop(logMin, logMax);
   if (scaledShape === undefined) {
     throw new Error('scaledShape is not initialized')
@@ -434,7 +440,9 @@ self.onmessage = async (e: MessageEvent<WorkerMessage>) => {
       newPower,
       newCMap,
       audioID,
-      newVerbose
+      newVerbose, 
+      normedStart,
+      normedEnd
     } = data;
     if (type === 'initial') {
       if (audioID === undefined) {
@@ -457,7 +465,9 @@ self.onmessage = async (e: MessageEvent<WorkerMessage>) => {
       }
       scaledShape = newScaledShape;
       try {
-        await initialize(audioID, logMin, logMax);
+        let start = normedStart === undefined ? 0 : normedStart;
+        let end = normedEnd === undefined ? 1 : normedEnd;
+        await initialize(audioID, logMin, logMax, start, end);
       } catch (e) {
         console.error(e);
       }

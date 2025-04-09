@@ -19,7 +19,8 @@ import {
   RuleSetType,
   BoolObj,
   NumObj,
-  TuningType
+  TuningType,
+  ExcerptRange
 } from '@/ts/types.ts';
 import { Instrument } from '@/ts/enums.ts';
 import { closeTo, getClosest, isUpperCase } from '@/ts/utils.ts';
@@ -2441,6 +2442,7 @@ class Piece {
   durArrayGrid: number[][];
   sectionStartsGrid: number[][];
   sectionCatGrid: SecCatType[][];
+  excerptRange?: ExcerptRange;
 
 
 
@@ -2472,6 +2474,7 @@ class Piece {
     durArrayGrid = undefined,
     sectionStartsGrid = undefined,
     sectionCatGrid = undefined,
+    excerptRange = undefined,
 
   }: {
     phrases?: Phrase[],
@@ -2505,6 +2508,7 @@ class Piece {
     durArrayGrid?: number[][],
     sectionStartsGrid?: number[][],
     sectionCatGrid?: SecCatType[][],
+    excerptRange?: ExcerptRange,
   } = {}) {
     this.meters = meters;
 
@@ -2642,6 +2646,7 @@ class Piece {
     } else {
       this.explicitPermissions = explicitPermissions
     }
+    this.excerptRange = excerptRange;
   }
 
   get phrases() {
@@ -3494,6 +3499,7 @@ class Piece {
       durArrayGrid: this.durArrayGrid,
       sectionStartsGrid: this.sectionStartsGrid,
       sectionCatGrid: this.sectionCatGrid,
+      excerptRange: this.excerptRange,
     }
   }
 }
