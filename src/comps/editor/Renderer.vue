@@ -79,6 +79,7 @@
             :audioID='piece.audioID!'
             :xScale='xScale'
             :yScale='yScale'
+            :excerptRange='piece.excerptRange'
             ref='melographLayer'
             />
             <TranscriptionLayer
@@ -420,7 +421,8 @@ export default defineComponent({
     sargamRepresentation: {
       type: String as PropType<SargamRepresentation>,
       required: true
-    }
+    },
+
   },
   emits: [
     'update:recomputeTrigger',
