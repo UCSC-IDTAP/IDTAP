@@ -1,6 +1,11 @@
 # Changelog
 
 
+* Feat: Added ability to select an excerpt from a recording when setting up a transcription [729b243] (Jon Myers)
+### 2025-04-08
+
+## April 2025
+
 * feat: added ability to download "staff tuning", to show cents offset of tuning system on stave with C as tonic [c40beab] (Jon Myers)
 ### 2025-03-20
 
