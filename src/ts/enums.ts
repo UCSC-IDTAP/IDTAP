@@ -73,6 +73,11 @@ enum PhonemeRepresentation {
   Latin = 'English',
 }
 
+enum LabelScheme {
+  Structured = 'Structured',
+  AdHoc = 'Ad Hoc',
+}
+
 
 
 export {
@@ -83,5 +88,6 @@ export {
   PlayheadAnimations,
   ScaleSystem,
   SargamRepresentation,
-  PhonemeRepresentation
+  PhonemeRepresentation,
+  LabelScheme,
 }

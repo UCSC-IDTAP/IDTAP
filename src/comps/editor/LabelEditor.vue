@@ -10,6 +10,16 @@
         <input type='radio' value='Phrase' v-model='selectedHierarchy'/>
         Phrase
       </label>
+      <div class='verticalDivider'></div>
+      <label>
+        <input type='radio' :value='LabelScheme.Structured' v-model='labelScheme'/>
+        {{LabelScheme.Structured}}
+      </label>
+      <label>
+        <input type='radio' :value='LabelScheme.AdHoc' v-model='labelScheme'/>
+        {{LabelScheme.AdHoc}}
+      </label>
+
     </div>
     <div 
       class='sectionLabelHolder' 
@@ -45,8 +55,6 @@
       ref='phraseLabelEditors'
       />
     </div>
-    
-
   </div>
 </template>
 
@@ -56,12 +64,15 @@ import { defineComponent, PropType } from 'vue';
 import SectionLabelEditor from '@/comps/editor/SectionLabelEditor.vue';
 import PhraseLabelEditor from '@/comps/editor/PhraseLabelEditor.vue';
 import { Piece } from '@/js/classes.ts'
+import { LabelScheme } from '@/ts/enums.ts'
 
 export default defineComponent({
   name: 'LabelEditor',
   data() {
     return {
       selectedHierarchy: 'Section',
+      LabelScheme,
+      labelScheme: LabelScheme.Structured
     }
   },
   props: {
@@ -186,6 +197,13 @@ export default defineComponent({
   justify-content: left;
   overflow-x: scroll;
   box-sizing: border-box;
+}
+
+.verticalDivider {
+  width: 1px;
+  height: 24px;
+  background-color: #fff;
+  margin: 0 10px;
 }
 
 </style>
