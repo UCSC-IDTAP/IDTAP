@@ -5,7 +5,7 @@
       {{`Section ${sNum + 1}`  }}
       </label>
     </div>
-    <div class='middleRow'>
+    <div class='middleRow' v-if='labelScheme === LabelScheme.Structured'>
       <select 
         v-model='topLevel' 
         @change='updateTopLevel' 
@@ -17,7 +17,7 @@
         </option>
       </select>
     </div>
-    <div class='bottomContainer'>
+    <div class='bottomContainer' v-if='labelScheme === LabelScheme.Structured'>
       <div class='checkColumn' v-if='topLevel === "Alap"'>
         <div class='titleRow'>
           <label>Alap Section</label>
@@ -95,6 +95,32 @@
         </div>
       </div>
     </div>
+    <div v-if="labelScheme === LabelScheme.AdHoc" class="adhoc-wrapper">
+      <div class="adhoc-list">
+        <div
+          v-for="(field, idx) in adHocFields"
+          :key="idx"
+          class="adhoc-field"
+        >
+          <input
+            type="text"
+            v-model="adHocFields[idx]"
+            :placeholder="`Label ${idx + 1}`"
+            :disabled="!editable"
+            @keydown.stop
+            @input='updateAdHocField(idx)'
+          />
+        </div>
+      </div>
+      <div class="adhoc-controls">
+        <button
+          type="button"
+          @click="removeLastAdHocField"
+          :disabled="adHocFields.length === 1"
+        >-</button>
+        <button type="button" @click="addAdHocField">+</button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -102,6 +128,7 @@
 
 import { defineComponent, PropType } from 'vue';
 import { Piece, initSecCategorization, Section } from '@/js/classes.ts';
+import { LabelScheme } from '@/ts/enums.ts';
 type topLevelOptionsType = (
   'Pre-Chiz Alap' | 
   'Alap' | 
@@ -122,7 +149,9 @@ type SectionLabelEditorType = {
   compositionType?: CompositionType,
   section_tempo?: Section_TempoType,
   tala?: TalaType,
-  alapType?: AlapType
+  alapType?: AlapType,
+  LabelScheme: typeof LabelScheme,
+  adHocFields: string[],
 }
 
 export default defineComponent({
@@ -141,7 +170,9 @@ export default defineComponent({
       compositionType: undefined,
       section_tempo: undefined,
       tala: undefined,
-      alapType: undefined
+      alapType: undefined,
+      LabelScheme,
+      adHocFields: ['']
     }
   },
   props: {
@@ -164,20 +195,52 @@ export default defineComponent({
     editingInstIdx: {
       type: Number,
       required: true
+    },
+    labelScheme: {
+      type: Object as PropType<LabelScheme>,
+      required: true
     }
   },
 
   mounted() {
     this.updateFromSectionProp();
+    // this.adHocFields = this.piece.adHocSectionCatGrid[this.editingInstIdx][this.sNum];
+
   },
 
   watch: {
     section() {
       this.updateFromSectionProp();
+    },
+
+    editingInstIdx() {
+      this.adHocFields = this.piece.adHocSectionCatGrid[this.editingInstIdx][this.sNum];
     }
   },
 
   methods: {
+
+    updateAdHocField(idx: number) {
+      while (this.piece.adHocSectionCatGrid[this.editingInstIdx].length <= this.sNum) {
+        this.piece.adHocSectionCatGrid[this.editingInstIdx].push([]);
+      }
+      while (idx >= this.adHocFields.length) {
+        this.piece.adHocSectionCatGrid[this.editingInstIdx][this.sNum].push('');
+      }
+      this.piece.adHocSectionCatGrid[this.editingInstIdx][this.sNum][idx] = this.adHocFields[idx];
+      this.$emit('unsavedChanges');
+    },
+
+    addAdHocField() {
+      this.adHocFields.push('');
+    },
+    removeLastAdHocField() {
+      if (this.adHocFields.length > 1) {
+        this.adHocFields.pop();
+        this.piece.adHocSectionCatGrid[this.editingInstIdx][this.sNum].pop();
+        this.$emit('unsavedChanges');
+      }
+    },
 
     updateFromSectionProp() {
       const cat = this.section.categorization;
@@ -210,6 +273,10 @@ export default defineComponent({
       }
       if (cat['Top Level'] !== undefined) {
         this.topLevel = cat['Top Level'];
+      }
+      this.adHocFields = this.section.adHocCategorization;
+      if (this.adHocFields.length === 0) {
+        this.adHocFields = [''];
       }
     },
 
@@ -404,5 +471,32 @@ select {
 
 select:disabled {
   color: black;
+}
+
+.adhoc-field {
+  overflow-y: auto;
+  max-height: 100px;
+}
+
+.adhoc-wrapper {
+   display: flex;
+   flex-direction: column;
+   flex: 1 1 auto;
+   width: 100%;
+   min-height: 0;
+}
+
+.adhoc-list {
+   flex: 1 1 auto;
+   overflow-y: auto;
+   width: 100%;
+   min-height: 0;
+}
+
+.adhoc-controls {
+   display: flex;
+   justify-content: center;
+   margin: 5px 0;
+   flex: 0 0 auto;
 }
 </style>

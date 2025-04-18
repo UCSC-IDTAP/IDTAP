@@ -2582,8 +2582,14 @@ class Piece {
     }
     if (adHocSectionCatGrid !== undefined) {
       this.adHocSectionCatGrid = adHocSectionCatGrid;
+      // Remove any empty-string entries from the nested ad-hoc arrays
+      this.adHocSectionCatGrid = this.adHocSectionCatGrid.map(track =>
+        track.map(fields => fields.filter(field => field !== ''))
+      );
     } else {
-      this.adHocSectionCatGrid = this.sectionCatGrid.map(() => [[]])
+      this.adHocSectionCatGrid = this.sectionCatGrid.map(sc => {
+        return sc.map(() => [])
+      })
     }
     this.raga = raga;
     if (this.phrases.length === 0) {
@@ -2641,6 +2647,7 @@ class Piece {
         debugger;
       }
       if (ss.length > this.sectionCatGrid[ssIdx].length) {
+        console.log('this is where the fix is')
         const dif = ss.length - this.sectionCatGrid[ssIdx].length;
         for (let i = 0; i < dif; i++) {
           this.sectionCatGrid[ssIdx].push(initSecCategorization())
@@ -2899,7 +2906,8 @@ class Piece {
         }
         sections.push(new Section({
           phrases: slice,
-          categorization: this.sectionCatGrid[i][j]
+          categorization: this.sectionCatGrid[i][j],
+          adHocCategorization: this.adHocSectionCatGrid[i][j],
         }))
       });
       return sections
@@ -3543,19 +3551,27 @@ const yamanRuleSet = {
 class Section {
   phrases: Phrase[];
   categorization: SecCatType;
+  adHocCategorization: string[];
 
   constructor({
     phrases = [],
-    categorization = undefined
+    categorization = undefined,
+    adHocCategorization = undefined
   }: {
     phrases?: Phrase[],
-    categorization?: SecCatType
+    categorization?: SecCatType,
+    adHocCategorization?: string[]
   } = {}) {
     this.phrases = phrases;
     if (categorization !== undefined) {
       this.categorization = categorization;
     } else {
       this.categorization = initSecCategorization();
+    }
+    if (adHocCategorization !== undefined) {
+      this.adHocCategorization = adHocCategorization;
+    } else {
+      this.adHocCategorization = [];
     }
   }
 

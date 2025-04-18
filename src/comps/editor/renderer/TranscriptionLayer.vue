@@ -2222,17 +2222,18 @@ export default defineComponent({
       const prevPhrase = props.piece.phraseGrid[track][phrase.pieceIdx! - 1];
       prevPhrase.trajectories.push(...phrase.trajectories);
       prevPhrase.consolidateSilentTrajs();
-      // I believe the next three lines are included in consolidateSilentTrajs
-      // prevPhrase.durTotFromTrajectories();
-      // prevPhrase.durArrayFromTrajectories();
-      // prevPhrase.assignStartTimes();
       props.piece.phraseGrid[track].splice(phrase.pieceIdx!, 1);
       props.piece.durArrayFromPhrases();
-      
       justDeletedPhraseDiv = true;
       selectedPhraseDivUid.value = undefined;
       emit('unsavedChanges', true);
       emit('update:selPhraseDivUid', undefined);
+      if (props.piece.sectionStartsGrid[track].includes(phrase.pieceIdx!)) {
+        const sectionIdx = props.piece.sectionStartsGrid[track].indexOf(phrase.pieceIdx!);
+        props.piece.sectionStartsGrid[track].splice(sectionIdx, 1);
+        props.piece.sectionCatGrid[track].splice(sectionIdx, 1);
+        props.piece.adHocSectionCatGrid[track].splice(sectionIdx, 1);
+      }
     }
 
     const deleteTrajs = (trajs: Trajectory[]) => {
