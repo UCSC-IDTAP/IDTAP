@@ -1,4 +1,4 @@
-import { findLastIndex } from 'lodash';
+import  findLastIndex  from 'lodash/findLastIndex';
 import { v4 as uuidv4 } from 'uuid';
 import { Meter } from './meter.ts';
 import { 

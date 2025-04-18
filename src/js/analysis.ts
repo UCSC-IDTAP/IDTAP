@@ -212,6 +212,64 @@ const PitchTimes = (trajs: Trajectory[], {
   return pitchTimes
 }
 
+
+
+const condensedDurations = (trajs: Trajectory[], { 
+  outputType = 'pitchNumber', // pitchNumber, chroma, scaleDegree, sargamLetter
+  maxSilence = 5,
+  excludeSilence = true,
+ } = {}) => {
+  let pitchTimes = PitchTimes(trajs);
+  if (outputType === 'chroma') {
+    pitchTimes.forEach(pt => {
+      if (pt.pitch !== 'silence') {
+        if (typeof pt.pitch !== 'number') {
+          throw new Error('pitch is not a number')
+        }
+        pt.pitch = pitchNumberToChroma(pt.pitch)
+      }
+    })
+  }
+  // remove latter of adjacent items where pitch is equal
+  pitchTimes = pitchTimes.filter((obj, idx) => {
+    if (idx === 0) {
+      return true
+    } else {
+      return obj.pitch !== pitchTimes[idx-1].pitch;
+    }
+  })
+  const durations: { dur: number, pitch: string | number }[] = [];
+  const endTime = trajs.reduce((sum, traj) => sum + traj.durTot, 0);
+  const ends = pitchTimes.map(obj => obj.time).slice(1).concat([endTime]);
+  pitchTimes.forEach((obj, idx) => {
+    const newObj = { dur: ends[idx] - obj.time, pitch: obj.pitch };
+    durations.push(newObj);
+  })
+  // if dur of silence is less than maxSilence, add it to the previous pitch
+  let condensedDurations: { dur: number, pitch: string | number }[] = [];
+  durations.forEach((obj, idx) => {
+    if (obj.pitch === 'silence') {
+      if (idx === 0) {
+        condensedDurations.push(obj)
+      } else if (obj.dur < maxSilence) {
+        condensedDurations[condensedDurations.length - 1].dur += obj.dur;
+      } else {
+        condensedDurations[condensedDurations.length - 1].dur += maxSilence;
+        obj.dur -= maxSilence;
+        condensedDurations.push(obj);
+      }
+    } else {
+      condensedDurations.push(obj);
+    }
+    
+  });
+  if (excludeSilence) {
+    condensedDurations = condensedDurations
+      .filter(obj => obj.pitch !== 'silence');
+  }
+  return condensedDurations
+}
+
 const durationsOfPitchOnsets = (trajs: Trajectory[], { 
   outputType = 'pitchNumber', // pitchNumber, chroma, scaleDegree, sargamLetter
   countType = 'cumulative',
@@ -492,5 +550,6 @@ export {
   segmentByDuration, 
   durationsOfPitchOnsets,
   patternCounter,
-  chromaSeqToCondensedPitchNums
+  chromaSeqToCondensedPitchNums,
+  condensedDurations,
 }
