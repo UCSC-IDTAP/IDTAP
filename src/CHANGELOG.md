@@ -1,6 +1,9 @@
 # Changelog
 
 
+* Feat: Added ad hoc annotations for sections and phrases [fa3fa34] (Jon Myers)
+### 2025-04-18
+
 * Feat: Added ability to select an excerpt from a recording when setting up a transcription [729b243] (Jon Myers)
 ### 2025-04-08
 
