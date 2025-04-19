@@ -45,15 +45,16 @@
       ref='phraseLabelHolder'
       >
       <PhraseLabelEditor 
-      v-for='(phrase, i) in piece.phraseGrid[editingInstIdx]'
-      @dblclick='goToPhrase($event, i)'
-      :phraseNum='i'
-      :vocal='vocal'
-      :piece='piece'
-      :editable='editable'
-      :editingInstIdx='editingInstIdx'
-      @unsavedChanges='$emit("unsavedChanges")'
-      ref='phraseLabelEditors'
+        v-for='(phrase, i) in piece.phraseGrid[editingInstIdx]'
+        @dblclick='goToPhrase($event, i)'
+        :phraseNum='i'
+        :vocal='vocal'
+        :piece='piece'
+        :editable='editable'
+        :editingInstIdx='editingInstIdx'
+        :labelScheme='labelScheme'
+        @unsavedChanges='$emit("unsavedChanges")'
+        ref='phraseLabelEditors'
       />
     </div>
   </div>
