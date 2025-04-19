@@ -10,6 +10,16 @@
         <input type='radio' value='Phrase' v-model='selectedHierarchy'/>
         Phrase
       </label>
+      <div class='verticalDivider'></div>
+      <label>
+        <input type='radio' :value='LabelScheme.Structured' v-model='labelScheme'/>
+        {{LabelScheme.Structured}}
+      </label>
+      <label>
+        <input type='radio' :value='LabelScheme.AdHoc' v-model='labelScheme'/>
+        {{LabelScheme.AdHoc}}
+      </label>
+
     </div>
     <div 
       class='sectionLabelHolder' 
@@ -21,8 +31,9 @@
         :piece='piece'
         :editable='editable'
         :editingInstIdx='editingInstIdx'
-        @unsavedChanges='$emit("unsavedChanges")'
         :section='section'
+        :labelScheme='labelScheme'
+        @unsavedChanges='$emit("unsavedChanges")'
         @dblclick='goToSection($event, i)'
         ref='sectionLabelEditors'
         :key='i'
@@ -34,19 +45,18 @@
       ref='phraseLabelHolder'
       >
       <PhraseLabelEditor 
-      v-for='(phrase, i) in piece.phraseGrid[editingInstIdx]'
-      @dblclick='goToPhrase($event, i)'
-      :phraseNum='i'
-      :vocal='vocal'
-      :piece='piece'
-      :editable='editable'
-      :editingInstIdx='editingInstIdx'
-      @unsavedChanges='$emit("unsavedChanges")'
-      ref='phraseLabelEditors'
+        v-for='(phrase, i) in piece.phraseGrid[editingInstIdx]'
+        @dblclick='goToPhrase($event, i)'
+        :phraseNum='i'
+        :vocal='vocal'
+        :piece='piece'
+        :editable='editable'
+        :editingInstIdx='editingInstIdx'
+        :labelScheme='labelScheme'
+        @unsavedChanges='$emit("unsavedChanges")'
+        ref='phraseLabelEditors'
       />
     </div>
-    
-
   </div>
 </template>
 
@@ -56,12 +66,15 @@ import { defineComponent, PropType } from 'vue';
 import SectionLabelEditor from '@/comps/editor/SectionLabelEditor.vue';
 import PhraseLabelEditor from '@/comps/editor/PhraseLabelEditor.vue';
 import { Piece } from '@/js/classes.ts'
+import { LabelScheme } from '@/ts/enums.ts'
 
 export default defineComponent({
   name: 'LabelEditor',
   data() {
     return {
       selectedHierarchy: 'Section',
+      LabelScheme,
+      labelScheme: LabelScheme.Structured
     }
   },
   props: {
@@ -186,6 +199,13 @@ export default defineComponent({
   justify-content: left;
   overflow-x: scroll;
   box-sizing: border-box;
+}
+
+.verticalDivider {
+  width: 1px;
+  height: 24px;
+  background-color: #fff;
+  margin: 0 10px;
 }
 
 </style>

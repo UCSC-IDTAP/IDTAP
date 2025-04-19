@@ -3,7 +3,7 @@
     <div class='topRow'>
       {{`Phrase ${phraseNum + 1}`  }}
     </div>
-    <div class='bottomContainer'>
+    <div class='bottomContainer' v-if='labelScheme === LabelScheme.Structured'>
       <div class='checkColumn'>
         <div class='titleRow'>
           <label>Phrase Type</label>
@@ -110,6 +110,32 @@
         </div>
       </div>
     </div>
+    <div v-if="labelScheme === LabelScheme.AdHoc" class="adhoc-wrapper">
+      <div class="adhoc-list">
+        <div
+          v-for="(field, idx) in adHocFields"
+          :key="idx"
+          class="adhoc-field"
+        >
+          <input
+            type="text"
+            v-model="adHocFields[idx]"
+            :placeholder="`Label ${idx + 1}`"
+            :disabled="!editable"
+            @keydown.stop
+            @input='updateAdHocField(idx)'
+          />
+        </div>
+      </div>
+      <div class="adhoc-controls">
+        <button
+          type="button"
+          @click="removeLastAdHocField"
+          :disabled="adHocFields.length === 1"
+        >-</button>
+        <button type="button" @click="addAdHocField">+</button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -118,6 +144,7 @@
 import { defineComponent, PropType } from 'vue';
 import { Piece, Phrase } from '@/js/classes.ts';
 import { PhraseCatType } from '@/ts/types.ts';
+import { LabelScheme } from '@/ts/enums.ts';
 import categoryData from '@/assets/json/categorization.json';
 const phraseData = categoryData['Phrase'];
 const articulationTypes = phraseData['Articulation Type'];
@@ -128,7 +155,8 @@ type PhraseLabelEditorDataType = {
   vocalArtTypes: PVArtType[],
   instrumentalArtTypes: PIArtType[],
   incidentalTypes: PIncidentalType[],
-  // phrase: Phrase
+  LabelScheme: typeof LabelScheme,
+  adHocFields: string[],
 }
 
 type PPhraseType = keyof PhraseCatType['Phrase'];
@@ -157,7 +185,14 @@ export default defineComponent({
       vocalArtTypes: articulationTypes['Vocal'] as PVArtType[],
       instrumentalArtTypes: articulationTypes['Instrumental'] as PIArtType[],
       incidentalTypes: phraseData['Incidental'] as PIncidentalType[],
-      // phrase: this.piece.phrases[this.phraseNum]
+      LabelScheme,
+      adHocFields: ['']
+    }
+  },
+  mounted() {
+    this.adHocFields = this.phrase.adHocCategorizationGrid;
+    if (this.adHocFields.length === 0) {
+      this.adHocFields.push('');
     }
   },
   props: {
@@ -180,8 +215,31 @@ export default defineComponent({
     editingInstIdx: {
       type: Number,
       required: true
+    },
+    labelScheme: {
+      type: Object as PropType<LabelScheme>,
+      required: true
     }
   },
+  methods: {
+    updateAdHocField(idx: number) {
+      while (idx >= this.phrase.adHocCategorizationGrid.length) {
+        this.phrase.adHocCategorizationGrid.push('');
+      }
+      this.phrase.adHocCategorizationGrid[idx] = this.adHocFields[idx];
+      this.$emit('unsavedChanges');
+    },
+    addAdHocField() {
+      this.adHocFields.push('')
+    },
+    removeLastAdHocField() {
+      if (this.adHocFields.length > 1) {
+        this.adHocFields.pop();
+        this.phrase.adHocCategorizationGrid.pop();
+        this.$emit('unsavedChanges');
+      }
+    }
+  }
 })
 </script>
 

@@ -1943,6 +1943,7 @@ class Phrase {
   // chikaris: { [key: string]: Chikari };
   pieceIdx?: number;
   categorizationGrid: PhraseCatType[];
+  adHocCategorizationGrid: string[];
   uniqueId: string;
   
   constructor({
@@ -1958,6 +1959,7 @@ class Phrase {
     groupsGrid = undefined,
     categorizationGrid = undefined,
     uniqueId = undefined,
+    adHocCategorizationGrid = undefined,
   }: {
     trajectories?: Trajectory[],
     durTot?: number,
@@ -1971,6 +1973,7 @@ class Phrase {
     groupsGrid?: Group[][],
     categorizationGrid?: PhraseCatType[],
     uniqueId?: string,
+    adHocCategorizationGrid?: string[],
   } = {}) {
     if (uniqueId === undefined) {
       this.uniqueId = uuidv4();
@@ -2046,6 +2049,11 @@ class Phrase {
       this.categorizationGrid.forEach(cat => {
         cat.Elaboration['Bol Alap'] = false;
       })
+    }
+    if (adHocCategorizationGrid !== undefined) {
+      this.adHocCategorizationGrid = adHocCategorizationGrid;
+    } else {
+      this.adHocCategorizationGrid = [];
     }
   }
 
@@ -2357,6 +2365,7 @@ class Phrase {
       groupsGrid: this.groupsGrid,
       categorizationGrid: this.categorizationGrid,
       uniqueId: this.uniqueId,
+      adHocCategorizationGrid: this.adHocCategorizationGrid,
     }
   }
 
@@ -2430,7 +2439,6 @@ class Piece {
   instrumentation: Instrument[];
   possibleTrajs: { [key: string]: number[] };
   meters: Meter[];
-  // sectionCategorization: SecCatType[];
   explicitPermissions: {
     edit: string[],
     view: string[],
@@ -2443,6 +2451,7 @@ class Piece {
   sectionStartsGrid: number[][];
   sectionCatGrid: SecCatType[][];
   excerptRange?: ExcerptRange;
+  adHocSectionCatGrid: string[][][];
 
 
 
@@ -2475,6 +2484,7 @@ class Piece {
     sectionStartsGrid = undefined,
     sectionCatGrid = undefined,
     excerptRange = undefined,
+    adHocSectionCatGrid = undefined,
 
   }: {
     phrases?: Phrase[],
@@ -2509,6 +2519,7 @@ class Piece {
     sectionStartsGrid?: number[][],
     sectionCatGrid?: SecCatType[][],
     excerptRange?: ExcerptRange,
+    adHocSectionCatGrid?: string[][][],
   } = {}) {
     this.meters = meters;
 
@@ -2569,12 +2580,17 @@ class Piece {
         return ss.map(() => initSecCategorization())
       })
     }
-    const err = new Error();
-    // get a call trace here?
-
-
-
-
+    if (adHocSectionCatGrid !== undefined) {
+      this.adHocSectionCatGrid = adHocSectionCatGrid;
+      // Remove any empty-string entries from the nested ad-hoc arrays
+      this.adHocSectionCatGrid = this.adHocSectionCatGrid.map(track =>
+        track.map(fields => fields.filter(field => field !== ''))
+      );
+    } else {
+      this.adHocSectionCatGrid = this.sectionCatGrid.map(sc => {
+        return sc.map(() => [])
+      })
+    }
     this.raga = raga;
     if (this.phrases.length === 0) {
       if (durTot === undefined) {
@@ -2631,6 +2647,7 @@ class Piece {
         debugger;
       }
       if (ss.length > this.sectionCatGrid[ssIdx].length) {
+        console.log('this is where the fix is')
         const dif = ss.length - this.sectionCatGrid[ssIdx].length;
         for (let i = 0; i < dif; i++) {
           this.sectionCatGrid[ssIdx].push(initSecCategorization())
@@ -2889,7 +2906,8 @@ class Piece {
         }
         sections.push(new Section({
           phrases: slice,
-          categorization: this.sectionCatGrid[i][j]
+          categorization: this.sectionCatGrid[i][j],
+          adHocCategorization: this.adHocSectionCatGrid[i][j],
         }))
       });
       return sections
@@ -3500,6 +3518,7 @@ class Piece {
       sectionStartsGrid: this.sectionStartsGrid,
       sectionCatGrid: this.sectionCatGrid,
       excerptRange: this.excerptRange,
+      adHocSectionCatGrid: this.adHocSectionCatGrid,
     }
   }
 }
@@ -3532,19 +3551,27 @@ const yamanRuleSet = {
 class Section {
   phrases: Phrase[];
   categorization: SecCatType;
+  adHocCategorization: string[];
 
   constructor({
     phrases = [],
-    categorization = undefined
+    categorization = undefined,
+    adHocCategorization = undefined
   }: {
     phrases?: Phrase[],
-    categorization?: SecCatType
+    categorization?: SecCatType,
+    adHocCategorization?: string[]
   } = {}) {
     this.phrases = phrases;
     if (categorization !== undefined) {
       this.categorization = categorization;
     } else {
       this.categorization = initSecCategorization();
+    }
+    if (adHocCategorization !== undefined) {
+      this.adHocCategorization = adHocCategorization;
+    } else {
+      this.adHocCategorization = [];
     }
   }
 
