@@ -2267,6 +2267,9 @@ export default defineComponent({
             const artEntries = artKeys.map(key => traj.articulations[key]);
             const artObj: { [key: string]: Articulation } = {};
             artKeys.forEach((key, i) => {
+              if (artEntries[i] === null) {
+                return
+              }
               artObj[key] = new Articulation(artEntries[i]);
             });
             traj.articulations = artObj;
