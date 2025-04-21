@@ -287,37 +287,29 @@
     :y='contextMenuY'
     :closed='contextMenuClosed'
     :choices='contextMenuChoices'
-    />
-  <AutomationWindow
-    v-if='autoWindowOpen && autoTrajs.length > 0 && piece && editable'
-    :trajectories='autoTrajs'
-    :x='autoWindowX'
-    :y='autoWindowY'
-    :width='autoWindowWidth'
-    :piece='piece'
-    />
-    <Tooltip
-      :x='tooltipX'
-      :y='tooltipY'
-      :open='tooltipOpen'
-      :text='tooltipText'
-    />
-    <AddToCollection
-      v-if='showAddToCollection'
-      :possibleCollections='editableCols'
-      :navHeight='navHeight'
-      :tID='piece._id'
-      @close='closeAddToCollection'
-      addType='transcription'
-    />
-    <RemoveFromCollection
-      v-if='showRemoveFromCollection'
-      :possibleCollections='removableCols'
-      :navHeight='navHeight'
-      :tID='piece._id'
-      @close='closeRemoveFromCollection'
-      removeType='transcription'
-    />
+  />
+  <Tooltip
+    :x='tooltipX'
+    :y='tooltipY'
+    :open='tooltipOpen'
+    :text='tooltipText'
+  />
+  <AddToCollection
+    v-if='showAddToCollection'
+    :possibleCollections='editableCols'
+    :navHeight='navHeight'
+    :tID='piece._id'
+    @close='closeAddToCollection'
+    addType='transcription'
+  />
+  <RemoveFromCollection
+    v-if='showRemoveFromCollection'
+    :possibleCollections='removableCols'
+    :navHeight='navHeight'
+    :tID='piece._id'
+    @close='closeRemoveFromCollection'
+    removeType='transcription'
+  />
 </template>
 <script lang='ts'>
 const getClosest = (counts: number[], goal: number) => {
@@ -374,7 +366,6 @@ import EditorAudioPlayer from '@/comps/editor/audioPlayer/EditorAudioPlayer.vue'
 import TrajSelectPanel from '@/comps/editor/TrajSelectPanel.vue';
 import ContextMenu from'@/comps/ContextMenu.vue';
 import instructionsText from '@/assets/texts/editor_instructions.html?raw';
-import AutomationWindow from '@/comps/editor/AutomationWindow.vue';
 import Renderer from '@/comps/editor/Renderer.vue';
 import Tooltip from '@/comps/Tooltip.vue';
 import Synths from '@/comps/editor/audioPlayer/Synths.vue';
@@ -599,7 +590,6 @@ type EditorDataType = {
     time_increment: number,
   },
   melographVisible: boolean,
-  autoWindowOpen: boolean,
   autoWindowX: number,
   autoWindowY: number,
   autoTrajs: Trajectory[],
@@ -767,7 +757,6 @@ export default defineComponent({
       melographJSON: undefined,
       melographVisible: false,
       selectedPhraseDivIdx: undefined,
-      autoWindowOpen: false,
       autoWindowX: 500,
       autoWindowY: 500,
       autoTrajs: [],
@@ -832,7 +821,6 @@ export default defineComponent({
     EditorAudioPlayer,
     TrajSelectPanel,
     ContextMenu,
-    AutomationWindow,
     Renderer,
     Tooltip,
     AddToCollection,

@@ -23,6 +23,16 @@
       :width='autoWindowWidth'
       :piece='piece'
       />
+    <TrajectoryAnnotator
+      v-if='annotatingTraj !== undefined && trajAnnotatorOpen'
+      :trajectory='annotatingTraj'
+      :editable='editable'
+      :x='trajAnnotatorX'
+      :y='trajAnnotatorY'
+      :width='trajAnnotatorWidth'
+      :height='trajAnnotatorHeight'
+      @closeWindow='trajAnnotatorOpen = false'
+    />
   </div>
   <ContextMenu
     :x='contextMenuX'
@@ -66,7 +76,7 @@ import {
 import { EditorMode, Instrument, PlayheadAnimations } from '@/ts/enums.ts';
 import { BrowserInfo } from 'detect-browser';
 import AutomationWindow from '@/comps/editor/AutomationWindow.vue';
-
+import TrajectoryAnnotator from '@/comps/editor/renderer/TrajectoryAnnotator.vue';
 import { 
   Piece, 
   Trajectory, 
@@ -106,7 +116,8 @@ export default defineComponent({
   name: 'TranscriptionLayer',
   components: {
     ContextMenu,
-    AutomationWindow
+    AutomationWindow,
+    TrajectoryAnnotator,
   },
   props: {
     width: {
@@ -346,6 +357,11 @@ export default defineComponent({
     const autoWindowOpen = ref<boolean>(false);
     const autoWindowX = ref<number>(500);
     const autoWindowY = ref<number>(500);
+    const trajAnnotatorOpen = ref<boolean>(false);
+    const trajAnnotatorX = ref<number>(500);
+    const trajAnnotatorY = ref<number>(500);
+    const trajAnnotatorWidth = ref<number>(200);
+    const trajAnnotatorHeight = ref<number>(200);
     const regionG = ref<d3.Selection<SVGGElement, unknown, null, undefined> | undefined>(undefined);
     const regionStartPxl = ref<number | undefined>(undefined);
     const regionEndPxl = ref<number | undefined>(undefined);
@@ -364,6 +380,7 @@ export default defineComponent({
     const goToHours = ref<string>('0');
     const goToMinutes = ref<string>('00');
     const controlled = ref<boolean>(false);
+    const annotatingTraj = ref<Trajectory | undefined>(undefined);
     let playheadLineIdx = 0;
     let justDeletedPhraseDiv = false;
     const dragDotColor = 'purple';
@@ -2784,6 +2801,22 @@ export default defineComponent({
           })
         })
       }
+      contextMenuChoices.value.push({
+        text: 'Annotate Trajectory',
+        action: () => {
+          annotatingTraj.value = traj;
+          const startTime = traj.startTime! + phrase.startTime!;
+          const xStart = props.xScale(startTime);
+          const endTime = startTime + traj.durTot;
+          const xEnd = props.xScale(endTime);
+          const xMiddle = (xStart + xEnd) / 2;
+          const left = xMiddle - trajAnnotatorWidth.value / 2;
+          trajAnnotatorX.value = left;
+          trajAnnotatorOpen.value = true;
+          contextMenuClosed.value = true;
+        },
+        enabled: true
+      })
       if (contextMenuChoices.value.length > 0) {
         contextMenuClosed.value = false;
       }
@@ -4070,6 +4103,7 @@ export default defineComponent({
         emit('cancelRegionSpeed')
       }
       autoWindowOpen.value = false;
+      trajAnnotatorOpen.value = false;
       emit('clearTSP');
       goToTimeModal.value = false;
     }
@@ -5706,6 +5740,12 @@ export default defineComponent({
       controlled,
       startPlayingTransition,
       stopPlayingTransition,
+      trajAnnotatorX,
+      trajAnnotatorY,
+      trajAnnotatorWidth,
+      trajAnnotatorHeight,
+      trajAnnotatorOpen,
+      annotatingTraj,
     }
   }
 })

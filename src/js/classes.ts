@@ -981,6 +981,7 @@ class Trajectory {
   names: string[];
   automation: Automation | undefined;
   uniqueId: string | undefined;
+  tags: string[]
 
   get freqs() {
     return this.pitches.map(p => p.frequency)
@@ -1016,7 +1017,8 @@ class Trajectory {
     endConsonantEngTrans = undefined,
     groupId = undefined,
     automation = undefined,
-    uniqueId = undefined
+    uniqueId = undefined,
+    tags = undefined
   }: {
     id?: number,
     pitches?: Pitch[],
@@ -1043,7 +1045,8 @@ class Trajectory {
     endConsonantEngTrans?: string,
     groupId?: string,
     automation?: Automation,
-    uniqueId?: string
+    uniqueId?: string,
+    tags?: string[]
   } = {}) {
     this.names = [
       'Fixed',
@@ -1314,6 +1317,11 @@ class Trajectory {
         delete this.articulations[k];
       }
     })
+    if (tags === undefined) {
+      this.tags = []
+    } else {
+      this.tags = tags
+    }
   }
 
   updateFundamental(fundamental: number) {
@@ -1798,6 +1806,7 @@ class Trajectory {
       groupId: this.groupId,
       automation: this.automation,
       uniqueId: this.uniqueId,
+      tags: this.tags,
     }
   }
 
