@@ -1,6 +1,9 @@
 # Changelog
 
 
+* Feat: Added ability to annotated trajectories. [ba0ecc0] (Jon Myers)
+### 2025-04-21
+
 * Feat: Added ad hoc annotations for sections and phrases [fa3fa34] (Jon Myers)
 ### 2025-04-18
 
