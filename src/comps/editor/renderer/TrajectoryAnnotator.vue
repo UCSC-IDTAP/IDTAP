@@ -84,6 +84,7 @@ export default defineComponent({
   background-color: white;
   border: 1px solid black;
   box-sizing: border-box;
+  padding: 8px;
   width: v-bind(width + 'px');
   height: v-bind(height + 'px');
   top: v-bind(y + 'px');
@@ -92,11 +93,12 @@ export default defineComponent({
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
 }
 
 .tag-list {
   flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
   width: 100%;
   padding: 8px;
