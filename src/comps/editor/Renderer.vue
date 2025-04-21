@@ -733,8 +733,13 @@ export default defineComponent({
       const halfPxl = clientWidth.value / 2;
       const halfTime = xScale.value.invert(halfPxl);
       return leftTime + halfTime;
-     
     }
+
+    const handleScroll = throttle(() => {
+      updateAxesScroll();
+      scrollUpdateIdx.value += 1;
+      verticalScrollUpdateIdx.value += 1;
+    }, 16);
 
     onMounted(async () => {
       window.addEventListener('keydown', handleKeydown);
@@ -746,11 +751,7 @@ export default defineComponent({
       scrollingContainer.value?.addEventListener('click', (e) => {
         e.preventDefault();
       })
-      scrollingContainer.value?.addEventListener('scroll', () => {
-        updateAxesScroll();
-        scrollUpdateIdx.value += 1;
-        verticalScrollUpdateIdx.value += 1;
-      });
+      scrollingContainer.value?.addEventListener('scroll', handleScroll, { passive: true });
       window.addEventListener('resize', updateClientWidth);
       const durTot = props.piece.durTot;
       if (durTot === undefined) {
@@ -779,6 +780,7 @@ export default defineComponent({
       window.removeEventListener('click', () => {
         contextMenuClosed.value = true;
       })
+      scrollingContainer.value?.removeEventListener('scroll', handleScroll);
     });
     return {
       scrollingContainer,
