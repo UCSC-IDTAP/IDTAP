@@ -2812,11 +2812,21 @@ export default defineComponent({
           const xMiddle = (xStart + xEnd) / 2;
           const left = xMiddle - trajAnnotatorWidth.value / 2;
           trajAnnotatorX.value = left;
+          let top = props.yScale(traj.logFreqs[0]) + 20;
+          if (top + trajAnnotatorHeight.value > props.height) {
+            top = props.height - trajAnnotatorHeight.value - 20;
+          }
+          trajAnnotatorY.value = top; // Assigning the calculated top value
           trajAnnotatorOpen.value = true;
           contextMenuClosed.value = true;
         },
         enabled: true
       })
+      const offset = 20 * (contextMenuChoices.value.length + 4);
+      if (contextMenuY.value + offset > props.height) {
+        contextMenuY.value = props.height - offset;
+      }
+
       if (contextMenuChoices.value.length > 0) {
         contextMenuClosed.value = false;
       }
