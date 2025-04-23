@@ -52,6 +52,7 @@
       :editableCols='editableCols'
       :scaleSystem='scaleSystem'
       :audioPlayerRef='$refs.audioPlayer as APType'
+      :showPhrases='showPhrases'
       @zoomInY='zoomInY'
       @zoomOutY='zoomOutY'
       @zoomInX='zoomInX'
@@ -150,7 +151,6 @@
         :ctrlBoxWidth='controlBoxWidth'
         :selectedPhraseDivUid='selectedPhraseDivUid'
         :piece='piece'
-
         :freqMax='freqMax'
         :freqMin='freqMin'
         :setNewTraj='setNewTraj'
@@ -237,6 +237,7 @@
   :showPhonemes='showPhonemes'
   :showPhraseDivs='viewPhrases'
   :excerptRange='excerptRange'
+  :showPhraseLabels='showPhrases'
   @resizeHeightEmit='resizeHeight'
   @currentTimeEmit='setCurrentTime'
   @updateSargamLinesEmit='updateSargamLines'
@@ -281,6 +282,7 @@
   @update:showPhraseDivs='viewPhrases = $event'
   @startPlayingTransition='handleStartPlayingTransition'
   @stopPlayingTransition='handleStopPlayingTransition'
+  @update:showPhraseLabels='showPhrases = $event'
   />
   <ContextMenu 
     :x='contextMenuX'
@@ -397,6 +399,7 @@ import {
   YAxisType,
   LabelEditorType,
   MeterControlsType,
+  ExcerptRange,
 } from '@/ts/types';
 import { 
   EditorMode, 
@@ -413,8 +416,6 @@ const getStarts = (durArray: number[]) => {
   const cumsum = (sum => (value: number) => sum += value)(0);
   return [0].concat(durArray.slice(0, durArray.length - 1)).map(cumsum)
 }
-
-
 
 import { 
   select as d3Select, 
@@ -643,6 +644,7 @@ type EditorDataType = {
   showRemoveFromCollection: boolean,
   scaleSystem: ScaleSystem,
   excerptRange?: ExcerptRange,
+  showPhrases: boolean,
 }
 
 export { findClosestStartTime }
@@ -656,7 +658,7 @@ export default defineComponent({
       backColor: '#f0f8ff', // aliceblue
       axisColor: '#c4b18b', // tan
       // yAxWidth: 30,
-      xAxHeight: 30,
+      xAxHeight: 60,
       minDrawDur: 0.01, //this could be smaller, potentially
       initViewDur: 20,
       initYScale: 2,
@@ -810,6 +812,7 @@ export default defineComponent({
       showRemoveFromCollection: false,
       scaleSystem: ScaleSystem.Sargam,
       excerptRange: undefined,
+      showPhrases: true,
     }
   },
   setup() {
@@ -861,6 +864,7 @@ export default defineComponent({
   },
 
   async mounted() {
+    this.xAxHeight = this.showPhrases ? 60 : 30;
     window.addEventListener('beforeunload', this.beforeUnload);
     this.fullWidth = window.innerWidth;
     this.throttledAlterSlope = throttle(this.alterSlope, 16);
@@ -1019,6 +1023,10 @@ export default defineComponent({
   },
 
   watch: {
+
+    showPhrases(newVal) {
+      this.xAxHeight = newVal ? 60 : 30;
+    },
 
     scaleSystem(ss) {
       if (ss === ScaleSystem.Sargam || ss === ScaleSystem.SargamCents) {
@@ -1209,6 +1217,7 @@ export default defineComponent({
   },
 
   methods: {
+    
 
     handleStartPlayingTransition() {
       const r = this.$refs.renderer as RendererType;
