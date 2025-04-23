@@ -3660,11 +3660,11 @@ export default defineComponent({
       };
       if (traj.logFreqs[idx]) {
         traj.pitches[idx] = newPitch();
-        if (idx === 0 && traj.id === 0) { // if first dot of fixed traj
+        if (idx === 0 && (traj.id === 0 || traj.id === 13)) { // if first dot of fixed traj
           traj.pitches[1] = newPitch();
           d3.select(`#dragDot1`)
             .attr('cy', y);
-        } else if (idx === 1 && traj.id === 0) { // if second dot of fixed traj
+        } else if (idx === 1 && (traj.id === 0 || traj.id === 13)) { // if second dot of fixed traj
           traj.pitches[0] = newPitch();
           d3.select(`#dragDot0`)
             .attr('cy', y);
@@ -4441,13 +4441,10 @@ export default defineComponent({
       let newLogFreq = traj.logFreqs.length > idx ? traj.logFreqs[idx] : 
         traj.logFreqs[idx - 1];
       if (dir === 'left') {
-        
         newTime = constrainTime(curTime - amt, idx);
-        // console.log(curTime, newTime)
         const x = props.xScale(newTime);
         d3.select(`#dragDot${idx}`)
           .attr('cx', x);
-
         // if idx is 0, and the diff between newTime and the previous traj's end (assuming
         // that traj.id !== 12) is less than some min, and the logFreq of the new time is close to the 
         // logFreq of the previous traj's last pitch, then set newTime to the previous
@@ -4473,16 +4470,12 @@ export default defineComponent({
               }
             }
           }
-
-
-
         }
       } else if (dir === 'right') {
         newTime = constrainTime(curTime + amt, idx);
         const x = props.xScale(newTime);
         d3.select(`#dragDot${idx}`)
           .attr('cx', x);
-
         if (idx === traj.pitches.length - 1) {
           if (traj.num! < phrase.trajectories.length - 2) {
             const silTraj = phrase.trajectories[traj.num! + 1];
@@ -4504,7 +4497,6 @@ export default defineComponent({
             }
           }
         }
-        
       } else if (dir === 'up') {
         if (props.sargamMagnetMode) {
           const curPitch = traj.pitches[idx];
@@ -4652,11 +4644,11 @@ export default defineComponent({
       const y = props.yScale(newLogFreq);
       if (traj.logFreqs[idx]) {
         traj.pitches[idx] = newPitch();
-        if (idx === 0 && traj.id === 0) {
+        if (idx === 0 && (traj.id === 0 || traj.id === 13)) {
           traj.pitches[1] = newPitch();
           d3.select(`#dragDot1`)
             .attr('cy', y);
-        } else if (idx === 1 && traj.id === 0) {
+        } else if (idx === 1 && (traj.id === 0 || traj.id === 13)) {
           traj.pitches[0] = newPitch();
           d3.select(`#dragDot0`)
             .attr('cy', y);
