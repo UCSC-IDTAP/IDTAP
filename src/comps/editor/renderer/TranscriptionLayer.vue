@@ -326,6 +326,7 @@ export default defineComponent({
     'clearTSP',
     'open:addToCollection',
     'open:removeFromCollection',
+    'update:xAxisPhraseLabels',
   ],
   setup(props, { emit }) {
     const tranContainer = ref<HTMLDivElement | null>(null);
@@ -2251,6 +2252,7 @@ export default defineComponent({
         props.piece.sectionCatGrid[track].splice(sectionIdx, 1);
         props.piece.adHocSectionCatGrid[track].splice(sectionIdx, 1);
       }
+      emit('update:xAxisPhraseLabels')
     }
 
     const deleteTrajs = (trajs: Trajectory[]) => {
@@ -5338,6 +5340,7 @@ export default defineComponent({
       renderPhraseDiv(pd);
       emit('unsavedChanges', true);
       emit('update:selectedMode', EditorMode.None);
+      emit('update:xAxisPhraseLabels')
     }
 
     const insertNewChikari = (time: number, track: number, pIdx: number) => {

@@ -1,6 +1,8 @@
 <template>
   <div class='xAxis' :style='dynamicStyle'>
     <svg ref='axSvg'></svg>
+    <svg ref='phraseSvg' v-if='showPhrases'></svg>
+    
 
   </div>
 </template>
@@ -12,10 +14,12 @@ import {
   computed, 
   PropType, 
   onMounted,
-  watch
+  watch,
+  nextTick
 } from 'vue';
 import * as d3 from 'd3';
 import { getContrastingTextColor } from '@/ts/utils.ts';
+import { Piece } from '@/js/classes.ts';
 
 export default defineComponent({
   name: 'XAxis',
@@ -36,12 +40,25 @@ export default defineComponent({
       type: String,
       required: true
     },
+    piece: {
+      type: Object as PropType<Piece>,
+      required: true
+    },
+    instIdx: {
+      type: Number,
+      required: true
+    },
+    showPhrases: {
+      type: Boolean,
+      required: true
+    }
   },
   setup(props, { emit }) {
     const xAxisContainer = ref<HTMLDivElement | null>(null);
     const axSvg = ref<SVGSVGElement | null>(null);
     const regionStartPxl = ref<number | undefined>(undefined);
     const regionEndPxl = ref<number | undefined>(undefined);  
+    const phraseSvg = ref<SVGSVGElement | null>(null);
     
     
     const textColor = computed(() => getContrastingTextColor(props.axisColor));
@@ -58,6 +75,8 @@ export default defineComponent({
         svg
           .selectAll('.tick line')
           .attr('stroke', textColor.value)
+        
+        drawPhrases();
       }
     })
 
@@ -97,7 +116,12 @@ export default defineComponent({
       .tickPadding(5)
     );
 
+    const phrases = computed(() => {
+      return props.piece.phraseGrid[props.instIdx]
+    })
+
     const resetAxis = () => {
+      console.log('resetting axis');
       const scaleDomain = props.scale.domain();
       const maxVal = scaleDomain[1];
       const minInterTickPxls = 40;
@@ -118,22 +142,26 @@ export default defineComponent({
       svg.selectAll('*').remove();
       svg
         .attr('width', props.scaledWidth)
-        .attr('height', props.height)
+        .attr('height', elementHeight.value)
       svg.append('rect')
         .attr('width', props.scaledWidth)
-        .attr('height', props.height)
+        .attr('height', elementHeight.value)
         .attr('fill', props.axisColor)
         .on('mousedown', handleMouseDown)
         .on('mouseup', handleMouseUp)
         .on('mouseout', handleMouseUp)
       svg.append('g')
-        .attr('transform', `translate(0, ${props.height})`)
+        .attr('transform', `translate(0, ${elementHeight.value})`)
         .call(axis.value)
         .selectAll('text')
         .style('fill', textColor.value)
         .style('pointer-events', 'none')
       svg.selectAll('.tick line')
         .style('stroke', textColor.value)
+      nextTick(() => {
+
+        drawPhrases();
+      })
     }
 
     watch(() => props.scaledWidth, () => {
@@ -143,12 +171,19 @@ export default defineComponent({
         resetAxis();
       }
     });
+    watch(() => props.showPhrases, () => {
+      resetAxis();
+    })
 
     const dynamicStyle = computed(() => {
       return {
         '--scaledWidth': `${props.scaledWidth}px`,
         '--height': `${props.height}px`,
       }
+    });
+
+    const elementHeight = computed(() => {
+      return props.showPhrases ? props.height / 2 : props.height;
     });
 
     const handleMouseDown = (e: MouseEvent) => {
@@ -173,28 +208,70 @@ export default defineComponent({
       regionStartPxl.value = undefined;
       regionEndPxl.value = undefined;
     };
+    const drawPhrases = () => {
+      if (!phraseSvg.value) return;
+      console.log('drawing phrases');
+      const svg = d3.select(phraseSvg.value)
+        .attr('width', props.scaledWidth)
+        .attr('height', props.height/2)
+      svg.selectAll('*').remove();
+      svg.append('rect')
+        .attr('width', props.scaledWidth)
+        .attr('height', props.height / 2)
+        .attr('fill', props.axisColor)
+        .attr('pointer-events', 'none')
+      phrases.value.forEach((phrase, idx) => {
+        const xStart = props.scale(phrase.startTime!);
+        const xEnd = props.scale(phrase.startTime! + phrase.durTot!);
+        const width = xEnd - xStart;
+
+        // Vertical division line at phrase start
+        if (idx !== 0) {
+          svg.append('line')
+            .attr('x1', xStart)
+            .attr('y1', 0)
+            .attr('x2', xStart)
+            .attr('y2', props.height / 2)
+            .attr('stroke', '#333')
+            .attr('stroke-width', 2);
+        }
+
+        // Phrase number centered in the phrase
+        svg.append('text')
+          .attr('x', xStart + width / 2)
+          .attr('y', props.height / 4)
+          .attr('text-anchor', 'middle')
+          .attr('dominant-baseline', 'middle')
+          .style('fill', '#333')
+          .style('font-size', '14px')
+          .text(`Phrase ${idx + 1}`);
+      });
+    };
 
     onMounted(() => {
       // put the axis on the axSvg
       if (axSvg.value) {
         const svg = d3.select(axSvg.value)
           .attr('width', props.scaledWidth)
-          .attr('height', props.height)
+          .attr('height', elementHeight.value)
         svg.append('rect')
           .attr('width', props.scaledWidth)
-          .attr('height', props.height)
+          .attr('height', elementHeight.value)
           .attr('fill', props.axisColor)
+          // .attr('y', props.height/2)
           .on('mousedown', handleMouseDown)
           .on('mouseup', handleMouseUp)
           .on('mouseout', handleMouseUp)
         svg.append('g')
-          .attr('transform', `translate(0, ${props.height})`)
+          .attr('transform', `translate(0, ${elementHeight.value})`)
           .call(axis.value)
           .selectAll('text')
           .style('fill', textColor.value)
           .style('pointer-events', 'none')
         svg.selectAll('.tick line')
-          .attr('stroke', textColor.value)   
+          .attr('stroke', textColor.value)  
+        
+          drawPhrases();
       }
     })
 
@@ -204,7 +281,9 @@ export default defineComponent({
       axSvg,
       integerTicks,
       regionStartPxl,
-      regionEndPxl
+      regionEndPxl,
+      phraseSvg,
+      resetAxis,
     }
   }
 })
@@ -218,4 +297,11 @@ export default defineComponent({
   background-color: #f0f0f0;
 }
 
+.xAxis svg {
+  display: block;
+  margin: 0;
+  padding: 0;
+}
+
 </style>
+

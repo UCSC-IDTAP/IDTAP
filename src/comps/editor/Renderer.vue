@@ -33,6 +33,9 @@
           :height='xAxHeight'
           :scale='xScale'
           :axisColor='axisColor'
+          :piece='piece'
+          :instIdx='editingInstIdx'
+          :showPhrases='showPhrases'
           @update:region='updateRegion'
           ref='xAxis'/>
       </div>
@@ -158,6 +161,7 @@
               @clearTSP='$emit("clearTSP")'
               @open:addToCollection='$emit("open:addToCollection")'
               @open:removeFromCollection='$emit("open:removeFromCollection")'
+              @update:xAxisPhraseLabels='updateXAxisPhraseLabels'
             />
           />
         </div>
@@ -422,7 +426,10 @@ export default defineComponent({
       type: String as PropType<SargamRepresentation>,
       required: true
     },
-
+    showPhrases: {
+      type: Boolean,
+      required: true
+    }
   },
   emits: [
     'update:recomputeTrigger',
@@ -734,6 +741,9 @@ export default defineComponent({
       const halfTime = xScale.value.invert(halfPxl);
       return leftTime + halfTime;
     }
+    const updateXAxisPhraseLabels = () => {
+      xAxis.value!.resetAxis();
+    }
 
     const handleScroll = throttle(() => {
       updateAxesScroll();
@@ -827,7 +837,8 @@ export default defineComponent({
       curPlayheadPxl,
       curMiddleTime,
       preZoomMiddleTime,
-      scrollBackForPlayhead
+      scrollBackForPlayhead,
+      updateXAxisPhraseLabels,
 
     }
   }
