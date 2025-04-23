@@ -123,6 +123,8 @@
             :placeholder="`Label ${idx + 1}`"
             :disabled="!editable"
             @keydown.stop
+            @click.capture.stop
+            @dblclick.capture.stop
             @input='updateAdHocField(idx)'
           />
         </div>
