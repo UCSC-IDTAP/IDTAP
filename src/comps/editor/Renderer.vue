@@ -36,6 +36,7 @@
           :piece='piece'
           :instIdx='editingInstIdx'
           :showPhrases='showPhrases'
+          :instTracks='instTracks'
           @update:region='updateRegion'
           ref='xAxis'/>
       </div>

@@ -205,6 +205,15 @@
             @click='preventSpaceToggle'
           />
         </div>
+        <div class='row'>
+          <label for='phraseLabels'>Phrase Labels</label>
+          <input 
+            id='phraseLabels' 
+            type='checkbox'
+            v-model='phraseLabelsToggleProxy'
+            @click='preventSpaceToggle'
+          />
+        </div>
       </div>
     </div>
 
@@ -538,6 +547,10 @@ export default defineComponent({
     durTot: {
       type: Number,
       required: true
+    },
+    showPhraseLabels: {
+      type: Boolean,
+      required: true
     }
   },
   emits: [
@@ -566,7 +579,8 @@ export default defineComponent({
     'update:showTranscription',
     'update:showMeter',
     'update:showPhonemes',
-    'update:showPhraseDivs'
+    'update:showPhraseDivs',
+    'update:showPhraseLabels'
   ],
   setup(props, { emit }) {
 
@@ -735,6 +749,14 @@ export default defineComponent({
       },
       set(val) {
         emit('update:showPhraseDivs', val);
+      }
+    })
+    const phraseLabelsToggleProxy = computed({
+      get() {
+        return props.showPhraseLabels;
+      },
+      set(val) {
+        emit('update:showPhraseLabels', val);
       }
     })
 
@@ -1233,7 +1255,8 @@ export default defineComponent({
       transcriptionToggleProxy,
       meterToggleProxy,
       phonemesToggleProxy,
-      phraseDivsToggleProxy
+      phraseDivsToggleProxy,
+      phraseLabelsToggleProxy,
     }
   }
 })

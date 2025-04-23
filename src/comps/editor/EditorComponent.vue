@@ -151,7 +151,6 @@
         :ctrlBoxWidth='controlBoxWidth'
         :selectedPhraseDivUid='selectedPhraseDivUid'
         :piece='piece'
-
         :freqMax='freqMax'
         :freqMin='freqMin'
         :setNewTraj='setNewTraj'
@@ -238,6 +237,7 @@
   :showPhonemes='showPhonemes'
   :showPhraseDivs='viewPhrases'
   :excerptRange='excerptRange'
+  :showPhraseLabels='showPhrases'
   @resizeHeightEmit='resizeHeight'
   @currentTimeEmit='setCurrentTime'
   @updateSargamLinesEmit='updateSargamLines'
@@ -282,6 +282,7 @@
   @update:showPhraseDivs='viewPhrases = $event'
   @startPlayingTransition='handleStartPlayingTransition'
   @stopPlayingTransition='handleStopPlayingTransition'
+  @update:showPhraseLabels='showPhrases = $event'
   />
   <ContextMenu 
     :x='contextMenuX'
@@ -811,7 +812,7 @@ export default defineComponent({
       showRemoveFromCollection: false,
       scaleSystem: ScaleSystem.Sargam,
       excerptRange: undefined,
-      showPhrases: false,
+      showPhrases: true,
     }
   },
   setup() {
@@ -1216,6 +1217,7 @@ export default defineComponent({
   },
 
   methods: {
+    
 
     handleStartPlayingTransition() {
       const r = this.$refs.renderer as RendererType;

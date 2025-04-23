@@ -20,6 +20,7 @@ import {
 import * as d3 from 'd3';
 import { getContrastingTextColor } from '@/ts/utils.ts';
 import { Piece } from '@/js/classes.ts';
+import { InstrumentTrackType } from '@/ts/types.ts';
 
 export default defineComponent({
   name: 'XAxis',
@@ -51,7 +52,11 @@ export default defineComponent({
     showPhrases: {
       type: Boolean,
       required: true
-    }
+    },
+    instTracks: {
+      type: Array as PropType<InstrumentTrackType[]>,
+      required: true
+    },
   },
   setup(props, { emit }) {
     const xAxisContainer = ref<HTMLDivElement | null>(null);
@@ -79,6 +84,7 @@ export default defineComponent({
         drawPhrases();
       }
     })
+    watch(() => props.instIdx, () => resetAxis())
 
     const leadingZeros = (int: number) => {
       if (int < 10) {
@@ -121,7 +127,6 @@ export default defineComponent({
     })
 
     const resetAxis = () => {
-      console.log('resetting axis');
       const scaleDomain = props.scale.domain();
       const maxVal = scaleDomain[1];
       const minInterTickPxls = 40;
@@ -210,7 +215,6 @@ export default defineComponent({
     };
     const drawPhrases = () => {
       if (!phraseSvg.value) return;
-      console.log('drawing phrases');
       const svg = d3.select(phraseSvg.value)
         .attr('width', props.scaledWidth)
         .attr('height', props.height/2)
@@ -220,6 +224,7 @@ export default defineComponent({
         .attr('height', props.height / 2)
         .attr('fill', props.axisColor)
         .attr('pointer-events', 'none')
+      const divColor = props.instTracks[props.instIdx].color;
       phrases.value.forEach((phrase, idx) => {
         const xStart = props.scale(phrase.startTime!);
         const xEnd = props.scale(phrase.startTime! + phrase.durTot!);
@@ -232,7 +237,7 @@ export default defineComponent({
             .attr('y1', 0)
             .attr('x2', xStart)
             .attr('y2', props.height / 2)
-            .attr('stroke', '#333')
+            .attr('stroke', divColor)
             .attr('stroke-width', 2);
         }
 

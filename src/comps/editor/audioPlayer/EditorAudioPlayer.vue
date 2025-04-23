@@ -329,6 +329,7 @@
       :showPhraseDivs='showPhraseDivs'
       :excerptRange='excerptRange'
       :durTot='audioDBDoc ? audioDBDoc.duration : piece.durTot!'
+      :showPhraseLabels='showPhraseLabels'
       @specCanvas='handleSpecCanvas'
       @update:backgroundColor='$emit("update:backgroundColor", $event)'
       @update:axisColor='$emit("update:axisColor", $event)'
@@ -339,6 +340,7 @@
       @update:sargamLineColor='$emit("update:sargamLineColor", $event)'
       @update:instTracks='$emit("update:instTracks", $event)'
       @update:meterColor='$emit("update:meterColor", $event)'
+      @update:showPhraseLabels='$emit("update:showPhraseLabels", $event)'
       @update:selectedMeterColor='$emit("update:selectedMeterColor", $event)'
       @update:playheadColor='$emit("update:playheadColor", $event)'
       @update:playheadAnimation='$emit("update:playheadAnimation", $event)'
@@ -1043,6 +1045,10 @@ export default defineComponent({
     excerptRange: {
       type: Object as PropType<ExcerptRange>,
       required: false
+    },
+    showPhraseLabels: {
+      type: Boolean,
+      required: true
     },
   },
 
