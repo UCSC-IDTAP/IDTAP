@@ -1,6 +1,9 @@
 # Changelog
 
 
+* Feat: Added toggleable phrase labels in X axis [18cda53] (Jon Myers)
+### 2025-04-22
+
 * Feat: Added ability to annotated trajectories. [ba0ecc0] (Jon Myers)
 ### 2025-04-21
 
