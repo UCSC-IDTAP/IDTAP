@@ -1764,6 +1764,7 @@ export default defineComponent({
       const tIdx = this.trajTimePts[0].tIdx;
       const track = this.trajTimePts[0].track;
       const phrase = this.piece.phraseGrid[track][pIdx];
+      // console.log(track, tIdx, pIdx, phrase)
       if (this.piece.instrumentation) {
         trajObj.instrumentation = this.piece.instrumentation[track];
       }

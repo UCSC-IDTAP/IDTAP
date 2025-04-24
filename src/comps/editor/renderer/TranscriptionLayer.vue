@@ -2580,6 +2580,7 @@ export default defineComponent({
             })
           }
         }
+        
         const selTrajCond = sts.length === 1 && sts[0] === traj;
         const sarangi = props.piece.instrumentation[track] === Instrument.Sarangi;
         const vocal = ([Instrument.Vocal_M, Instrument.Vocal_F]).includes(props.piece.instrumentation[track]);
@@ -2824,6 +2825,70 @@ export default defineComponent({
         },
         enabled: true
       })
+      contextMenuChoices.value.push({
+          text: 'Add Orientation Dot',
+          action: () => {
+            emit('update:selectedMode', EditorMode.Trajectory);
+            // capture orientation dots from traj
+            nextTick(() => {
+
+              trajTimePts.value = traj.pitches!.map((d, dIdx) => {
+                let durArrOffset: number;
+                if (dIdx === 0) {
+                  durArrOffset = 0;
+                } else {
+                  durArrOffset = traj.durArray!.slice(0, dIdx).reduce((acc, val) => acc + val, 0) * traj.durTot;
+                }
+                const pIdx = traj.phraseIdx!;
+                const track = props.piece.trackFromTraj(traj);
+                const phrase = props.piece.phraseGrid[track][pIdx];
+                const time = phrase.startTime! + traj.startTime! + durArrOffset;
+                const logFreq = traj.logFreqs[dIdx];
+                const tIdx = traj.num!;
+                return {
+                  time,
+                  logFreq,
+                  pIdx,
+                  tIdx,
+                  track
+                }
+              })
+  
+              // delete traj from render status / view
+              const renderObj = trajRenderStatus.value[track].find(obj => {
+                return obj.uniqueId === traj.uniqueId
+              });
+              if (renderObj === undefined) {
+                throw new Error('Trajectory not found in render status array');
+              }
+              d3.selectAll(`.uId${traj.uniqueId}`).remove();
+              renderObj.renderStatus = false;
+              renderObj.selectedStatus = false;
+  
+              // replace traj with silent traj in phrase
+              const silentTraj = new Trajectory({
+                id: 12,
+                durTot: traj.durTot,
+                fundID12: traj.fundID12,
+                instrumentation: props.piece.instrumentation[track],
+                num: traj.num,
+              });
+              const phrase = props.piece.phraseGrid[track][traj.phraseIdx!];
+              phrase.trajectories.splice(traj.num!, 1, silentTraj);
+              // phrase.consolidateSilentTrajs();
+              phrase.reset();
+  
+              // enter into trajectory mode
+              
+              emit('unsavedChanges', true);
+              refreshTimePts();
+              emit('update:trajTimePts', trajTimePts.value);
+            })
+
+            
+          },
+          enabled: props.editable
+        })
       const offset = 20 * (contextMenuChoices.value.length + 4);
       if (contextMenuY.value + offset > props.height) {
         contextMenuY.value = props.height - offset;

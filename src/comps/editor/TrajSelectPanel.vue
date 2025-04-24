@@ -941,6 +941,15 @@ export default defineComponent({
             if (outIdx >= 12) outIdx += 1;
             this.$emit('newTraj', outIdx)
           }
+        } else if (timePts.length > 7) {
+          const options = [6];
+          if (options.includes(realIdx)) {
+            this.selectedIdx = idx;
+            document.querySelector(selectId)!.classList.add('selected')
+            let outIdx = this.trajIdxs[this.selectedIdx];
+            if (outIdx >= 12) outIdx += 1;
+            this.$emit('newTraj', outIdx)
+          }
         }
       } 
     },
