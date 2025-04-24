@@ -1,6 +1,10 @@
 # Changelog
 
 
+* Feat: Added ability to add orientation dot to Trajectory via context menu [1e4e7fb] (Jon Myers)
+* Feat: traj 6 can now have an unlimited number of points. [4d5e816] (Jon Myers)
+### 2025-04-24
+
 * Feat: Added toggleable phrase labels in X axis [18cda53] (Jon Myers)
 ### 2025-04-22
 
