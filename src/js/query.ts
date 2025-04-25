@@ -438,33 +438,41 @@ class Query {
       const duration = endTime - startTime;
       let title: string = '';
       if (this.segmentation === 'phrase') {
-        title = 'Phrase ' + startPhrase.pieceIdx
+        const pIdxStr = String(Number(startPhrase.pieceIdx!) + 1);
+        title = 'Phrase ' + pIdxStr;
       } else if (this.segmentation === 'group') {
         const group = startPhrase.getGroupFromId(trajs[0].groupId!);
         if (group === undefined) throw new Error('group is undefined');
         const groupIdx = startPhrase.groupsGrid[0].indexOf(group);
-        title = `Phrase ${startPhrase.pieceIdx} Group ${groupIdx}`;
+        const pIdxStr = String(Number(startPhrase.pieceIdx!) + 1);
+        title = `Phrase ${pIdxStr} Group ${groupIdx}`;
       } else if (this.segmentation === 'sequenceOfTrajectories') {
         const pIdxs = trajs.map(t => t.phraseIdx!);
         const phraseIdxs = [...new Set(pIdxs)];
-        const firstTIdx = trajs[0].num;
-        const lastTIdx = trajs[trajs.length - 1].num;
+        const firstTIdx = trajs[0].num! + 1;
+        const lastTIdx = trajs[trajs.length - 1].num! + 1;
         if (phraseIdxs.length === 1) {
-          title = `Phrase ${phraseIdxs[0]} Traj ${firstTIdx}-${lastTIdx}`;
+          const pIdxStr = String(Number(phraseIdxs[0]) + 1);
+          title = `Phrase ${pIdxStr} Traj ${firstTIdx}-${lastTIdx}`;
         } else {
-          title = `Phrase ${phraseIdxs[0]} Traj ${firstTIdx} - Phrase ` + 
-            `${phraseIdxs[phraseIdxs.length - 1]} Traj ${lastTIdx} `
+          const sPIdxStr = String(Number(phraseIdxs[0]) + 1);
+          const lPIdxStr = String(Number(phraseIdxs[phraseIdxs.length - 1]) + 1);
+          title = `Phrase ${sPIdxStr} Traj ${firstTIdx} - Phrase ` + 
+            `${lPIdxStr} Traj ${lastTIdx} `
         }
       } else if (this.segmentation === 'connectedSequenceOfTrajectories') {
         const pIdxs = trajs.map(t => t.phraseIdx!);
         const phraseIdxs = [...new Set(pIdxs)];
-        const firstTIdx = trajs[0].num;
-        const lastTIdx = trajs[trajs.length - 1].num;
+        const firstTIdx = trajs[0].num! + 1;
+        const lastTIdx = trajs[trajs.length - 1].num! + 1;
         if (phraseIdxs.length === 1) {
-          title = `Phrase ${phraseIdxs[0]} Traj ${firstTIdx}-${lastTIdx}`;
+          const pIdxStr = String(Number(phraseIdxs[0]) + 1);
+          title = `Phrase ${pIdxStr} Traj ${firstTIdx}-${lastTIdx}`;
         } else {
-          title = `Phrase ${phraseIdxs[0]} Traj ${firstTIdx} - Phrase ` + 
-            `${phraseIdxs[phraseIdxs.length - 1]} Traj ${lastTIdx} `
+          const sPIdxStr = String(Number(phraseIdxs[0]) + 1);
+          const lPIdxStr = String(Number(phraseIdxs[phraseIdxs.length - 1]) + 1);
+          title = `Phrase ${sPIdxStr} Traj ${firstTIdx} - Phrase ` + 
+            `${lPIdxStr} Traj ${lastTIdx} `
         }
       }
       return {
