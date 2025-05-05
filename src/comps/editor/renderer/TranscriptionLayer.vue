@@ -4402,6 +4402,7 @@ export default defineComponent({
         removePhraseDiv(selectedPhraseDivUid.value);
         renderPhraseDiv(pd);
       };
+      emit('update:xAxisPhraseLabels');
       emit('unsavedChanges', true);
     };
 
