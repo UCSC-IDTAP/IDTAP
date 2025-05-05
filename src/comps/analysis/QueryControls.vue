@@ -450,7 +450,7 @@ export default defineComponent({
       vocalArtTypes: ['Non-Tom'],
       instArtTypes: ['Bol'],
       incidentals: ['Tuning'],
-      proportionalVertical: false,
+      proportionalVertical: true,
       showSaveQueryModal: false,
       showLoadQueryModal: false,
       queryTitle: '',
