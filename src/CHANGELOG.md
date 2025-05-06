@@ -1,6 +1,11 @@
 # Changelog
 
 
+* Feat: Now when holding option / alt while a single trajectory is selected, arrow keys can be used to adjust slope. [160e6d7] (Jon Myers)
+### 2025-05-06
+
+## May 2025
+
 * Feat: Added ability to add orientation dot to Trajectory via context menu [1e4e7fb] (Jon Myers)
 * Feat: traj 6 can now have an unlimited number of points. [4d5e816] (Jon Myers)
 ### 2025-04-24
