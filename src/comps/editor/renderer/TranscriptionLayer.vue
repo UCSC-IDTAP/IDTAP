@@ -327,6 +327,7 @@ export default defineComponent({
     'open:addToCollection',
     'open:removeFromCollection',
     'update:xAxisPhraseLabels',
+    'update:slope',
   ],
   setup(props, { emit }) {
     const tranContainer = ref<HTMLDivElement | null>(null);
@@ -4267,6 +4268,9 @@ export default defineComponent({
         } else if (selectedPulse.value !== undefined) {
           e.preventDefault();
           nudgePulse('left');
+        } else if (selectedTraj.value !== undefined && alted.value) {
+          e.preventDefault(); 
+          nudgeSlope('left');
         } else {
           e.preventDefault();
           horizontalMoveGraph(-0.1);
@@ -4284,6 +4288,9 @@ export default defineComponent({
         } else if (selectedPulse.value !== undefined) {
           e.preventDefault();
           nudgePulse('right');
+        } else if (selectedTraj.value !== undefined && alted.value) {
+          e.preventDefault();
+          nudgeSlope('right');
         } else {
           e.preventDefault();
           horizontalMoveGraph(0.1);
@@ -4292,6 +4299,9 @@ export default defineComponent({
         if (selectedDragDotIdx.value !== undefined) {
           e.preventDefault();
           nudgeDragDot('down')
+        } else if (selectedTraj.value !== undefined && alted.value) {
+          e.preventDefault();
+          nudgeSlope('down');
         } else {
           e.preventDefault();
           verticalMoveGraph(-0.1);
@@ -4300,6 +4310,9 @@ export default defineComponent({
         if (selectedDragDotIdx.value !== undefined) {
           e.preventDefault();
           nudgeDragDot('up')
+        } else if (selectedTraj.value !== undefined && alted.value) {
+          e.preventDefault();
+          nudgeSlope('up');
         } else {
           e.preventDefault();
           verticalMoveGraph(0.1);
@@ -4492,6 +4505,24 @@ export default defineComponent({
       });
       emit('unsavedChanges', true);
     };
+
+    const nudgeSlope = (dir: 'left' | 'right' | 'up' | 'down') => {
+      if (selectedTraj.value === undefined) {
+        throw new Error('No trajectory selected');
+      }
+      const traj = selectedTraj.value!;
+      if (traj.sloped) {
+        if (dir === 'left' || dir === 'down') {
+          const logSlope = Math.log2(traj.slope);
+          let offset = logSlope - 0.1 < 0 ? 0 : logSlope - 0.1;
+          emit('update:slope', offset);
+        } else {
+          const logSlope = Math.log2(traj.slope);
+          let offset = logSlope + 0.1 > 3 ? 3 : logSlope + 0.1;
+          emit('update:slope', offset);
+        }
+      }
+    }
 
     const nudgeDragDot = (dir: 'left' | 'right' | 'up' | 'down') => {
       const traj = selectedTraj.value!;

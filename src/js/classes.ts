@@ -981,7 +981,9 @@ class Trajectory {
   names: string[];
   automation: Automation | undefined;
   uniqueId: string | undefined;
-  tags: string[]
+  tags: string[];
+
+
 
   get freqs() {
     return this.pitches.map(p => p.frequency)
@@ -989,6 +991,10 @@ class Trajectory {
 
   get logFreqs() {
     return this.pitches.map(p => Math.log2(p.frequency))
+  }
+
+  get sloped() {
+    return this.id === 2 || this.id === 3 || this.id === 4 || this.id === 5
   }
 
   constructor({

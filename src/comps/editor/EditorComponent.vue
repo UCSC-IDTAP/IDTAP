@@ -65,6 +65,7 @@
       @update:editingInstIdx='editingInstIdx = $event'
       @update:currentTime='updateCurrentTime'
       @update:recomputeTrigger='recomputeTrigger += 1'
+      @update:slope='nudgeSlope'
       @update:prevMeter='updatePrevMeter'
       @update:insertPulses='insertPulses = $event'
       @open:labelEditor='engageLabelEditor'
@@ -1218,6 +1219,11 @@ export default defineComponent({
 
   methods: {
     
+    nudgeSlope(offset: number) {
+      const tsp = this.$refs.trajSelectPanel as TSPType;
+      tsp.slope = offset;
+      tsp.updateSlope();
+    },
 
     handleStartPlayingTransition() {
       const r = this.$refs.renderer as RendererType;

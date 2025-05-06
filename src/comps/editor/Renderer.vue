@@ -137,6 +137,7 @@
               :preZoomMiddleTime='preZoomMiddleTime'
               :editableCols='editableCols'
               :audioPlayerRef='audioPlayerRef'
+              @update:slope='$emit("update:slope", $event)'
               @update:prevMeter='$emit("update:prevMeter", $event)'
               @update:selectedMode='$emit("update:selectedMode", $event)'
               @unsavedChanges='$emit("unsavedChanges", $event)'
@@ -462,6 +463,7 @@ export default defineComponent({
     'clearTSP',
     'open:addToCollection',
     'open:removeFromCollection',
+    'update:slope',
   ],
   setup(props, { emit }) {
     const layersContainer = ref<HTMLDivElement | null>(null);
