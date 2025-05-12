@@ -48,6 +48,7 @@
     "d3-scale-chromatic": "^3.1.0",
     "detect-browser": "^5.3.0",
     "esbuild": "^0.25.0",
+    "exceljs": "^4.4.0",
     "gsap": "^3.12.5",
     "javascript-color-gradient": "^2.4.4",
     "jpickle": "^0.4.1",
