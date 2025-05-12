@@ -164,10 +164,18 @@ const PitchTimes = (trajs: Trajectory[], {
       pitchTimes.push(obj);
       startTime += traj.durTot;
     } else {
-      traj.pitches.forEach((pitch, pIdx) => {       
+      traj.pitches.forEach((pitch, pIdx) => {  
+        let pitchRep;
+        if (outputType === 'pitchNumber') {
+          pitchRep = pitch.numberedPitch;
+        } else if (outputType === 'chroma') {
+          pitchRep = pitch.chroma;
+        } else {
+          throw new Error('outputType not recognized')
+        }
         const obj = { 
           time: startTime, 
-          pitch: pitch.numberedPitch,
+          pitch: pitchRep,
           articulation: pIdx === 0 && (art !== undefined)
         };
         pitchTimes.push(obj);
@@ -552,4 +560,5 @@ export {
   patternCounter,
   chromaSeqToCondensedPitchNums,
   condensedDurations,
+  PitchTimes,
 }
