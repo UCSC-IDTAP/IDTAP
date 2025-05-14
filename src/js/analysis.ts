@@ -170,6 +170,10 @@ const PitchTimes = (trajs: Trajectory[], {
           pitchRep = pitch.numberedPitch;
         } else if (outputType === 'chroma') {
           pitchRep = pitch.chroma;
+        } else if (outputType === 'sargamLetter') { 
+          pitchRep = pitch.sargamLetter;
+        } else if (outputType === 'octavedSargamLetter') { 
+          pitchRep = pitch.octavedSargamLetter;
         } else {
           throw new Error('outputType not recognized')
         }
@@ -216,7 +220,7 @@ const PitchTimes = (trajs: Trajectory[], {
         pt.pitch = pitchNumberToChroma(pt.pitch)
       }
     })
-  }
+  } 
   return pitchTimes
 }
 
