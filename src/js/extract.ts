@@ -166,12 +166,14 @@ enum Segmentation {
 
 enum PitchInclusionMethod {
   All = 'all',
-  AboveThreshold = 'above threshold',
+  AboveThreshold = 'above threshold', // not implemented yet
 }
 
 enum PitchRepresentation {
   Chroma = 'chroma',
-  PitchNumber = 'pitch number',
+  PitchNumber = 'pitchNumber',
+  SargamLetter = 'sargamLetter',
+  OctavedSargamLetter = 'octavedSargamLetter',
 }
 
 type DN_ExtractorOptions = {
@@ -568,8 +570,8 @@ class DN_Extractor {
     });
   }
 
-   addSegmentedEndingSequencesWorksheet(workbook: ExcelJS.Workbook) {  
-    const sheet = workbook.addWorksheet('Segmented Ending Sequences');
+   addSegmentedEndingSequencesWorksheet(workbook: ExcelJS.Workbook, title: string) {  
+    const sheet = workbook.addWorksheet(title);
     sheet.views = [
       { state: 'frozen', xSplit: 5 }
     ];
@@ -608,7 +610,7 @@ class DN_Extractor {
       const allSegIdxs = this.uniqueEndsDict[JSON.stringify(end)];
       allSegIdxs.forEach((segIdx, rowIdx) => {
         const segment = this.segmentOutputs[segIdx];
-        sheet.addRow([
+        const row = sheet.addRow([
           '', 
           '',
           segIdx + 1,
@@ -617,6 +619,7 @@ class DN_Extractor {
           ...Array.from({ length: longestLength - segment.pitches.length }, () => ''),
           ...segment.pitches
         ]);
+        row.alignment = { vertical: 'middle', horizontal: 'center' };
         const cell = sheet.getCell(`C${rowIdx + idxCt + 8}`);
         cell.alignment = { vertical: 'middle', horizontal: 'center' };
         cell.border = { left: { style: 'medium' }, bottom: { style: 'thin' } };
@@ -678,6 +681,128 @@ class DN_Extractor {
       });
       idxCt += allSegIdxs.length;
     });  
+  }
+
+  addSeparatedSegmentedEndingSequencesWorksheet(workbook: ExcelJS.Workbook, title: string, insertString: string) {
+    const sheet = workbook.addWorksheet(title);
+     sheet.views = [
+      { state: 'frozen', xSplit: 5 }
+    ];
+    this.addBoilerPlate(sheet);
+    const c7 = sheet.getCell('C7');
+    const d7 = sheet.getCell('D7');
+    const e7 = sheet.getCell('E7');
+    c7.value = 'Segment';
+    c7.font = {
+      bold: true
+    }
+    c7.alignment = { vertical: 'middle', horizontal: 'center' };
+    d7.value = 'Start';
+    d7.font = {
+      bold: true
+    }
+    d7.alignment = { vertical: 'middle', horizontal: 'center' };
+    e7.value = 'End';
+    e7.font = {
+      bold: true
+    }
+    e7.alignment = { vertical: 'middle', horizontal: 'center' };
+    ['C', 'D', 'E'].forEach(col => {
+      const cell = sheet.getCell(`${col}7`);
+      cell.border = {
+        top:    { style: 'medium' },
+        bottom: { style: 'medium' },
+        left: { style: 'medium' },
+        right: { style: 'medium' },
+      };
+    });
+    const withInserts = this.backPropagatedFromEndsPitchSubSegments.map((seg, idx) => {
+      const segment = seg.map((s, sIdx) => {
+        if (sIdx === seg.length - 1) {
+          return s;
+        }
+        return [...s, insertString];
+      });
+      return segment.flat();
+    });
+    const longestLength = Math.max(...withInserts.map(e => e.length));
+    let idxCt = 0;
+    this.uniqueEnds.forEach((end, idx) => {
+      const allSegIdxs = this.uniqueEndsDict[JSON.stringify(end)];
+      allSegIdxs.forEach((segIdx, rowIdx) => {
+        const segment = withInserts[segIdx];
+        const row = sheet.addRow([
+          '', 
+          '',
+          segIdx + 1,
+          displayTime(this.segmentOutputs[segIdx].start),
+          displayTime(this.segmentOutputs[segIdx].end),
+          ...Array.from({ length: longestLength - segment.length }, () => ''),
+          ...segment
+        ]);
+        row.alignment = { vertical: 'middle', horizontal: 'center' };
+        const cell = sheet.getCell(`C${rowIdx + idxCt + 8}`);
+        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+        cell.border = { left: { style: 'medium' }, bottom: { style: 'thin' } };
+        const startCell = sheet.getCell(`D${rowIdx + idxCt + 8}`);
+        startCell.border = { left: { style: 'medium' }, bottom: { style: 'thin' } };
+        startCell.alignment = { vertical: 'middle', horizontal: 'center' };
+        const endCell = sheet.getCell(`E${rowIdx + idxCt + 8}`);
+        endCell.border = {
+          left: { style: 'medium' },
+          right: { style: 'medium' },
+          bottom: { style: 'thin' },
+        };
+        endCell.alignment = { vertical: 'middle', horizontal: 'center' };
+        if (rowIdx === allSegIdxs.length - 1) {
+          startCell.border['bottom'] = { style: 'medium' };
+          endCell.border['bottom'] = { style: 'medium' };
+          cell.border['bottom'] = { style: 'medium' };
+        }        
+        for (let col = 6; col <= longestLength + 5; col++) {
+          const borderCell = sheet.getCell(`${getExcelColumn(col)}${rowIdx + idxCt + 8}`);
+          borderCell.border = { bottom: { style: 'thin' } };
+          if (idx === 0 && rowIdx === 0) {
+            borderCell.border.top = { style: 'medium' };
+          }
+          if (rowIdx === allSegIdxs.length - 1) {
+            borderCell.border.bottom = { style: 'medium' };
+          }
+        }
+        const endCutoff = longestLength - this.options.endSequenceLength + 1;
+        const colName = getExcelColumn(endCutoff + 5);
+        const cellID = `${colName}${rowIdx + idxCt + 8}`;
+
+        const addVerticalLine = (colIdx: number) => {
+          const colName = getExcelColumn(colIdx + 5);
+          const cellID = `${colName}${rowIdx + idxCt + 8}`;
+          const cell = sheet.getCell(cellID);
+          if (!cell.border) {
+            cell.border = {};
+          }
+          cell.border.left = { style: 'thin' }
+        }
+
+        let vertIdx = longestLength - segment.length + 1;
+        if (vertIdx > this.options.endSequenceLength) {
+          addVerticalLine(vertIdx);
+        }
+        const segmentedEndSeq = this.backPropagatedFromEndsPitchSubSegments[segIdx]
+          .map(seg => [...seg, insertString]);
+        segmentedEndSeq.forEach((subSeg, subSegIdx) => {
+          if (subSegIdx !== segmentedEndSeq.length - 1) {
+            vertIdx += subSeg.length;
+            addVerticalLine(vertIdx);
+          }
+        });
+        const cutoffCell = sheet.getCell(cellID);
+        cutoffCell.border.left = { style: 'medium' };
+        const lastCell = sheet.getCell(`${getExcelColumn(longestLength + 5)}${rowIdx + idxCt + 8}`);
+        lastCell.border.right = { style: 'medium' };
+      });
+      idxCt += allSegIdxs.length;
+    });
+
   }
 
   addBoilerPlate(sheet: ExcelJS.Worksheet) {
@@ -855,11 +980,12 @@ class DN_Extractor {
 
   async writeToExcel(filename: string) {
     const workbook = new ExcelJS.Workbook();
-    this.addSeparatedSegmentSheet(workbook, 'Segments_separated');
-    this.addSeparatedSegmentSheet(workbook, 'Segments_separated_end_aligned', true);
-    this.addCombinedSegmentSheet(workbook, 'Segments_combined');
+    this.addSeparatedSegmentSheet(workbook, 'Segments separated');
+    this.addSeparatedSegmentSheet(workbook, 'Segments separated end aligned', true);
+    this.addCombinedSegmentSheet(workbook, 'Segments combined');
     this.addEndingSequencesWorksheet(workbook);
-    this.addSegmentedEndingSequencesWorksheet(workbook);
+    this.addSegmentedEndingSequencesWorksheet(workbook, 'Segmented Ending Sequences');
+    this.addSeparatedSegmentedEndingSequencesWorksheet(workbook, 'Segmented Ending Sequences with Inserts', ',');
 
     try {
       await workbook.xlsx.writeFile(filename);
@@ -870,12 +996,13 @@ class DN_Extractor {
 }
 
 
-const mak_yaman_id = '63445d13dc8b9023a09747a6';
+// const mak_yaman_id = '63445d13dc8b9023a09747a6';
+const multaniID = '6417585554a0bfbd8de2d3ff';
 const options = {
-  segmentation: Segmentation.Silence,
+  segmentation: Segmentation.UserDefined,
   endSequenceLength: 3,
-  pitchRepresentation: PitchRepresentation.Chroma,
+  pitchRepresentation: PitchRepresentation.OctavedSargamLetter,
 
 }
-const e = await DN_Extractor.create(mak_yaman_id, options);
-e.writeToExcel('extracts/excel/test.xlsx')
+const e = await DN_Extractor.create(multaniID, options);
+e.writeToExcel('extracts/excel/multani_test_octaved.xlsx')
