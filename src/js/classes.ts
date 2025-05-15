@@ -506,6 +506,28 @@ class Pitch {
     return s
   }
 
+  get scaleDegree() {
+    return Number(this.swara) + 1;
+  }
+
+  get octavedScaleDegree() {
+    let s = String(this.scaleDegree);
+    if (this.oct === -2) {
+      s = s + '\u0324'
+    } else if (this.oct === -1) {
+      s = s + '\u0323'
+    } else if (this.oct === 1) {
+      s = s + '\u0307'
+    } else if (this.oct === 2) {
+      s = s + '\u0308'
+    } else if (this.oct === -3) {
+      s = s + '\u20E8'
+    } else if (this.oct === 3) {
+      s = s + '\u20DB'
+    }
+    return s
+  }
+
   get octavedSargamLetter() {
     let s = this.sargamLetter;
     if (this.oct === -2) {

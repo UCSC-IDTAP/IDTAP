@@ -11,7 +11,14 @@ import {
   ValueFn
 } from 'd3';
 
-import { Instrument, PlayheadAnimations, ScaleSystem } from '@/ts/enums';
+import { 
+  Instrument, 
+  PlayheadAnimations, 
+  ScaleSystem,
+  Segmentation,
+  PitchInclusionMethod,
+  PitchRepresentation,
+ } from '@/ts/enums';
 import TrajSelectPanel from '@/comps/editor/TrajSelectPanel.vue';
 import Renderer from '@/comps/editor/Renderer.vue';
 import EditorAudioPlayer from '@/comps/editor/audioPlayer/EditorAudioPlayer.vue';
@@ -1131,6 +1138,15 @@ type ExcerptRange = {
   end: number,
 }
 
+type DN_ExtractorOptions = {
+  segmentation: Segmentation,
+  pitchJustification: PitchInclusionMethod,
+  durThreshold: number,
+  track: number,
+  pitchRepresentation: PitchRepresentation,
+  endSequenceLength: number,
+}
+
 export type { 
   CollectionType, 
   UserType, 
@@ -1235,5 +1251,6 @@ export type {
   NumObj,
   TuningType,
   ExcerptRange,
+  DN_ExtractorOptions,
 };
 

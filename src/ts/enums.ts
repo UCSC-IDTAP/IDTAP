@@ -78,6 +78,27 @@ enum LabelScheme {
   AdHoc = 'Ad Hoc',
 }
 
+enum PitchRepresentation {
+  Chroma = 'chroma',
+  PitchNumber = 'pitchNumber',
+  SargamLetter = 'sargamLetter',
+  OctavedSargamLetter = 'octavedSargamLetter',
+  ScaleDegree = 'scaleDegree',
+  OctavedScaleDegree = 'octavedScaleDegree',
+}
+
+enum Segmentation {
+  UserDefined = 'user-defined',
+  Silence = 'silence',
+  Chikari = 'chikari',
+  MelodicDiscontinuity = 'melodic discontinuity',
+}
+
+enum PitchInclusionMethod {
+  All = 'all',
+  AboveThreshold = 'above threshold', // not implemented yet
+}
+
 
 
 export {
@@ -90,4 +111,7 @@ export {
   SargamRepresentation,
   PhonemeRepresentation,
   LabelScheme,
+  PitchRepresentation,
+  Segmentation,
+  PitchInclusionMethod,
 }

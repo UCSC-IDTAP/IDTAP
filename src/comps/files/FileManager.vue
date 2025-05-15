@@ -372,11 +372,8 @@ export default defineComponent({
       } else {
         throw new Error('this.allUsers is undefined');
       }
-      
       this.editableCols = await getEditableCollections(userID);
       this.allMusicians = await getSortedMusicians(true);
-      
-      
     } catch (err) {
       console.log(err)
     }
@@ -554,20 +551,7 @@ export default defineComponent({
             });
           }
         };
-
-
-        
-
-
         this.contextMenuClosed = false;
-
-
-
-
-
-
-
-
       } catch (err) {
         console.log(err)
       }

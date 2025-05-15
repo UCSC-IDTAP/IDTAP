@@ -1,6 +1,6 @@
 <template>
   <div class='main_'>
-    <div class='analysisControls'>
+    <div class='analysisControls' v-if='selectedATIdx !== 3'>
       <div class='analysisTypeRow'>
         <div 
           :class='`analysisType ${atIdx === selectedATIdx ? "selected" : ""}`' 
@@ -342,6 +342,12 @@
           :queryAnswer='queryAnswers[idx]'
           />
     </div>
+    <ExcelDatasets
+      v-if='piece && selectedATIdx === 3'
+      :piece='piece'
+      :instIdx='instIdx'
+      />
+
     <div class='graphContainer' v-if='selectedATIdx === 1'>
       <div class='graph' ref='graph'>
       </div>
@@ -410,6 +416,7 @@ import SegmentDisplay from '@/comps/analysis/SegmentDisplay.vue';
 import QueryControls from '@/comps/analysis/QueryControls.vue';
 import PitchPrevalence from '@/comps/analysis/PitchPrevalence.vue';
 import categorization from '@/assets/json/categorization.json';
+import ExcelDatasets from '@/comps/analysis/ExcelDatasets.vue';
 
 const phraseTop = categorization['Phrase'];
 const phraseTypes = phraseTop['Phrase Type'] as 
@@ -559,7 +566,12 @@ export default defineComponent({
   data(): AnalyzerComponentDataType {
     return {
       piece: undefined,
-      analysisTypes: ['Pitch Prevalence', 'Pitch Patterns', 'Query Display'],
+      analysisTypes: [
+        'Pitch Prevalence', 
+        'Pitch Patterns', 
+        'Query Display',
+        'Excel Datasets',
+      ],
       selectedATIdx: 0,
       pitchPrevalenceTypes: ['Section', 'Phrase', 'Duration'],
       patternCountTypes: ['Transcription', 'Section', 'Duration'],
@@ -655,6 +667,7 @@ export default defineComponent({
     PitchPrevalence,
     ModeSelector,
     Tooltip,
+    ExcelDatasets,
   },
 
   watch: {
@@ -1860,7 +1873,7 @@ export default defineComponent({
   }
 
   .analysisType {
-    width: 150px;
+    width: 180px;
     height: 30px;
     display: flex;
     flex-direction: row;
