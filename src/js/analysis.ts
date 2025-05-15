@@ -174,6 +174,10 @@ const PitchTimes = (trajs: Trajectory[], {
           pitchRep = pitch.sargamLetter;
         } else if (outputType === 'octavedSargamLetter') { 
           pitchRep = pitch.octavedSargamLetter;
+        } else if (outputType === 'scaleDegree') {
+          pitchRep = pitch.scaleDegree;
+        } else if (outputType === 'octavedScaleDegree') {
+          pitchRep = pitch.octavedScaleDegree;
         } else {
           throw new Error('outputType not recognized')
         }

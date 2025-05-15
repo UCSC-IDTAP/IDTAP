@@ -14,7 +14,13 @@ import {
 import { writeFileSync } from 'fs';
 import {
   Instrument,
+  PitchRepresentation,
+  Segmentation,
+  PitchInclusionMethod,
 } from './../ts/enums.ts';
+import {
+  DN_ExtractorOptions,
+} from './../ts/types.ts';
 import { displayTime } from './../ts/utils.ts';
 
 import ExcelJS from 'exceljs';
@@ -146,45 +152,6 @@ class Extractor {
 
 // Dard Neuman - extraction
 
-// options: 
-// 
-// Phrase Division type - 
-//    'user-defined', 
-//    'interspersed silence', 
-//    'trajectory following chikari',
-
-// Pitch justification -
-//    'all', 
-//    'with duration above dur threshold',
-
-enum Segmentation {
-  UserDefined = 'user-defined',
-  Silence = 'silence',
-  Chikari = 'chikari',
-  MelodicDiscontinuity = 'melodic discontinuity',
-}
-
-enum PitchInclusionMethod {
-  All = 'all',
-  AboveThreshold = 'above threshold', // not implemented yet
-}
-
-enum PitchRepresentation {
-  Chroma = 'chroma',
-  PitchNumber = 'pitchNumber',
-  SargamLetter = 'sargamLetter',
-  OctavedSargamLetter = 'octavedSargamLetter',
-}
-
-type DN_ExtractorOptions = {
-  segmentation: Segmentation,
-  pitchJustification: PitchInclusionMethod,
-  durThreshold: number,
-  track: number,
-  pitchRepresentation: PitchRepresentation,
-  endSequenceLength: number,
-}
-
 type SegmentType = {
   start: number,
   end: number,
@@ -196,8 +163,23 @@ class DN_Extractor {
   options: DN_ExtractorOptions;
 
   private constructor(piece: Piece, options: DN_ExtractorOptions) {
-      this.piece = piece;
-      this.options = options;
+    this.piece = piece;
+    this.options = options;
+    if (
+      this.options.pitchRepresentation === PitchRepresentation.ScaleDegree ||
+      this.options.pitchRepresentation === PitchRepresentation.OctavedScaleDegree
+    ) {
+      const r = this.piece.raga;
+      const pitches = r.getPitches({ 
+        low: r.fundamental, 
+        high: r.fundamental * 2 - 1 
+      });
+      const swara = pitches.map(p => p.swara);
+      const swaraSet = Array.from(new Set(swara));
+      if (swaraSet.length !== swara.length) {
+        throw new Error('Duplicate swara found in raga');
+      }
+    }
   }
 
   static async create(
@@ -455,6 +437,38 @@ class DN_Extractor {
     return pitchSegments;
   }
 
+  get evenlyInsertedBackPropagatedFromEndsPitchSubSegments() {
+    const segmented = this.backPropagatedFromEndsPitchSubSegments;
+    const longestLength = Math.max(...segmented.map(e => e.length));
+    const maxSubSegLengths = Array.from({ length: longestLength }, () => 0);
+    segmented.forEach(seg => {
+      seg.forEach((subSeg, subSegIdx) => {
+        const relevantIdx = longestLength - seg.length + subSegIdx;
+        if (subSeg.length > maxSubSegLengths[relevantIdx]) {
+          maxSubSegLengths[relevantIdx] = subSeg.length;
+        }
+      })
+    })
+    const withInserts = segmented.map(seg => {
+      const newSeg: (number | string)[][] = [];
+      let segIdx = 0;
+      seg.forEach((subSeg, subSegIdx) => {
+        const relevantIdx = longestLength - seg.length + subSegIdx;
+        const maxSubSegLength = maxSubSegLengths[relevantIdx];
+        if (subSeg.length < maxSubSegLength) {
+          const diff = maxSubSegLength - subSeg.length;
+          const insertString = '';
+          const insertArray = Array.from({ length: diff }, () => insertString);
+          newSeg.push([...subSeg, ...insertArray]);
+        } else {
+          newSeg.push(subSeg);
+        }
+      })
+      return newSeg
+    })
+    return withInserts;
+  }
+
   get uniqueEnds() {
     const uniqueEnds = Array.from(new Set(this.allEnds.map(e => JSON.stringify(e))))
       .map(s => JSON.parse(s) as (number | string)[]);
@@ -666,7 +680,7 @@ class DN_Extractor {
         if (vertIdx > this.options.endSequenceLength) {
           addVerticalLine(vertIdx);
         }
-        const segmentedEndSeq = this.backPropagatedFromEndsPitchSubSegments[segIdx];
+        let segmentedEndSeq = this.backPropagatedFromEndsPitchSubSegments[segIdx];
         segmentedEndSeq.forEach((subSeg, subSegIdx) => {
           if (subSegIdx !== segmentedEndSeq.length - 1) {
             vertIdx += subSeg.length;
@@ -683,7 +697,12 @@ class DN_Extractor {
     });  
   }
 
-  addSeparatedSegmentedEndingSequencesWorksheet(workbook: ExcelJS.Workbook, title: string, insertString: string) {
+  addSeparatedSegmentedEndingSequencesWorksheet(
+    workbook: ExcelJS.Workbook, 
+    title: string, 
+    insertString: string,
+    aligned: boolean = false
+  ) {
     const sheet = workbook.addWorksheet(title);
      sheet.views = [
       { state: 'frozen', xSplit: 5 }
@@ -716,15 +735,23 @@ class DN_Extractor {
         right: { style: 'medium' },
       };
     });
-    const withInserts = this.backPropagatedFromEndsPitchSubSegments.map((seg, idx) => {
-      const segment = seg.map((s, sIdx) => {
-        if (sIdx === seg.length - 1) {
-          return s;
-        }
-        return [...s, insertString];
+    let withInserts: (number | string)[][]
+    if (aligned) {
+      withInserts = this.evenlyInsertedBackPropagatedFromEndsPitchSubSegments.map((seg, idx) => {
+        return seg.flat();
+      })
+    } else {
+      withInserts = this.backPropagatedFromEndsPitchSubSegments.map((seg, idx) => {
+        const segment = seg.map((s, sIdx) => {
+          if (sIdx === seg.length - 1) {
+            return s;
+          }
+          return [...s, insertString];
+        });
+        return segment.flat();
       });
-      return segment.flat();
-    });
+    }
+
     const longestLength = Math.max(...withInserts.map(e => e.length));
     let idxCt = 0;
     this.uniqueEnds.forEach((end, idx) => {
@@ -787,8 +814,12 @@ class DN_Extractor {
         if (vertIdx > this.options.endSequenceLength) {
           addVerticalLine(vertIdx);
         }
-        const segmentedEndSeq = this.backPropagatedFromEndsPitchSubSegments[segIdx]
+        let segmentedEndSeq = this.backPropagatedFromEndsPitchSubSegments[segIdx]
           .map(seg => [...seg, insertString]);
+        if (aligned) {
+          segmentedEndSeq = this.evenlyInsertedBackPropagatedFromEndsPitchSubSegments[segIdx];
+
+        }
         segmentedEndSeq.forEach((subSeg, subSegIdx) => {
           if (subSegIdx !== segmentedEndSeq.length - 1) {
             vertIdx += subSeg.length;
@@ -802,7 +833,6 @@ class DN_Extractor {
       });
       idxCt += allSegIdxs.length;
     });
-
   }
 
   addBoilerPlate(sheet: ExcelJS.Worksheet) {
@@ -986,6 +1016,9 @@ class DN_Extractor {
     this.addEndingSequencesWorksheet(workbook);
     this.addSegmentedEndingSequencesWorksheet(workbook, 'Segmented Ending Sequences');
     this.addSeparatedSegmentedEndingSequencesWorksheet(workbook, 'Segmented Ending Sequences with Inserts', ',');
+    this.addSeparatedSegmentedEndingSequencesWorksheet(
+      workbook, 'Aligned Segmented Ending Sequences with Inserts', ',', true
+    );
 
     try {
       await workbook.xlsx.writeFile(filename);
@@ -1001,8 +1034,12 @@ const multaniID = '6417585554a0bfbd8de2d3ff';
 const options = {
   segmentation: Segmentation.UserDefined,
   endSequenceLength: 3,
-  pitchRepresentation: PitchRepresentation.OctavedSargamLetter,
+  pitchRepresentation: PitchRepresentation.ScaleDegree,
 
 }
 const e = await DN_Extractor.create(multaniID, options);
 e.writeToExcel('extracts/excel/multani_test_octaved.xlsx')
+
+export {
+  PitchRepresentation
+}
