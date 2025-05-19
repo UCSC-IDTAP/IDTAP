@@ -1,6 +1,9 @@
 # Changelog
 
 
+* Feat: Trajectory orientation dots can now be removed while in trajectory mode by hodling alt / option and clicking on a dot [fe4c26e] (Jon Myers)
+### 2025-05-19
+
 * Feat: Now when holding option / alt while a single trajectory is selected, arrow keys can be used to adjust slope. [160e6d7] (Jon Myers)
 ### 2025-05-06
 
