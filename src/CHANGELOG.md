@@ -1,6 +1,7 @@
 # Changelog
 
 
+* Feat: While a trajectory is selected, press tab to select the next trajectory, or shift-tab to select the previous trajectory. [5f61ee3] (Jon Myers)
 * Feat: Trajectory orientation dots can now be removed while in trajectory mode by hodling alt / option and clicking on a dot [fe4c26e] (Jon Myers)
 ### 2025-05-19
 
