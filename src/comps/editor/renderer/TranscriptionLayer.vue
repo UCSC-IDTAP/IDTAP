@@ -2211,8 +2211,12 @@ export default defineComponent({
       g.selectAll(`.uId${uId}`).remove();
     };
     const clearChikari = (cd: ChikariDisplayType) => {
-      const g = d3.select('.chikariG');
-      g.selectAll(`.uId${cd.uId}`).remove();
+      const trackG = tracks[cd.track];
+      const g = trackG.select('.chikariG');
+      console.log(`uId${cd.uId}`)
+      const selected = g.selectAll(`.uId${cd.uId}`);
+      console.log(selected)
+      selected.remove();
     };
 
     const resetTranscription = () => {
@@ -4262,6 +4266,7 @@ export default defineComponent({
       } else if (e.key === 'Backspace') {
         if (selectedChikari.value !== undefined) {
           const cd = selectedChikari.value;
+          console.log(cd)
           const phrase = props.piece.phraseGrid[cd.track][cd.phraseIdx];
           delete phrase.chikaris[cd.phraseTimeKey];
           clearChikari(cd);
