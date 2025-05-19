@@ -1064,6 +1064,14 @@ export default defineComponent({
       } else if (!newVal && selMeterHovering) {
         d3.selectAll('.metricGrid')
           .attr('cursor', 'col-resize')
+      }      if (props.selectedMode === EditorMode.Trajectory) {
+        if (newVal) {
+          d3.select(tranSvg.value)
+            .attr('cursor', 'not-allowed')
+        } else {
+          d3.select(tranSvg.value)
+            .attr('cursor', 'crosshair')
+        }
       }
     });
     watch(insertPulses, newVal => {
@@ -2827,7 +2835,7 @@ export default defineComponent({
         enabled: true
       })
       contextMenuChoices.value.push({
-          text: 'Add Orientation Dot',
+          text: 'Adjust Orientation Dots',
           action: () => {
             emit('update:selectedMode', EditorMode.Trajectory);
             // capture orientation dots from traj
@@ -3827,6 +3835,17 @@ export default defineComponent({
         .attr('r', 4)
         .attr('class', `timePt`)
         .style('fill', 'green')
+        .on('click', (e: MouseEvent) => {
+          if (alted.value) {
+            e.preventDefault();
+            e.stopPropagation();
+            trajTimePts.value = trajTimePts.value.filter(tp => {
+              return tp.time !== time || tp.logFreq !== logFreq
+            });
+            emit('update:trajTimePts', trajTimePts.value);
+            refreshTimePts();
+          }
+        });
     };
 
     const clearTimePts = () => {
@@ -4325,7 +4344,6 @@ export default defineComponent({
           moveToNextPhrase();
         }
       } else if (e.key === 'Alt') {
-        console.log('turning on alt')
         alted.value = true;
       } else if (e.key === '[') {
         e.preventDefault();
@@ -4953,7 +4971,14 @@ export default defineComponent({
         } else {
           regionEndPxl.value = e.x;
         }
-        setUpRegion();
+        const timeDiff = Math.abs(props.xScale.invert(regionStartPxl.value) - 
+          props.xScale.invert(regionEndPxl.value));
+        if (timeDiff < 0.01) {
+          regionStartPxl.value = undefined;
+          regionEndPxl.value = undefined;
+        } else {
+          setUpRegion();
+        }
       } else {
         const c = selBoxStartX === e.x && selBoxStartY === e.y;
         if (selBoxStartX !== undefined && selBoxStartY !== undefined && !c) {
@@ -5163,7 +5188,10 @@ export default defineComponent({
       } else if (props.selectedMode === EditorMode.PhraseDiv) {
         insertNewPhraseDiv(time, track, pIdx);
       } else if (props.selectedMode === EditorMode.Trajectory) { 
-        insertNewTrajDot(time, logFreq, track, pIdx);
+        if (!alted.value) {
+
+          insertNewTrajDot(time, logFreq, track, pIdx);
+        }
       } else if (props.selectedMode === EditorMode.Series) {
         insertNewTrajDot(time, logFreq, track, pIdx);
       } else if (props.selectedMode === EditorMode.Meter) {
