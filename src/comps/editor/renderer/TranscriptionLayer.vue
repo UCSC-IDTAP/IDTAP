@@ -4339,9 +4339,17 @@ export default defineComponent({
       } else if (e.key === 'Tab') {
         e.preventDefault();
         if (shifted.value) {
-          moveToPrevPhrase();
+          if (selectedTraj.value !== undefined && selectedTrajs.value.length === 1) {
+            selectPrevTraj();
+          } else {
+            moveToPrevPhrase();
+          }
         } else {
-          moveToNextPhrase();
+          if (selectedTraj.value !== undefined && selectedTrajs.value.length === 1) {
+            selectNextTraj();
+          } else {
+            moveToNextPhrase();
+          }
         }
       } else if (e.key === 'Alt') {
         alted.value = true;
@@ -4367,6 +4375,72 @@ export default defineComponent({
         throw new Error('Traj not found in trajRenderStatus array');
       }
       renderObj.selectedStatus = true;
+    }
+
+    const selectNextTraj = () => {
+      if (selectedTraj.value === undefined) {
+        throw new Error('No traj selected');
+      }
+      const traj = selectedTraj.value;
+      const track = props.piece.trackFromTraj(traj);
+      const allTrajs = props.piece.allTrajectories(track)
+        .filter(t => {
+          return t.id !== 12
+        })
+      const trajIdx = allTrajs.findIndex(t => {
+        return t.uniqueId === traj.uniqueId
+      });
+      if (trajIdx === -1) {
+        throw new Error('Traj not found in allTrajs array');
+      }
+      if (trajIdx === allTrajs.length - 1) {
+        return;
+      }
+      const nextTraj = allTrajs[trajIdx + 1];
+      const nextPhrase = props.piece.phraseGrid[track][nextTraj.phraseIdx!];
+      const trajEnd = nextPhrase.startTime! + nextTraj.startTime! + nextTraj.durTot;
+      const nextTrajUId = nextTraj.uniqueId!;
+      const renderObj = trajRenderStatus.value[track].find(obj => {
+        return obj.uniqueId === traj.uniqueId
+      })
+      renderObj!.selectedStatus = false;
+      selectTraj(nextTrajUId);
+      if (trajEnd > props.displayRange[1]) {
+        horizontalMoveGraph(0.85);
+      }
+    }
+
+    const selectPrevTraj = () => {
+      if (selectedTraj.value === undefined) {
+        throw new Error('No traj selected');
+      }
+      const traj = selectedTraj.value;
+      const track = props.piece.trackFromTraj(traj);
+      const allTrajs = props.piece.allTrajectories(track)
+        .filter(t => {
+          return t.id !== 12
+        })
+      const trajIdx = allTrajs.findIndex(t => {
+        return t.uniqueId === traj.uniqueId
+      });
+      if (trajIdx === -1) {
+        throw new Error('Traj not found in allTrajs array');
+      }
+      if (trajIdx === 0) {
+        return;
+      }
+      const prevTraj = allTrajs[trajIdx - 1];
+      const prevPhrase = props.piece.phraseGrid[track][prevTraj.phraseIdx!];
+      const trajStart = prevPhrase.startTime! + prevTraj.startTime!;
+      const prevTrajUId = prevTraj.uniqueId!;
+      const renderObj = trajRenderStatus.value[track].find(obj => {
+        return obj.uniqueId === traj.uniqueId
+      })
+      renderObj!.selectedStatus = false;
+      selectTraj(prevTrajUId);
+      if (trajStart < props.displayRange[0]) {
+        horizontalMoveGraph(-0.85);
+      }
     }
 
     const nudgePhraseDiv = (amt: 1 | -1) => {
