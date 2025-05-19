@@ -377,9 +377,7 @@ export default defineComponent({
     const targetDragDotY = ref<number | undefined>(undefined);
     const currentSec = ref<number>(0);
     const litTrajs = ref<(Trajectory | undefined)[]>(Array(props.instTracks.length).fill(undefined));
-    const litChikaris = ref<string[][]>(
-      props.instTracks.map(() => [])
-    );    
+    const litChikaris = ref<string[][]>(props.instTracks.map(() => []));    
     const goToTimeModal = ref<boolean>(false);
     const goToHours = ref<string>('0');
     const goToMinutes = ref<string>('00');
@@ -2215,9 +2213,7 @@ export default defineComponent({
     const clearChikari = (cd: ChikariDisplayType) => {
       const trackG = tracks[cd.track];
       const g = trackG.select('.chikariG');
-      console.log(`uId${cd.uId}`)
       const selected = g.selectAll(`.uId${cd.uId}`);
-      console.log(selected)
       selected.remove();
     };
 
@@ -3432,6 +3428,16 @@ export default defineComponent({
       SVGCircleElement, Datum, MouseEvent
     >) => {
       if (alted.value) return;
+      if (
+        selectedDragDotIdx.value === undefined ||
+        (
+          selectedDragDotIdx.value !== undefined && 
+          selectedDragDotIdx.value !== Number(e.sourceEvent.target.id.slice(7))
+        )
+      ) {
+        handleClickDragDot(e.sourceEvent);
+        return
+      }
       const traj = selectedTrajs.value[0];
       const track = props.piece.trackFromTraj(traj);
       const phrase = props.piece.phraseGrid[track][traj.phraseIdx!];
@@ -3447,31 +3453,8 @@ export default defineComponent({
       targetDragDotY.value = e.y;
       laggingDragDotX.value = e.x;
       laggingDragDotY.value = e.y;
-
       requestAnimationFrame(dragDotAnimationStep);
-      // const trajG = d3.select(tranSvg.value)
-      //   .select('.trajG')
-      // trajG.append('path')
-      //   .datum(trajData)
-      //   .attr('d', trajCurve)
-      //   .classed('dragShadowTraj', true)
-      //   .attr('fill', 'none')
-      //   .attr('stroke', props.instTracks[0].color)
-      //   .attr('stroke-width', '3px')
-      //   .attr('stroke-linejoin', 'round')
-      //   .attr('stroke-linecap', 'round')
-      //   .style('opacity', '0.35')
-      
     };
-
-    // const updateTrajCurve = throttle((
-    //     traj: Trajectory, 
-    //     startTime: number) => {
-    //   const data = makeTrajData(traj, startTime);
-    //   d3.select('.dragShadowTraj')
-    //     .datum(data)
-    //     .attr('d', trajCurve)
-    // }, 50)
 
     const updateDurArray = (traj: any, delta: number) => {
       if (traj.durArray && traj.durArray.length > 1) {
@@ -3656,9 +3639,9 @@ export default defineComponent({
       SVGCircleElement, Datum, MouseEvent
     >) => {
       if (alted.value) return;
+      if (!dragDotDragging) return;
       dragDotMove(e);
       dragDotDragging = false;
-      // d3.selectAll('.dragShadowTraj').remove();
       emit('unsavedChanges', true);
       const idx = dragDotIdx!;
       const traj = selectedTrajs.value[0];
@@ -3672,23 +3655,6 @@ export default defineComponent({
       if (props.sargamMagnetMode) {
         logFreq = getClosest(logSargamVals.value, logFreq);
       } else {
-        // // if dragdot idx is 0 and the prev traj exists, and that prev traj is not
-        // // 12, then the logFreq should be the same as the prev traj's last logFreq
-        // if (idx === 0 && tIdx > 0) {
-        //   const prevTraj = phrase.trajectories[tIdx - 1];
-        //   if (prevTraj.id !== 12) {
-        //     logFreq = prevTraj.logFreqs[prevTraj.logFreqs.length - 1];
-        //   }
-        // }
-        // // if dragdot idx is the last one and the next traj exists, and that next
-        // // traj is not 12, then the logFreq should be the same as the next traj's
-        // // first logFreq
-        // if (idx === traj.durArray!.length && tIdx < phrase.trajectories.length - 1) {
-        //   const nextTraj = phrase.trajectories[tIdx + 1];
-        //   if (nextTraj.id !== 12) {
-        //     logFreq = nextTraj.logFreqs[0];
-        //   }
-        // }
 
         if (idx === 0 && traj.num! > 1) {
           const silTraj = phrase.trajectories[traj.num! - 1];
@@ -3915,7 +3881,6 @@ export default defineComponent({
     }
 
     const handleClickDragDot = (e: MouseEvent) => {
-      if (alted.value) {
         e.preventDefault();
         const target = e.target as SVGCircleElement;
         const idx = Number(target.id.split('dragDot')[1]);
@@ -3923,7 +3888,6 @@ export default defineComponent({
         d3.select(`#dragDot${idx}`)
           .style('fill', selectedDragDotColor);
         selectedDragDotIdx.value = idx;
-      }
     }
 
     const handleContextMenuDragDot = (e: MouseEvent) => {
