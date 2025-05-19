@@ -377,7 +377,9 @@ export default defineComponent({
     const targetDragDotY = ref<number | undefined>(undefined);
     const currentSec = ref<number>(0);
     const litTrajs = ref<(Trajectory | undefined)[]>(Array(props.instTracks.length).fill(undefined));
-    const litChikaris = ref<(string)[]>([]);
+    const litChikaris = ref<string[][]>(
+      props.instTracks.map(() => [])
+    );    
     const goToTimeModal = ref<boolean>(false);
     const goToHours = ref<string>('0');
     const goToMinutes = ref<string>('00');
@@ -967,7 +969,7 @@ export default defineComponent({
 
                 // Highlight new items and collect them in newLitChikaris
                 cs.forEach(c => {
-                  if (!litChikaris.value.includes(c.uId)) {
+                  if (!litChikaris.value[idx].includes(c.uId)) {
                     const selector = '.uId' + c.uId;
                     d3.selectAll(selector).attr('stroke', track.selColor);
                   }
@@ -975,7 +977,7 @@ export default defineComponent({
                 });
 
                 // Remove highlights from old items not in cs
-                litChikaris.value.forEach(c => {
+                litChikaris.value[idx].forEach(c => {
                   if (!cs.map((cdt => cdt.uId)).includes(c)) {
                     const selector = '.uId' + c;
                     d3.selectAll(selector).attr('stroke', track.color);
@@ -983,14 +985,14 @@ export default defineComponent({
                 });
 
                 // Update litChikaris.value to the new list
-                litChikaris.value = newLitChikaris;
+                litChikaris.value[idx] = newLitChikaris;
               } else {
                 // Remove highlights from all items
-                litChikaris.value.forEach(c => {
+                litChikaris.value[idx].forEach(c => {
                   const selector = '.uId' + c;
                   d3.selectAll(selector).attr('stroke', track.color);
                 });
-                litChikaris.value = [];
+                litChikaris.value[idx] = [];
               }
             }
           })
