@@ -377,7 +377,9 @@ export default defineComponent({
     const targetDragDotY = ref<number | undefined>(undefined);
     const currentSec = ref<number>(0);
     const litTrajs = ref<(Trajectory | undefined)[]>(Array(props.instTracks.length).fill(undefined));
-    const litChikaris = ref<(string)[]>([]);
+    const litChikaris = ref<string[][]>(
+      props.instTracks.map(() => [])
+    );    
     const goToTimeModal = ref<boolean>(false);
     const goToHours = ref<string>('0');
     const goToMinutes = ref<string>('00');
@@ -967,7 +969,7 @@ export default defineComponent({
 
                 // Highlight new items and collect them in newLitChikaris
                 cs.forEach(c => {
-                  if (!litChikaris.value.includes(c.uId)) {
+                  if (!litChikaris.value[idx].includes(c.uId)) {
                     const selector = '.uId' + c.uId;
                     d3.selectAll(selector).attr('stroke', track.selColor);
                   }
@@ -975,7 +977,7 @@ export default defineComponent({
                 });
 
                 // Remove highlights from old items not in cs
-                litChikaris.value.forEach(c => {
+                litChikaris.value[idx].forEach(c => {
                   if (!cs.map((cdt => cdt.uId)).includes(c)) {
                     const selector = '.uId' + c;
                     d3.selectAll(selector).attr('stroke', track.color);
@@ -983,14 +985,14 @@ export default defineComponent({
                 });
 
                 // Update litChikaris.value to the new list
-                litChikaris.value = newLitChikaris;
+                litChikaris.value[idx] = newLitChikaris;
               } else {
                 // Remove highlights from all items
-                litChikaris.value.forEach(c => {
+                litChikaris.value[idx].forEach(c => {
                   const selector = '.uId' + c;
                   d3.selectAll(selector).attr('stroke', track.color);
                 });
-                litChikaris.value = [];
+                litChikaris.value[idx] = [];
               }
             }
           })
@@ -2211,8 +2213,12 @@ export default defineComponent({
       g.selectAll(`.uId${uId}`).remove();
     };
     const clearChikari = (cd: ChikariDisplayType) => {
-      const g = d3.select('.chikariG');
-      g.selectAll(`.uId${cd.uId}`).remove();
+      const trackG = tracks[cd.track];
+      const g = trackG.select('.chikariG');
+      console.log(`uId${cd.uId}`)
+      const selected = g.selectAll(`.uId${cd.uId}`);
+      console.log(selected)
+      selected.remove();
     };
 
     const resetTranscription = () => {
@@ -4262,6 +4268,7 @@ export default defineComponent({
       } else if (e.key === 'Backspace') {
         if (selectedChikari.value !== undefined) {
           const cd = selectedChikari.value;
+          console.log(cd)
           const phrase = props.piece.phraseGrid[cd.track][cd.phraseIdx];
           delete phrase.chikaris[cd.phraseTimeKey];
           clearChikari(cd);
