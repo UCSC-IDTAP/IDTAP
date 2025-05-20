@@ -2628,6 +2628,9 @@ class Piece {
         return sc.map(() => [])
       })
     }
+    while (this.adHocSectionCatGrid.length < this.sectionStartsGrid.length) {
+      this.adHocSectionCatGrid.push(this.adHocSectionCatGrid[0].map(() => []))
+    }
     this.raga = raga;
     if (this.phrases.length === 0) {
       if (durTot === undefined) {
