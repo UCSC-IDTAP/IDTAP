@@ -11,6 +11,8 @@ import history from 'connect-history-api-fallback';
 import cron from 'node-cron';
 import aggregations from './aggregations.js';
 import { OAuth2Client } from 'google-auth-library';
+import { DN_Extractor } from './extract';
+import { DN_ExtractorOptions } from '@shared/types';
 import 'dotenv/config';
 import { $push } from 'mongo-dot-notation';
 const app = express();
@@ -2078,6 +2080,23 @@ const runServer = async () => {
 		res.status(500).send(err);
 	  }
 	});
+
+	app.get('/DNExtractExcel', async (req, res) => {
+    try {
+      const id = req.query.id as string;
+      const extractorOptions = JSON.parse(req.query.options as string) as DN_ExtractorOptions;
+      const extractor = await DN_Extractor.create(id, extractorOptions);
+
+      // Generate Excel in-memory
+      const excelBuffer = await extractor.toBuffer();
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename="extract-${id}.xlsx"`);
+      res.send(excelBuffer);
+    } catch (err) {
+      console.error(err);
+      res.status(500).send(err);
+    }
+  });
 
 	const setNoCache = (res: express.Response) => {
 	  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');

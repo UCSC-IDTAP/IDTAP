@@ -13,11 +13,12 @@ import {
   CollectionType,
   QueryType,
   MultipleOptionType,
-  MelographData
-} from '@/ts/types.ts';
+  MelographData,
+  DN_ExtractorOptions,
+} from '@shared/types.ts';
 import {
   Instrument
-} from '@/ts/enums.ts';
+} from '@shared/enums';
 const getPiece = async (id: string): Promise<Piece> => {
   let piece;
   const request = {
@@ -1398,7 +1399,7 @@ import {
   OnProgressType,
   MusicianNameType,
   DisplaySettings
-} from '@/ts/types.ts'
+} from '@shared/types.ts'
 
 const userLoginGoogle = async (userData: UserDataType) => {
   const data = JSON.stringify({
@@ -2129,6 +2130,26 @@ const getUsersLastViewedTranscriptions = async (
   return out
 }
 
+const getDNExtractExcel = async (id: string, options: DN_ExtractorOptions) => {
+  let out;
+  const request = {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  };
+  try {
+    const params = new URLSearchParams({ id, options: JSON.stringify(options) });
+    const res = await fetch(url + 'DNExtractExcel?' + params, request);
+    if (res.ok) {
+      out = await res.arrayBuffer();
+    }
+  } catch (err) {
+    console.error(err)
+  }
+  return out
+}
+
 
 export { 
   getPiece,
@@ -2218,5 +2239,6 @@ export {
   updateCollectionInviteCode,
   enrollUserInCollection,
   updateTranscriptionViewed,
-  getUsersLastViewedTranscriptions
+  getUsersLastViewedTranscriptions,
+  getDNExtractExcel,
 }

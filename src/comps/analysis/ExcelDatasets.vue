@@ -45,8 +45,9 @@ import {
 	PitchRepresentation,
 	Segmentation,
   PitchInclusionMethod
-} from '@/ts/enums.ts';
-import { DN_ExtractorOptions } from '@/ts/types.ts';
+} from '@shared/enums';
+import { DN_ExtractorOptions } from '@shared/types';
+import { getDNExtractExcel } from '@/js/serverCalls';
 
 export default defineComponent({
 	name: 'ExcelDatasets',
@@ -67,7 +68,7 @@ export default defineComponent({
 		const endSequenceLength = ref<number>(3);
 		const endSequenceOptions = [1, 2, 3, 4, 5, 6];
 
-    const downloadExcel = () => {
+    const downloadExcel = async () => {
       const options: DN_ExtractorOptions = {
         segmentation: segmentation.value,
         pitchJustification: PitchInclusionMethod.All,
@@ -77,7 +78,26 @@ export default defineComponent({
         endSequenceLength: endSequenceLength.value,
       };
 
-      //server call here.
+      try {
+        const data = await getDNExtractExcel(props.piece._id!, options);
+        // Handle the Excel file download
+        console.log('Excel data:', data);
+        if (!data) {
+          console.error('No data received from server');
+          return;
+        }
+
+        const blob = new Blob([data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'DN_Extract.xlsx';
+        a.click();
+        window.URL.revokeObjectURL(url);
+
+      } catch (error) {
+        console.error('Error downloading Excel file:', error);
+      }
     }
 		return {
 			pitchRepresentation,
@@ -86,6 +106,7 @@ export default defineComponent({
 			Segmentation,
 			endSequenceLength,
 			endSequenceOptions,
+      downloadExcel,
 		}
 	}
 })

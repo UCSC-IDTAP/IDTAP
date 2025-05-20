@@ -18,8 +18,8 @@
 
 <script lang='ts'>
 import { defineComponent, ref, onMounted, PropType, computed, watch } from 'vue';
-import { EditorMode } from '@/ts/enums.ts';
-import { TooltipData } from '@/ts/types.ts';
+import { EditorMode } from '@shared/enums';
+import { TooltipData } from '@shared/types';
 export default defineComponent({
   name: 'ModeSelector',
   props: {

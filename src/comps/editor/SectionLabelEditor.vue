@@ -130,7 +130,7 @@
 
 import { defineComponent, PropType } from 'vue';
 import { Piece, initSecCategorization, Section } from '@/js/classes.ts';
-import { LabelScheme } from '@/ts/enums.ts';
+import { LabelScheme } from '@shared/enums';
 type topLevelOptionsType = (
   'Pre-Chiz Alap' | 
   'Alap' | 

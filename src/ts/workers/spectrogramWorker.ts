@@ -1,10 +1,10 @@
 import * as d3CMap from 'd3-scale-chromatic';
-import { CMap } from '../types';
+import { CMap } from '@shared/types';
 import { rgb, RGBColor } from 'd3-color';
 import ndarray, { NdArray } from 'ndarray';
 import ops from 'ndarray-ops';
 import pako from  'pako';
-import { ProcessMessage, WorkerMessage } from '@/ts/types';
+import { ProcessMessage, WorkerMessage } from '@shared/types';
 
 let extData: Uint8Array | undefined = undefined;
 let extDataShape: [number, number] | undefined = undefined;

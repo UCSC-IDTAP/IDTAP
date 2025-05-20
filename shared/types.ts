@@ -18,7 +18,7 @@ import {
   Segmentation,
   PitchInclusionMethod,
   PitchRepresentation,
- } from '@/ts/enums';
+ } from '@shared/enums';
 import TrajSelectPanel from '@/comps/editor/TrajSelectPanel.vue';
 import Renderer from '@/comps/editor/Renderer.vue';
 import EditorAudioPlayer from '@/comps/editor/audioPlayer/EditorAudioPlayer.vue';
@@ -696,7 +696,7 @@ type ArtNameType = (
 )
 type StrokeNicknameType = "d" | "r" | "da" | "ra" | "di" | "ri"
 
-import { SortState } from '@/ts/enums';
+import { SortState } from '@shared/enums';
 
 type SortFuncType = ((a: RecType, b: RecType) => (-1 | 0 | 1)) | 
                   ((a: TransMetadataType, b: TransMetadataType) => (-1 | 0 | 1))

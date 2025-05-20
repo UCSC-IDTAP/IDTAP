@@ -444,10 +444,10 @@ import  {
   PCountType,
   PhraseCatType,
   TooltipData,
-} from '@/ts/types.ts'
+} from '@shared/types'
 import {
   Instrument
-} from '@/ts/enums.ts';
+} from '@shared/enums';
 
 import ModeSelector from '@/comps/editor/renderer/ModeSelector.vue';
 import Tooltip from '@/comps/Tooltip.vue';

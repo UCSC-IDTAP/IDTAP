@@ -13,7 +13,7 @@
 <script lang='ts'>
 
 import { defineComponent, ref, onMounted, watch, computed } from 'vue';
-import { RenderCall } from '@/ts/types.ts';
+import { RenderCall } from '@shared/types';
 import { getWorker } from '@/ts/workers/workerManager.ts';
 
 export default defineComponent({

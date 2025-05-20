@@ -426,7 +426,7 @@ import {
   ControlsMode,
   Instrument,
   ScaleSystem
- } from '@/ts/enums.ts';
+ } from '@shared/enums';
 import { AudioWorklet } from '@/audio-worklet';
 import { excelData, jsonData } from '@/js/serverCalls.ts';
 import { tuningData } from '@/ts/tuningData.ts';
@@ -442,7 +442,7 @@ import {
   KlattSynthType, 
   NumObj,
   ExcerptRange,
-} from '@/ts/types.ts';
+} from '@shared/types';
 
 // External Libraries
 import { createRubberBandNode as createRBNode } from 'rubberband-web';

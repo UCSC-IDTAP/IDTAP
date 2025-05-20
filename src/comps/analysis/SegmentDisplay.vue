@@ -19,9 +19,9 @@
 
 import { defineComponent, PropType } from 'vue';
 import { Trajectory, Piece, Phrase, Pitch, linSpace } from '@/js/classes.ts';
-import { QueryAnswerType, ContextMenuOptionType } from '@/ts/types.ts';
-import { Instrument } from '@/ts/enums.ts';
-import { PhonemeRepresentation } from '@/ts/enums.ts';
+import { QueryAnswerType, ContextMenuOptionType } from '@shared/types';
+import { Instrument } from '@shared/enums';
+import { PhonemeRepresentation } from '@shared/enums';
 
 import * as d3 from 'd3';
 

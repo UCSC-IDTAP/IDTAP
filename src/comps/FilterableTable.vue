@@ -92,13 +92,13 @@
 </template>
 <script lang='ts'>
 import { defineComponent, PropType } from 'vue';
-import { SortState } from '@/ts/enums.ts';
+import { SortState } from '@shared/enums';
 import { 
   RecType, 
   FilterableTableType, 
   TransMetadataType,
   UserCheckType,
-} from '@/ts/types.ts';
+} from '@shared/types';
 
 type FilterableTableDataType = {
   colWidths: number[],

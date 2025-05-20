@@ -401,7 +401,7 @@ import {
   LabelEditorType,
   MeterControlsType,
   ExcerptRange,
-} from '@/ts/types';
+} from '@shared/types';
 import { 
   EditorMode, 
   Instrument, 
@@ -410,7 +410,7 @@ import {
   ScaleSystem,
   SargamRepresentation,
   PhonemeRepresentation
-} from '@/ts/enums';
+} from '@shared/enums';
 const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
 
 const getStarts = (durArray: number[]) => {

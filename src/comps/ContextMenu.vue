@@ -22,7 +22,7 @@
 import { defineComponent } from 'vue';
 import { PropType } from 'vue';
 
-import { ContextMenuOptionType } from '@/ts/types.ts';
+import { ContextMenuOptionType } from '@shared/types';
 
 type ContextMenuDataType = {
   dropDownWidth: number,

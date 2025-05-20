@@ -18,7 +18,8 @@
     "strict": true,
     "lib": ["esnext", "webworker"],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@shared/*": ["./shared/*"],
     },
     "allowSyntheticDefaultImports": true,
   }

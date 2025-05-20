@@ -9,7 +9,7 @@ import {
   Group,
   getStarts,
   pitchNumberToChroma
-} from './classes.ts';
+} from './classes';
 import { Meter } from '@/js/meter.ts';
 import { getPiece, getRaagRule } from './serverCalls.ts';
 const testQueryId = '63445d13dc8b9023a09747a6';
@@ -490,7 +490,9 @@ const patternCounter = (trajs: Trajectory[], {
             throw new Error('sel[pitch] is not a number')
           }      
         }
-        sel = sel[pitch];
+        if (typeof sel[pitch] === 'object' && sel[pitch] !== null) {
+          sel = sel[pitch] as { [key: string]: number | {}; [key: number]: number | {} };
+        }
       })
     }
   })
@@ -498,19 +500,32 @@ const patternCounter = (trajs: Trajectory[], {
   // 'pattern' key, an array of the nested keys, and a 'count' key, the nested 
   // value
   let out: { pattern: number[], count: number }[] = [];
-  const recurse = (obj: { 
-    [key: number | string]: number | {} 
-  }, pattern = []) => {
-    const keys = Object.keys(obj);
-    keys.forEach(key => {
+  // const recurse = (obj: { 
+  //   [key: number | string]: number | {} 
+  // }, pattern = []) => {
+  //   const keys = Object.keys(obj);
+  //   keys.forEach(key => {
+  //     if (typeof obj[key] === 'number') {
+  //       const ok = obj[key] as number;
+  //       out.push({ pattern: pattern.concat([Number(key)]), count: ok });
+  //     } else {
+  //       recurse(obj[key] as {}, pattern.concat([Number(key)]));
+  //     }
+  //   })
+  // }
+  const recurse = (
+    obj: Record<string, number|Record<string, any>>,
+    pattern: number[] = []
+  ) => {
+    Object.keys(obj).forEach(key => {
       if (typeof obj[key] === 'number') {
         const ok = obj[key] as number;
         out.push({ pattern: pattern.concat([Number(key)]), count: ok });
       } else {
-        recurse(obj[key] as {}, pattern.concat([Number(key)]));
+        recurse(obj[key] as Record<string, any>, pattern.concat([Number(key)]));
       }
-    })
-  }
+    });
+  };
   recurse(patterns);
   if (sort) {
     out.sort((a, b) => b.count - a.count);

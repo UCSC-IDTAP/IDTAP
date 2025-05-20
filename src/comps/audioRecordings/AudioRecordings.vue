@@ -95,8 +95,8 @@ import {
   GetDisplayType,
   UserCheckType,
   MusicianNameType
-} from '@/ts/types.ts';
-import { SortState } from '@/ts/enums.ts';
+} from '@shared/types';
+import { SortState } from '@shared/enums';
 import PermissionsModal from '@/comps/PermissionsModal.vue';
 import FilterableTable from '@/comps/FilterableTable.vue';
 

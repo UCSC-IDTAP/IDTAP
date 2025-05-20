@@ -17,7 +17,7 @@ import {
   PhraseCatType
 
 
-} from '@/ts/types.ts';
+} from '@shared/types.ts';
 
 
 

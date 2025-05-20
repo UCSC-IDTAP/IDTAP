@@ -21,8 +21,8 @@ import {
   NumObj,
   TuningType,
   ExcerptRange
-} from '@/ts/types.ts';
-import { Instrument } from '@/ts/enums.ts';
+} from '@shared/types.ts';
+import { Instrument } from '@shared/enums';
 import { closeTo, getClosest, isUpperCase } from '@/ts/utils.ts';
 
 

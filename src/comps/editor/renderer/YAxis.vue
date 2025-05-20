@@ -17,7 +17,7 @@ import {
 import * as d3 from 'd3';
 import { Raga } from '@/js/classes.ts';
 import { getContrastingTextColor } from '@/ts/utils.ts';
-import { ScaleSystem } from '@/ts/enums.ts';
+import { ScaleSystem } from '@shared/enums';
 
 export default defineComponent({
   name: 'YAxis',

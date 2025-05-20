@@ -36,7 +36,7 @@
 <script lang='ts'>
 
 import { defineComponent, PropType } from 'vue';
-import { QueryType, MultipleOptionType } from '@/ts/types.ts';
+import { QueryType, MultipleOptionType } from '@shared/types';
 import { loadQueries, deleteQuery } from '@/js/serverCalls';
 
 type LoadQueryModalDataType = {

@@ -76,7 +76,7 @@
 </template>
 <script lang="ts">
 import { defineComponent, PropType } from 'vue';
-import { RecType } from '@/ts/types.ts';
+import { RecType } from '@shared/types';
 import { 
   getRecsFromIds,
   getSortedMusicians, 

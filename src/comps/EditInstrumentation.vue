@@ -64,8 +64,8 @@ import {
   getTranscriptionInstrumentation, 
   updateInstrumentation 
 } from '@/js/serverCalls.ts';
-import { TransMetadataType } from '@/ts/types.ts';
-import { Instrument } from '@/ts/enums.ts';
+import { TransMetadataType } from '@shared/types';
+import { Instrument } from '@shared/enums';
 export default defineComponent({
   name: 'EditInstrumentation',
   props: {

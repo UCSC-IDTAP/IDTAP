@@ -433,7 +433,7 @@ import {
   RecUpdateType,
   EditingSecType,
   AudioEventMetadataType,
-} from '@/ts/types.ts';
+} from '@shared/types';
 type UploadRecordingDataType = {
   progressWidth: number;
   file: File | null;

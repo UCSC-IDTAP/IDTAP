@@ -145,8 +145,8 @@
 
 import { defineComponent, PropType } from 'vue';
 import { Piece, Phrase } from '@/js/classes.ts';
-import { PhraseCatType } from '@/ts/types.ts';
-import { LabelScheme } from '@/ts/enums.ts';
+import { PhraseCatType } from '@shared/types';
+import { LabelScheme } from '@shared/enums';
 import categoryData from '@/assets/json/categorization.json';
 const phraseData = categoryData['Phrase'];
 const articulationTypes = phraseData['Articulation Type'];

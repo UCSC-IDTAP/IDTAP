@@ -341,8 +341,8 @@ import {
   TrajSelectionStatus, 
   PhraseDivDisplayType,
   TooltipData 
-} from '@/ts/types.ts';
-import { Instrument, EditorMode } from '@/ts/enums.ts';
+} from '@shared/types';
+import { Instrument, EditorMode } from '@shared/enums';
 
 type TrajSelectPanelDataType = {
   urls: string[],

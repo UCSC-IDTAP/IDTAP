@@ -19,7 +19,7 @@ import {
 } from 'vue';
 import * as d3 from 'd3';
 import { getMelographJSON } from '@/js/serverCalls.ts';
-import { MelographData, ExcerptRange } from '@/ts/types.ts';
+import { MelographData, ExcerptRange } from '@shared/types';
 
 export default defineComponent({
   name: 'MelographLayer',
