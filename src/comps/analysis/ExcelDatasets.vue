@@ -96,7 +96,7 @@ export default defineComponent({
 .outer {
 	width: 100%;
 	height: 100px;
-	background-color: #1e241e;
+	background-color: black;
 	display: flex;
 	flex-direction: row;
 	justify-content: left;

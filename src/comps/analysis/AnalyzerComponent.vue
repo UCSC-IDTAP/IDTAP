@@ -1,6 +1,6 @@
 <template>
   <div class='main_'>
-    <div class='analysisControls' v-if='selectedATIdx !== 3'>
+    <div class='analysisControls'>
       <div class='analysisTypeRow'>
         <div 
           :class='`analysisType ${atIdx === selectedATIdx ? "selected" : ""}`' 
@@ -317,6 +317,11 @@
         :instIdx='instIdx'
         @update:instIdx='instIdx = $event'
         />
+      <ExcelDatasets
+        v-if='piece && selectedATIdx === 3'
+        :piece='piece'
+        :instIdx='instIdx'
+        />
     </div>
     <div 
       class='segmentDisplayHolder' 
@@ -342,11 +347,7 @@
           :queryAnswer='queryAnswers[idx]'
           />
     </div>
-    <ExcelDatasets
-      v-if='piece && selectedATIdx === 3'
-      :piece='piece'
-      :instIdx='instIdx'
-      />
+
 
     <div class='graphContainer' v-if='selectedATIdx === 1'>
       <div class='graph' ref='graph'>
