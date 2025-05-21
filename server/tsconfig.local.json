@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      // override only @/* so it points at your Vue‐style src folder locally
+      "@/*": ["../src/*"],
+	  "@shared/*": ["../shared/*"],
+    }
+  }
+}

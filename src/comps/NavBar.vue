@@ -53,7 +53,7 @@ import {
 } from '@/js/serverCalls.ts';
 import  { 
   UserDataType
-} from '@/ts/types.ts';
+} from '@shared/types';
 import { defineComponent } from 'vue';
 import defaultUsrImgUrl from '@/assets/icons/user_head.svg';
 import { LocationQueryRaw } from 'vue-router';

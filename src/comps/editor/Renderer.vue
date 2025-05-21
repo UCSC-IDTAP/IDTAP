@@ -211,7 +211,7 @@ import {
   TransMetadataType,
   CollectionType,
   APType
-} from '@/ts/types.ts';
+} from '@shared/types';
 import { 
   EditorMode, 
   Instrument, 
@@ -219,7 +219,7 @@ import {
   ScaleSystem,
   PhonemeRepresentation,
   SargamRepresentation,
-} from '@/ts/enums.ts';
+} from '@shared/enums';
 import { BrowserInfo } from 'detect-browser';
 import ContextMenu from '@/comps/ContextMenu.vue';
 import EditInstrumentation from '@/comps/EditInstrumentation.vue';

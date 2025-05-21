@@ -10,7 +10,7 @@ import { defineComponent, PropType } from 'vue';
 import { Automation, Trajectory, Piece } from '@/js/classes.ts';
 import * as d3 from 'd3';
 
-import { AutoValue } from '@/ts/types.ts';
+import { AutoValue } from '@shared/types';
 
 type AutomationWindowDataType = {
   height: number,

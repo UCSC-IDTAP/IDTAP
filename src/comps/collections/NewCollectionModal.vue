@@ -110,7 +110,7 @@
 
 <script lang='ts'>
 import { defineComponent } from 'vue';
-import { CollectionType, UserType } from '@/ts/types.ts';
+import { CollectionType, UserType } from '@shared/types';
 import { 
   getAllUsers, 
   createCollection, 

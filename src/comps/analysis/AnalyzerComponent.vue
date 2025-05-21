@@ -317,6 +317,11 @@
         :instIdx='instIdx'
         @update:instIdx='instIdx = $event'
         />
+      <ExcelDatasets
+        v-if='piece && selectedATIdx === 3'
+        :piece='piece'
+        :instIdx='instIdx'
+        />
     </div>
     <div 
       class='segmentDisplayHolder' 
@@ -342,6 +347,8 @@
           :queryAnswer='queryAnswers[idx]'
           />
     </div>
+
+
     <div class='graphContainer' v-if='selectedATIdx === 1'>
       <div class='graph' ref='graph'>
       </div>
@@ -410,6 +417,7 @@ import SegmentDisplay from '@/comps/analysis/SegmentDisplay.vue';
 import QueryControls from '@/comps/analysis/QueryControls.vue';
 import PitchPrevalence from '@/comps/analysis/PitchPrevalence.vue';
 import categorization from '@/assets/json/categorization.json';
+import ExcelDatasets from '@/comps/analysis/ExcelDatasets.vue';
 
 const phraseTop = categorization['Phrase'];
 const phraseTypes = phraseTop['Phrase Type'] as 
@@ -436,10 +444,10 @@ import  {
   PCountType,
   PhraseCatType,
   TooltipData,
-} from '@/ts/types.ts'
+} from '@shared/types'
 import {
   Instrument
-} from '@/ts/enums.ts';
+} from '@shared/enums';
 
 import ModeSelector from '@/comps/editor/renderer/ModeSelector.vue';
 import Tooltip from '@/comps/Tooltip.vue';
@@ -483,7 +491,7 @@ const hexToRgb = (hex: string) => {
 
 type AnalyzerComponentDataType = {
   piece?: Piece,
-  analysisTypes: string[],
+  basicAnalysisTypes: string[],
   selectedATIdx: number,
   pitchPrevalenceTypes: string[],
   patternCountTypes: string[],
@@ -559,7 +567,12 @@ export default defineComponent({
   data(): AnalyzerComponentDataType {
     return {
       piece: undefined,
-      analysisTypes: ['Pitch Prevalence', 'Pitch Patterns', 'Query Display'],
+      basicAnalysisTypes: [
+        'Pitch Prevalence', 
+        'Pitch Patterns', 
+        'Query Display',
+        'Excel Datasets',
+      ],
       selectedATIdx: 0,
       pitchPrevalenceTypes: ['Section', 'Phrase', 'Duration'],
       patternCountTypes: ['Transcription', 'Section', 'Duration'],
@@ -655,6 +668,7 @@ export default defineComponent({
     PitchPrevalence,
     ModeSelector,
     Tooltip,
+    ExcelDatasets,
   },
 
   watch: {
@@ -696,6 +710,24 @@ export default defineComponent({
   },
 
   computed: {
+
+    analysisTypes(): string[] {
+      return this.admin ? 
+        this.basicAnalysisTypes :
+        this.basicAnalysisTypes.filter(type => type !== 'Excel Datasets');
+    },
+
+    admin() {
+      const jmId = '634d9506a6a3647e543b7641';
+      const dnId = '63595c60a6a3647e54a62853';
+      const currentId = this.$store.state.userID;
+      console.log('currentId', currentId);
+      if (currentId === jmId || currentId === dnId) {
+        return true;
+      } else {
+        return false;
+      }
+    },
 
     vocal() {
       const inst = this.piece?.instrumentation[this.instIdx];
@@ -1860,7 +1892,7 @@ export default defineComponent({
   }
 
   .analysisType {
-    width: 150px;
+    width: 180px;
     height: 30px;
     display: flex;
     flex-direction: row;

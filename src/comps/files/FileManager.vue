@@ -137,8 +137,8 @@ import {
   UserCheckType,
   MusicianNameType,
   RuleSetType,
-} from '@/ts/types.ts';
-import { SortState, Instrument } from '@/ts/enums.ts';
+} from '@shared/types';
+import { SortState, Instrument } from '@shared/enums';
 import EditInstrumentation from '@/comps/EditInstrumentation.vue';
 
 type FileManagerDataType = {
@@ -372,11 +372,8 @@ export default defineComponent({
       } else {
         throw new Error('this.allUsers is undefined');
       }
-      
       this.editableCols = await getEditableCollections(userID);
       this.allMusicians = await getSortedMusicians(true);
-      
-      
     } catch (err) {
       console.log(err)
     }
@@ -554,20 +551,7 @@ export default defineComponent({
             });
           }
         };
-
-
-        
-
-
         this.contextMenuClosed = false;
-
-
-
-
-
-
-
-
       } catch (err) {
         console.log(err)
       }

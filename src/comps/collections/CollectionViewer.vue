@@ -73,7 +73,7 @@ import {
   TransMetadataType, 
   RecType,
   AudioEventType
-} from '@/ts/types.ts';
+} from '@shared/types';
 import { getContrastingTextColor } from '@/ts/utils';
 import GenericAudioPlayer from '@/comps/GenericAudioPlayer.vue';
 import { 

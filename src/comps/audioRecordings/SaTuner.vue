@@ -54,7 +54,7 @@
 <script lang='ts'>
 
 import { defineComponent, PropType } from 'vue';
-import { RecType } from '@/ts/types.ts';
+import { RecType } from '@shared/types';
 import { makeSpectrograms, makeMelograph } from '@/js/serverCalls.ts';
 
 type SaTunerDataType = {

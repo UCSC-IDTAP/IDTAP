@@ -73,7 +73,7 @@ import {
   findClosestStartTimeAfter,
   findClosestStartTime,
 } from '@/ts/utils.ts';
-import { EditorMode, Instrument, PlayheadAnimations } from '@/ts/enums.ts';
+import { EditorMode, Instrument, PlayheadAnimations } from '@shared/enums';
 import { BrowserInfo } from 'detect-browser';
 import AutomationWindow from '@/comps/editor/AutomationWindow.vue';
 import TrajectoryAnnotator from '@/comps/editor/renderer/TrajectoryAnnotator.vue';
@@ -104,11 +104,11 @@ import {
   BolDisplayType,
   CollectionType,
   APType,
-} from '@/ts/types.ts';
+} from '@shared/types';
 import { 
   PhonemeRepresentation,
   SargamRepresentation
-} from '@/ts/enums.ts';
+} from '@shared/enums';
 import { Meter, Pulse } from '@/js/meter.ts';
 import ContextMenu from'@/comps/ContextMenu.vue';
 

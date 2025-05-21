@@ -70,7 +70,7 @@
 <script lang='ts'>
 
 import { defineComponent, PropType } from 'vue';
-import { UserType } from '@/ts/types';
+import { UserType } from '@shared/types';
 import { updateVisibility, getAllUsers } from '@/js/serverCalls';
 
 type PermissionsModalDataType = {

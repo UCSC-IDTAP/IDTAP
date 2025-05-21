@@ -11,7 +11,14 @@ import {
   ValueFn
 } from 'd3';
 
-import { Instrument, PlayheadAnimations, ScaleSystem } from '@/ts/enums';
+import { 
+  Instrument, 
+  PlayheadAnimations, 
+  ScaleSystem,
+  Segmentation,
+  PitchInclusionMethod,
+  PitchRepresentation,
+ } from '@shared/enums';
 import TrajSelectPanel from '@/comps/editor/TrajSelectPanel.vue';
 import Renderer from '@/comps/editor/Renderer.vue';
 import EditorAudioPlayer from '@/comps/editor/audioPlayer/EditorAudioPlayer.vue';
@@ -689,7 +696,7 @@ type ArtNameType = (
 )
 type StrokeNicknameType = "d" | "r" | "da" | "ra" | "di" | "ri"
 
-import { SortState } from '@/ts/enums';
+import { SortState } from '@shared/enums';
 
 type SortFuncType = ((a: RecType, b: RecType) => (-1 | 0 | 1)) | 
                   ((a: TransMetadataType, b: TransMetadataType) => (-1 | 0 | 1))
@@ -1131,6 +1138,15 @@ type ExcerptRange = {
   end: number,
 }
 
+type DN_ExtractorOptions = {
+  segmentation: Segmentation,
+  pitchJustification: PitchInclusionMethod,
+  durThreshold: number,
+  track: number,
+  pitchRepresentation: PitchRepresentation,
+  endSequenceLength: number,
+}
+
 export type { 
   CollectionType, 
   UserType, 
@@ -1235,5 +1251,6 @@ export type {
   NumObj,
   TuningType,
   ExcerptRange,
+  DN_ExtractorOptions,
 };
 

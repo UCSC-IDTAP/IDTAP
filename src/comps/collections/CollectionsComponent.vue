@@ -74,7 +74,7 @@
 
 <script lang='ts'>
 
-import { CollectionType, ContextMenuOptionType } from '@/ts/types.ts';
+import { CollectionType, ContextMenuOptionType } from '@shared/types';
 import { 
   deleteCollection, 
   getAllCollections,

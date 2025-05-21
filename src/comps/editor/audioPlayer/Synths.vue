@@ -4,8 +4,8 @@
 import { defineComponent, PropType, onMounted, ref, watch } from 'vue';
 import {
   InstrumentTrackType,
-} from '@/ts/types.ts';
-import { Instrument } from '@/ts/enums.ts';
+} from '@shared/types';
+import { Instrument } from '@shared/enums';
 import ksURL from '@/audioWorklets/karplusStrong2.worklet.js?url';
 import cURL from '@/audioWorklets/chikaris2.worklet.js?url';
 import ssURL from '@/audioWorklets/sarangi.worklet.js?url';
@@ -36,7 +36,7 @@ import {
   SarangiSynthType,
   KlattSynthType,
   BurstOption,
-} from '@/ts/types.ts';
+} from '@shared/types';
 
 
 export default defineComponent({

@@ -334,8 +334,8 @@ import {
   UserType,
   AudioEventMetadataType,
   RulesType,
-} from '@/ts/types.ts'
-import { Instrument } from '@/ts/enums.ts'
+} from '@shared/types'
+import { Instrument } from '@shared/enums'
 
 type NewPieceRegistrarDataType = {
   title?: string;

@@ -151,7 +151,7 @@ import {
   select as d3Select,
  } from 'd3';
 import { defineComponent, PropType } from 'vue';
-import { EditorMode } from '@/ts/enums.ts';
+import { EditorMode } from '@shared/enums';
  
 type MeterControlsDataType = {
   numLayers: number,

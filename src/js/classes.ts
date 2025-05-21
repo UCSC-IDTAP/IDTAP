@@ -21,8 +21,8 @@ import {
   NumObj,
   TuningType,
   ExcerptRange
-} from '@/ts/types.ts';
-import { Instrument } from '@/ts/enums.ts';
+} from '@shared/types.ts';
+import { Instrument } from '@shared/enums';
 import { closeTo, getClosest, isUpperCase } from '@/ts/utils.ts';
 
 
@@ -503,6 +503,28 @@ class Pitch {
       'Do', 'Ra', 'Re', 'Me', 'Mi', 'Fa', 'Fi', 'Sol', 'Le', 'La', 'Te', 'Ti'
     ]
     let s = solfege[this.chroma as number];
+    return s
+  }
+
+  get scaleDegree() {
+    return Number(this.swara) + 1;
+  }
+
+  get octavedScaleDegree() {
+    let s = String(this.scaleDegree);
+    if (this.oct === -2) {
+      s = s + '\u0324'
+    } else if (this.oct === -1) {
+      s = s + '\u0323'
+    } else if (this.oct === 1) {
+      s = s + '\u0307'
+    } else if (this.oct === 2) {
+      s = s + '\u0308'
+    } else if (this.oct === -3) {
+      s = s + '\u20E8'
+    } else if (this.oct === 3) {
+      s = s + '\u20DB'
+    }
     return s
   }
 
@@ -2605,6 +2627,9 @@ class Piece {
       this.adHocSectionCatGrid = this.sectionCatGrid.map(sc => {
         return sc.map(() => [])
       })
+    }
+    while (this.adHocSectionCatGrid.length < this.sectionStartsGrid.length) {
+      this.adHocSectionCatGrid.push(this.adHocSectionCatGrid[0].map(() => []))
     }
     this.raga = raga;
     if (this.phrases.length === 0) {

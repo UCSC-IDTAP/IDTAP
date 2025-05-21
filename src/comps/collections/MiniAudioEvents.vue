@@ -149,7 +149,7 @@ import { displayTime } from '@/ts/utils';
 import { 
   RecType, 
   AudioEventType 
-} from '@/ts/types';
+} from '@shared/types';
 import { getAEsFromIds } from '@/js/serverCalls';
 
 type MiniAudioEventsDataType = {

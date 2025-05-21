@@ -79,7 +79,7 @@ import {
   getTranscriptionsFromIds, 
   getSortedMusicians 
 } from '@/js/serverCalls.ts';
-import { TransMetadataType, MusicianNameType } from '@/ts/types.ts';
+import { TransMetadataType, MusicianNameType } from '@shared/types';
 
 
 // title, transcriber, raga, created, modified, permissions

@@ -20,7 +20,7 @@ import {
 import * as d3 from 'd3';
 import { getContrastingTextColor } from '@/ts/utils.ts';
 import { Piece } from '@/js/classes.ts';
-import { InstrumentTrackType } from '@/ts/types.ts';
+import { InstrumentTrackType } from '@shared/types';
 
 export default defineComponent({
   name: 'XAxis',

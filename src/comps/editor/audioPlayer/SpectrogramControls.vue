@@ -363,8 +363,8 @@ import {
   DisplaySettings,
   ExcerptRange,
   ProcessMessage
-} from '@/ts/types.ts';
-import { PlayheadAnimations, ScaleSystem } from '@/ts/enums';
+} from '@shared/types';
+import { PlayheadAnimations, ScaleSystem } from '@shared/enums';
 import SwatchSelect from '@/comps/SwatchSelect.vue';
 import {
   Pitch, 

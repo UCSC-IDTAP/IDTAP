@@ -36,8 +36,8 @@ import {
   SitarSynthType,
   SarangiSynthType,
   KlattSynthType 
-} from '@/ts/types.ts';
-import { Instrument } from '@/ts/enums.ts';
+} from '@shared/types';
+import { Instrument } from '@shared/enums';
 
 export default defineComponent({
   name: 'InstrumentControl',

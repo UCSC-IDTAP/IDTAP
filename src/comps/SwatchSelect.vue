@@ -24,7 +24,7 @@
 <script lang="ts">
 import { defineComponent, PropType, ref, onMounted, computed } from 'vue';
 import * as d3 from 'd3';
-import { CMap } from '@/ts/types.ts';
+import { CMap } from '@shared/types';
 import * as d3CMap from 'd3-scale-chromatic';
 
 const createSwatches = (width: number, height: number): { svgString: string, cMap: CMap }[] => {

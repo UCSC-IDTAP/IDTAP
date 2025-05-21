@@ -111,7 +111,7 @@
 <script lang='ts'>
  
 import { getRagaNames, getRaagRule, saveRaagRules } from '@/js/serverCalls.ts';
-import { RuleProfileType } from '@/ts/types.ts';
+import { RuleProfileType } from '@shared/types';
 import cloneDeep from 'lodash/cloneDeep';
 
 

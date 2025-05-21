@@ -23,8 +23,8 @@ import {
 } from '@/js/classes.ts';
 import { 
   PhraseCatType,
-} from '@/ts/types.ts'
-import { Instrument } from '@/ts/enums.ts';
+} from '@shared/types'
+import { Instrument } from '@shared/enums';
 import * as d3 from 'd3';
 import { 
   segmentByDuration,

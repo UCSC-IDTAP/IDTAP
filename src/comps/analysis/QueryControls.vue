@@ -320,7 +320,7 @@ import {
   PitchNameType,
   ParamType,
   PitchSeqObjType
-} from '@/ts/types.ts';
+} from '@shared/types';
 import {
   Pitch,
   Raga,
@@ -330,7 +330,7 @@ import {
 import {
   saveMultiQuery
 } from '@/js/serverCalls.ts';
-import { Instrument } from '@/ts/enums.ts';
+import { Instrument } from '@shared/enums';
 import LoadQueryModal from '@/comps/analysis/LoadQueryModal.vue';
 type QueryControlsDataType = {
   segmentation: SegmentationType,

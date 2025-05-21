@@ -81,8 +81,8 @@
 </template>
 <script lang='ts'>
 import { defineComponent, PropType, computed, ref, getCurrentInstance } from 'vue'
-import { SynthControl, InstrumentTrackType, SynthType } from '@/ts/types.ts';
-import { Instrument } from '@/ts/enums.ts';
+import { SynthControl, InstrumentTrackType, SynthType } from '@shared/types';
+import { Instrument } from '@shared/enums';
 import InstrumentControl from '@/comps/editor/audioPlayer/InstrumentControl.vue';
 
 export default defineComponent({
