@@ -31,7 +31,7 @@
 			</div>
 		</div>
 		<div class='selectionCol'>
-			<button @click='downloadExcel'>Download Dataset</button>
+			<button @click='downloadExcel' :disabled='downloading'>Download Dataset</button>
 		</div>
 	</div>
 </template>
@@ -66,9 +66,11 @@ export default defineComponent({
 		const pitchRepresentation = ref<PitchRepresentation>(PitchRepresentation.Chroma);
 		const segmentation = ref<Segmentation>(Segmentation.UserDefined);
 		const endSequenceLength = ref<number>(3);
+    const downloading = ref<boolean>(false);
 		const endSequenceOptions = [1, 2, 3, 4, 5, 6];
 
     const downloadExcel = async () => {
+      downloading.value = true;
       const options: DN_ExtractorOptions = {
         segmentation: segmentation.value,
         pitchJustification: PitchInclusionMethod.All,
@@ -81,7 +83,7 @@ export default defineComponent({
       try {
         const data = await getDNExtractExcel(props.piece._id!, options);
         // Handle the Excel file download
-        console.log('Excel data:', data);
+        
         if (!data) {
           console.error('No data received from server');
           return;
@@ -94,9 +96,11 @@ export default defineComponent({
         a.download = 'DN_Extract.xlsx';
         a.click();
         window.URL.revokeObjectURL(url);
+        downloading.value = false;
 
       } catch (error) {
         console.error('Error downloading Excel file:', error);
+        downloading.value = false;
       }
     }
 		return {
@@ -107,6 +111,7 @@ export default defineComponent({
 			endSequenceLength,
 			endSequenceOptions,
       downloadExcel,
+      downloading,
 		}
 	}
 })

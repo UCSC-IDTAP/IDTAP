@@ -491,7 +491,7 @@ const hexToRgb = (hex: string) => {
 
 type AnalyzerComponentDataType = {
   piece?: Piece,
-  analysisTypes: string[],
+  basicAnalysisTypes: string[],
   selectedATIdx: number,
   pitchPrevalenceTypes: string[],
   patternCountTypes: string[],
@@ -567,7 +567,7 @@ export default defineComponent({
   data(): AnalyzerComponentDataType {
     return {
       piece: undefined,
-      analysisTypes: [
+      basicAnalysisTypes: [
         'Pitch Prevalence', 
         'Pitch Patterns', 
         'Query Display',
@@ -710,6 +710,24 @@ export default defineComponent({
   },
 
   computed: {
+
+    analysisTypes(): string[] {
+      return this.admin ? 
+        this.basicAnalysisTypes :
+        this.basicAnalysisTypes.filter(type => type !== 'Excel Datasets');
+    },
+
+    admin() {
+      const jmId = '634d9506a6a3647e543b7641';
+      const dnId = '63595c60a6a3647e54a62853';
+      const currentId = this.$store.state.userID;
+      console.log('currentId', currentId);
+      if (currentId === jmId || currentId === dnId) {
+        return true;
+      } else {
+        return false;
+      }
+    },
 
     vocal() {
       const inst = this.piece?.instrumentation[this.instIdx];
