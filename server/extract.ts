@@ -459,7 +459,7 @@ class DN_Extractor {
           const diff = maxSubSegLength - subSeg.length;
           const insertString = '';
           const insertArray = Array.from({ length: diff }, () => insertString);
-          newSeg.push([...subSeg, ...insertArray]);
+          newSeg.push([...insertArray, ...subSeg]);
         } else {
           newSeg.push(subSeg);
         }
@@ -1007,18 +1007,18 @@ class DN_Extractor {
   }
 
   
-
-  async writeToExcel(filename: string) {
+  createWorkbook(filename: string) {
     const workbook = new ExcelJS.Workbook();
     this.addSeparatedSegmentSheet(workbook, 'Segments separated');
     this.addSeparatedSegmentSheet(workbook, 'Segments separated end aligned', true);
     this.addCombinedSegmentSheet(workbook, 'Segments combined');
     this.addEndingSequencesWorksheet(workbook);
-    this.addSegmentedEndingSequencesWorksheet(workbook, 'Segmented Ending Sequences');
-    this.addSeparatedSegmentedEndingSequencesWorksheet(workbook, 'Segmented Ending Sequences with Inserts', ',');
-    this.addSeparatedSegmentedEndingSequencesWorksheet(
-      workbook, 'Aligned Segmented Ending Sequences with Inserts', ',', true
-    );
+    this.addSeparatedSegmentedEndingSequencesWorksheet(workbook, 'Aligned Segmented Ending Sequences with Inserts', ',', true);
+    return workbook;
+  }
+
+  async writeToExcel(filename: string) {
+    const workbook = this.createWorkbook(filename);
 
     try {
       await workbook.xlsx.writeFile(filename);
@@ -1031,30 +1031,14 @@ class DN_Extractor {
    * Build all worksheets in-memory and return the Excel file as a Buffer.
    */
   async toBuffer(): Promise<Buffer> {
-    const workbook = new ExcelJS.Workbook();
-    this.addSeparatedSegmentSheet(workbook, 'Segments separated');
-    this.addSeparatedSegmentSheet(workbook, 'Segments separated end aligned', true);
-    this.addCombinedSegmentSheet(workbook, 'Segments combined');
-    this.addEndingSequencesWorksheet(workbook);
-    this.addSegmentedEndingSequencesWorksheet(workbook, 'Segmented Ending Sequences');
-    this.addSeparatedSegmentedEndingSequencesWorksheet(workbook, 'Segmented Ending Sequences with Inserts', ',');
-    this.addSeparatedSegmentedEndingSequencesWorksheet(workbook, 'Aligned Segmented Ending Sequences with Inserts', ',', true);
+    const workbook = this.createWorkbook('temp.xlsx');
     const arrayBuffer = await workbook.xlsx.writeBuffer();
     return Buffer.from(arrayBuffer);
   }
 }
 
 
-// // const mak_yaman_id = '63445d13dc8b9023a09747a6';
-// const multaniID = '6417585554a0bfbd8de2d3ff';
-// const options = {
-//   segmentation: Segmentation.UserDefined,
-//   endSequenceLength: 3,
-//   pitchRepresentation: PitchRepresentation.ScaleDegree,
 
-// }
-// const e = await DN_Extractor.create(multaniID, options);
-// e.writeToExcel('extracts/excel/multani_test_octaved.xlsx')
 
 export {
   PitchRepresentation,
