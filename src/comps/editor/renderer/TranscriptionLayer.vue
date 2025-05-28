@@ -2249,6 +2249,12 @@ export default defineComponent({
       const track = props.piece.trackFromPhraseUId(uId);
       removePhraseDiv(uId);
       const prevPhrase = props.piece.phraseGrid[track][phrase.pieceIdx! - 1];
+      const chikKeys = Object.keys(phrase.chikaris);
+      chikKeys.forEach(key => {
+        // console.log(key, prevPhrase.durTot)
+        const newKey = (prevPhrase.durTot! + Number(key)).toFixed(2);
+        prevPhrase.chikaris[newKey] = phrase.chikaris[key];
+      })
       prevPhrase.trajectories.push(...phrase.trajectories);
       prevPhrase.consolidateSilentTrajs();
       props.piece.phraseGrid[track].splice(phrase.pieceIdx!, 1);
