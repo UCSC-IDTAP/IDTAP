@@ -23,6 +23,11 @@ interface SitarPhraseAttributes extends BasePhraseAttributes {
 	chikariNCVI: number;
 	krintinCount: number;
 	slideCount: number;
+  directionInterval: (-1 | 0 | 1)[];
+  linearContourVector: [number, number, number];
+  combinatorialContourVector: [number, number, number];
+  morph: number[];
+  pitchCounts: Record<number, number>;
 }
 
 
@@ -204,6 +209,58 @@ class SitarPhraseAnalyzer {
     return this.slideTimes.length;
   }
 
+  get pitchCounts(): Record<number, number> {
+    const counts: Record<number, number> = {};
+    this.allNotes.forEach(note => {
+      if (counts[note]) {
+        counts[note]++;
+      } else {
+        counts[note] = 1;
+      }
+    });
+    return counts;
+  }
+
+  // ngrams<T>(data: T[], n: number): T[][] {
+  //   const out: T[][] = [];
+  //   for (let i = 0; i <= data.length - n; i++) {
+  //     out.push(data.slice(i, i + n));
+  //   }
+  //   return out;
+  // }
+
+  markovCounts<T>(data: T[], order: number = 1): { states: T[][]; matrix: number[][] } {
+    // generate n-grams of length `order`
+    const ngrams: T[][] = [];
+    for (let i = 0; i <= data.length - order; i++) {
+      ngrams.push(data.slice(i, i + order));
+    }
+    // collect unique states in order of first appearance
+    const stateMap = new Map<string, T[]>();
+    ngrams.forEach(ng => {
+      const key = JSON.stringify(ng);
+      if (!stateMap.has(key)) {
+        stateMap.set(key, ng);
+      }
+    });
+    const states = Array.from(stateMap.values());
+    // map each state to its index
+    const index = new Map<string, number>();
+    states.forEach((s, i) => index.set(JSON.stringify(s), i));
+    // initialize transition matrix
+    const N = states.length;
+    const matrix: number[][] = Array.from({ length: N }, () => Array(N).fill(0));
+    // count transitions between consecutive n-grams
+    for (let i = 0; i < ngrams.length - 1; i++) {
+      const fromKey = JSON.stringify(ngrams[i]);
+      const toKey = JSON.stringify(ngrams[i + 1]);
+      const fromIdx = index.get(fromKey)!;
+      const toIdx = index.get(toKey)!;
+      matrix[fromIdx][toIdx]++;
+    }
+    return { states, matrix };
+  }
+
   get statistics(): SitarPhraseAttributes {
     return {
       instrument: this.instrument,
@@ -219,7 +276,14 @@ class SitarPhraseAnalyzer {
       chikariNPVI: this.chikariNPVI,
       chikariNCVI: this.chikariNCVI,
       krintinCount: this.krintinCount,
-      slideCount: this.slideCount
+      slideCount: this.slideCount,
+      directionInterval: this.morph.directionInterval,
+      linearContourVector: this.morph.linearContourVector,
+      combinatorialContourVector: this.morph.combinatorialContourVector,
+      morph: this.morph.data,
+      pitchCounts: this.pitchCounts,
+      transitionMatrix1: this.markovCounts(this.allNotes, 1),
+      transitionMatrix2: this.markovCounts(this.allNotes, 2),
     };
   }
 }
