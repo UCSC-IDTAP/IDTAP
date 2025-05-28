@@ -28,7 +28,7 @@ const instantiatePiece = async (queryId = testQueryId) => {
     }
   }
   piece.phraseGrid.forEach((phrases, instIdx) => {
-    phrases.forEach(phrase => {
+    phrases.forEach((phrase, pIdx) => {
       let pt = phrase.trajectoryGrid ?
               phrase.trajectoryGrid[0] : 
               phrase.trajectories;
@@ -83,6 +83,16 @@ const instantiatePiece = async (queryId = testQueryId) => {
           })
         })
       }
+            // fix to move chikaris to next phrase if necessary
+      const initChikariKeys = Object.keys(phrase.chikaris);
+      initChikariKeys.forEach((key, i) => {
+        if (Number(key) >= phrase.durTot!) {
+          const newKey = (Number(key) - phrase.durTot!).toFixed(2);
+          phrases[pIdx+1].chikaris[newKey] = phrase.chikaris[key];
+          delete phrase.chikaris[key];
+        }
+      })
+
       const chikariKeys = Object.keys(phrase.chikaris);
       const chikariEntries = chikariKeys.map(key => phrase.chikaris[key]);
       const chikariObj: { [key: string]: Chikari } = {};
