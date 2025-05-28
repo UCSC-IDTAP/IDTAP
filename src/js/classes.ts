@@ -689,6 +689,11 @@ class Pitch {
     return Math.log2(this.frequency)
   }
 
+  sameAs(other: Pitch): boolean {
+    return this.swara === other.swara && 
+      this.oct === other.oct && 
+      this.raised === other.raised
+  }
 
   toJSON() {
     return {

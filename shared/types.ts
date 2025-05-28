@@ -1147,6 +1147,12 @@ type DN_ExtractorOptions = {
   endSequenceLength: number,
 }
 
+type Temporality = {
+	startTime: number;
+	endTime: number;
+	duration: number;
+}
+
 export type { 
   CollectionType, 
   UserType, 
@@ -1252,5 +1258,6 @@ export type {
   TuningType,
   ExcerptRange,
   DN_ExtractorOptions,
+  Temporality,
 };
 

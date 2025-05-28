@@ -67860,7 +67860,7 @@ var DN_Extractor = class _DN_Extractor {
           const diff = maxSubSegLength - subSeg.length;
           const insertString = "";
           const insertArray = Array.from({ length: diff }, () => insertString);
-          newSeg.push([...subSeg, ...insertArray]);
+          newSeg.push([...insertArray, ...subSeg]);
         } else {
           newSeg.push(subSeg);
         }
@@ -68371,20 +68371,17 @@ var DN_Extractor = class _DN_Extractor {
     const longestLength = Math.max(...this.segmentOutputs.map((s) => s.pitches.join(", ").length));
     sheet.columns[5].width = 0.7 * longestLength;
   }
-  async writeToExcel(filename) {
+  createWorkbook(filename) {
     const workbook = new import_exceljs.default.Workbook();
     this.addSeparatedSegmentSheet(workbook, "Segments separated");
     this.addSeparatedSegmentSheet(workbook, "Segments separated end aligned", true);
     this.addCombinedSegmentSheet(workbook, "Segments combined");
     this.addEndingSequencesWorksheet(workbook);
-    this.addSegmentedEndingSequencesWorksheet(workbook, "Segmented Ending Sequences");
-    this.addSeparatedSegmentedEndingSequencesWorksheet(workbook, "Segmented Ending Sequences with Inserts", ",");
-    this.addSeparatedSegmentedEndingSequencesWorksheet(
-      workbook,
-      "Aligned Segmented Ending Sequences with Inserts",
-      ",",
-      true
-    );
+    this.addSeparatedSegmentedEndingSequencesWorksheet(workbook, "Aligned Segmented Ending Sequences with Inserts", ",", true);
+    return workbook;
+  }
+  async writeToExcel(filename) {
+    const workbook = this.createWorkbook(filename);
     try {
       await workbook.xlsx.writeFile(filename);
     } catch (error) {
@@ -68395,14 +68392,7 @@ var DN_Extractor = class _DN_Extractor {
    * Build all worksheets in-memory and return the Excel file as a Buffer.
    */
   async toBuffer() {
-    const workbook = new import_exceljs.default.Workbook();
-    this.addSeparatedSegmentSheet(workbook, "Segments separated");
-    this.addSeparatedSegmentSheet(workbook, "Segments separated end aligned", true);
-    this.addCombinedSegmentSheet(workbook, "Segments combined");
-    this.addEndingSequencesWorksheet(workbook);
-    this.addSegmentedEndingSequencesWorksheet(workbook, "Segmented Ending Sequences");
-    this.addSeparatedSegmentedEndingSequencesWorksheet(workbook, "Segmented Ending Sequences with Inserts", ",");
-    this.addSeparatedSegmentedEndingSequencesWorksheet(workbook, "Aligned Segmented Ending Sequences with Inserts", ",", true);
+    const workbook = this.createWorkbook("temp.xlsx");
     const arrayBuffer = await workbook.xlsx.writeBuffer();
     return Buffer.from(arrayBuffer);
   }
