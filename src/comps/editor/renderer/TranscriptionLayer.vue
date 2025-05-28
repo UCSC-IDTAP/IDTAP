@@ -5479,11 +5479,23 @@ export default defineComponent({
       const newPhraseObj: {
         trajectories: Trajectory[],
         raga: Raga,
+        chikaris?: { [key: string]: Chikari },
         instrumentation?: string[]
       } = {
         trajectories: newTrajs,
         raga: phrase_.raga!
       };
+      const keys = Object.keys(phrase_.chikaris);
+      keys.forEach(key => {
+        if (Number(key) >= phrase_.durTot!) {
+          newPhraseObj.chikaris = newPhraseObj.chikaris || {};
+          const newTime = String(Math.round(100 * 
+            (Number(key) - phrase_.durTot!)) / 100);
+          newPhraseObj.chikaris[newTime] = phrase_.chikaris[key];
+          delete phrase_.chikaris[key];
+        }
+      })
+
       if (props.piece.instrumentation) {
         newPhraseObj.instrumentation = props.piece.instrumentation;
       }
