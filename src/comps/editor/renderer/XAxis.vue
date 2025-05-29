@@ -1,9 +1,7 @@
 <template>
-  <div class='xAxis' :style='dynamicStyle'>
+  <div class='xAxis' ref='xAxisContainer' :style='dynamicStyle'>
     <svg ref='axSvg'></svg>
     <svg ref='phraseSvg' v-if='showPhrases'></svg>
-    
-
   </div>
 </template>
 
@@ -194,14 +192,62 @@ export default defineComponent({
     const handleMouseDown = (e: MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
+      const x = e.offsetX;
+      // Draw vertical line on axis svg
+      d3.selectAll('.region-line').remove();
+      if (axSvg.value) {
+        d3.select(axSvg.value)
+          .append('line')
+          .classed('region-line', true)
+          .attr('x1', x).attr('x2', x)
+          .attr('y1', 0).attr('y2', elementHeight.value)
+          .attr('stroke', 'grey')
+          .attr('stroke-width', 1);
+      }
+      // Draw vertical line on phrase svg
+      if (phraseSvg.value) {
+        d3.select(phraseSvg.value)
+          .append('line')
+          .classed('region-line', true)
+          .attr('x1', x).attr('x2', x)
+          .attr('y1', 0).attr('y2', props.height / 2)
+          .attr('stroke', 'grey')
+          .attr('stroke-width', 1);
+      }
       regionStartPxl.value = e.offsetX;
     };
     
     const handleMouseUp = (e: MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
+      if (
+        xAxisContainer.value &&
+        e.relatedTarget instanceof Node &&
+        xAxisContainer.value.contains(e.relatedTarget)
+      ) {
+        return;
+      }
+      const x = e.offsetX;
       if (regionStartPxl.value === undefined) {
         return
+      }
+      if (axSvg.value) {
+        d3.select(axSvg.value)
+          .append('line')
+          .classed('region-line', true)
+          .attr('x1', x).attr('x2', x)
+          .attr('y1', 0).attr('y2', elementHeight.value)
+          .attr('stroke', 'grey')
+          .attr('stroke-width', 1);
+      }
+      if (phraseSvg.value) {
+        d3.select(phraseSvg.value)
+          .append('line')
+          .classed('region-line', true)
+          .attr('x1', x).attr('x2', x)
+          .attr('y1', 0).attr('y2', props.height / 2)
+          .attr('stroke', 'grey')
+          .attr('stroke-width', 1);
       }
       if (e.offsetX < regionStartPxl.value) {
         regionEndPxl.value = regionStartPxl.value;
@@ -218,6 +264,9 @@ export default defineComponent({
       const svg = d3.select(phraseSvg.value)
         .attr('width', props.scaledWidth)
         .attr('height', props.height/2)
+        .on('mousedown', handleMouseDown)
+        .on('mouseup', handleMouseUp)
+        .on('mouseout', handleMouseUp)
       svg.selectAll('*').remove();
       svg.append('rect')
         .attr('width', props.scaledWidth)
@@ -252,6 +301,10 @@ export default defineComponent({
           .text(`Phrase ${idx + 1}`);
       });
     };
+
+    const clearRegionBorders = () => {
+      d3.selectAll('.region-line').remove();
+    }
 
     onMounted(() => {
       // put the axis on the axSvg
@@ -289,6 +342,7 @@ export default defineComponent({
       regionEndPxl,
       phraseSvg,
       resetAxis,
+      clearRegionBorders,
     }
   }
 })
