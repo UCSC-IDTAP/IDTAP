@@ -328,6 +328,7 @@ export default defineComponent({
     'open:removeFromCollection',
     'update:xAxisPhraseLabels',
     'update:slope',
+    'clearRegionBorders',
   ],
   setup(props, { emit }) {
     const tranContainer = ref<HTMLDivElement | null>(null);
@@ -4179,6 +4180,7 @@ export default defineComponent({
       autoWindowOpen.value = false;
       trajAnnotatorOpen.value = false;
       emit('clearTSP');
+      emit('clearRegionBorders');
       goToTimeModal.value = false;
     }
 

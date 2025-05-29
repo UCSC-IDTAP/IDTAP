@@ -166,6 +166,7 @@
               @open:addToCollection='$emit("open:addToCollection")'
               @open:removeFromCollection='$emit("open:removeFromCollection")'
               @update:xAxisPhraseLabels='updateXAxisPhraseLabels'
+              @clearRegionBorders='xAxis ? xAxis!.clearRegionBorders() : null'
             />
           />
         </div>
