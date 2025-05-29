@@ -64,6 +64,8 @@
       <div 
         class='scrollingContainer' 
         ref='scrollingContainer'
+        @wheel='onWheel'
+        @touchmove='onTouchMove'
         >
         <div class='layersContainer' ref='layersContainer'>
           <div class='backgroundLayer'></div>
@@ -224,6 +226,7 @@ import { BrowserInfo } from 'detect-browser';
 import ContextMenu from '@/comps/ContextMenu.vue';
 import EditInstrumentation from '@/comps/EditInstrumentation.vue';
 import { Meter } from '@/js/meter.ts';
+import { useStore } from 'vuex';
 
 export default defineComponent({
   name: 'Renderer',
@@ -488,6 +491,8 @@ export default defineComponent({
     const showEditInstrumentation = ref(false);
     const preZoomPlayheadPxl = ref(0);
     const preZoomMiddleTime = ref(0);
+
+    const store = useStore();
 
     const availableModes = computed(() => {
       let entries = Object.entries(EditorMode);
@@ -754,6 +759,20 @@ export default defineComponent({
       verticalScrollUpdateIdx.value += 1;
     }, 16);
 
+    const onWheel = (e: WheelEvent) => {
+      console.log(store.state.userID);
+      if (store.state.userID === '634d9506a6a3647e543b7641') {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+    const onTouchMove = (e: TouchEvent) => {
+      if (store.state.userID === '634d9506a6a3647e543b7641') {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+
     onMounted(async () => {
       window.addEventListener('keydown', handleKeydown);
       window.addEventListener('click', () => {
@@ -842,6 +861,8 @@ export default defineComponent({
       preZoomMiddleTime,
       scrollBackForPlayhead,
       updateXAxisPhraseLabels,
+      onWheel,
+      onTouchMove,
 
     }
   }
