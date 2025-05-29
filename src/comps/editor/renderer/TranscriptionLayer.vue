@@ -43,7 +43,7 @@
   <div class='timeModalOuter'v-if="goToTimeModal">
     <div class="time-entry-modal">
       <div class="time-entry-container">
-        <input type="text" v-model="goToHours" placeholder="HH" class="time-entry-input" />
+        <input ref='hrInput' type="text" v-model="goToHours" placeholder="HH" class="time-entry-input" />
         <span>:</span>
         <input type="text" v-model="goToMinutes" placeholder="MM" class="time-entry-input" />
       </div>
@@ -384,6 +384,9 @@ export default defineComponent({
     const goToMinutes = ref<string>('00');
     const controlled = ref<boolean>(false);
     const annotatingTraj = ref<Trajectory | undefined>(undefined);
+    const hrInput = ref<HTMLInputElement | null>(null);
+
+
     let playheadLineIdx = 0;
     let justDeletedPhraseDiv = false;
     const dragDotColor = 'purple';
@@ -4234,7 +4237,13 @@ export default defineComponent({
         emit('update:selectedMode', EditorMode.Region);
       } else if (e.code === 'KeyG') {
         if (alted.value) {
+          e.preventDefault();
+          e.stopPropagation();
           goToTimeModal.value = true;
+          nextTick(() => {
+            console.log(hrInput.value)
+            hrInput.value?.focus();
+          })
         }
       } else if (e.key === 'Shift') {
         shifted.value = true;
@@ -4317,6 +4326,9 @@ export default defineComponent({
           verticalMoveGraph(0.1);
         }
       } else if (e.key === 'Tab') {
+        if (goToTimeModal.value) {
+          return;
+        }
         e.preventDefault();
         if (shifted.value) {
           if (selectedTraj.value !== undefined && selectedTrajs.value.length === 1) {
@@ -4344,6 +4356,11 @@ export default defineComponent({
         metad.value = true;
       } else if (e.key === 'Control' && props.browser.os!.includes('Windows')) {
         metad.value = true
+      } else if (e.key === 'Enter') {
+        if (goToTimeModal.value) {
+          e.preventDefault();
+          goToTime();
+        }
       }
     }
 
@@ -5942,6 +5959,7 @@ export default defineComponent({
       trajAnnotatorHeight,
       trajAnnotatorOpen,
       annotatingTraj,
+      hrInput,
     }
   }
 })
