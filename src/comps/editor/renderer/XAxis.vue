@@ -306,6 +306,53 @@ export default defineComponent({
       d3.selectAll('.region-line').remove();
     }
 
+    const setRegionStartPxl = (pxl: number) => {
+      const x = pxl;
+      // Draw vertical line on axis svg
+      d3.selectAll('.region-line').remove();
+      if (axSvg.value) {
+        d3.select(axSvg.value)
+          .append('line')
+          .classed('region-line', true)
+          .attr('x1', x).attr('x2', x)
+          .attr('y1', 0).attr('y2', elementHeight.value)
+          .attr('stroke', 'grey')
+          .attr('stroke-width', 1);
+      }
+      // Draw vertical line on phrase svg
+      if (phraseSvg.value) {
+        d3.select(phraseSvg.value)
+          .append('line')
+          .classed('region-line', true)
+          .attr('x1', x).attr('x2', x)
+          .attr('y1', 0).attr('y2', props.height / 2)
+          .attr('stroke', 'grey')
+          .attr('stroke-width', 1);
+      }
+    }
+
+    const setRegionEndPxl = (pxl: number) => {
+      const x = pxl;
+      if (axSvg.value) {
+        d3.select(axSvg.value)
+          .append('line')
+          .classed('region-line', true)
+          .attr('x1', x).attr('x2', x)
+          .attr('y1', 0).attr('y2', elementHeight.value)
+          .attr('stroke', 'grey')
+          .attr('stroke-width', 1);
+      }
+      if (phraseSvg.value) {
+        d3.select(phraseSvg.value)
+          .append('line')
+          .classed('region-line', true)
+          .attr('x1', x).attr('x2', x)
+          .attr('y1', 0).attr('y2', props.height / 2)
+          .attr('stroke', 'grey')
+          .attr('stroke-width', 1);
+      }
+    }
+
     onMounted(() => {
       // put the axis on the axSvg
       if (axSvg.value) {
@@ -343,6 +390,8 @@ export default defineComponent({
       phraseSvg,
       resetAxis,
       clearRegionBorders,
+      setRegionStartPxl,
+      setRegionEndPxl,
     }
   }
 })

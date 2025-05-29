@@ -167,6 +167,8 @@
               @open:removeFromCollection='$emit("open:removeFromCollection")'
               @update:xAxisPhraseLabels='updateXAxisPhraseLabels'
               @clearRegionBorders='xAxis ? xAxis!.clearRegionBorders() : null'
+              @update:regionStartPxl='xAxis ? xAxis!.setRegionStartPxl($event) : null'
+              @update:regionEndPxl='xAxis ? xAxis!.setRegionEndPxl($event) : null'
             />
           />
         </div>

@@ -329,6 +329,8 @@ export default defineComponent({
     'update:xAxisPhraseLabels',
     'update:slope',
     'clearRegionBorders',
+    'update:regionStartPxl',
+    'update:regionEndPxl',
   ],
   setup(props, { emit }) {
     const tranContainer = ref<HTMLDivElement | null>(null);
@@ -4183,7 +4185,9 @@ export default defineComponent({
       autoWindowOpen.value = false;
       trajAnnotatorOpen.value = false;
       emit('clearTSP');
-      emit('clearRegionBorders');
+      if (options.includeRegion) {
+        emit('clearRegionBorders');
+      }
       goToTimeModal.value = false;
     }
 
@@ -4964,6 +4968,7 @@ export default defineComponent({
           .attr('id', 'selBox')
       } else if (alted.value) {
         regionStartPxl.value = e.x;
+        emit('update:regionStartPxl', regionStartPxl.value);
       }
     }
 
@@ -5049,7 +5054,9 @@ export default defineComponent({
           regionEndPxl.value = undefined;
         } else {
           setUpRegion();
+          emit('update:regionEndPxl', e.x)
         }
+        
       } else {
         const c = selBoxStartX === e.x && selBoxStartY === e.y;
         if (selBoxStartX !== undefined && selBoxStartY !== undefined && !c) {
