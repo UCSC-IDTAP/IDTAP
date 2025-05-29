@@ -745,23 +745,24 @@ export default defineComponent({
     })
     watch(() => props.instTracks, (newVal) => {
       newVal.forEach((track, tIdx) => {
-        d3.selectAll(`.track${track.idx}`)
+        const selector = `.track${tIdx}`;
+        d3.selectAll(selector)
           .style('opacity', Number(track.displaying))
-        d3.selectAll(`.track${track.idx} .traj`)
+        d3.selectAll(`${selector} .traj`)
           .attr('stroke', track.color)
-        d3.selectAll('.pluck')
+        d3.selectAll(`${selector} .pluck`)
           .attr('fill', track.color)
-        d3.selectAll(`.track${track.idx} .pluck`)
+        d3.selectAll(`${selector} .pluck`)
           .attr('stroke', track.color)
-        d3.selectAll(`.track${track.idx} .consonantSymbol`)
+        d3.selectAll(`${selector} .consonantSymbol`)
           .attr('fill', track.color)
 
         // chikaris
-        d3.selectAll(`.track${track.idx} .chikari`)
+        d3.selectAll(`${selector} .chikari`)
           .attr('stroke', track.color)
 
         // phrase divs
-        d3.selectAll(`.track${track.idx} .phraseDiv`)
+        d3.selectAll(`${selector} .phraseDiv`)
           .attr('stroke', track.color)
       })
       selectedTrajs.value.forEach(traj => {
