@@ -501,17 +501,33 @@ self.onmessage = async (e: MessageEvent<WorkerMessage>) => {
           throw new Error('newPower is undefined');
         }
         power = newPower;
+        intensityLUT = createIntensityLUT(maxVal);
         dispatcher!.resetBackgroundQueue(TaskName.Intensify);
         self.postMessage('updateObserver');
       } else if (type === 'color') {
         if (newCMap === undefined) {
           throw new Error('newCMap is undefined');
         }
+        
         cmap = newCMap;
         cmapLUT = createColorMapLUT(d3CMap[cmap]);
         dispatcher!.resetBackgroundQueue(TaskName.Colorize);
         self.postMessage('updateObserver');
-      } 
+      } else if (type === 'powerAndColor') {
+        if (newPower === undefined) {
+          throw new Error('newPower is undefined');
+        }
+        if (newCMap === undefined) {
+          throw new Error('newCMap is undefined');
+        }
+        power = newPower;
+        cmap = newCMap;
+        intensityLUT = createIntensityLUT(maxVal);
+        cmapLUT = createColorMapLUT(d3CMap[cmap]);
+        dispatcher!.resetBackgroundQueue(TaskName.Intensify);
+        dispatcher!.resetBackgroundQueue(TaskName.Colorize);
+        self.postMessage('updateObserver');
+      }
     }
   } else if (e.data.msg === 'requestRenderData') {
     while (dispatcher === undefined) {

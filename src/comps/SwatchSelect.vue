@@ -22,7 +22,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType, ref, onMounted, computed } from 'vue';
+import { defineComponent, PropType, ref, onMounted, computed, watch } from 'vue';
 import * as d3 from 'd3';
 import { CMap } from '@shared/types';
 import * as d3CMap from 'd3-scale-chromatic';
@@ -76,7 +76,9 @@ export default defineComponent({
       svgString: string, 
       cMap: CMap 
     }[] = createSwatches(width.value - 2, height.value - 2);
+
     const selectedValue = ref(swatches.find(swatch => swatch.cMap === props.initCMap)!.svgString);
+    
     const toggleDropdown = () => {
       isOpen.value = !isOpen.value;
       console.log('isOpen', isOpen.value);
@@ -98,10 +100,14 @@ export default defineComponent({
       emit('change', swatch.cMap);
     };
 
-    // onMounted(() => {
-    //   console.log(selectedLabel.value);
-    //   console.log(swatches)
-    // })
+    watch(() => props.initCMap, (newValue) => {
+      const swatch = swatches.find(s => s.cMap === newValue);
+      if (swatch) {
+        selectedLabel.value = newValue;
+        selectedValue.value = swatch.svgString;
+      }
+    });
+
 
 
     return {
