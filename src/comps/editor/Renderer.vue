@@ -760,7 +760,6 @@ export default defineComponent({
     }, 16);
 
     const onWheel = (e: WheelEvent) => {
-      console.log(store.state.userID);
       if (store.state.userID === '634d9506a6a3647e543b7641') {
         e.preventDefault();
         e.stopPropagation();
