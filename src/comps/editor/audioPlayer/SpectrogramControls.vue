@@ -914,6 +914,9 @@ export default defineComponent({
         oscNode.value.frequency.exponentialRampToValueAtTime(newVal, now + lag);
       }
     });
+    watch(cMapName, newVal => {
+      initCMap.value = newVal;
+    })
 
     
 
@@ -971,6 +974,19 @@ export default defineComponent({
         payload: processOptions
       })
     };
+
+    const updateIntensityAndColorMap = () => {
+      if (spectrogramWorker === undefined) return;
+      const processOptions = {
+        type: 'powerAndColor',
+        newPower: intensityPower.value,
+        newCMap: cMapName.value
+      }
+      spectrogramWorker.postMessage({
+        msg: 'process',
+        payload: processOptions
+      })
+    }
 
     const updateSaFreq = () => {
       logSaFreq.value = Math.log2(saFreq.value);
@@ -1143,6 +1159,8 @@ export default defineComponent({
         phonemesToggleProxy.value = s.visibility.phonemes;
         phraseDivsToggleProxy.value = s.visibility.phraseDivs;
       }
+      updateIntensityAndColorMap();
+
     };
 
     const setAsDefaultSetting = () => {
