@@ -1145,7 +1145,8 @@ export default defineComponent({
 
     const replaceSilenceWithConnection = (
         silentTraj: Trajectory, 
-        track: number
+        track: number,
+        selectedTraj: Trajectory
       ) => {
       if (silentTraj.id !== 12) {
         throw new Error('Trajectory is not silent');
@@ -1193,6 +1194,7 @@ export default defineComponent({
       phrase.reset();
       resetTrajRenderStatus()
       renderTraj(newTraj);
+      selectTraj(selectedTraj.uniqueId!);
       emit('unsavedChanges', true);
     }
 
@@ -2559,7 +2561,7 @@ export default defineComponent({
               contextMenuClosed.value = true;
               const phrase = props.piece.phraseGrid[track][pIdx];
               const silTraj = phrase.trajectories[tIdx + 1];
-              replaceSilenceWithConnection(silTraj, track);
+              replaceSilenceWithConnection(silTraj, track, traj);
             },
             enabled: props.editable
           })
@@ -2571,7 +2573,7 @@ export default defineComponent({
               contextMenuClosed.value = true;
               const phrase = props.piece.phraseGrid[track][pIdx];
               const silTraj = phrase.trajectories[tIdx - 1];
-              replaceSilenceWithConnection(silTraj, track);
+              replaceSilenceWithConnection(silTraj, track, traj);
             },
             enabled: props.editable
           })
@@ -3933,6 +3935,12 @@ export default defineComponent({
         .style('fill', selectedDragDotColor);
     }
 
+    const deSelectDragDot = () => {
+      selectedDragDotIdx.value = undefined;
+      d3.selectAll('.dragDot')
+        .style('fill', dragDotColor);
+    };
+
     const handleContextMenuDragDot = (e: MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
@@ -4408,6 +4416,8 @@ export default defineComponent({
         if (goToTimeModal.value) {
           e.preventDefault();
           goToTime();
+        } else if (selectedDragDotIdx.value !== undefined) {
+          deSelectDragDot();
         }
       }
     }
