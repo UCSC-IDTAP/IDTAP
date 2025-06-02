@@ -93,29 +93,23 @@
           </option>
         </select>
       </div>
-      <div class='formRow tall'>
+      <div class='formRow veryTall'>
         <label>Editors</label>
-        <select v-model='explicitPermissions.edit' multiple>
-          <option 
-            v-for='user in allUsers' 
-            :key='user._id' 
-            :value='user._id'
-            >
-            {{ `${user.name} , (${user.email})` }}
-          </option>
-        </select>
+        <UserSearch
+          :users='allUsers'
+          :includedUsers='explicitPermissions.edit'
+          @addUser='explicitPermissions.edit.push($event)'
+          @removeUser='explicitPermissions.edit = explicitPermissions.edit.filter(id => id !== $event)'
+          />
       </div>
-      <div class='formRow tall' v-if='!explicitPermissions.publicView'>
+      <div class='formRow veryTall' v-if='!explicitPermissions.publicView'>
         <label>Viewers</label>
-        <select v-model='explicitPermissions.view' multiple>
-          <option 
-            v-for='user in allUsers' 
-            :key='user._id' 
-            :value='user._id'
-            >
-            {{ `${user.name} , (${user.email})` }}
-          </option>
-        </select>
+        <UserSearch
+          :users='allUsers'
+          :includedUsers='explicitPermissions.view'
+          @addUser='explicitPermissions.view.push($event)'
+          @removeUser='explicitPermissions.view = explicitPermissions.view.filter(id => id !== $event)'
+          />
       </div>
       <div class='formRow'>
         <label>Number of Instruments</label>
@@ -336,6 +330,7 @@ import {
   RulesType,
 } from '@shared/types'
 import { Instrument } from '@shared/enums'
+import UserSearch from '@/comps/files/UserSearch.vue';
 
 type NewPieceRegistrarDataType = {
   title?: string;
@@ -380,6 +375,9 @@ import cloneDeep from 'lodash/cloneDeep';
 
 export default defineComponent({
   name: 'NewPieceRegistrar',
+  components: {
+    UserSearch
+  },
   data(): NewPieceRegistrarDataType {
     return {
       title: undefined,
@@ -1116,6 +1114,10 @@ export default defineComponent({
 
 .formRow.tall {
   height: 80px;
+}
+
+.formRow.veryTall {
+  height: 120px;
 }
 
 .errorRow {
