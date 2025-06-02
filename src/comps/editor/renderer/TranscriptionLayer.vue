@@ -3898,9 +3898,39 @@ export default defineComponent({
         const target = e.target as SVGCircleElement;
         const idx = Number(target.id.split('dragDot')[1]);
         const traj = selectedTrajs.value[0];
+        d3.selectAll('.dragDot')
+          .style('fill', dragDotColor);
         d3.select(`#dragDot${idx}`)
           .style('fill', selectedDragDotColor);
         selectedDragDotIdx.value = idx;
+    }
+
+    const selectDragDot = (dir: 'right' | 'left') => {
+      if (selectedTraj.value === undefined) {
+        return
+      }
+      if (selectedDragDotIdx.value === undefined) {
+        if (dir === 'left') {
+          selectedDragDotIdx.value = 0;
+        } else {
+          selectedDragDotIdx.value = selectedTraj.value.durArray!.length;
+        }
+      } else {
+        if (dir === 'left') {
+          if (selectedDragDotIdx.value > 0) {
+            selectedDragDotIdx.value -= 1;
+          }
+        } else {
+          if (selectedDragDotIdx.value < selectedTraj.value.durArray!.length) {
+            selectedDragDotIdx.value += 1;
+          }
+        }
+      }
+      const idx = selectedDragDotIdx.value;
+      d3.selectAll('.dragDot')
+        .style('fill', dragDotColor);
+      d3.select(`#dragDot${idx}`)
+        .style('fill', selectedDragDotColor);
     }
 
     const handleContextMenuDragDot = (e: MouseEvent) => {
@@ -4276,13 +4306,20 @@ export default defineComponent({
           nudgePhraseDiv(-1);
         } else if (selectedDragDotIdx.value !== undefined) {
           e.preventDefault();
-          nudgeDragDot('left')
+          if (shifted.value) {
+            selectDragDot('left') 
+          } else {
+            nudgeDragDot('left')
+          }
         } else if (selectedPulse.value !== undefined) {
           e.preventDefault();
           nudgePulse('left');
         } else if (selectedTraj.value !== undefined && alted.value) {
           e.preventDefault(); 
           nudgeSlope('left');
+        } else if (selectedTraj.value !== undefined && shifted.value) {
+          e.preventDefault();
+          selectDragDot('left');
         } else {
           e.preventDefault();
           horizontalMoveGraph(-0.1);
@@ -4296,13 +4333,20 @@ export default defineComponent({
           nudgePhraseDiv(1);
         } else if (selectedDragDotIdx.value !== undefined) {
           e.preventDefault();
-          nudgeDragDot('right')
+          if (shifted.value) {
+            selectDragDot('right')
+          } else {
+            nudgeDragDot('right')
+          }
         } else if (selectedPulse.value !== undefined) {
           e.preventDefault();
           nudgePulse('right');
         } else if (selectedTraj.value !== undefined && alted.value) {
           e.preventDefault();
           nudgeSlope('right');
+        } else if (selectedTraj.value !== undefined && shifted.value) {
+          e.preventDefault();
+          selectDragDot('right');
         } else {
           e.preventDefault();
           horizontalMoveGraph(0.1);
