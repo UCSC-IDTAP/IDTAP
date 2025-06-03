@@ -1153,6 +1153,14 @@ type Temporality = {
 	duration: number;
 }
 
+type AssemblageDescriptor = {
+  instrument: Instrument;
+  strands: {
+    label: string;
+    phraseIDs: string[];
+  }[]
+}
+
 export type { 
   CollectionType, 
   UserType, 
@@ -1259,5 +1267,6 @@ export type {
   ExcerptRange,
   DN_ExtractorOptions,
   Temporality,
+  AssemblageDescriptor
 };
 

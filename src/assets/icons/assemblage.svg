@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="64" height="64"
+     viewBox="0 0 64 64">
+
+  <!-- Column labels with slight top padding -->
+  <text x="11" y="12" font-size="12" text-anchor="middle" fill="white">A</text>
+  <text x="32" y="12" font-size="12" text-anchor="middle" fill="white">B</text>
+  <text x="53" y="12" font-size="12" text-anchor="middle" fill="white">C</text>
+
+  <!-- Row 0: one wider box in column A -->
+  <rect x="1"  y="16" width="19" height="4"
+        stroke="white" fill="none" stroke-width="2"/>
+
+  <!-- Row 1: one wider box in column B -->
+  <rect x="22" y="22" width="19" height="4"
+        stroke="white" fill="none" stroke-width="2"/>
+
+  <!-- Row 2: one wider box in column A -->
+  <rect x="1"  y="28" width="19" height="4"
+        stroke="white" fill="none" stroke-width="2"/>
+
+  <!-- Row 3: one wider box in column A -->
+  <rect x="1"  y="34" width="19" height="4"
+        stroke="white" fill="none" stroke-width="2"/>
+
+  <!-- Row 4: one wider box in column B -->
+  <rect x="22" y="40" width="19" height="4"
+        stroke="white" fill="none" stroke-width="2"/>
+
+  <!-- Row 5: one wider box in column C -->
+  <rect x="43" y="46" width="19" height="4"
+        stroke="white" fill="none" stroke-width="2"/>
+
+  <!-- Row 6: one wider box in column B -->
+  <rect x="22" y="52" width="19" height="4"
+        stroke="white" fill="none" stroke-width="2"/>
+
+  <!-- Row 7: one wider box in column A -->
+  <rect x="1"  y="58" width="19" height="4"
+        stroke="white" fill="none" stroke-width="2"/>
+
+</svg>

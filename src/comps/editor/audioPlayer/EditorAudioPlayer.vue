@@ -55,6 +55,16 @@
           </div>
           <div class="rulerBox">
             <img
+              :src="icons.assemblage"
+              @click="toggleAssemblage"
+              class="assemblageImg"
+              ref="assemblageImg"
+              @mouseover='controlsMouseOver'
+              @mouseout='controlsMouseOut'
+            />
+          </div>
+          <div class="rulerBox">
+            <img
               :src="icons.tags"
               @click="toggleLabelControls"
               class="tagsImg"
@@ -403,6 +413,7 @@ import downloadIcon from '@/assets/icons/download.svg';
 import meterIcon from '@/assets/icons/meter.svg';
 import specControlIcon from '@/assets/icons/specControls.svg';
 import shareIcon from '@/assets/icons/share.svg';
+import assemblageIcon from '@/assets/icons/assemblage.svg';
 
 // URLs
 import caURL from '@/audioWorklets/captureAudio.worklet.js?url';
@@ -411,12 +422,7 @@ import stretcherURL from '@/js/bundledStretcherWorker.js?url';
 
 // Classes and Types
 import { 
-  getStarts, 
-  getEnds, 
-  Phrase, 
-  Trajectory, 
   Raga, 
-  RuleSetType,
   Piece,
   Pitch
 } from '@model';
@@ -442,6 +448,7 @@ import {
   KlattSynthType, 
   NumObj,
   ExcerptRange,
+  RuleSetType
 } from '@shared/types';
 
 // External Libraries
@@ -472,6 +479,7 @@ type EditorAudioPlayerData = {
     tags: string;
     specControl: string;
     share: string;
+    assemblage: string;
   };
   circleDragging: boolean;
   formattedCurrentTime: string;
@@ -501,6 +509,7 @@ type EditorAudioPlayerData = {
   showMeterControls: boolean;
   showLabelControls: boolean;
   showSpecControls: boolean;
+  showAssemblage: boolean;
   sargam: string[];
   solfege: string[];
   pitchClasses: string[];
@@ -706,6 +715,7 @@ export default defineComponent({
         meter: meterIcon,
         tags: tagsIcon,
         specControl: specControlIcon,
+        assemblage: assemblageIcon,
         share: shareIcon,
       },
       circleDragging: false,
@@ -736,6 +746,7 @@ export default defineComponent({
       showMeterControls: false,
       showLabelControls: false,
       showSpecControls: false,
+      showAssemblage: false,
       sargam: [],
       solfege: [],
       pitchClasses: [],
@@ -835,6 +846,7 @@ export default defineComponent({
         tuningFork: 'Tuning Controls',
         showControls: 'Synthesis Controls',
         shareImg: 'Share Transcription',
+        assemblageImg: 'Assemblage Controls',
       },
       synthControls: [],
       initializedSynthControls: false,
@@ -1145,6 +1157,7 @@ export default defineComponent({
       this.showShare = false;
       this.showTuning = false;
       this.showControls = false;
+      this.showAssemblage = false;
       const controlsImg = this.$refs.controlsImg as HTMLImageElement;
       controlsImg.classList.remove('showControls');
       const tuningImg = this.$refs.tuningImg as HTMLImageElement;
@@ -1159,6 +1172,8 @@ export default defineComponent({
       specImg.classList.remove('showSpecControls');
       const shareImg = this.$refs.shareImg as HTMLImageElement;
       shareImg.classList.remove('showShare');
+      const assemblageImg = this.$refs.assemblageImg as HTMLImageElement;
+      assemblageImg.classList.remove('showAssemblage');
       if (mode === ControlsMode.Display) {
         this.showSpecControls = true;
         specImg.classList.add('showSpecControls');
@@ -1174,6 +1189,9 @@ export default defineComponent({
       } else if (mode === ControlsMode.Share) {
         this.showShare = true;
         shareImg.classList.add('showShare');
+      } else if (mode === ControlsMode.Assemblage) {
+        this.showAssemblage = true;
+        assemblageImg.classList.add('showAssemblage');
       }
       
       else if (mode === ControlsMode.Tuning) {
@@ -2191,6 +2209,16 @@ export default defineComponent({
       }
     },
 
+    toggleAssemblage(e?: MouseEvent) {
+      if (!this.loading) {
+        if (this.selectedControlsMode === ControlsMode.Assemblage) {
+          this.selectedControlsMode = ControlsMode.None;
+        } else {
+          this.selectedControlsMode = ControlsMode.Assemblage;
+        }
+      }
+    },
+
     goToBeginning() {
       if (!this.playing) {
         this.pausedAt = 0;
@@ -2407,8 +2435,8 @@ export default defineComponent({
   justify-content: bottom;
 }
 .recInfo {
-  max-width: 300px;
-  min-width: 250px;
+  max-width: 330px;
+  min-width: 300px;
   height: 100%;
   background-color: black;
 }
@@ -2731,6 +2759,12 @@ export default defineComponent({
   filter: invert(46%) sepia(42%) saturate(292%) hue-rotate(78deg)
     brightness(94%) contrast(97%);
 }
+
+.rulerBox > .showAssemblageControls {
+  filter: invert(46%) sepia(42%) saturate(292%) hue-rotate(78deg)
+    brightness(94%) contrast(97%);
+}
+
 .tuningBox {
   display: flex;
   flex-direction: column;
@@ -2858,6 +2892,17 @@ button {
 }
 
 .specImg {
+  width: 40px;
+}
+
+.assemblageImg {
+  width: 40px;
+}
+
+.downloadsImg {
+  width: 40px;
+}
+.shareImg {
   width: 40px;
 }
 </style>

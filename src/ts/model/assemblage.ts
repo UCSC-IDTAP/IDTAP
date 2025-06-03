@@ -1,0 +1,102 @@
+import { Phrase } from './phrase';
+import { Instrument } from '@shared/enums';
+import { Temporality, AssemblageDescriptor } from '@shared/types';
+
+
+class Strand {
+	label: string;
+	phraseIDs: string[];
+	assemblage: Assemblage;
+	constructor(label: string, phraseIDs: string[], assemblage: Assemblage) {
+		this.label = label;
+		this.phraseIDs = phraseIDs;
+		this.assemblage = assemblage;
+	}
+
+	addPhrase(phrase: Phrase): void {
+		if (this.phraseIDs.includes(phrase.uniqueId)) {
+			throw new Error(`Phrase with UUID ${phrase.uniqueId} already exists in strand ${this.label}`);
+		}
+		this.phraseIDs.push(phrase.uniqueId);
+	}
+
+  removePhrase(phrase: Phrase): void {
+    const index = this.phraseIDs.indexOf(phrase.uniqueId);
+    if (index === -1) {
+      throw new Error(`Phrase with UUID ${phrase.uniqueId} not found in strand ${this.label}`);
+    }
+    this.phraseIDs.splice(index, 1);
+  }
+
+	get phrases(): Phrase[] {
+		return this.phraseIDs.map(uuid => {
+			return this.assemblage.phrases.find(p => p.uniqueId === uuid)!
+		}).sort((a, b) => a.startTime! - b.startTime!);
+	}
+}
+
+class Assemblage {
+	phrases: Phrase[];
+	strands: Strand[];
+	instrument: Instrument;
+	
+	constructor(instrument: Instrument) {
+		this.phrases = [];
+		this.strands = [];
+		this.instrument = instrument;
+	}
+
+	addStrand(label: string): void {
+		const existingStrand = this.strands.find(s => s.label === label);
+		if (existingStrand) {
+			throw new Error(`Strand with label ${label} already exists`);
+		}
+		this.strands.push(new Strand(label, [], this));
+	}
+
+	addPhrase(phrase: Phrase, strandLabel?: string): void {
+		if (this.phrases.some(p => p.uniqueId === phrase.uniqueId)) {
+			throw new Error(`Phrase with UUID ${phrase.uniqueId} already exists in assemblage`);
+		}
+		this.phrases.push(phrase);
+    if (strandLabel === undefined) {
+      return; // If no strand label is provided, do not add to any strand
+    }
+		const strand = this.strands.find(s => s.label === strandLabel);
+		if (strand) {
+			strand.addPhrase(phrase);
+		} else {
+			throw new Error(`Strand with label ${strandLabel} not found`);
+		}
+	}
+
+  static fromDescriptor(
+    descriptor: AssemblageDescriptor, phrases: Phrase[]
+  ): Assemblage {
+    const assemblage = new Assemblage(descriptor.instrument);
+    descriptor.strands.forEach(strand => {
+      assemblage.addStrand(strand.label);
+      strand.phraseIDs.forEach(phraseID => {
+        const phrase = phrases.find(p => p.uniqueId === phraseID);
+        if (phrase) {
+          assemblage.addPhrase(phrase, strand.label);
+        } else {
+          throw new Error(`Phrase with UUID ${phraseID} not found`);
+        }
+      });
+    });
+    return assemblage;
+  }
+  
+  get descriptor(): AssemblageDescriptor {
+    return {
+      instrument: this.instrument,
+      strands: this.strands.map(strand => ({
+        label: strand.label,
+        phraseIDs: strand.phraseIDs
+      }))
+    };
+  }
+}
+
+export { Assemblage, Strand };

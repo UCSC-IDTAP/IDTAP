@@ -6,6 +6,7 @@ import { Chikari } from './chikari';
 import { Group } from './group';
 import { Section } from './section';
 import { Pitch } from './pitch';
+import { Assemblage } from './assemblage';
 import { Instrument } from '@shared/enums';
 import { 
 	SecCatType, 
@@ -18,6 +19,7 @@ import {
 	ChikariDisplayType,
 	OutputType,
 	NumObj,
+	AssemblageDescriptor
 } from '@shared/types';
 import { Meter } from '@/js/meter';
 import { getStarts, getEnds } from '@/ts/utils';
@@ -144,8 +146,7 @@ class Piece {
   sectionCatGrid: SecCatType[][];
   excerptRange?: ExcerptRange;
   adHocSectionCatGrid: string[][][];
-
-
+  assemblageDescriptors: AssemblageDescriptor[];
 
   constructor({
     phrases = [],
@@ -177,6 +178,7 @@ class Piece {
     sectionCatGrid = undefined,
     excerptRange = undefined,
     adHocSectionCatGrid = undefined,
+	assemblageDescriptors = undefined
 
   }: {
     phrases?: Phrase[],
@@ -212,6 +214,7 @@ class Piece {
     sectionCatGrid?: SecCatType[][],
     excerptRange?: ExcerptRange,
     adHocSectionCatGrid?: string[][][],
+	assemblageDescriptors?: AssemblageDescriptor[]
   } = {}) {
     this.meters = meters;
 
@@ -359,6 +362,11 @@ class Piece {
       this.explicitPermissions = explicitPermissions
     }
     this.excerptRange = excerptRange;
+	if (assemblageDescriptors === undefined) {
+	  this.assemblageDescriptors = [];
+	} else {
+		this.assemblageDescriptors = assemblageDescriptors;
+	}
   }
 
   get phrases() {
@@ -391,6 +399,12 @@ class Piece {
 
   set sectionCategorization(arr) { 
     this.sectionCatGrid[0] = arr
+  }
+  
+  get assemblages(): Assemblage[] {
+	return this.assemblageDescriptors.map(ad => 
+	  Assemblage.fromDescriptor(ad, this.phraseGrid.flat())
+	)
   }
 
   chikariFreqs(instIdx: number) {
@@ -1214,6 +1228,7 @@ class Piece {
       sectionCatGrid: this.sectionCatGrid,
       excerptRange: this.excerptRange,
       adHocSectionCatGrid: this.adHocSectionCatGrid,
+	  assemblageDescriptors: this.assemblageDescriptors,
     }
   }
 }

@@ -40,6 +40,7 @@ enum ControlsMode {
   Share = 'Share',
   Tuning = 'Tuning',
   Synthesis = 'Synthesis',
+  Assemblage = 'Assemblage',
   None = 'None',
 }
 
