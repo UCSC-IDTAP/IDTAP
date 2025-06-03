@@ -20,7 +20,7 @@ import { defineComponent, PropType } from 'vue';
 import { 
   Piece,
   durationsOfFixedPitches,  
-} from '@/js/classes.ts';
+} from '@model';
 import { 
   PhraseCatType,
 } from '@shared/types'

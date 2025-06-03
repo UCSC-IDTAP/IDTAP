@@ -419,7 +419,7 @@ import {
   RuleSetType,
   Piece,
   Pitch
-} from '@/js/classes.ts';
+} from '@model';
 import { 
   EditorMode, 
   PlayheadAnimations,

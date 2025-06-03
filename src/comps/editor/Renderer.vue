@@ -208,7 +208,7 @@ import YAxis from '@/comps/editor/renderer/YAxis.vue';
 import MelographLayer from '@/comps/editor/renderer/MelographLayer.vue';
 import TranscriptionLayer from '@/comps/editor/renderer/TranscriptionLayer.vue';
 import ModeSelector from '@/comps/editor/renderer/ModeSelector.vue';
-import { Piece, Trajectory } from '@/js/classes.ts';
+import { Piece, Trajectory } from '@model';
 import * as d3 from 'd3';
 import { 
   InstrumentTrackType, 

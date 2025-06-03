@@ -17,7 +17,7 @@ import {
 } from 'vue';
 import * as d3 from 'd3';
 import { getContrastingTextColor } from '@/ts/utils.ts';
-import { Piece } from '@/js/classes.ts';
+import { Piece } from '@model';
 import { InstrumentTrackType } from '@shared/types';
 
 export default defineComponent({

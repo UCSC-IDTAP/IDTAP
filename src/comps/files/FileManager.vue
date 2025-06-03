@@ -118,7 +118,7 @@ import {
 import NewPieceRegistrar from '@/comps/files/NewPieceRegistrar.vue';
 import AddToCollection from '@/comps/AddToCollection.vue';
 import RemoveFromCollection from '@/comps/RemoveFromCollection.vue';
-import { Raga, Piece, Trajectory, Phrase } from '@/js/classes.ts';
+import { Raga, Piece, Trajectory, Phrase } from '@model';
 import PermissionsModal from '@/comps/PermissionsModal.vue';
 import { defineComponent } from 'vue';
 import ContextMenu from '@/comps/ContextMenu.vue';

@@ -20,7 +20,7 @@
 </template>
 <script lang='ts'>
 import { defineComponent, PropType, ref, onMounted } from 'vue';
-import { Trajectory } from '@/js/classes.ts';
+import { Trajectory } from '@model';
 
 export default defineComponent({
   name: 'TrajectoryAnnotator',

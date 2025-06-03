@@ -27,6 +27,7 @@ export default defineConfig(({ command }) => {
       alias: {
         "@": path.resolve(__dirname, "./src"),
         '@shared': path.resolve(__dirname, './shared'),
+        '@model': path.resolve(__dirname, './src/ts/model'),
       },
     },
     server: {

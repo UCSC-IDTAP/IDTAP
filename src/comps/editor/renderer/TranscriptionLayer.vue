@@ -86,7 +86,7 @@ import {
   Raga,
   Group,
   Articulation
-} from '@/js/classes.ts';
+} from '@model';
 import { throttle, debounce } from 'lodash';
 import { 
   SargamDisplayType, 

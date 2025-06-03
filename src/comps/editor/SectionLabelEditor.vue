@@ -129,7 +129,7 @@
 <script lang='ts'>
 
 import { defineComponent, PropType } from 'vue';
-import { Piece, initSecCategorization, Section } from '@/js/classes.ts';
+import { Piece, initSecCategorization, Section } from '@model';
 import { LabelScheme } from '@shared/enums';
 type topLevelOptionsType = (
   'Pre-Chiz Alap' | 

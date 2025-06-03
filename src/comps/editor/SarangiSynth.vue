@@ -4,7 +4,7 @@
 <script lang='ts'>
 
 import { defineComponent, PropType } from 'vue';
-import { Trajectory } from '@/js/classes.ts';
+import { Trajectory } from '@model';
 
 type SarangiSynthDataType = {
   freq: number,

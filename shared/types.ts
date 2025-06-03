@@ -5,7 +5,7 @@ import {
   Pitch,
   Phrase,
   Chikari,
-} from '@/js/classes.ts';
+} from '@model';
 
 import {
   ValueFn

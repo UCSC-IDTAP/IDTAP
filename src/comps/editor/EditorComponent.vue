@@ -347,10 +347,8 @@ import {
   Articulation,
   Raga,
   Chikari,
-  Group,
-  linSpace,
-  VibObjType
-} from '@/js/classes.ts';
+  Group
+} from '@model';
 
 import {
   getPiece,
@@ -376,7 +374,7 @@ import AddToCollection from '@/comps/AddToCollection.vue';
 import RemoveFromCollection from '@/comps/RemoveFromCollection.vue';
 import { detect, BrowserInfo } from 'detect-browser';
 import { throttle } from 'lodash';
-import { defineComponent } from 'vue';
+import { defineComponent, useStore } from 'vue';
 
 import { 
   ContextMenuOptionType, 
@@ -401,6 +399,7 @@ import {
   LabelEditorType,
   MeterControlsType,
   ExcerptRange,
+  VibObjType
 } from '@shared/types';
 import { 
   EditorMode, 

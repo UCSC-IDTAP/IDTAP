@@ -7,7 +7,7 @@
 
 <script lang='ts'>
 import { defineComponent, PropType } from 'vue';
-import { Automation, Trajectory, Piece } from '@/js/classes.ts';
+import { Automation, Trajectory, Piece } from '@model';
 import * as d3 from 'd3';
 
 import { AutoValue } from '@shared/types';

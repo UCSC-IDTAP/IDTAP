@@ -14,10 +14,12 @@ import klattURL from '@/audioWorklets/klattSynth2.worklet.js?url';
 import { 
   Piece, 
   Trajectory, 
+  Phrase
+} from '@model';
+import {
   getStarts, 
   getEnds,
-  Phrase
-} from '@/js/classes.ts';
+} from '@/ts/utils'
 import { v4 as uuidv4 } from 'uuid';
 import { 
   LoopSourceNode,
