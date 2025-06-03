@@ -9,3 +9,4 @@ export * from './raga';
 export * from './section';
 export * from './trajectory';
 export * from './piece';
+export * from './assemblage';

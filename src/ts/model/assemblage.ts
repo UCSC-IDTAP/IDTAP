@@ -1,6 +1,7 @@
 import { Phrase } from './phrase';
 import { Instrument } from '@shared/enums';
 import { Temporality, AssemblageDescriptor } from '@shared/types';
+import { v4 as uuidv4 } from 'uuid';
 
 
 class Strand {
@@ -39,11 +40,15 @@ class Assemblage {
 	phrases: Phrase[];
 	strands: Strand[];
 	instrument: Instrument;
-	
-	constructor(instrument: Instrument) {
+	name: string;
+	id: string;
+
+	constructor(instrument: Instrument, name: string, id?: string) {
 		this.phrases = [];
 		this.strands = [];
 		this.instrument = instrument;
+		this.name = name;
+		this.id = id ? id : uuidv4();
 	}
 
 	addStrand(label: string): void {
@@ -73,7 +78,7 @@ class Assemblage {
   static fromDescriptor(
     descriptor: AssemblageDescriptor, phrases: Phrase[]
   ): Assemblage {
-    const assemblage = new Assemblage(descriptor.instrument);
+    const assemblage = new Assemblage(descriptor.instrument, descriptor.name, descriptor.id);
     descriptor.strands.forEach(strand => {
       assemblage.addStrand(strand.label);
       strand.phraseIDs.forEach(phraseID => {
@@ -94,7 +99,9 @@ class Assemblage {
       strands: this.strands.map(strand => ({
         label: strand.label,
         phraseIDs: strand.phraseIDs
-      }))
+      })),
+	  name: this.name,
+	  id: this.id
     };
   }
 }

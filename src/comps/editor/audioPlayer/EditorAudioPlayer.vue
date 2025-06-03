@@ -293,6 +293,15 @@
       @goToSectionEmit='goToSection'
       ref='labelControls'
     />
+    <AssemblageEditor
+      v-if='showAssemblage'
+      :height='controlsHeight'
+      :playerHeight='playerHeight'
+      :piece='piece'
+      :track='editingInstIdx'
+      @unsavedChanges='$emit("unsavedChangesEmit", true)'
+
+    />
     <SpectrogramControls
       v-if='
         transcriptionWidth !== 0 &&
@@ -396,7 +405,7 @@ import LabelEditor from '@/comps/editor/LabelEditor.vue';
 import Synths from '@/comps/editor/audioPlayer/Synths.vue';
 import InstrumentControl from '@/comps/editor/audioPlayer/InstrumentControl.vue';
 import SynthesisControls from '@/comps/editor/audioPlayer/SynthesisControls.vue';
-
+import AssemblageEditor from '@/comps/editor/AssemblageEditor.vue';
 // Icons
 import beginningIcon from '@/assets/icons/beginning.svg';
 import endIcon from '@/assets/icons/end.svg';
@@ -1071,6 +1080,7 @@ export default defineComponent({
     Synths,
     InstrumentControl,
     SynthesisControls,
+    AssemblageEditor,
   },
 
   async mounted() {
