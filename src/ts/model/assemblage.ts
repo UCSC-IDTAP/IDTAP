@@ -8,10 +8,13 @@ class Strand {
 	label: string;
 	phraseIDs: string[];
 	assemblage: Assemblage;
-	constructor(label: string, phraseIDs: string[], assemblage: Assemblage) {
+	id: string;
+
+	constructor(label: string, phraseIDs: string[], assemblage: Assemblage, id?: string) {
 		this.label = label;
 		this.phraseIDs = phraseIDs;
 		this.assemblage = assemblage;
+		this.id = id ? id : uuidv4();
 	}
 
 	addPhrase(phrase: Phrase): void {
@@ -51,12 +54,12 @@ class Assemblage {
 		this.id = id ? id : uuidv4();
 	}
 
-	addStrand(label: string): void {
+	addStrand(label: string, id?: string): void {
 		const existingStrand = this.strands.find(s => s.label === label);
 		if (existingStrand) {
 			throw new Error(`Strand with label ${label} already exists`);
 		}
-		this.strands.push(new Strand(label, [], this));
+		this.strands.push(new Strand(label, [], this, id));
 	}
 
 	addPhrase(phrase: Phrase, strandLabel?: string): void {
@@ -75,12 +78,16 @@ class Assemblage {
 		}
 	}
 
+	removeStrand(label: string): void {
+		
+	}
+
   static fromDescriptor(
     descriptor: AssemblageDescriptor, phrases: Phrase[]
   ): Assemblage {
     const assemblage = new Assemblage(descriptor.instrument, descriptor.name, descriptor.id);
     descriptor.strands.forEach(strand => {
-      assemblage.addStrand(strand.label);
+      assemblage.addStrand(strand.label, strand.id);
       strand.phraseIDs.forEach(phraseID => {
         const phrase = phrases.find(p => p.uniqueId === phraseID);
         if (phrase) {
@@ -98,7 +105,8 @@ class Assemblage {
       instrument: this.instrument,
       strands: this.strands.map(strand => ({
         label: strand.label,
-        phraseIDs: strand.phraseIDs
+        phraseIDs: strand.phraseIDs,
+		id: strand.id
       })),
 	  name: this.name,
 	  id: this.id

@@ -1158,6 +1158,7 @@ type AssemblageDescriptor = {
   strands: {
     label: string;
     phraseIDs: string[];
+    id: string;
   }[],
   name: string;
   id: string;
