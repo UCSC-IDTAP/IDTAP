@@ -300,6 +300,8 @@
       :piece='piece'
       :track='editingInstIdx'
       @unsavedChanges='$emit("unsavedChangesEmit", true)'
+      @update:selectedMode='$emit("update:selectedMode", $event)'
+      ref='assemblageEditor'
 
     />
     <SpectrogramControls

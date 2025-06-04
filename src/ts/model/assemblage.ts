@@ -62,25 +62,59 @@ class Assemblage {
 		this.strands.push(new Strand(label, [], this, id));
 	}
 
-	addPhrase(phrase: Phrase, strandLabel?: string): void {
+	addPhrase(phrase: Phrase, strandId?: string): void {
 		if (this.phrases.some(p => p.uniqueId === phrase.uniqueId)) {
 			throw new Error(`Phrase with UUID ${phrase.uniqueId} already exists in assemblage`);
 		}
 		this.phrases.push(phrase);
-    if (strandLabel === undefined) {
-      return; // If no strand label is provided, do not add to any strand
+    if (strandId === undefined) {
+      return; // If no strand id is provided, do not add to any strand
     }
-		const strand = this.strands.find(s => s.label === strandLabel);
+		const strand = this.strands.find(s => s.id === strandId);
 		if (strand) {
 			strand.addPhrase(phrase);
 		} else {
-			throw new Error(`Strand with label ${strandLabel} not found`);
+			throw new Error(`Strand with id ${strandId} not found`);
 		}
 	}
 
-	removeStrand(label: string): void {
-		
+	removeStrand(id: string): void {
+		const index = this.strands.findIndex(s => s.id === id);
+		if (index === -1) {
+			throw new Error(`Strand with id ${id} not found`);
+		}
+		this.strands.splice(index, 1);	
 	}
+
+  movePhraseToStrand(phrase: Phrase, targetStrandId?: string): void {
+    const sourceStrand = this.strands.find(s => s.phraseIDs.includes(phrase.uniqueId));
+    const targetStrand = this.strands.find(s => s.id === targetStrandId);
+    if (!targetStrand) {
+      sourceStrand?.removePhrase(phrase);
+    } else if (!sourceStrand) {
+      if (!this.phrases.includes(phrase)) {
+        throw new Error(`Phrase with UUID ${phrase.uniqueId} not found in assemblage`);
+      } else {
+        targetStrand!.addPhrase(phrase);
+      }
+    } else {
+      sourceStrand.removePhrase(phrase);
+      targetStrand!.addPhrase(phrase);
+    }
+  }
+
+  removePhrase(phrase: Phrase): void {
+    const index = this.phrases.indexOf(phrase);
+    if (index === -1) {
+      throw new Error(`Phrase with UUID ${phrase.uniqueId} not found in assemblage`);
+    }
+    this.strands.forEach(strand => {
+      if (strand.phraseIDs.includes(phrase.uniqueId)) {
+        strand.removePhrase(phrase);
+      }
+    });
+    this.phrases.splice(index, 1);
+  }
 
   static fromDescriptor(
     descriptor: AssemblageDescriptor, phrases: Phrase[]
@@ -91,13 +125,27 @@ class Assemblage {
       strand.phraseIDs.forEach(phraseID => {
         const phrase = phrases.find(p => p.uniqueId === phraseID);
         if (phrase) {
-          assemblage.addPhrase(phrase, strand.label);
+          assemblage.addPhrase(phrase, strand.id);
         } else {
           throw new Error(`Phrase with UUID ${phraseID} not found`);
         }
       });
     });
+    descriptor.loosePhraseIDs.forEach(phraseID => {
+      const phrase = phrases.find(p => p.uniqueId === phraseID);
+      if (phrase) {
+        assemblage.addPhrase(phrase);
+      } else {
+        throw new Error(`Loose phrase with UUID ${phraseID} not found`);
+      }
+    });
     return assemblage;
+  }
+
+  get loosePhrases(): Phrase[] {
+    return this.phrases.filter(phrase =>
+      !this.strands.some(strand => strand.phraseIDs.includes(phrase.uniqueId))
+    ).sort((a, b) => a.startTime! - b.startTime!);
   }
   
   get descriptor(): AssemblageDescriptor {
@@ -106,10 +154,11 @@ class Assemblage {
       strands: this.strands.map(strand => ({
         label: strand.label,
         phraseIDs: strand.phraseIDs,
-		id: strand.id
+		    id: strand.id
       })),
-	  name: this.name,
-	  id: this.id
+      name: this.name,
+      id: this.id,
+      loosePhraseIDs: this.loosePhrases.map(phrase => phrase.uniqueId)
     };
   }
 }

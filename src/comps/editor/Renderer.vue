@@ -169,6 +169,7 @@
               @clearRegionBorders='xAxis ? xAxis!.clearRegionBorders() : null'
               @update:regionStartPxl='xAxis ? xAxis!.setRegionStartPxl($event) : null'
               @update:regionEndPxl='xAxis ? xAxis!.setRegionEndPxl($event) : null'
+              @selectAssemblagePhrase='$emit("selectAssemblagePhrase", $event)'
             />
           />
         </div>
@@ -470,6 +471,7 @@ export default defineComponent({
     'open:addToCollection',
     'open:removeFromCollection',
     'update:slope',
+    'selectAssemblagePhrase',
   ],
   setup(props, { emit }) {
     const layersContainer = ref<HTMLDivElement | null>(null);
@@ -500,8 +502,9 @@ export default defineComponent({
     const availableModes = computed(() => {
       let entries = Object.entries(EditorMode);
       if (props.instTracks[props.editingInstIdx].inst !== Instrument.Sitar) {
-        entries = entries.filter(entry => entry[1] !== 'Chikari')
+        entries = entries.filter(entry => entry[1] !== EditorMode.Chikari)
       }
+      entries = entries.filter(entry => entry[1] !== EditorMode.AssemblagePhrasePick)
       return Object.fromEntries(entries);
     })
     const scrollX = computed(() => {

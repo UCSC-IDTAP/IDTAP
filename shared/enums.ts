@@ -10,6 +10,7 @@ enum EditorMode {
   Meter = 'Meter',
   Chikari = 'Chikari',
   Region = 'Region',
+  AssemblagePhrasePick = 'AssemblagePhrasePick',
   None = 'None',
 }
 

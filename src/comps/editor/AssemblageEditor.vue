@@ -60,19 +60,67 @@
       v-if='selectedAssemblageObj'
       v-for='strand in selectedAssemblageObj.strands'
       :key='strand.id'
-    >
+      >
       <div class='title'>
         <span>{{ "Strand: " + strand.label }}</span>
       </div>
-      <div class='strandSection'>
+      <div class='strandSection' v-if='!editorSelectedPhrase || editorSelectedPhraseStrandId === strand.id'>
         <button
           @click='addPhrase(strand.id)'
+          :disabled='editorSelectedPhrase !== null && editorSelectedPhraseStrandId === strand.id'
         >
           Add Phrase
         </button>
         <button 
           @click='deleteStrand(strand.id)'
+          :disabled='editorSelectedPhrase !== null && editorSelectedPhraseStrandId === strand.id'
         >Delete Strand</button>
+      </div>
+      <div class='strandSection' v-else>
+        <button
+          @click='moveToStrand(editorSelectedPhrase, strand.id)'
+        >
+        Move to Strand
+        </button>
+      </div>
+      <div class="phraseList">
+        <div
+          v-for="phrase in strand.phrases.slice().sort((a, b) => a.pieceIdx! - b.pieceIdx!)"
+          :key="phrase.uniqueId"
+          :class="['phraseItem', 'phrase-' + phrase.uniqueId]"
+          @click='editorSelectPhrase(phrase)'
+        >
+          {{ `Phrase ${phrase.pieceIdx! + 1}` }}
+        </div>
+      </div>
+    </div>
+    <div class='col' v-if='selectedAssemblageObj'>
+      <div class='title'>
+        <span>Loose Phrases</span>
+      </div>
+      <div class='strandSection' v-if='!editorSelectedPhrase || editorSelectedPhraseStrandId === undefined'>
+        <button
+        @click='addPhrase()'
+        >
+          Add Loose Phrase
+        </button>
+      </div>
+      <div class='strandSection' v-else>
+        <button
+          @click='moveToStrand(editorSelectedPhrase, undefined)'
+        >
+          Move to Loose Phrases
+        </button>
+      </div>
+      <div class="phraseList">
+        <div
+          v-for="phrase in selectedAssemblageObj.loosePhrases.slice().sort((a, b) => a.pieceIdx! - b.pieceIdx!)"
+          :key="phrase.uniqueId"
+          :class="['phraseItem', 'phrase-' + phrase.uniqueId]"
+          @click='editorSelectPhrase(phrase)'
+        >
+          {{ `Phrase ${phrase.pieceIdx! + 1}` }}
+        </div>
       </div>
     </div>
 	</div>
@@ -83,10 +131,13 @@ import {
   PropType, 
   ref, 
   nextTick,
-  computed 
+  computed,
+  onMounted,
+  onUnmounted
 } from 'vue';
-import { Piece } from '@model';
+import { Piece, Phrase } from '@model';
 import { Assemblage } from '@model'
+import { EditorMode } from '@shared/enums';
 
 export default defineComponent({
   name: 'AssemblageEditor',
@@ -112,6 +163,36 @@ export default defineComponent({
     const assemblageName = ref('');
     const selectedAssemblage = ref<string | null>(null);
     const newStrandName = ref('');
+    const selectingStrandId = ref<string | undefined>(undefined);
+    const editorSelectedPhrase = ref<Phrase | null>(null);
+    const editorSelectedPhraseStrandId = ref<string | undefined>(undefined);
+
+    const handleGeneralKeydown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        const el = document.querySelector('.phraseItem.' + (editorSelectedPhrase.value?.uniqueId || ''));
+        if (el) {
+          (el as HTMLElement).style.backgroundColor = '';
+        }
+        editorSelectedPhrase.value = null;
+        editorSelectedPhraseStrandId.value = undefined;
+      } else if (e.key === 'Backspace' || e.key === 'Delete') {
+        if (editorSelectedPhrase.value) {
+          selectedAssemblageObj.value?.removePhrase(editorSelectedPhrase.value);
+          emit('unsavedChanges', true);
+          nextTick(() => {
+            editorSelectedPhrase.value = null;
+            editorSelectedPhraseStrandId.value = undefined;
+          });
+
+        }
+      }
+    };
+    onMounted(() => {
+      window.addEventListener('keydown', handleGeneralKeydown);
+    });
+    onUnmounted(() => {
+      window.removeEventListener('keydown', handleGeneralKeydown);
+    });
 
     const selectedAssemblageName = computed(() => {
       const assemblage = props.piece.assemblages.find(a => a.id === selectedAssemblage.value);
@@ -120,6 +201,49 @@ export default defineComponent({
     const selectedAssemblageObj = computed(() => {
       return props.piece.assemblages.find(a => a.id === selectedAssemblage.value);
     });
+
+    const addPhrase = (strandId?: string) => {
+      emit('update:selectedMode', EditorMode.AssemblagePhrasePick)
+      selectingStrandId.value = strandId;
+    };
+
+    const selectPhrase = (phrase: Phrase) => {
+      const assemblage = selectedAssemblageObj.value;
+      if (!assemblage) return;
+      if (!selectingStrandId.value) {
+        // implement loose phrase addition
+        console.log('adding loose phrase');
+        assemblage.addPhrase(phrase);
+      } else {
+        console.log('selected strand id', selectingStrandId.value);
+        assemblage.addPhrase(phrase, selectingStrandId.value);
+      }
+      const descriptorIdx = props.piece.assemblageDescriptors.findIndex(a => a.id === assemblage.id);
+        if (descriptorIdx !== -1) {
+          props.piece.assemblageDescriptors[descriptorIdx] = assemblage.descriptor;
+        } else {
+          throw new Error('Assemblage descriptor not found');
+        }
+        emit('unsavedChanges', true);
+        nextTick(() => {
+          selectingStrandId.value = undefined;
+        });
+    }
+
+    const editorSelectPhrase = (phrase: Phrase) => {
+      const el = document.querySelector('.phraseItem.phrase-' + phrase.uniqueId);
+      editorSelectedPhrase.value = phrase;
+      const assemblage = selectedAssemblageObj.value;
+      if (assemblage) {
+        const strand = assemblage.strands.find(s => s.phraseIDs.includes(phrase.uniqueId));
+        editorSelectedPhraseStrandId.value = strand ? strand.id : undefined;
+      } else {
+        editorSelectedPhraseStrandId.value = undefined;
+      }
+      if (el) {
+        (el as HTMLElement).style.backgroundColor = '#576857';
+      }
+    }
 
     const createStrand = () => {
       if (!selectedAssemblage.value) return;
@@ -141,7 +265,37 @@ export default defineComponent({
         newStrandName.value = '';
       });
     }
-    // const deleteStrand = 
+    const deleteStrand = (strandId: string) => {
+      if (!selectedAssemblage.value) return;
+      const assemblage = selectedAssemblageObj.value;
+      if (!assemblage) return;
+      assemblage.removeStrand(strandId);
+      const descriptorIdx = props.piece.assemblageDescriptors.findIndex(a => a.id === assemblage.id);
+      if (descriptorIdx !== -1) {
+        props.piece.assemblageDescriptors[descriptorIdx] = assemblage.descriptor;
+      } else {
+        throw new Error('Assemblage descriptor not found');
+      }
+      emit('unsavedChanges', true);
+    }
+
+    const moveToStrand = (phrase: Phrase, strandId?: string) => {
+      if (!selectedAssemblage.value) return;
+      const assemblage = selectedAssemblageObj.value;
+      if (!assemblage) return;
+      assemblage.movePhraseToStrand(phrase, strandId);
+      const descriptorIdx = props.piece.assemblageDescriptors.findIndex(a => a.id === assemblage.id);
+      if (descriptorIdx !== -1) {
+        props.piece.assemblageDescriptors[descriptorIdx] = assemblage.descriptor;
+      } else {
+        throw new Error('Assemblage descriptor not found');
+      }
+      emit('unsavedChanges', true);
+      nextTick(() => {
+        editorSelectedPhrase.value = null;
+        editorSelectedPhraseStrandId.value = undefined;
+      });
+    }
 
     const createAssemblage = () => {
       if (assemblageName.value.trim() === '') {
@@ -185,7 +339,14 @@ export default defineComponent({
       selectedAssemblageName,
       newStrandName,
       createStrand,
-      selectedAssemblageObj
+      selectedAssemblageObj,
+      deleteStrand,
+      addPhrase,
+      selectPhrase,
+      editorSelectPhrase,
+      editorSelectedPhrase,
+      editorSelectedPhraseStrandId,
+      moveToStrand,
     };
   }
 });
@@ -305,5 +466,27 @@ export default defineComponent({
   justify-content: space-around;
   box-sizing: border-box;
   border-bottom: 1px solid #ccc;
+}
+
+.phraseList {
+  width: 100%;
+  /* flex-grow: 1; */
+  height: calc(100% - 80px);
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.phraseItem {
+  width: 100%;
+  height: 40px;
+  border-bottom: 1px solid white;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  padding-left: 8px;
+}
+
+.phraseItem:hover {
+  background-color: #323c32
 }
 </style>

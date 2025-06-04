@@ -1,6 +1,6 @@
 <template>
   <div class='tranContainer' ref='tranContainer' :style='dynamicStyle'>
-    <svg ref='tranSvg' class='tranSvg'>
+    <svg ref='tranSvg' class='tranSvg' @mousemove='onMainHover' @click='onMainClick'>
       <!-- this rect needs to stay because of how things are inserted -->
       <rect
         ref='playhead'
@@ -331,6 +331,7 @@ export default defineComponent({
     'clearRegionBorders',
     'update:regionStartPxl',
     'update:regionEndPxl',
+    'selectAssemblagePhrase',
   ],
   setup(props, { emit }) {
     const tranContainer = ref<HTMLDivElement | null>(null);
@@ -870,6 +871,8 @@ export default defineComponent({
         }
       } else if (mode === EditorMode.Region) {
         d3.select(tranSvg.value).attr('cursor', 'alias');
+      } else if (mode === EditorMode.AssemblagePhrasePick) {
+        d3.select(tranSvg.value).attr('cursor', 'pointer');
       }
     });
     watch(() => props.editingInstIdx, (instIdx) => {
@@ -1196,6 +1199,48 @@ export default defineComponent({
       renderTraj(newTraj);
       selectTraj(selectedTraj.uniqueId!);
       emit('unsavedChanges', true);
+    }
+
+    const highlightPhrase = (phrase: Phrase) => {
+      const track = props.editingInstIdx;
+      const trackG = tracks[track];
+      // Remove any existing highlight rectangles so only one is visible
+      trackG.selectAll('.highlight').remove();
+      // Append a new highlight rectangle
+      trackG.append('rect')
+        .attr('class', 'highlight')
+        .attr('x', props.xScale(phrase.startTime!))
+        .attr('y', 0)
+        .attr('width', props.xScale(phrase.durTot!))
+        .attr('height', props.height)
+        .attr('fill', 'green')
+        .attr('fill-opacity', 0.2)
+        .attr('stroke', 'green')
+        .attr('stroke-width', 1);
+    }
+
+    const clearHighlightedPhrase = () => {
+      const track = props.editingInstIdx;
+      const trackG = tracks[track];
+      // Remove the highlight rectangle
+      trackG.selectAll('.highlight').remove();
+    }
+
+    const onMainHover = (e: MouseEvent) => {
+      if (props.selectedMode === EditorMode.AssemblagePhrasePick) {
+        const time = props.xScale.invert(e.offsetX);
+        const phrase = props.piece.phraseFromTime(time, props.editingInstIdx);
+        highlightPhrase(phrase);
+      }
+    }
+
+    const onMainClick = (e: MouseEvent) => {
+      if (props.selectedMode === EditorMode.AssemblagePhrasePick) {
+        const time = props.xScale.invert(e.offsetX);
+        const phrase = props.piece.phraseFromTime(time, props.editingInstIdx);
+        emit('selectAssemblagePhrase', phrase);
+        handleEscape();
+      }
     }
 
     const startPlayingTransition = () => {
@@ -4227,6 +4272,7 @@ export default defineComponent({
         emit('clearRegionBorders');
       }
       goToTimeModal.value = false;
+      clearHighlightedPhrase();
     }
 
     const clearDragDots = () => {
@@ -6021,6 +6067,8 @@ export default defineComponent({
       trajAnnotatorOpen,
       annotatingTraj,
       hrInput,
+      onMainHover,
+      onMainClick,
     }
   }
 })

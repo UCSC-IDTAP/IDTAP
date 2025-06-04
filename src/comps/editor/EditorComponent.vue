@@ -83,6 +83,7 @@
       @clearTSP='clearTSP'
       @open:addToCollection='showAddToCollection = true'
       @open:removeFromCollection='showRemoveFromCollection = true'
+      @selectAssemblagePhrase='selectAssemblagePhrase'
       />
     <div class='controlBox'>
       <div class='scrollingControlBox'>
@@ -284,6 +285,7 @@
   @startPlayingTransition='handleStartPlayingTransition'
   @stopPlayingTransition='handleStopPlayingTransition'
   @update:showPhraseLabels='showPhrases = $event'
+  @update:selectedMode='selectedMode = $event'
   />
   <ContextMenu 
     :x='contextMenuX'
@@ -399,7 +401,8 @@ import {
   LabelEditorType,
   MeterControlsType,
   ExcerptRange,
-  VibObjType
+  VibObjType,
+  AssemblageEditorType
 } from '@shared/types';
 import { 
   EditorMode, 
@@ -1217,6 +1220,12 @@ export default defineComponent({
   },
 
   methods: {
+
+    selectAssemblagePhrase(phrase: Phrase) {
+      const eap = this.$refs.audioPlayer as APType;
+      const ae = eap.$refs.assemblageEditor as AssemblageEditorType;
+      ae.selectPhrase(phrase);
+    },
     
     nudgeSlope(offset: number) {
       const tsp = this.$refs.trajSelectPanel as TSPType;
