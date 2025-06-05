@@ -169,7 +169,7 @@ export default defineComponent({
 
     const handleGeneralKeydown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        const el = document.querySelector('.phraseItem.' + (editorSelectedPhrase.value?.uniqueId || ''));
+        const el = document.querySelector('.phraseItem.phrase-' + (editorSelectedPhrase.value?.uniqueId || ''));
         if (el) {
           (el as HTMLElement).style.backgroundColor = '';
         }
@@ -231,6 +231,13 @@ export default defineComponent({
     }
 
     const editorSelectPhrase = (phrase: Phrase) => {
+      // Remove highlight from any previously selected phrase
+      if (editorSelectedPhrase.value) {
+        const prevEl = document.querySelector('.phraseItem.phrase-' + editorSelectedPhrase.value.uniqueId);
+        if (prevEl) {
+          (prevEl as HTMLElement).style.backgroundColor = '';
+        }
+      }
       const el = document.querySelector('.phraseItem.phrase-' + phrase.uniqueId);
       editorSelectedPhrase.value = phrase;
       const assemblage = selectedAssemblageObj.value;
