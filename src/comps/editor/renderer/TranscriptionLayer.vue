@@ -3128,7 +3128,7 @@ export default defineComponent({
       if (traj.id === 0) {
         throw new Error('Cannot insert fixed pitch to a fixed pitch trajectory');
       }
-      const newPitch = new Pitch(traj.pitches[0]);
+      const pitches = Array.from({ length: 2 }).map(() => new Pitch(traj.pitches[0]));
       const art = traj.articulations['0.00'];
       const newArts = art && art.name === 'pluck' ? 
         [{ '0.00': new Articulation({
@@ -3140,7 +3140,7 @@ export default defineComponent({
       const newTraj = new Trajectory({
         id: 0,
         durTot: dur,
-        pitches: [newPitch],
+        pitches: pitches,
         articulations: newArts,
         vowel: traj.vowel,
         vowelEngTrans: traj.vowelEngTrans,
@@ -3190,11 +3190,11 @@ export default defineComponent({
       if (traj.id === 0) {
         throw new Error('Cannot insert fixed pitch to a fixed pitch trajectory');
       }
-      const newPitch = new Pitch(traj.pitches[traj.pitches.length - 1]);
+      const pitches = Array.from({ length: 2 }).map(() => new Pitch(traj.pitches[traj.pitches.length - 1]));
       const newTraj = new Trajectory({
         id: 0,
         durTot: dur,
-        pitches: [newPitch],
+        pitches: pitches,
         articulations: {},
         vowel: traj.vowel,
         vowelEngTrans: traj.vowelEngTrans,
