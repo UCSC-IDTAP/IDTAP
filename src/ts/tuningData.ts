@@ -1,5 +1,5 @@
 import { VexFlow, Renderer, Stave, StaveNote, Formatter, Voice } from 'vexflow';
-import { Raga } from '@/js/classes.ts';
+import { Raga } from '@model';
 
 const tuningData = (raga: Raga) => {
 

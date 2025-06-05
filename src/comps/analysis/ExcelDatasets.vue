@@ -39,7 +39,7 @@
 <script lang='ts'>
 
 import { defineComponent, ref, PropType } from 'vue';
-import { Piece } from '@/js/classes.ts';
+import { Piece } from '@model';
 
 import { 
 	PitchRepresentation,

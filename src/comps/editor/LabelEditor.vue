@@ -65,7 +65,7 @@
 import { defineComponent, PropType } from 'vue';
 import SectionLabelEditor from '@/comps/editor/SectionLabelEditor.vue';
 import PhraseLabelEditor from '@/comps/editor/PhraseLabelEditor.vue';
-import { Piece } from '@/js/classes.ts'
+import { Piece } from '@model'
 import { LabelScheme } from '@shared/enums'
 
 export default defineComponent({

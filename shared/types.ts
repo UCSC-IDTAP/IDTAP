@@ -5,7 +5,7 @@ import {
   Pitch,
   Phrase,
   Chikari,
-} from '@/js/classes.ts';
+} from '@model';
 
 import {
   ValueFn
@@ -27,6 +27,7 @@ import SpectrogramLayer from '@/comps/editor/renderer/SpectrogramLayer.vue';
 import YAxis from '@/comps/editor/renderer/YAxis.vue';
 import LabelEditor from '@/comps/editor/LabelEditor.vue';
 import MeterControls from '@/comps/editor/audioPlayer/MeterControls.vue';
+import AssemblageEditor from '@/comps/editor/AssemblageEditor.vue';
 
 
 type CollectionType = {
@@ -1129,6 +1130,7 @@ type SLayerType = InstanceType<typeof SpectrogramLayer>;
 type YAxisType = InstanceType<typeof YAxis>;
 type LabelEditorType = InstanceType<typeof LabelEditor>;
 type MeterControlsType = InstanceType<typeof MeterControls>;
+type AssemblageEditorType = InstanceType<typeof AssemblageEditor>;
 
 type NumObj = { [key: string]: number };
 type TuningType = { [key: string]: number | NumObj };
@@ -1145,6 +1147,24 @@ type DN_ExtractorOptions = {
   track: number,
   pitchRepresentation: PitchRepresentation,
   endSequenceLength: number,
+}
+
+type Temporality = {
+	startTime: number;
+	endTime: number;
+	duration: number;
+}
+
+type AssemblageDescriptor = {
+  instrument: Instrument;
+  strands: {
+    label: string;
+    phraseIDs: string[];
+    id: string;
+  }[],
+  name: string;
+  id: string;
+  loosePhraseIDs: string[];
 }
 
 export type { 
@@ -1252,5 +1272,8 @@ export type {
   TuningType,
   ExcerptRange,
   DN_ExtractorOptions,
+  Temporality,
+  AssemblageDescriptor,
+  AssemblageEditorType
 };
 

@@ -18,7 +18,8 @@
 <script lang='ts'>
 
 import { defineComponent, PropType } from 'vue';
-import { Trajectory, Piece, Phrase, Pitch, linSpace } from '@/js/classes.ts';
+import { Trajectory, Piece, Phrase, Pitch } from '@model';
+import { linSpace } from '@/ts/utils';
 import { QueryAnswerType, ContextMenuOptionType } from '@shared/types';
 import { Instrument } from '@shared/enums';
 import { PhonemeRepresentation } from '@shared/enums';

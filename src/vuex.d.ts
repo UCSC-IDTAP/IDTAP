@@ -1,5 +1,6 @@
 import { Store } from 'vuex'
 import { VueCookies } from 'vue-cookies'
+// import type { RootState } from '@/router'
 
 declare module '@vue/runtime-core' {
   // declare your own store states

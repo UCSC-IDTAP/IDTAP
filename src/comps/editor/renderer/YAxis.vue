@@ -15,7 +15,7 @@ import {
   nextTick 
 } from 'vue';
 import * as d3 from 'd3';
-import { Raga } from '@/js/classes.ts';
+import { Raga } from '@model';
 import { getContrastingTextColor } from '@/ts/utils.ts';
 import { ScaleSystem } from '@shared/enums';
 

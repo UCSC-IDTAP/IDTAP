@@ -144,7 +144,7 @@
 <script lang='ts'>
 
 import { defineComponent, PropType } from 'vue';
-import { Piece, Phrase } from '@/js/classes.ts';
+import { Piece, Phrase } from '@model';
 import { PhraseCatType } from '@shared/types';
 import { LabelScheme } from '@shared/enums';
 import categoryData from '@/assets/json/categorization.json';

@@ -10,6 +10,7 @@ enum EditorMode {
   Meter = 'Meter',
   Chikari = 'Chikari',
   Region = 'Region',
+  AssemblagePhrasePick = 'AssemblagePhrasePick',
   None = 'None',
 }
 
@@ -40,6 +41,7 @@ enum ControlsMode {
   Share = 'Share',
   Tuning = 'Tuning',
   Synthesis = 'Synthesis',
+  Assemblage = 'Assemblage',
   None = 'None',
 }
 

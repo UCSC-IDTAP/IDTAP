@@ -20,6 +20,8 @@
     "paths": {
       "@/*": ["./src/*"],
       "@shared/*": ["./shared/*"],
+      "@model": ["./src/ts/model/index.ts"],
+      "@model/*": ["./src/ts/model/*"]
     },
     "allowSyntheticDefaultImports": true,
   }

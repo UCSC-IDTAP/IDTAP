@@ -83,6 +83,7 @@
       @clearTSP='clearTSP'
       @open:addToCollection='showAddToCollection = true'
       @open:removeFromCollection='showRemoveFromCollection = true'
+      @selectAssemblagePhrase='selectAssemblagePhrase'
       />
     <div class='controlBox'>
       <div class='scrollingControlBox'>
@@ -284,6 +285,8 @@
   @startPlayingTransition='handleStartPlayingTransition'
   @stopPlayingTransition='handleStopPlayingTransition'
   @update:showPhraseLabels='showPhrases = $event'
+  @update:selectedMode='selectedMode = $event'
+  @assemblageSelectPhrase='handleAssemblageSelectPhrase'
   />
   <ContextMenu 
     :x='contextMenuX'
@@ -347,10 +350,8 @@ import {
   Articulation,
   Raga,
   Chikari,
-  Group,
-  linSpace,
-  VibObjType
-} from '@/js/classes.ts';
+  Group
+} from '@model';
 
 import {
   getPiece,
@@ -376,7 +377,7 @@ import AddToCollection from '@/comps/AddToCollection.vue';
 import RemoveFromCollection from '@/comps/RemoveFromCollection.vue';
 import { detect, BrowserInfo } from 'detect-browser';
 import { throttle } from 'lodash';
-import { defineComponent } from 'vue';
+import { defineComponent, useStore } from 'vue';
 
 import { 
   ContextMenuOptionType, 
@@ -401,6 +402,8 @@ import {
   LabelEditorType,
   MeterControlsType,
   ExcerptRange,
+  VibObjType,
+  AssemblageEditorType
 } from '@shared/types';
 import { 
   EditorMode, 
@@ -1218,6 +1221,17 @@ export default defineComponent({
   },
 
   methods: {
+    handleAssemblageSelectPhrase(phrase: Phrase) {
+      const r = this.$refs.renderer as RendererType;
+      const tLayer = r.transcriptionLayer as TLayerType;
+      tLayer.selectPhrase(phrase);
+    },
+
+    selectAssemblagePhrase(phrase: Phrase) {
+      const eap = this.$refs.audioPlayer as APType;
+      const ae = eap.$refs.assemblageEditor as AssemblageEditorType;
+      ae.selectPhrase(phrase);
+    },
     
     nudgeSlope(offset: number) {
       const tsp = this.$refs.trajSelectPanel as TSPType;

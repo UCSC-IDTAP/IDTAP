@@ -404,10 +404,9 @@ import {
 import { 
   durationsOfFixedPitches, 
   Pitch, 
-  pitchNumberToChroma,
   Trajectory,
   Piece,
-} from '@/js/classes.ts';
+} from '@model';
 import { pieceExists } from '@/js/serverCalls.ts';
 import Gradient from 'javascript-color-gradient';
 import * as d3 from 'd3';
@@ -1595,7 +1594,7 @@ export default defineComponent({
                 (aIdx + verticalOffset) * 20;
             patternObj.pattern.forEach((patItem, patIdx) => {
               const x = patIdx * 20 + ct * 20;
-              const chroma = pitchNumberToChroma(patItem);
+              const chroma = Pitch.pitchNumberToChroma(patItem);
               const colors = [
                 '#e6194b', 
                 '#3cb44b', 

@@ -369,7 +369,7 @@ import SwatchSelect from '@/comps/SwatchSelect.vue';
 import {
   Pitch, 
   Raga
-} from '@/js/classes.ts';
+} from '@model';
 import { 
   getSavedSettings, 
   saveDisplaySettings,

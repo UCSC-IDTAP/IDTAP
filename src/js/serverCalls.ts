@@ -105,9 +105,9 @@ const getAudioDBEntry = async (_id: string): Promise<RecType> => {
   };
   const res = await fetch(url + 'getAudioDBEntry', request)
   if (res.ok) {
-    return res.json()
+    return await res.json()
   }
-  return res.ok ? res.json(): undefined
+  throw new Error('Failed to fetch audio DB entry');
 }
 
 

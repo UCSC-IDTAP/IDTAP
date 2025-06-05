@@ -326,7 +326,7 @@ import {
   Raga,
   Trajectory,
   Piece
-} from '@/js/classes.ts';
+} from '@model';
 import {
   saveMultiQuery
 } from '@/js/serverCalls.ts';

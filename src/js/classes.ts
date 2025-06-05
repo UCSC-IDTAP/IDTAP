@@ -418,6 +418,71 @@ class Pitch {
     })
   }
 
+  static pitchNumberToChroma(pitchNumber: number) {
+    let chroma = pitchNumber % 12;
+    while (chroma < 0) {
+      chroma += 12;
+    }
+    return chroma
+  }
+
+  static chromaToScaleDegree(chroma: number): [number, boolean] {
+    let scaleDegree = 0;
+    let raised = true;
+    switch (chroma) {
+      case 0:
+        scaleDegree = 0;
+        raised = true;
+        break;
+      case 1:
+        scaleDegree = 1;
+        raised = false;
+        break;
+      case 2:
+        scaleDegree = 1;
+        raised = true;
+        break;
+      case 3:
+        scaleDegree = 2;
+        raised = false;
+        break;
+      case 4:
+        scaleDegree = 2;
+        raised = true;
+        break;
+      case 5:
+        scaleDegree = 3;
+        raised = false;
+        break;
+      case 6:
+        scaleDegree = 3;
+        raised = true;
+        break;
+      case 7:
+        scaleDegree = 4;
+        raised = true;
+        break;
+      case 8:
+        scaleDegree = 5;
+        raised = false;
+        break;
+      case 9:
+        scaleDegree = 5;
+        raised = true;
+        break;
+      case 10:
+        scaleDegree = 6;
+        raised = false;
+        break;
+      case 11:
+        scaleDegree = 6;
+        raised = true;
+        break;
+    }
+    return [scaleDegree, raised]
+  }
+  
+
   get frequency() {
     let ratio;
     if (this.swara === 0 || this.swara === 4) {
@@ -689,6 +754,11 @@ class Pitch {
     return Math.log2(this.frequency)
   }
 
+  sameAs(other: Pitch): boolean {
+    return this.swara === other.swara && 
+      this.oct === other.oct && 
+      this.raised === other.raised
+  }
 
   toJSON() {
     return {

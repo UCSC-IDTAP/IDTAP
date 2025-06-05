@@ -51,6 +51,20 @@ const getClosest = (counts: number[], goal: number) => {
   })
 };
 
+const isObject = (argument: any) => {
+  return typeof argument === 'object' && argument !== null
+}
+
+const getStarts = (durArray: number[]) => {
+  const cumsum: (value: number) => number = (sum => value => sum += value)(0);
+  return [0].concat(durArray.slice(0, durArray.length - 1)).map(cumsum)
+};
+
+const getEnds = (durArray: number[]) => {
+  const cumsum: (value: number) => number = (sum => value => sum += value)(0);
+  return durArray.map(cumsum)
+}
+
 const isUpperCase = (str: string) => str === str.toUpperCase();
 
 const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
@@ -98,5 +112,8 @@ export {
   isUpperCase,
   sum,
   findClosestStartTime,
-  findClosestStartTimeAfter
+  findClosestStartTimeAfter,
+  isObject,
+  getStarts,
+  getEnds
 };
