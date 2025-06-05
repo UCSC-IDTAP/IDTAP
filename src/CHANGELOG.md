@@ -1,6 +1,12 @@
 # Changelog
 
 
+* Feat: Added Assemblage editor [c0386f1] (Jon Myers)
+### 2025-06-05
+
+* feat: while a drag dot is selected, pressing enter / return  deselects drag dots, leaving trajectory selected [f23bc20] (Jon Myers)
+* Feat: holding shift and pressing left or right while a trajectory is selected now selects or moves to a different selected drag dot. (fixes #639) [979e826] (Jon Myers)
+* Feat: Improved the look and privacy when adding users as editors or viewers of a transcription [3e69f03] (Jon Myers)
 * feat: while a drag dot is selected, pressing enter / return  deselects drag dots, leaving trajectory selected [68b9ed3] (Jon Myers)
 * Feat: holding shift and pressing left or right while a trajectory is selected now selects or moves to a different selected drag dot. (fixes #639) [264b2d7] (Jon Myers)
 * Feat: Improved the look and privacy when adding users as editors or viewers of a transcription [c1b2093] (Jon Myers)
