@@ -301,6 +301,7 @@
       :track='editingInstIdx'
       @unsavedChanges='$emit("unsavedChangesEmit", true)'
       @update:selectedMode='$emit("update:selectedMode", $event)'
+      @assemblageSelectPhrase='$emit("assemblageSelectPhrase", $event)'
       ref='assemblageEditor'
 
     />

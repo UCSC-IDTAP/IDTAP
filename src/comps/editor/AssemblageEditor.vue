@@ -62,7 +62,21 @@
       :key='strand.id'
       >
       <div class='title'>
-        <span>{{ "Strand: " + strand.label }}</span>
+        <span>{{ "Strand: " }}</span>
+          <span 
+            v-if='!strand.nameEditing'
+            @click='strand.nameEditing = true'
+            >
+            {{ strand.label }}
+          </span>
+          <input 
+            v-else
+            type='text'
+            v-model='strand.label'
+            @keydown='handleKeydown($event)'
+            @keydown.enter='strand.nameEditing = false'
+            @blur='strand.nameEditing = false'
+          />
       </div>
       <div class='strandSection' v-if='!editorSelectedPhrase || editorSelectedPhraseStrandId === strand.id'>
         <button
@@ -161,11 +175,14 @@ export default defineComponent({
   },
   setup(props, { emit }) {
     const assemblageName = ref('');
-    const selectedAssemblage = ref<string | null>(null);
+    const selectedAssemblage = ref<string | null>(
+      props.piece.assemblages.length > 0 ? props.piece.assemblages[0].id : null
+    );
     const newStrandName = ref('');
     const selectingStrandId = ref<string | undefined>(undefined);
     const editorSelectedPhrase = ref<Phrase | null>(null);
     const editorSelectedPhraseStrandId = ref<string | undefined>(undefined);
+
 
     const handleGeneralKeydown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -250,6 +267,7 @@ export default defineComponent({
       if (el) {
         (el as HTMLElement).style.backgroundColor = '#576857';
       }
+      emit('assemblageSelectPhrase', phrase);
     }
 
     const createStrand = () => {

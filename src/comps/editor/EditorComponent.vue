@@ -286,6 +286,7 @@
   @stopPlayingTransition='handleStopPlayingTransition'
   @update:showPhraseLabels='showPhrases = $event'
   @update:selectedMode='selectedMode = $event'
+  @assemblageSelectPhrase='handleAssemblageSelectPhrase'
   />
   <ContextMenu 
     :x='contextMenuX'
@@ -1220,6 +1221,11 @@ export default defineComponent({
   },
 
   methods: {
+    handleAssemblageSelectPhrase(phrase: Phrase) {
+      const r = this.$refs.renderer as RendererType;
+      const tLayer = r.transcriptionLayer as TLayerType;
+      tLayer.selectPhrase(phrase);
+    },
 
     selectAssemblagePhrase(phrase: Phrase) {
       const eap = this.$refs.audioPlayer as APType;

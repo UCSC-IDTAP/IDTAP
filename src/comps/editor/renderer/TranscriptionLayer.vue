@@ -5401,6 +5401,21 @@ export default defineComponent({
       }
     };
 
+    const selectPhrase = (phrase: Phrase) => {
+      regionStartX.value = phrase.startTime!;
+      regionEndX.value = phrase.startTime! + phrase.durTot!;
+      emit('update:selectedMode', EditorMode.None);
+      let time = phrase.startTime! - 2;
+      emit('update:currentTime', phrase.startTime!);
+      updatePlayheadPosition(phrase.startTime!);
+      nextTick(() => setUpRegion());
+      const x = props.xScale(time);
+      emit('moveToX', x);
+
+
+
+    };
+
     const handleDoubleClick = (e: MouseEvent) => {
       let time = props.xScale.invert(e.offsetX);
       emit('update:currentTime', time);
@@ -6069,6 +6084,7 @@ export default defineComponent({
       hrInput,
       onMainHover,
       onMainClick,
+      selectPhrase,
     }
   }
 })

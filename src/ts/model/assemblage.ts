@@ -9,6 +9,7 @@ class Strand {
 	phraseIDs: string[];
 	assemblage: Assemblage;
 	id: string;
+  nameEditing: boolean = false;
 
 	constructor(label: string, phraseIDs: string[], assemblage: Assemblage, id?: string) {
 		this.label = label;
