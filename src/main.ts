@@ -5,7 +5,7 @@ import { createStore } from 'vuex';
 import vue3GoogleLogin from 'vue3-google-login';
 import VueCookies from 'vue-cookies';
 import './assets/styles/global.css';
-import Color from '@shared/enums'
+import { Color } from '@shared/enums'
 
 const store = createStore({
   state() {
