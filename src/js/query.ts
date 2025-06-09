@@ -3,7 +3,7 @@ import {
   Piece, 
   Pitch, 
   Trajectory, 
-} from '@/ts/model';
+} from './classes.ts';
 
 import { 
   CategoryType,

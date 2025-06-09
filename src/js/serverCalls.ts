@@ -2,7 +2,7 @@ const url = 'https://swara.studio/';
 import axios from 'axios';
 import { AxiosProgressEvent } from 'axios';
 import fetch from 'cross-fetch';
-import { Piece } from '@/ts/model';
+import { Piece } from './classes.ts';
 import { 
   MusicianDBType, 
   GharanaType,
