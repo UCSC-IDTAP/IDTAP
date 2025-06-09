@@ -318,9 +318,15 @@
         @update:instIdx='instIdx = $event'
         />
       <ExcelDatasets
-        v-if='piece && selectedATIdx === 3'
+        v-if='piece && selectedATIdx === 4'
         :piece='piece'
         :instIdx='instIdx'
+        />
+        <AssemblageDisplay
+          v-if='piece && selectedATIdx === 3'
+          :piece='piece'
+          :navHeight='navHeight'
+          :analysisTypeRowHeight='typeRowHeight'
         />
     </div>
     <div 
@@ -417,6 +423,7 @@ import QueryControls from '@/comps/analysis/QueryControls.vue';
 import PitchPrevalence from '@/comps/analysis/PitchPrevalence.vue';
 import categorization from '@/assets/json/categorization.json';
 import ExcelDatasets from '@/comps/analysis/ExcelDatasets.vue';
+import AssemblageDisplay from '@/comps/analysis/AssemblageDisplay.vue';
 
 const phraseTop = categorization['Phrase'];
 const phraseTypes = phraseTop['Phrase Type'] as 
@@ -570,6 +577,7 @@ export default defineComponent({
         'Pitch Prevalence', 
         'Pitch Patterns', 
         'Query Display',
+        'Assemblage Display',
         'Excel Datasets',
       ],
       selectedATIdx: 0,
@@ -668,6 +676,7 @@ export default defineComponent({
     ModeSelector,
     Tooltip,
     ExcelDatasets,
+    AssemblageDisplay
   },
 
   watch: {
@@ -720,7 +729,6 @@ export default defineComponent({
       const jmId = '634d9506a6a3647e543b7641';
       const dnId = '63595c60a6a3647e54a62853';
       const currentId = this.$store.state.userID;
-      console.log('currentId', currentId);
       if (currentId === jmId || currentId === dnId) {
         return true;
       } else {
@@ -1891,7 +1899,8 @@ export default defineComponent({
   }
 
   .analysisType {
-    width: 180px;
+    min-width: 180px;
+    max-width: 180px;
     height: 30px;
     display: flex;
     flex-direction: row;

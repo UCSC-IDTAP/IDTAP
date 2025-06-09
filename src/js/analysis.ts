@@ -7,9 +7,11 @@ import {
   Chikari, 
   Raga,
   Group,
-  getStarts,
+} from '@/ts/model';
+import {
+  getStarts, 
   pitchNumberToChroma
-} from './classes';
+} from '@/ts/utils.ts';
 import { Meter } from '@/js/meter.ts';
 import { getPiece, getRaagRule } from './serverCalls.ts';
 const testQueryId = '63445d13dc8b9023a09747a6';
@@ -127,6 +129,7 @@ const instantiatePiece = async (queryId = testQueryId) => {
   if (piece.meters) {
     piece.meters = piece.meters.map(meter => new Meter(meter))
   }
+  console.log(piece.assemblages)
   piece = new Piece(piece);
   // let dateModified = new Date(piece.dateModified);
   fixTrajs(piece);
