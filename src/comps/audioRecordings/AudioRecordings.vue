@@ -937,7 +937,7 @@ export default defineComponent({
 
 .main {
   background-color: black;
-  background-image: linear-gradient(black, #1e241e);
+  background-image: linear-gradient(black, var(--Primary));
   color: white;
 }
 

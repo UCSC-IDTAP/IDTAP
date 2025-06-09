@@ -101,6 +101,9 @@ enum PitchInclusionMethod {
   AboveThreshold = 'above threshold', // not implemented yet
 }
 
+enum Color {
+  Primary = 'var(--Primary)'
+}
 
 
 export {
@@ -116,4 +119,5 @@ export {
   PitchRepresentation,
   Segmentation,
   PitchInclusionMethod,
+  Color
 }

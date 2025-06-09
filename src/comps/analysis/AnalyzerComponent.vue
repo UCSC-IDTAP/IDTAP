@@ -1829,7 +1829,7 @@ export default defineComponent({
 
 <style lang="css" scoped>
   .main_ {
-    background-image: linear-gradient(black, #1e241e);
+    background-image: linear-gradient(black, var(--Primary));
     height: 100vh;
     color: white;
     user-select: none;
@@ -1887,7 +1887,7 @@ export default defineComponent({
     align-items: center;
     width: 100%;
     height: v-bind(typeRowHeight + 'px');
-    background-color: #1e241e;
+    background-color: var(--Primary);
   }
 
   .analysisType {

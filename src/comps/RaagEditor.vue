@@ -315,7 +315,7 @@ label.small {
 
 select {
   width: 250px;
-  background-color: #1e241e;
+  background-color: var(--Primary);
   color: white;
 }
 
@@ -328,7 +328,7 @@ button.right {
 }
 
 .main {
-  background-image: linear-gradient(black, #1e241e);
+  background-image: linear-gradient(black, var(--Primary));
   height: 100%;
   color: white;
   user-select: none;

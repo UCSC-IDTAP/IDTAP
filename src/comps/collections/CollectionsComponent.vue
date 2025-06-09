@@ -352,7 +352,7 @@ export default defineComponent({
 <style scoped>
 
 .collectionsMain {
-  background-image: linear-gradient(black, #1e241e);
+  background-image: linear-gradient(black, var(--Primary));
   height: 100%;
   width: 100%;
   display: flex;

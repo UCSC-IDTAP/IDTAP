@@ -140,7 +140,7 @@ export default {
   align-items: center;
   justify-content: center;
   height: 100%;
-  background-image: linear-gradient(black, #1e241e);
+  background-image: linear-gradient(black, var(--Primary));
 }
 
 </style>

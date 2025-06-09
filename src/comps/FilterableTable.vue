@@ -432,7 +432,7 @@ export default defineComponent({
 
 .tableMain {
   background-color: black;
-  background-image: linear-gradient(black, #1e241e);
+  background-image: linear-gradient(black, var(--Primary));
   color: white;
 }
 
@@ -442,7 +442,7 @@ export default defineComponent({
   justify-content: left;
   align-items: center;
   min-height: v-bind(labelRowHeight + 'px');
-  background-color: #1e241e;
+  background-color: var(--Primary);
   border-top: 1px solid grey;
 }
 
@@ -461,7 +461,7 @@ export default defineComponent({
 }
 
 .dataRow:hover {
-  background-color: #1e241e;
+  background-color: var(--Primary);
 }
 
 .metadataLabels {

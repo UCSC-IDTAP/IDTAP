@@ -938,7 +938,7 @@ export default defineComponent({
   box-sizing: border-box;
   border: 1px solid #ccc;
   width: 100%;
-  background-image: linear-gradient(black, #1e241e);
+  background-image: linear-gradient(black, var(--Primary));
 }
 
 .miniAEMain *, .miniAEMain *::before, .miniAEMain *::after {
@@ -951,7 +951,7 @@ export default defineComponent({
   justify-content: left;
   align-items: center;
   min-height: v-bind(labelRowHeight + 'px');
-  background-color: #1e241e;
+  background-color: var(--Primary);
   border-top: 1px solid grey;
 }
 
