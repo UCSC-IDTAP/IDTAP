@@ -227,6 +227,7 @@ export default defineComponent({
       .attr('text-anchor', 'middle')
       .attr('dominant-baseline', 'middle')
       .style('font-size', '20px')
+      .style('fill', this.titleColor)
       .text(this.queryAnswer.title);
 
     window.addEventListener('keydown', this.handleKeydown);
@@ -277,7 +278,12 @@ export default defineComponent({
     horizontalProportionalDisplay: {
       type: Boolean,
       required: true
-    }
+    },
+    titleColor: {
+      type: String,
+      required: false,
+      default: 'black'
+    },
   },
 
   components: {
