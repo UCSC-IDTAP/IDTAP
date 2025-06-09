@@ -21,7 +21,9 @@
           <SegmentDisplay
             v-if="strand.phrases.find(phrase => phrase.pieceIdx === pIdx)"
             class="strand-display"
-            
+            :outerMargin="outerMargin"
+            :innerMargin="innerMargin"
+            :titleMargin='0'
             :trajectories="phraseMap[pIdx].trajectories"
             :piece="piece"
             :displayWidth="400"
@@ -29,7 +31,7 @@
             :proportion="1"
             :horizontalProportionalDisplay="true"
             :vocal="false"
-            titleColor='white'
+            titleColor='black'
             :queryAnswer="{ 
               trajectories: phraseMap[pIdx].trajectories,
               identifier: phraseMap[pIdx].pieceIdx!,
@@ -41,6 +43,7 @@
               }"
             :id="`strand-${strand.id}`"
             :logFreqOverride="logFreqOverride"
+            :titleInAxis='true'
           />
           </div>
       </div>
@@ -94,14 +97,13 @@ export default defineComponent({
       return out;
     });
 
-  const phraseMap = computed(() => {
-    const m: Record<number, Phrase> = {};
-    selectedAssemblage.value.phrases.forEach(phrase => {
-      m[phrase.pieceIdx!] = phrase;
-    });
-    return m;
-  })
-    // Define the height of the selection area
+    const phraseMap = computed(() => {
+      const m: Record<number, Phrase> = {};
+      selectedAssemblage.value.phrases.forEach(phrase => {
+        m[phrase.pieceIdx!] = phrase;
+      });
+      return m;
+    })
 
     const selectionHeight = '80px';
     const styleVars = computed(() => ({
@@ -118,12 +120,8 @@ export default defineComponent({
              - selectionHeightPx;
     });
 
-    // --- Begin: logFreqOverride and sampleXs ---
-    // 1. Define a fixed sample array for interpolation
     const sampleXs = Array.from({ length: 25 }, (_, i) => i / 24);
-    // 2. Compute a global log-frequency override over all phrase trajectories
     const logFreqOverride = computed(() => {
-      // collect all trajectories from all phrases in the selected assemblage
       const allTrajs = selectedAssemblage.value.strands
         .flatMap(strand => strand.phrases)
         .flatMap(p => p.trajectories);
@@ -138,7 +136,18 @@ export default defineComponent({
       });
       return { low: minVal, high: maxVal };
     });
-    // --- End: logFreqOverride and sampleXs ---
+    const outerMargin = {
+      top: 0,
+      bottom: 0,
+      left: 0,
+      right: 0
+    }
+    const innerMargin = {
+      top: 50,
+      bottom: 0,
+      left: 30,
+      right: 0
+    };
 
     return {
       styleVars,
@@ -147,7 +156,9 @@ export default defineComponent({
       calcDisplayHeight,
       range,
       phraseMap,
-      logFreqOverride
+      logFreqOverride,
+      outerMargin,
+      innerMargin
     };
   }
 });
@@ -168,7 +179,7 @@ export default defineComponent({
   box-sizing: border-box
 }
 .assemblage-display {
-  background-color: blue;
+  background-color: var(--Primary);
   min-height: calc(100vh - var(--nav-height) - var(--analysis-type-row-height) - var(--selection-height));
   max-height: calc(100vh - var(--nav-height) - var(--analysis-type-row-height) - var(--selection-height));
   box-sizing: border-box;
@@ -194,7 +205,7 @@ export default defineComponent({
 .strand-label {
   position: sticky;
   top: 0;
-  background-color: blue;
+  background-color: var(--Primary);
   z-index: 1;
   border-bottom: 1px solid white;
   box-sizing: border-box
@@ -203,6 +214,7 @@ export default defineComponent({
 .phrase-display {
   width: 400px;
   min-height: 300px;
+  box-sizing: border-box;
 }
 
 .segment-holder {
@@ -211,7 +223,6 @@ export default defineComponent({
   min-height: 300px;
   max-height: 300px;
   border-bottom: 1px solid white;
-  padding-top: 10px;
   box-sizing: border-box;
 }
 
