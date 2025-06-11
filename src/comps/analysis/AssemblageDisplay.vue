@@ -12,8 +12,19 @@
   </div>
   <div class="assemblage-display" :style="styleVars" v-if="selectedAssemblage">
     <div class='strandLabelRow' >
-      <div class='strand-label' v-for='(strand, sIdx) in selectedAssemblage.strands' :key='strand.id'>
+      <div 
+        class='strand-label' 
+        v-for='(strand, sIdx) in selectedAssemblage.strands' 
+        :key='strand.id'
+        >
         <h3>{{ strand.label }}</h3>
+        <button 
+          class="strand-play-button"
+          @click="playingStrandId === strand.id ? stopStrand() : playStrand(strand.id)"
+          :disabled="audioLoading"
+        >
+          {{ playingStrandId === strand.id ? 'Stop Strand' : 'Play Strand' }}
+        </button>
       </div>
     </div>
     <div class='strandContentRow'>
@@ -127,7 +138,7 @@ export default defineComponent({
       '--nav-height': `${props.navHeight}px`,
       '--analysis-type-row-height': `${props.analysisTypeRowHeight}px`,
       '--selection-height': selectionHeight,
-      '--label-height': '60px',
+      '--label-height': '80px',
       '--col-width': `${colWidth}px`,
       '--col-height': `${colHeight}px`,
       '--total-width': `${colWidth * selectedAssemblage.value.strands.length}px`,
@@ -179,6 +190,7 @@ export default defineComponent({
     const currentGainNode = ref<GainNode | null>(null);
     const audioLoading = ref(true);
     const playingSegmentId = ref<number | null>(null);
+    const playingStrandId = ref<string | null>(null);
     const browser = detect() as BrowserInfo;
 
     const loadAudio = async (audioSource: string) => {
@@ -294,6 +306,82 @@ export default defineComponent({
       const segmentId = segmentData.identifier ?? 0;
       playSegment(segmentData.startTime, segmentData.duration, segmentId);
     };
+
+    const scrollToSegment = (pieceIdx: number) => {
+      const segmentElement = document.querySelector(`.segment-holder:nth-child(${pieceIdx - startPIdx.value + 1})`);
+      const scrollContainer = document.querySelector('.strandContentRow');
+      
+      if (segmentElement && scrollContainer) {
+        const containerRect = scrollContainer.getBoundingClientRect();
+        const segmentRect = segmentElement.getBoundingClientRect();
+        
+        const isVisible = segmentRect.top >= containerRect.top && 
+                         segmentRect.bottom <= containerRect.bottom;
+        
+        if (!isVisible) {
+          segmentElement.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center' 
+          });
+        }
+      }
+    };
+
+    const playStrand = async (strandId: string) => {
+      const strand = selectedAssemblage.value.strands.find(s => s.id === strandId);
+      if (!strand || !audioContext.value || !masterAudioBuffer.value) return;
+
+      // Stop any currently playing audio
+      stopAudio();
+
+      // Set the playing strand ID
+      playingStrandId.value = strandId;
+
+      // Sort phrases by pieceIdx to play in order
+      const sortedPhrases = [...strand.phrases].sort((a, b) => a.pieceIdx! - b.pieceIdx!);
+
+      for (let i = 0; i < sortedPhrases.length; i++) {
+        console.log(`Playing phrase ${i + 1} of ${sortedPhrases.length}`);
+        const phrase = sortedPhrases[i];
+        
+        // Check if we should continue (in case user stopped playback)
+        if (playingStrandId.value !== strandId) break;
+        
+        // Scroll to current segment
+        scrollToSegment(phrase.pieceIdx!);
+        
+        // Play the segment
+        playSegment(phrase.startTime!, phrase.durTot!, phrase.pieceIdx!);
+        
+        // Wait for the phrase to finish
+        await new Promise(resolve => {
+          setTimeout(resolve, phrase.durTot! * 1000);
+        });
+        
+        // Check if we should continue (in case user stopped playback)
+        if (playingStrandId.value !== strandId) break;
+        
+        // Scroll to next segment (if there is one) before the 1-second pause
+        if (i + 1 < sortedPhrases.length) {
+          scrollToSegment(sortedPhrases[i + 1].pieceIdx!);
+        }
+        
+        // 1 second pause before next phrase
+        await new Promise(resolve => {
+          setTimeout(resolve, 1000);
+        });
+      }
+      
+      // Clear playing strand when done
+      if (playingStrandId.value === strandId) {
+        playingStrandId.value = null;
+      }
+    };
+
+    const stopStrand = () => {
+      playingStrandId.value = null;
+      stopAudio();
+    };
     
 
 
@@ -335,9 +423,12 @@ export default defineComponent({
       audioContext,
       audioLoading,
       playingSegmentId,
+      playingStrandId,
       playSegment,
       stopAudio,
-      handleSegmentClick
+      handleSegmentClick,
+      playStrand,
+      stopStrand
     };
   }
 });
@@ -391,6 +482,42 @@ export default defineComponent({
   box-sizing: border-box;
   min-width: var(--col-width);
   max-width: var(--col-width);
+  max-height: var(--label-height);
+  min-height: var(--label-height);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-evenly;
+  padding: 4px 8px;
+}
+
+.strand-label h3 {
+  margin: 0;
+  font-size: 14px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.strand-play-button {
+  padding: 4px 8px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 10px;
+  transition: background-color 0.2s;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.strand-play-button:hover:not(:disabled) {
+  background-color: #0056b3;
+}
+
+.strand-play-button:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
 }
 
 .strand-content {
