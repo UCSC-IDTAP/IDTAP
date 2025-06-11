@@ -29,7 +29,6 @@ import * as d3 from 'd3';
 type SegmentDisplayDataType = {
   svg?: d3.Selection<SVGSVGElement, unknown, null, any>,
   verticalPadding: number,
-  horizontalPadding: number,
   xScale?: d3.ScaleLinear<number, number>,
   xAxis?: d3.Axis<d3.NumberValue>,
   yScale?: d3.ScaleLinear<number, number>,
@@ -49,13 +48,14 @@ import ContextMenu from '@/comps/ContextMenu.vue';
 
 export default defineComponent({
   name: 'SegmentDisplay',
+  emits: ['segment-click'],
 
   data(): SegmentDisplayDataType {
     return {
       // VertMargin: 0.2,
       // horizontalMargin: 20,
       verticalPadding: 0.1,
-      horizontalPadding: 0.1,
+      // horizontalPadding: 0.1,
       svg: undefined,
       xScale: undefined,
       xAxis: undefined,
@@ -300,6 +300,11 @@ export default defineComponent({
       required: false,
       default: 30
     },
+    horizontalPadding: {
+      type: Number,
+      required: false,
+      default: 0.1
+    },
   },
 
   components: {
@@ -449,6 +454,10 @@ export default defineComponent({
 
     handleClick(e: MouseEvent) {
       this.contextMenuClosed = true;
+      this.$emit('segment-click', {
+        startTime: this.queryAnswer.startTime,
+        duration: this.queryAnswer.duration
+      });
     },
 
     handleContextClick(e: MouseEvent) {
