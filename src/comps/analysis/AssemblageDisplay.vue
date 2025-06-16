@@ -7,7 +7,7 @@
       </option>
     </select>
     <div v-if="audioLoading" class="audio-loading">
-      <span>Loading audio...</span>
+      <span class='audioLoadingSpan'>Loading audio<span style="display: inline-block; width: 0.5em; height: 1em; line-height: 1em; vertical-align: middle; text-align: left;" v-for="n in 3">{{ n <= loadingDots ? '.' : '' }}</span></span>
     </div>
   </div>
   <div class="assemblage-display" :style="styleVars" v-if="selectedAssemblage">
@@ -190,6 +190,7 @@ export default defineComponent({
     const currentGainNode = ref<GainNode | null>(null);
     const audioLoading = ref(true);
     const playingSegmentId = ref<number | null>(null);
+    const loadingDots = ref(0);
     const playingStrandId = ref<string | null>(null);
     const browser = detect() as BrowserInfo;
 
@@ -202,9 +203,11 @@ export default defineComponent({
         const arrayBuffer = await response.arrayBuffer();
         masterAudioBuffer.value = await audioContext.value!.decodeAudioData(arrayBuffer);
         audioLoading.value = false;
+        loadingDots.value = 0;
       } catch (error) {
         console.error('Error fetching or decoding audio:', error);
         audioLoading.value = false;
+        loadingDots.value = 0;
       }
     };
 
@@ -386,6 +389,13 @@ export default defineComponent({
 
 
     onMounted(async () => {
+      const dotInterval = setInterval(() => {
+        if (audioLoading.value) {
+          loadingDots.value = (loadingDots.value + 1) % 4;
+        } else {
+          clearInterval(dotInterval);
+        }
+      }, 500);
       const audioID = props.piece.audioID;
       if (!audioID) {
         console.warn('No audio ID provided for piece.');
@@ -428,7 +438,8 @@ export default defineComponent({
       stopAudio,
       handleSegmentClick,
       playStrand,
-      stopStrand
+      stopStrand,
+      loadingDots,
     };
   }
 });
@@ -565,13 +576,22 @@ export default defineComponent({
 
 .audio-loading {
   margin-left: 20px;
-  padding: 8px 12px;
+  /* padding: 8px 12px; */
   background-color: rgba(255, 255, 255, 0.9);
   border-radius: 4px;
   font-size: 14px;
   color: #333;
-  display: inline-block;
+  /* display: inline-block; */
   width: auto;
+  max-width: 160px;
+  min-width: 160px;
+  min-height: 30px;
+  max-height: 30px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+
 }
 
 
