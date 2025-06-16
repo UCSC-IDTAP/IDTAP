@@ -576,12 +576,10 @@ export default defineComponent({
 
 .audio-loading {
   margin-left: 20px;
-  /* padding: 8px 12px; */
   background-color: rgba(255, 255, 255, 0.9);
   border-radius: 4px;
   font-size: 14px;
   color: #333;
-  /* display: inline-block; */
   width: auto;
   max-width: 160px;
   min-width: 160px;
@@ -591,13 +589,7 @@ export default defineComponent({
   flex-direction: row;
   align-items: center;
   justify-content: center;
-
 }
-
-
-
-
-
 </style>
 
 
