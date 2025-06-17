@@ -15,6 +15,14 @@ const getContrastingTextColor = (backgroundColor: string): string => {
 
 }
 
+const pitchNumberToChroma = (pitchNumber: number) => {
+  let chroma = pitchNumber % 12;
+  while (chroma < 0) {
+    chroma += 12;
+  }
+  return chroma
+}
+
 const displayTime = (dur: number) => {
   const hours = Math.floor(dur / 3600);
   let minutes: number | string = Math.floor((dur - hours * 3600) / 60);
@@ -115,5 +123,6 @@ export {
   findClosestStartTimeAfter,
   isObject,
   getStarts,
-  getEnds
+  getEnds,
+  pitchNumberToChroma
 };

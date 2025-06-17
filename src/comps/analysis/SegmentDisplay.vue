@@ -29,20 +29,6 @@ import * as d3 from 'd3';
 type SegmentDisplayDataType = {
   svg?: d3.Selection<SVGSVGElement, unknown, null, any>,
   verticalPadding: number,
-  horizontalPadding: number,
-  titleMargin: number,
-  outerMargin: {
-    top: number,
-    bottom: number,
-    left: number,
-    right: number
-  }
-  innerMargin: {
-    top: number,
-    bottom: number,
-    left: number,
-    right: number
-  },
   xScale?: d3.ScaleLinear<number, number>,
   xAxis?: d3.Axis<d3.NumberValue>,
   yScale?: d3.ScaleLinear<number, number>,
@@ -62,26 +48,14 @@ import ContextMenu from '@/comps/ContextMenu.vue';
 
 export default defineComponent({
   name: 'SegmentDisplay',
+  emits: ['segment-click'],
 
   data(): SegmentDisplayDataType {
     return {
       // VertMargin: 0.2,
-      titleMargin: 30,
-      outerMargin: {
-        top: 20,
-        bottom: 20,
-        left: 20,
-        right: 20
-      },
       // horizontalMargin: 20,
       verticalPadding: 0.1,
-      horizontalPadding: 0.1,
-      innerMargin: {
-        top: 40,
-        bottom: 0,
-        left: 30,
-        right: 0
-      },
+      // horizontalPadding: 0.1,
       svg: undefined,
       xScale: undefined,
       xAxis: undefined,
@@ -214,19 +188,22 @@ export default defineComponent({
       const vowelIdxs = this.firstTrajIdxs();  
       this.trajectories.forEach((traj, idx) => {
         if (vowelIdxs.includes(idx)) {
-          this.addVowel(traj)
+          this.addVowel(traj) 
         }
         this.addEndingConsonant(traj);
       })
     }
 
-    // add the title
+    const titleY = this.titleInAxis ? 
+        (this.innerMargin.top - 13) / 2 : 
+        this.titleMargin / 2;
     this.svg.append('text')
       .attr('x', this.innerMargin.left + totWidth / 2)
-      .attr('y', this.titleMargin / 2)
+      .attr('y', titleY)
       .attr('text-anchor', 'middle')
       .attr('dominant-baseline', 'middle')
-      .style('font-size', '20px')
+      .style('font-size', this.titleInAxis ? '16px' : '20px')
+      .style('fill', this.titleColor)
       .text(this.queryAnswer.title);
 
     window.addEventListener('keydown', this.handleKeydown);
@@ -277,7 +254,57 @@ export default defineComponent({
     horizontalProportionalDisplay: {
       type: Boolean,
       required: true
-    }
+    },
+    titleColor: {
+      type: String,
+      required: false,
+      default: 'black'
+    },
+    outerMargin: {
+      type: Object as PropType<{
+        top: number,
+        bottom: number,
+        left: number,
+        right: number
+      }>,
+      required: false,
+      default: () => ({
+        top: 20,
+        bottom: 20,
+        left: 20,
+        right: 20
+      })
+    },
+    innerMargin: {
+      type: Object as PropType<{
+        top: number,
+        bottom: number,
+        left: number,
+        right: number
+      }>,
+      required: false,
+      default: () => ({
+        top: 40,
+        bottom: 0,
+        left: 30,
+        right: 0
+      })
+    },
+    titleInAxis: {
+      type: Boolean,
+      required: false,
+      default: false
+    },
+    titleMargin: {
+      type: Number,
+      required: false,
+      default: 30
+    },
+    horizontalPadding: {
+      type: Number,
+      required: false,
+      default: 0.1
+    },
   },
 
   components: {
@@ -427,6 +454,10 @@ export default defineComponent({
 
     handleClick(e: MouseEvent) {
       this.contextMenuClosed = true;
+      this.$emit('segment-click', {
+        startTime: this.queryAnswer.startTime,
+        duration: this.queryAnswer.duration
+      });
     },
 
     handleContextClick(e: MouseEvent) {
