@@ -31,6 +31,11 @@
     "deployDirectoryWatcher": "rsync -a ./python/mass_upload/directory_watcher.py root@swara.studio:directory_watcher.py",
     "test": "vitest"
   },
+  "pnpm": {
+    "overrides": {
+      "brace-expansion": ">=2.0.2"
+    }
+  },
   "main": "background.js",
   "type": "module",
   "dependencies": {
