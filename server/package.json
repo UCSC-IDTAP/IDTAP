@@ -36,5 +36,10 @@
     "@types/node-cron": "^3.0.5",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "brace-expansion": ">=2.0.2"
+    }
   }
 }
