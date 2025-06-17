@@ -947,7 +947,13 @@ interface LoopSourceNode extends AudioBufferSourceNode {
 interface ChikariNodeType extends AudioWorkletNode {
   freq0?: AudioParam;
   freq1?: AudioParam;
+  freq2?: AudioParam;
+  freq3?: AudioParam;
   cutoff?: AudioParam;
+  stringGain0?: AudioParam;
+  stringGain1?: AudioParam;
+  stringGain2?: AudioParam;
+  stringGain3?: AudioParam;
   parameters: Map<string, AudioParam>;
 }
 
@@ -1051,6 +1057,8 @@ type SitarSynthControl = {
     extChikariGain: number,
     chikariFreq0: number,
     chikariFreq1: number,
+    chikariFreq2?: number,
+    chikariFreq3?: number,
   }
 }
 
@@ -1120,6 +1128,13 @@ type BurstOption = {
   to: AudioNode,
   atk?: number,
   amp?: number
+}
+
+type ChikariStrum = {
+  strings: boolean[];     // [true, false, true, true] = hit strings 0, 2, 3
+  strumDelay: number;     // delay between strings in seconds (e.g., 0.01)
+  baseAmp: number;        // base amplitude
+  when: number;           // when to start the strum
 }
 
 type TSPType = InstanceType<typeof TrajSelectPanel>;
@@ -1258,6 +1273,7 @@ export type {
   SarangiSynthType,
   KlattSynthType,
   BurstOption,
+  ChikariStrum,
   BoolObj,
   RuleSetType,
   TSPType,

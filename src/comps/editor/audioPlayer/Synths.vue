@@ -8,6 +8,7 @@ import {
 import { Instrument } from '@shared/enums';
 import ksURL from '@/audioWorklets/karplusStrong2.worklet.js?url';
 import cURL from '@/audioWorklets/chikaris2.worklet.js?url';
+import c4URL from '@/audioWorklets/chikaris4.worklet.js?url';
 import ssURL from '@/audioWorklets/sarangi.worklet.js?url';
 import caURL from '@/audioWorklets/captureAudio.worklet.js?url';
 import klattURL from '@/audioWorklets/klattSynth2.worklet.js?url';
@@ -38,6 +39,7 @@ import {
   SarangiSynthType,
   KlattSynthType,
   BurstOption,
+  ChikariStrum,
 } from '@shared/types';
 
 
@@ -153,6 +155,39 @@ export default defineComponent({
       });
     };
 
+    // chikari strum function
+    const sendChikariStrum = (strum: ChikariStrum, to: ChikariNodeType) => {
+      // Send bursts with progressive delays for enabled strings only
+      // This approach avoids pops by simply not exciting strings that should be muted
+      let delayOffset = 0;
+      strum.strings.forEach((enabled, index) => {
+        if (enabled && index < 4) {
+          sendBurst({ 
+            when: strum.when + delayOffset, 
+            to, 
+            atk: 0.025, 
+            amp: strum.baseAmp 
+          });
+          delayOffset += strum.strumDelay;
+        }
+      });
+    };
+
+    // Helper function to create a chikari strum with specified strings
+    const createChikariStrum = (
+      strings: boolean[],
+      when: number,
+      strumDelay: number = 0.0025,
+      baseAmp: number = 0.2
+    ): ChikariStrum => {
+      return {
+        strings,
+        strumDelay,
+        baseAmp,
+        when
+      };
+    };
+
     // spawn Synths
     const spawnSitar = async (control: SitarSynthControl): Promise<SitarSynthType> => {
       if (control.inst !== Instrument.Sitar) {
@@ -162,6 +197,7 @@ export default defineComponent({
         // load audio worklets
         await props.ac.audioWorklet.addModule(ksURL);
         await props.ac.audioWorklet.addModule(cURL);
+        await props.ac.audioWorklet.addModule(c4URL);
 
         // initialize nodes
         const sitarNode = new AudioWorkletNode(props.ac, 'karplusStrong') as 
@@ -175,7 +211,7 @@ export default defineComponent({
         const extChikariGainNode = props.ac.createGain();
         const outGainNode = props.ac.createGain();
         const cOpt = { numberOfInputs: 1, numberOfOutputs: 2 };
-        const chikariNode = new AudioWorkletNode(props.ac, 'chikaris', cOpt) as 
+        const chikariNode = new AudioWorkletNode(props.ac, 'chikaris4', cOpt) as 
           ChikariNodeType;
         const cDCOffsetNode = props.ac.createBiquadFilter();
         const capOpts = { numberOfInputs: 2, numberOfOutputs: 0 };
@@ -192,7 +228,13 @@ export default defineComponent({
         sitarNode.cutoff = sitarNode.parameters.get('Cutoff');
         chikariNode.freq0 = chikariNode.parameters.get('freq0');
         chikariNode.freq1 = chikariNode.parameters.get('freq1');
+        chikariNode.freq2 = chikariNode.parameters.get('freq2');
+        chikariNode.freq3 = chikariNode.parameters.get('freq3');
         chikariNode.cutoff = chikariNode.parameters.get('Cutoff');
+        chikariNode.stringGain0 = chikariNode.parameters.get('stringGain0');
+        chikariNode.stringGain1 = chikariNode.parameters.get('stringGain1');
+        chikariNode.stringGain2 = chikariNode.parameters.get('stringGain2');
+        chikariNode.stringGain3 = chikariNode.parameters.get('stringGain3');
         capture.bufferSize = capture.parameters.get('BufferSize');
         capture.active = capture.parameters.get('Active');
         capture.cancel = capture.parameters.get('Cancel');
@@ -219,6 +261,15 @@ export default defineComponent({
         chikariLoopSourceNode.loop = true;
         chikariNode.freq0!.value = control.params.chikariFreq0!;
         chikariNode.freq1!.value = control.params.chikariFreq1!;
+        // Set default frequencies for strings 2 and 3 (can be made configurable later)
+        const fundamental = props.piece.raga.fundamental;
+        chikariNode.freq2!.value = fundamental * 2 ** (7/12); // Perfect fifth above fundamental
+        chikariNode.freq3!.value = fundamental * 2 ** (4/12); // Major third above fundamental
+        // All string gains start at 1.0 (full volume)
+        chikariNode.stringGain0!.value = 1.0;
+        chikariNode.stringGain1!.value = 1.0;
+        chikariNode.stringGain2!.value = 1.0;
+        chikariNode.stringGain3!.value = 1.0;
         sonifyNode.gain.value = props.instTracks[control.idx].sounding ? 1 : 0;
 
         // connect nodes
@@ -616,12 +667,9 @@ export default defineComponent({
         Object.keys(phrase.chikaris).forEach((key) => {
           const time = realNow + phrase.startTime! + Number(key) - props.curPlayTime;
           if (time >= realNow) {
-            sendBurst({ 
-              when: time, 
-              to: synth.chikariNode, 
-              atk: 0.025, 
-              amp: 0.2 
-            });
+            // Default to all 4 strings - can be customized based on chikari data
+            const strum = createChikariStrum([true, true, true, true], time);
+            sendChikariStrum(strum, synth.chikariNode);
           }
         })
       })
