@@ -1,6 +1,9 @@
 # Changelog
 
 
+* Feat: Implemented four strings for Chikari [d7158ba] (Jon Myers)
+### 2025-06-17
+
 * Feat: Added Assemblage editor [c0386f1] (Jon Myers)
 ### 2025-06-05
 
