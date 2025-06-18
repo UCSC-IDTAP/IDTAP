@@ -102,7 +102,7 @@ enum PitchInclusionMethod {
 }
 
 enum Color {
-  Primary = 'var(--Primary)'
+  Primary = '#1e241e'
 }
 
 
