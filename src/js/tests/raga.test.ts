@@ -173,10 +173,11 @@ test('defaultRaga', () => {
   });
   const sNames = ['Sa', 'Re', 'Ga', 'Ma', 'Pa', 'Dha', 'Ni'];
   expect(r.sargamNames).toEqual(sNames);
-  const json_obj = { 
+  const json_obj = {
     name: 'Yaman',
     fundamental: 261.63,
     ratios: baseRatios,
+    tuning: r.tuning,
   };
   expect(r.toJSON()).toEqual(json_obj);
 })
