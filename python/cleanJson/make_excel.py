@@ -17,8 +17,10 @@ json_out_path = sys.argv[2]
 xlcs_out_path = sys.argv[3]
 
 # get rid of ratios
-
-phrases = data['phrases']
+if 'phraseGrid' in data:
+    phrases = data['phraseGrid'][0]
+else:
+    phrases = data['phrases']
 for phrase in phrases:
     if 'trajectories' in phrase:
         trajectories = phrase['trajectories']
@@ -366,7 +368,7 @@ p_start = duration_start + 4
 worksheet.merge_range(p_start, 0, p_start, 17, 'Phrases', titleFormatEnd)
 worksheet.set_row(p_start, 30)
 
-for pIdx, phrase in enumerate(data['phrases']):
+for pIdx, phrase in enumerate(phrases):
     if pIdx == 0:
         start = p_start + 1
     start = add_phrase(phrase, start, pIdx)
