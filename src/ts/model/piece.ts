@@ -1228,7 +1228,7 @@ class Piece {
       sectionCatGrid: this.sectionCatGrid,
       excerptRange: this.excerptRange,
       adHocSectionCatGrid: this.adHocSectionCatGrid,
-          assemblageDescriptors: this.assemblageDescriptors,
+      assemblageDescriptors: this.assemblageDescriptors,
     }
   }
 
