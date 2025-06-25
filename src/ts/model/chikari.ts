@@ -44,11 +44,19 @@ class Chikari {
   }
 
   toJSON() {
-	return {
-	  fundamental: this.fundamental,
-	  pitches: this.pitches.map(p => p.toJSON()),
-	  uniqueId: this.uniqueId
-	}
+        return {
+          fundamental: this.fundamental,
+          pitches: this.pitches.map(p => p.toJSON()),
+          uniqueId: this.uniqueId
+        }
+  }
+
+  static fromJSON(obj: any): Chikari {
+        const pitches = (obj.pitches || []).map((p: any) => Pitch.fromJSON(p));
+        return new Chikari({
+          ...obj,
+          pitches,
+        });
   }
 }
 

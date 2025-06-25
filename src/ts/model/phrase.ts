@@ -493,6 +493,37 @@ class Phrase {
     }
   }
 
+  static fromJSON(obj: any): Phrase {
+    const trajectoryGrid = obj.trajectoryGrid
+      ? obj.trajectoryGrid.map((trajs: any[]) => trajs.map((t: any) => Trajectory.fromJSON(t)))
+      : undefined;
+    const trajectories = obj.trajectories
+      ? obj.trajectories.map((t: any) => Trajectory.fromJSON(t))
+      : undefined;
+    const chikaris: { [key: string]: Chikari } = {};
+    if (obj.chikaris) {
+      Object.keys(obj.chikaris).forEach(k => {
+        chikaris[k] = Chikari.fromJSON(obj.chikaris[k]);
+      });
+    }
+    const chikariGrid = obj.chikariGrid
+      ? obj.chikariGrid.map((cg: any) => {
+          const newObj: { [key: string]: Chikari } = {};
+          Object.keys(cg).forEach(k => {
+            newObj[k] = Chikari.fromJSON(cg[k]);
+          });
+          return newObj;
+        })
+      : undefined;
+    return new Phrase({
+      ...obj,
+      trajectories,
+      trajectoryGrid,
+      chikaris,
+      chikariGrid,
+    });
+  }
+
   toNoteViewPhrase() {
     const pitches: Pitch[] = [];
     this.trajectories.forEach(traj => {
