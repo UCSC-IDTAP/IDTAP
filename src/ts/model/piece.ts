@@ -1228,9 +1228,67 @@ class Piece {
       sectionCatGrid: this.sectionCatGrid,
       excerptRange: this.excerptRange,
       adHocSectionCatGrid: this.adHocSectionCatGrid,
-	  assemblageDescriptors: this.assemblageDescriptors,
+      assemblageDescriptors: this.assemblageDescriptors,
     }
+  }
+
+  static fromJSON(obj: any): Piece {
+    const raga = obj.raga ? Raga.fromJSON(obj.raga) : new Raga();
+    obj.raga = raga;
+
+    if (obj.phraseGrid === undefined && obj.phrases !== undefined) {
+      obj.phraseGrid = [obj.phrases];
+      while (obj.phraseGrid.length < obj.instrumentation.length) {
+        obj.phraseGrid.push([]);
+      }
+    }
+
+    obj.phraseGrid = (obj.phraseGrid || []).map((phrases: any[], instIdx: number) => {
+      return phrases.map((p: any) => Phrase.fromJSON(p));
+    });
+
+    if (obj.meters) {
+      obj.meters = obj.meters.map((m: any) => new Meter(m));
+    }
+
+    const piece = new Piece(obj);
+
+    // reconnect groups to actual trajectories
+    piece.phraseGrid.forEach((phrases) => {
+      phrases.forEach((phrase) => {
+        if (phrase.groupsGrid) {
+          phrase.groupsGrid = phrase.groupsGrid.map((groups) =>
+            groups.map((g) => {
+              g.trajectories = g.trajectories.map((t: Trajectory) => {
+                const tIdx = t.num!;
+                return phrase.trajectoryGrid[0][tIdx];
+              });
+              return new Group(g);
+            })
+          );
+        }
+      });
+    });
+
+    // fix articulations named slide at start
+    piece.phraseGrid.forEach((phrases) => {
+      phrases.forEach((phrase) => {
+        phrase.trajectories.forEach((traj) => {
+          const arts = traj.articulations;
+          const a1 = arts[0] && arts[0].name === 'slide';
+          const a2 = arts['0.00'] && arts['0.00'].name === 'slide';
+          if (a1 || a2) {
+            arts['0.00'].name = 'pluck';
+          }
+        });
+        phrase.consolidateSilentTrajs();
+      });
+    });
+
+    piece.durArrayFromPhrases();
+    piece.sectionStartsGrid = piece.sectionStartsGrid.map((arr) => [...new Set(arr)]);
+    return piece;
   }
 }
 
-export { Piece, initSecCategorization, durationsOfFixedPitches } 
+export { Piece, initSecCategorization, durationsOfFixedPitches }

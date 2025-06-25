@@ -467,12 +467,16 @@ class Raga {
   
 
   toJSON() {
-	return {
-	  name: this.name,
-	  fundamental: this.fundamental,
-	  ratios: this.ratios,
-	  tuning: this.tuning,
-	}
+        return {
+          name: this.name,
+          fundamental: this.fundamental,
+          ratios: this.ratios,
+          tuning: this.tuning,
+        }
+  }
+
+  static fromJSON(obj: any): Raga {
+        return new Raga(obj);
   }
 }
 

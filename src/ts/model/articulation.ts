@@ -37,6 +37,10 @@ class Articulation {
       this.strokeNickname = 'ra'
     }
   }
+
+  static fromJSON(obj: any): Articulation {
+    return new Articulation(obj);
+  }
 }
 
 export { Articulation };

@@ -483,14 +483,18 @@ class Pitch {
   }
 
   toJSON() {
-	return {
-	  swara: this.swara,
-	  raised: this.raised,
-	  oct: this.oct,
-	  ratios: this.ratios,
-	  fundamental: this.fundamental,
-	  logOffset: this.logOffset,
-	}
+        return {
+          swara: this.swara,
+          raised: this.raised,
+          oct: this.oct,
+          ratios: this.ratios,
+          fundamental: this.fundamental,
+          logOffset: this.logOffset,
+        }
+  }
+
+  static fromJSON(obj: any): Pitch {
+        return new Pitch(obj);
   }
 }
 

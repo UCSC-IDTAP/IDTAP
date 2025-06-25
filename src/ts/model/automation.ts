@@ -152,6 +152,10 @@ class Automation {
     }
     return new Automation({ values: allValues })
   }
+
+  static fromJSON(obj: any): Automation {
+    return new Automation(obj);
+  }
 }
 
 export { Automation };

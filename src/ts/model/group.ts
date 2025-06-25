@@ -115,10 +115,17 @@ class Group {
   }
 
   toJSON() {
-	return {
-	  trajectories: this.trajectories,
-	  id: this.id
-	}
+        return {
+          trajectories: this.trajectories,
+          id: this.id
+        }
+  }
+
+  static fromJSON(obj: any): Group {
+        return new Group({
+          trajectories: obj.trajectories as Trajectory[],
+          id: obj.id,
+        });
   }
 }
 

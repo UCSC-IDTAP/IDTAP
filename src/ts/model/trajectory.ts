@@ -890,6 +890,26 @@ class Trajectory {
     }
   }
 
+  static fromJSON(obj: any): Trajectory {
+    const pitches = (obj.pitches || []).map((p: any) => Pitch.fromJSON(p));
+    const articulations: { [key: string]: Articulation } = {};
+    if (obj.articulations) {
+      Object.keys(obj.articulations).forEach(key => {
+        const a = obj.articulations[key];
+        if (a !== null && a !== undefined) {
+          articulations[key] = Articulation.fromJSON(a);
+        }
+      });
+    }
+    const automation = obj.automation ? Automation.fromJSON(obj.automation) : undefined;
+    return new Trajectory({
+      ...obj,
+      pitches,
+      articulations,
+      automation,
+    });
+  }
+
   static names() {
     const traj = new Trajectory();
     return traj.names
