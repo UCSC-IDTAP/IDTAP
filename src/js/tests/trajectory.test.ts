@@ -85,9 +85,6 @@ test('compute id7-id13', () => {
 
   /* id8 … id10 (unchanged assertions) */
 
-   /* id12 / id13 */
-  const t12 = new Trajectory({ id: 12, fundID12: 220 });
-  expect(t12.id12(0.5)).toBeCloseTo(220);
   /* id12 / id13 */
   const t12 = new Trajectory({ id: 12, fundID12: 220 });
   expect(t12.id12(0.5)).toBeCloseTo(220);
