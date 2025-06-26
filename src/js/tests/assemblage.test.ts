@@ -15,6 +15,10 @@ test('Assemblage operations', () => {
   a.movePhraseToStrand(p2, a.strands[1].id);
   expect(a.loosePhrases.length).toBe(0);
   expect(a.strands[1].phrases[0]).toBe(p2);
+  a.removePhrase(p1);
+  expect(a.phrases.includes(p1)).toBe(false);
+  a.removeStrand(a.strands[0].id);
+  expect(a.strands.length).toBe(1);
   const desc = a.descriptor;
   const a2 = Assemblage.fromDescriptor(desc, [p1, p2]);
   expect(a2.descriptor).toEqual(desc);
