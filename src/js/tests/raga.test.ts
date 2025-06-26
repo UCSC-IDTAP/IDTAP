@@ -181,3 +181,53 @@ test('defaultRaga', () => {
   };
   expect(r.toJSON()).toEqual(json_obj);
 })
+
+test('pitchFromLogFreq', () => {
+  const r = new Raga();
+  const offset = 0.03;
+  const baseLog = Math.log2(r.fundamental * 2);
+  const p = r.pitchFromLogFreq(baseLog + offset);
+  expect(p).toBeInstanceOf(Pitch);
+  expect(p.frequency).toBeCloseTo(2 ** (baseLog + offset));
+})
+
+test('pitch string getters', () => {
+  const r = new Raga();
+  const pl = r.getPitches({ low: r.fundamental, high: r.fundamental * 1.999 });
+  const solfege = pl.map(p => p.solfegeLetter);
+  const pcs = pl.map(p => p.chroma.toString());
+  const western = pl.map(p => p.westernPitch);
+  expect(r.solfegeStrings).toEqual(solfege);
+  expect(r.pcStrings).toEqual(pcs);
+  expect(r.westernPitchStrings).toEqual(western);
+})
+
+test('swaraObjects', () => {
+  const r = new Raga();
+  const objs = [
+    { swara: 0, raised: true },
+    { swara: 1, raised: true },
+    { swara: 2, raised: true },
+    { swara: 3, raised: true },
+    { swara: 4, raised: true },
+    { swara: 5, raised: true },
+    { swara: 6, raised: true },
+  ];
+  expect(r.swaraObjects).toEqual(objs);
+})
+
+test('ratioIdxToTuningTuple', () => {
+  const r = new Raga();
+  const mapping: Array<[string, string | undefined]> = [
+    ['sa', undefined],
+    ['re', 'raised'],
+    ['ga', 'raised'],
+    ['ma', 'raised'],
+    ['pa', undefined],
+    ['dha', 'raised'],
+    ['ni', 'raised'],
+  ];
+  mapping.forEach((tuple, idx) => {
+    expect(r.ratioIdxToTuningTuple(idx)).toEqual(tuple);
+  });
+})

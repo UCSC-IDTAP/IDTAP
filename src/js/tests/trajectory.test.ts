@@ -91,10 +91,36 @@ test('compute id7-id13', () => {
 
   const vib = { periods: 2, vertOffset: 0, initUp: true, extent: 0.1 };
   const t13 = new Trajectory({ id: 13, vibObj: vib });
+  const log0 = Math.log2(261.63);
+  const expected13 = (x: number): number => {
+    const periods = vib.periods;
+    let vertOffset = vib.vertOffset;
+    const initUp = vib.initUp;
+    const extent = vib.extent;
+    if (Math.abs(vertOffset) > extent / 2) {
+      vertOffset = Math.sign(vertOffset) * extent / 2;
+    }
+    let out = Math.cos(x * 2 * Math.PI * periods + Number(initUp) * Math.PI);
+    if (x < 1 / (2 * periods)) {
+      const start = log0;
+      const end = Math.log2(expected13(1 / (2 * periods)));
+      const middle = (end + start) / 2;
+      const ext = Math.abs(end - start) / 2;
+      out = out * ext + middle;
+      return 2 ** out;
+    } else if (x > 1 - 1 / (2 * periods)) {
+      const start = Math.log2(expected13(1 - 1 / (2 * periods)));
+      const end = log0;
+      const middle = (end + start) / 2;
+      const ext = Math.abs(end - start) / 2;
+      out = out * ext + middle;
+      return 2 ** out;
+    } else {
+      return 2 ** (out * extent / 2 + vertOffset + log0);
+    }
+  };
   pts.forEach(x => {
-    /* expected13 logic copied verbatim from original test */
-    /* … */
-    expect(t13.id13(x)).toBeCloseTo(/* expected13(x) */);
+    expect(t13.id13(x)).toBeCloseTo(expected13(x));
   });
 });
 
