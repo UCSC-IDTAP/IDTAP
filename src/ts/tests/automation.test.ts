@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { Automation } from '../../js/classes.js';
+import { Automation } from '../model';
 
 
 test('Automation', () => {
@@ -105,3 +105,13 @@ test('partition', () => {
 
 
 })
+
+test('fromJSON round-trip', () => {
+  const orig = new Automation();
+  orig.addValue(0.3, 0.7);
+  orig.addValue(0.8, 0.4);
+  const json = JSON.parse(JSON.stringify(orig));
+  const clone = Automation.fromJSON(json);
+  expect(clone).toBeInstanceOf(Automation);
+  expect(clone.values).toEqual(orig.values);
+});
