@@ -264,3 +264,58 @@ test('numberedPitch', () => {
   p = new Pitch({ swara: 3, raised: false, oct: 1 })
   expect(p.numberedPitch).toEqual(17);
 })
+
+test('sameAs', () => {
+  const p1 = new Pitch({ swara: 're', raised: false, oct: 1 });
+  const p2 = new Pitch({ swara: 1, raised: false, oct: 1 });
+  const p3 = new Pitch({ swara: 1, raised: true, oct: 1 });
+  expect(p1.sameAs(p2)).toBe(true);
+  expect(p1.sameAs(p3)).toBe(false);
+})
+
+test('fromPitchNumber and helpers', () => {
+  let p = Pitch.fromPitchNumber(4);
+  expect(p.swara).toEqual(2);
+  expect(p.raised).toEqual(true);
+  expect(p.oct).toEqual(0);
+
+  p = Pitch.fromPitchNumber(-1);
+  expect(p.swara).toEqual(6);
+  expect(p.raised).toEqual(true);
+  expect(p.oct).toEqual(-1);
+
+  expect(Pitch.pitchNumberToChroma(14)).toEqual(2);
+  expect(Pitch.pitchNumberToChroma(-1)).toEqual(11);
+
+  let sd, raised;
+  [sd, raised] = Pitch.chromaToScaleDegree(3);
+  expect(sd).toEqual(2);
+  expect(raised).toEqual(false);
+  [sd, raised] = Pitch.chromaToScaleDegree(11);
+  expect(sd).toEqual(6);
+  expect(raised).toEqual(true);
+})
+
+test('display properties', () => {
+  const pDown = new Pitch({ swara: 'g', raised: false, oct: -1 });
+  expect(pDown.solfegeLetter).toEqual('Me');
+  expect(pDown.octavedScaleDegree).toEqual('3\u0323');
+  expect(pDown.octavedSolfegeLetter).toEqual('Me\u0323');
+  expect(pDown.octavedSolfegeLetterWithCents).toEqual('Me\u0323 (+0\u00A2)');
+  expect(pDown.octavedChroma).toEqual('3\u0323');
+  expect(pDown.octavedChromaWithCents).toEqual('3\u0323 (+0\u00A2)');
+  expect(pDown.centsString).toEqual('+0\u00A2');
+  expect(pDown.a440CentsDeviation).toEqual('D#3 (+0\u00A2)');
+  expect(pDown.movableCCentsDeviation).toEqual('D# (+0\u00A2)');
+
+  const pUp = new Pitch({ swara: 'Sa', oct: 2 });
+  expect(pUp.solfegeLetter).toEqual('Do');
+  expect(pUp.octavedScaleDegree).toEqual('1\u0308');
+  expect(pUp.octavedSolfegeLetter).toEqual('Do\u0308');
+  expect(pUp.octavedSolfegeLetterWithCents).toEqual('Do\u0308 (+0\u00A2)');
+  expect(pUp.octavedChroma).toEqual('0\u0308');
+  expect(pUp.octavedChromaWithCents).toEqual('0\u0308 (+0\u00A2)');
+  expect(pUp.centsString).toEqual('+0\u00A2');
+  expect(pUp.a440CentsDeviation).toEqual('C6 (+0\u00A2)');
+  expect(pUp.movableCCentsDeviation).toEqual('C (+0\u00A2)');
+})
