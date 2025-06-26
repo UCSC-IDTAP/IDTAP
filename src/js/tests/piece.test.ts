@@ -2,28 +2,70 @@ import { expect, test } from 'vitest';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { Piece, Phrase, Trajectory, Pitch, Raga, Group, Articulation, Chikari } from '@model';
-import { Meter } from '@/js/meter';
+
+import {
+  Piece,
+  Phrase,
+  Trajectory,
+  Pitch,
+  Raga,
+  Group,
+  Articulation,
+  Chikari,
+  initSecCategorization,
+} from '@model';              // ← adjust if your alias is different
+import { Meter } from '@/js/meter'; // or '../meter'
 import { Instrument } from '@shared/enums';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const pieceData = JSON.parse(readFileSync(join(__dirname, 'fixtures/serialization_test.json'), 'utf-8'));
+/* -------------------------------------------------------
+   Helpers for the “codex/add-test-cases-for-new-functions”
+   branch (returns just a Piece)
+------------------------------------------------------- */
+function buildSimplePiece(): Piece {
+  const raga = new Raga();
+  const t1 = new Trajectory({ id: 0, pitches: [new Pitch()], durTot: 1 });
+  const t2 = new Trajectory({ id: 12, pitches: [new Pitch()], durTot: 1 });
+  const p1 = new Phrase({ trajectories: [t1], durTot: 1, raga });
+  const p2 = new Phrase({ trajectories: [t2], durTot: 1, raga });
+  const m1 = new Meter({ hierarchy: [1], tempo: 60, startTime: 0 });
+  const m2 = new Meter({ hierarchy: [1], tempo: 60, startTime: 1 });
+  return new Piece({
+    phrases: [p1, p2],
+    raga,
+    meters: [m1, m2],
+    instrumentation: [Instrument.Sitar],
+  });
+}
 
-function buildSimplePiece() {
+/* -------------------------------------------------------
+   Helpers for the “porting-project” branch
+   (returns an object with many handles)
+------------------------------------------------------- */
+function buildSimplePieceFull() {
   const raga = new Raga({ fundamental: 240 });
   const art = { '0.00': new Articulation({ strokeNickname: 'da' }) };
   const t1 = new Trajectory({ num: 0, pitches: [new Pitch()], durTot: 0.5, articulations: art });
-  const t2 = new Trajectory({ num: 1, pitches: [new Pitch({ swara: 'r', raised: false })], durTot: 0.5, articulations: art });
+  const t2 = new Trajectory({
+    num: 1,
+    pitches: [new Pitch({ swara: 'r', raised: false })],
+    durTot: 0.5,
+    articulations: art,
+  });
   const group = new Group({ trajectories: [t1, t2] });
   const p1 = new Phrase({ trajectories: [t1, t2], raga });
   p1.groupsGrid[0].push(group);
+
   const t3 = new Trajectory({ num: 0, pitches: [new Pitch()], durTot: 1 });
   const p2 = new Phrase({ trajectories: [t3], raga });
+
   const piece = new Piece({ phrases: [p1, p2], raga, instrumentation: [Instrument.Sitar] });
   const meter = new Meter({ startTime: 0, tempo: 60 });
   return { piece, p1, p2, t1, t2, t3, group, meter };
 }
 
+/* -------------------------------------------------------
+   Extra helper for the vocal-piece tests
+------------------------------------------------------- */
 function buildVocalPiece() {
   const raga = new Raga({ fundamental: 240 });
   const art = { '0.00': new Articulation({ strokeNickname: 'da' }) };
@@ -31,21 +73,117 @@ function buildVocalPiece() {
   t1.addConsonant('ka');
   t1.updateVowel('a');
   t1.addConsonant('ga', false);
-  const t2 = new Trajectory({ num: 1, pitches: [new Pitch({ swara: 'r', raised: false })], durTot: 0.5, articulations: art });
+
+  const t2 = new Trajectory({
+    num: 1,
+    pitches: [new Pitch({ swara: 'r', raised: false })],
+    durTot: 0.5,
+    articulations: art,
+  });
   t2.updateVowel('i');
+
   const p1 = new Phrase({ trajectories: [t1, t2], raga });
   p1.chikaris['0.25'] = new Chikari({});
+
   const p2 = new Phrase({ trajectories: [new Trajectory({ num: 0, pitches: [new Pitch()], durTot: 1 })], raga });
+
   const piece = new Piece({
     phrases: [p1, p2],
     raga,
     instrumentation: [Instrument.Vocal_M],
     sectionStarts: [0, 1],
   });
+
   const meter = new Meter({ startTime: 0, tempo: 60 });
   piece.addMeter(meter);
+
   return { piece, meter };
 }
+
+/* =======================================================
+   TESTS FROM “codex/add-test-cases-for-new-functions”
+======================================================= */
+
+test('realignPitches and setDurTot', () => {
+  const piece = buildSimplePiece();
+  // mangle pitch ratios
+  piece.phrases[0].trajectories[0].pitches[0].ratios = [1];
+  piece.realignPitches();
+  expect(piece.phrases[0].trajectories[0].pitches[0].ratios[0]).toBe(piece.raga.stratifiedRatios[0]);
+
+  // extend piece duration using silent trajectory
+  piece.setDurTot(3);
+  expect(piece.durTot).toBe(3);
+  expect(piece.durArrayGrid[0][0]).toBeCloseTo(1 / 3);
+  expect(piece.phrases[1].trajectories[0].durTot).toBe(2);
+  expect(piece.phrases[1].startTime).toBeCloseTo(1);
+});
+
+test('dur calculations and cleanUpSectionCategorization', () => {
+  const piece = buildSimplePiece();
+
+  // change first phrase duration
+  piece.phrases[0].trajectories[0].durTot = 2;
+  piece.phrases[0].durTotFromTrajectories();
+  piece.durTotFromPhrases();
+  expect(piece.durTot).toBe(3);
+
+  piece.durArrayFromPhrases();
+  expect(piece.durArrayGrid[0]).toEqual([2 / 3, 1 / 3]);
+
+  // error when durTot undefined
+  piece.phrases[0].durTot = undefined as unknown as number;
+  expect(() => piece.durArrayFromPhrases()).toThrow();
+
+  // cleanUpSectionCategorization
+  const c = initSecCategorization();
+  // remove fields to force defaults
+  // @ts-ignore
+  delete c['Improvisation'];
+  // @ts-ignore
+  delete c['Other'];
+  // @ts-ignore
+  delete c['Top Level'];
+  c['Composition Type']['Bandish'] = true;
+  piece.cleanUpSectionCategorization(c);
+  expect(c['Improvisation']).toBeDefined();
+  expect(c['Other']).toBeDefined();
+  expect(c['Top Level']).toBe('Composition');
+});
+
+test('display helpers and meters', () => {
+  const piece = buildSimplePiece();
+
+  const divs = piece.allPhraseDivs();
+  expect(divs.length).toBe(1);
+  expect(divs[0].time).toBeCloseTo(1);
+
+  const divChunks = piece.chunkedPhraseDivs(0, 1);
+  expect(divChunks.length).toBe(2);
+  expect(divChunks[0].length).toBe(0);
+  expect(divChunks[1].length).toBe(1);
+
+  const sargam = piece.allDisplaySargam();
+  expect(sargam[0].sargam).toBeDefined();
+  const sargamChunks = piece.chunkedDisplaySargam(0, 1);
+  expect(sargamChunks.length).toBe(2);
+  expect(sargamChunks.map(c => c.length).reduce((a, b) => a + b, 0)).toBe(sargam.length);
+
+  const meterChunks = piece.chunkedMeters(1);
+  expect(meterChunks.length).toBe(2);
+  expect(meterChunks[0][0].startTime).toBe(0);
+  expect(meterChunks[1][0].startTime).toBe(1);
+
+  const badMeter = new Meter({ hierarchy: [1], tempo: 60, startTime: 0.5 });
+  expect(() => piece.addMeter(badMeter)).toThrow();
+});
+
+/* =======================================================
+   TESTS FROM “porting-project”
+======================================================= */
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const pieceData = JSON.parse(readFileSync(join(__dirname, 'fixtures/serialization_test.json'), 'utf-8'));
 
 test('Piece serialization from fixture', () => {
   const piece = Piece.fromJSON(pieceData);
@@ -55,7 +193,7 @@ test('Piece serialization from fixture', () => {
 });
 
 test('Piece method coverage', () => {
-  const { piece, p1, p2, t1, t2, t3, group, meter } = buildSimplePiece();
+  const { piece, p1, p2, t1, t2, t3, group, meter } = buildSimplePieceFull();
 
   expect(piece.phrases.length).toBe(2);
   expect(piece.durArray).toEqual([0.5, 0.5]);
@@ -119,6 +257,7 @@ test('Piece method coverage', () => {
 
 test('Piece display and sections', () => {
   const { piece, meter } = buildVocalPiece();
+
   expect(piece.sections.length).toBe(2);
   expect(piece.sectionsGrid[0].length).toBe(2);
 
