@@ -1,5 +1,6 @@
 import { expect, test } from 'vitest';
-import { Trajectory, Pitch, Articulation, linSpace } from '../classes';
+import { Trajectory, Pitch, Articulation } from '@model';
+import { linSpace } from '@/ts/utils';
 import { findLastIndex } from 'lodash';
 
 test('defaultTrajectory', () => {
@@ -88,10 +89,10 @@ test('defaultTrajectory', () => {
   const cEngTrans = ['k', 'kh', 'g', 'gh', 'ṅ', 'c', 'ch', 'j', 'jh', 'ñ', 'ṭ', 
   'ṭh', 'ḍ', 'ḍh', 'n', 't', 'th', 'd', 'dh', 'n', 'p', 'ph', 'b', 'bh', 
   'm', 'y', 'r', 'l', 'v', 'ś', 'ṣ', 's', 'h'];
-  const vIpas = ['ə', 'aː', 'ɪ', 'iː', 'ʊ', 'uː', 'eː', 'ɛː', 'oː', 'ɔː'];
-  const vIsos = ['a', 'ā', 'i', 'ī', 'u', 'ū', 'ē', 'ai', 'ō', 'au'];
-  const vHindis = ['अ', 'आ', 'इ', 'ई', 'उ', 'ऊ', 'ए', 'ऐ', 'ओ', 'औ'];
-  const vEngTrans = ['a', 'ā', 'i', 'ī', 'u', 'ū', 'ē', 'ai', 'ō', 'au'];
+  const vIpas = ['ə', 'aː', 'ɪ', 'iː', 'ʊ', 'uː', 'eː', 'ɛː', 'oː', 'ɔː', '_'];
+  const vIsos = ['a', 'ā', 'i', 'ī', 'u', 'ū', 'ē', 'ai', 'ō', 'au', '_'];
+  const vHindis = ['अ', 'आ', 'इ', 'ई', 'उ', 'ऊ', 'ए', 'ऐ', 'ओ', 'औ', '_'];
+  const vEngTrans = ['a', 'ā', 'i', 'ī', 'u', 'ū', 'ē', 'ai', 'ō', 'au', '_'];
   expect(t.cIpas).toEqual(cIpas);
   expect(t.cIsos).toEqual(cIsos);
   expect(t.cHindis).toEqual(cHindis);
@@ -223,3 +224,19 @@ test('defaultTrajectory', () => {
 
 
 })
+test('Trajectory consonant and vowel helpers', () => {
+  const t = new Trajectory({ pitches: [new Pitch()], durTot: 1 });
+  t.addConsonant('ka');
+  expect(t.startConsonant).toBe('ka');
+  t.addConsonant('ga', false);
+  expect(t.endConsonant).toBe('ga');
+  t.changeConsonant('kha');
+  expect(t.startConsonant).toBe('kha');
+  t.updateVowel('a');
+  expect(t.vowelHindi).toBe('अ');
+  const dur = t.durationsOfFixedPitches();
+  expect(dur[t.pitches[0].numberedPitch]).toBeCloseTo(1);
+  const json = t.toJSON();
+  const copy = Trajectory.fromJSON(json);
+  expect(copy.startConsonant).toBe('kha');
+});
