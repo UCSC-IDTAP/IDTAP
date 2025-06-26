@@ -225,10 +225,9 @@ test('Piece method coverage', () => {
 
   const allPitches = piece.allPitches();
   expect(allPitches.length).toBe(3);
-  const allNums = piece.allPitches({ pitchNumber: true }) as number[];
-  expect(allNums.length).toBe(3);
-  expect(piece.highestPitchNumber).toBe(Math.max(...allNums));
-  expect(piece.lowestPitchNumber).toBe(Math.min(...allNums));
+  const pitchNums = allPitches.map(p => (typeof p === 'number' ? p : p.numberedPitch));
+  expect(piece.highestPitchNumber).toBe(Math.max(...pitchNums));
+  expect(piece.lowestPitchNumber).toBe(Math.min(...pitchNums));
 
   expect(piece.allTrajectories().length).toBe(3);
   expect(piece.trajFromTime(0.25, 0)).toBe(t1);
@@ -242,6 +241,12 @@ test('Piece method coverage', () => {
   expect(chunks[0].length).toBe(2);
   expect(chunks[1].length).toBe(1);
 
+  const chunksSmall = piece.chunkedTrajs(0, 0.75);
+  expect(chunksSmall.length).toBe(3);
+  expect(chunksSmall[0].length).toBe(2);
+  expect(chunksSmall[1].length).toBe(2);
+  expect(chunksSmall[2].length).toBe(1);
+
   const bols = piece.allDisplayBols();
   expect(bols.length).toBeGreaterThan(0);
   expect(piece.chunkedDisplayBols(0, 1)[0].length).toBe(bols.filter(b => b.time < 1).length);
@@ -250,6 +255,21 @@ test('Piece method coverage', () => {
   expect(Object.keys(dur).length).toBeGreaterThan(0);
   const prop = piece.proportionsOfFixedPitches();
   expect(Object.keys(prop)).toEqual(Object.keys(dur));
+
+  const chromaDur = piece.durationsOfFixedPitches({ outputType: 'chroma' });
+  expect(Object.keys(chromaDur).length).toBeGreaterThan(0);
+  const chromaProp = piece.proportionsOfFixedPitches({ outputType: 'chroma' });
+  expect(Object.keys(chromaProp)).toEqual(Object.keys(chromaDur));
+
+  const degreeDur = piece.durationsOfFixedPitches({ outputType: 'scaleDegree' });
+  expect(Object.keys(degreeDur).length).toBeGreaterThan(0);
+  const degreeProp = piece.proportionsOfFixedPitches({ outputType: 'scaleDegree' });
+  expect(Object.keys(degreeProp)).toEqual(Object.keys(degreeDur));
+
+  const sargamDur = piece.durationsOfFixedPitches({ outputType: 'sargamLetter' });
+  expect(Object.keys(sargamDur).length).toBeGreaterThan(0);
+  const sargamProp = piece.proportionsOfFixedPitches({ outputType: 'sargamLetter' });
+  expect(Object.keys(sargamProp)).toEqual(Object.keys(sargamDur));
 
   expect(piece.mostRecentTraj(0.6, 0)).toBeInstanceOf(Trajectory);
   expect(piece.sIdxFromPIdx(1)).toBe(0);
