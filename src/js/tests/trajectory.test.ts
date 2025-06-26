@@ -88,11 +88,14 @@ test('compute id7-id13', () => {
    /* id12 / id13 */
   const t12 = new Trajectory({ id: 12, fundID12: 220 });
   expect(t12.id12(0.5)).toBeCloseTo(220);
+  /* id12 / id13 */
+  const t12 = new Trajectory({ id: 12, fundID12: 220 });
+  expect(t12.id12(0.5)).toBeCloseTo(220);
 
   const vib = { periods: 2, vertOffset: 0, initUp: true, extent: 0.1 };
   const t13 = new Trajectory({ id: 13, vibObj: vib });
 
-  /** mirrors Trajectory.id13 implementation */
+  /* helper that mirrors Trajectory.id13 */
   const expected13 = (xVal: number): number => {
     const { periods, vertOffset, initUp, extent } = vib;
     let vo = vertOffset;
