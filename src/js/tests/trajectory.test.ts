@@ -85,40 +85,40 @@ test('compute id7-id13', () => {
 
   /* id8 … id10 (unchanged assertions) */
 
+   /* id12 / id13 */
+  const t12 = new Trajectory({ id: 12, fundID12: 220 });
+  expect(t12.id12(0.5)).toBeCloseTo(220);
   /* id12 / id13 */
   const t12 = new Trajectory({ id: 12, fundID12: 220 });
   expect(t12.id12(0.5)).toBeCloseTo(220);
 
   const vib = { periods: 2, vertOffset: 0, initUp: true, extent: 0.1 };
   const t13 = new Trajectory({ id: 13, vibObj: vib });
-  const log0 = Math.log2(261.63);
-  const expected13 = (x: number): number => {
-    const periods = vib.periods;
-    let vertOffset = vib.vertOffset;
-    const initUp = vib.initUp;
-    const extent = vib.extent;
-    if (Math.abs(vertOffset) > extent / 2) {
-      vertOffset = Math.sign(vertOffset) * extent / 2;
-    }
-    let out = Math.cos(x * 2 * Math.PI * periods + Number(initUp) * Math.PI);
-    if (x < 1 / (2 * periods)) {
-      const start = log0;
+
+  /* helper that mirrors Trajectory.id13 */
+  const expected13 = (xVal: number): number => {
+    const { periods, vertOffset, initUp, extent } = vib;
+    let vo = vertOffset;
+    if (Math.abs(vo) > extent / 2) vo = Math.sign(vo) * extent / 2;
+
+    let out = Math.cos(xVal * 2 * Math.PI * periods + Number(initUp) * Math.PI);
+    const base = Math.log2(t13.freqs[0]);
+
+    if (xVal < 1 / (2 * periods)) {
+      const start = base;
       const end = Math.log2(expected13(1 / (2 * periods)));
-      const middle = (end + start) / 2;
-      const ext = Math.abs(end - start) / 2;
-      out = out * ext + middle;
+      out = out * (Math.abs(end - start) / 2) + (start + end) / 2;
       return 2 ** out;
-    } else if (x > 1 - 1 / (2 * periods)) {
+    } else if (xVal > 1 - 1 / (2 * periods)) {
       const start = Math.log2(expected13(1 - 1 / (2 * periods)));
-      const end = log0;
-      const middle = (end + start) / 2;
-      const ext = Math.abs(end - start) / 2;
-      out = out * ext + middle;
+      const end = base;
+      out = out * (Math.abs(end - start) / 2) + (start + end) / 2;
       return 2 ** out;
     } else {
-      return 2 ** (out * extent / 2 + vertOffset + log0);
+      return 2 ** (out * extent / 2 + vo + base);
     }
   };
+
   pts.forEach(x => {
     expect(t13.id13(x)).toBeCloseTo(expected13(x));
   });
