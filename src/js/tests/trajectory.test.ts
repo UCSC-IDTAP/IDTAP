@@ -1,5 +1,6 @@
 import { expect, test } from 'vitest';
-import { Trajectory, Pitch, Articulation, linSpace } from '../classes';
+import { Trajectory, Pitch, Articulation } from '@model';
+import { linSpace } from '@/ts/utils';
 import { findLastIndex } from 'lodash';
 
 test('defaultTrajectory', () => {
@@ -223,3 +224,19 @@ test('defaultTrajectory', () => {
 
 
 })
+test('Trajectory consonant and vowel helpers', () => {
+  const t = new Trajectory({ pitches: [new Pitch()], durTot: 1 });
+  t.addConsonant('ka');
+  expect(t.startConsonant).toBe('ka');
+  t.addConsonant('ga', false);
+  expect(t.endConsonant).toBe('ga');
+  t.changeConsonant('kha');
+  expect(t.startConsonant).toBe('kha');
+  t.updateVowel('a');
+  expect(t.vowelHindi).toBe('अ');
+  const dur = t.durationsOfFixedPitches();
+  expect(dur[t.pitches[0].numberedPitch]).toBeCloseTo(1);
+  const json = t.toJSON();
+  const copy = Trajectory.fromJSON(json);
+  expect(copy.startConsonant).toBe('kha');
+});
