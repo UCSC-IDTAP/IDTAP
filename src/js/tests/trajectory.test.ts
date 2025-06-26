@@ -1,5 +1,6 @@
 import { expect, test } from 'vitest';
 import { Trajectory, Pitch, Articulation, linSpace } from '../classes';
+import { Trajectory as ModelTrajectory } from '../../ts/model/trajectory';
 import { findLastIndex } from 'lodash';
 
 test('defaultTrajectory', () => {
@@ -88,10 +89,10 @@ test('defaultTrajectory', () => {
   const cEngTrans = ['k', 'kh', 'g', 'gh', 'ṅ', 'c', 'ch', 'j', 'jh', 'ñ', 'ṭ', 
   'ṭh', 'ḍ', 'ḍh', 'n', 't', 'th', 'd', 'dh', 'n', 'p', 'ph', 'b', 'bh', 
   'm', 'y', 'r', 'l', 'v', 'ś', 'ṣ', 's', 'h'];
-  const vIpas = ['ə', 'aː', 'ɪ', 'iː', 'ʊ', 'uː', 'eː', 'ɛː', 'oː', 'ɔː'];
-  const vIsos = ['a', 'ā', 'i', 'ī', 'u', 'ū', 'ē', 'ai', 'ō', 'au'];
-  const vHindis = ['अ', 'आ', 'इ', 'ई', 'उ', 'ऊ', 'ए', 'ऐ', 'ओ', 'औ'];
-  const vEngTrans = ['a', 'ā', 'i', 'ī', 'u', 'ū', 'ē', 'ai', 'ō', 'au'];
+  const vIpas = ['ə', 'aː', 'ɪ', 'iː', 'ʊ', 'uː', 'eː', 'ɛː', 'oː', 'ɔː', '_'];
+  const vIsos = ['a', 'ā', 'i', 'ī', 'u', 'ū', 'ē', 'ai', 'ō', 'au', '_'];
+  const vHindis = ['अ', 'आ', 'इ', 'ई', 'उ', 'ऊ', 'ए', 'ऐ', 'ओ', 'औ', '_'];
+  const vEngTrans = ['a', 'ā', 'i', 'ī', 'u', 'ū', 'ē', 'ai', 'ō', 'au', '_'];
   expect(t.cIpas).toEqual(cIpas);
   expect(t.cIsos).toEqual(cIsos);
   expect(t.cHindis).toEqual(cHindis);
@@ -223,3 +224,112 @@ test('defaultTrajectory', () => {
 
 
 })
+
+test('trajectory JSON round trip', () => {
+  const pitches = [new Pitch(), new Pitch({ swara: 1 })];
+  const traj = new Trajectory({
+    id: 7,
+    pitches,
+    durArray: [0.4, 0.6],
+    startConsonant: 'ka',
+    endConsonant: 'ga',
+    vowel: 'a',
+  });
+  const json = traj.toJSON();
+  const round = ModelTrajectory.fromJSON(json);
+  expect(round.toJSON()).toEqual(json);
+});
+
+
+test('compute id7-id13', () => {
+  const logFreqs = [Math.log2(261.63), Math.log2(523.25), Math.log2(392.0), Math.log2(261.63), Math.log2(523.25), Math.log2(392.0)];
+  const durArray = [0.2, 0.2, 0.2, 0.2, 0.2];
+  const t = new Trajectory({ id: 0 });
+  const pts = linSpace(0, 1, 10);
+  // id7
+  let vals = pts.map(x => t.id7(x, logFreqs.slice(0,2), [0.3,0.7]));
+  vals.forEach((val, i) => {
+    const x = pts[i];
+    const expected = x < 0.3 ? 261.63 : 523.25;
+    expect(val).toBeCloseTo(expected);
+  });
+  // id8
+  vals = pts.map(x => t.id8(x, logFreqs.slice(0,3), [0.2,0.3,0.5]));
+  vals.forEach((val, i) => {
+    const x = pts[i];
+    const starts = [0,0.2,0.5];
+    const idx = findLastIndex(starts, s => x >= s);
+    const expected = 2 ** logFreqs.slice(0,3)[idx];
+    expect(val).toBeCloseTo(expected);
+  });
+  // id9
+  vals = pts.map(x => t.id9(x, logFreqs.slice(0,4), [0.25,0.25,0.25,0.25]));
+  vals.forEach((val, i) => {
+    const x = pts[i];
+    const starts = [0,0.25,0.5,0.75];
+    const idx = findLastIndex(starts, s => x >= s);
+    const expected = 2 ** logFreqs.slice(0,4)[idx];
+    expect(val).toBeCloseTo(expected);
+  });
+  // id10
+  vals = pts.map(x => t.id10(x, logFreqs, [1/6,1/6,1/6,1/6,1/6,1/6]));
+  vals.forEach((val, i) => {
+    const x = pts[i];
+    const starts = [0,1/6,2/6,3/6,4/6,5/6];
+    const idx = findLastIndex(starts, s => x >= s);
+    const expected = 2 ** logFreqs[idx];
+    expect(val).toBeCloseTo(expected);
+  });
+  // id12
+  const t12 = new Trajectory({ id: 12, fundID12: 220 });
+  expect(t12.id12(0.5)).toBeCloseTo(220);
+  // id13
+  const vib = { periods: 2, vertOffset: 0, initUp: true, extent: 0.1 };
+  const t13 = new Trajectory({ id: 13, vibObj: vib });
+  const expected13 = (x: number) => {
+    const periods = vib.periods;
+    let vertOffset = vib.vertOffset;
+    const initUp = vib.initUp;
+    const extent = vib.extent;
+    if (Math.abs(vertOffset) > extent / 2) {
+      vertOffset = Math.sign(vertOffset) * extent / 2;
+    }
+    let out = Math.cos(x * 2 * Math.PI * periods + Number(initUp) * Math.PI);
+    if (x < 1 / (2 * periods)) {
+      const start = Math.log2(t13.freqs[0]);
+      const end = Math.log2(t13.id13(1 / (2 * periods)));
+      const middle = (end + start) / 2;
+      const ext = Math.abs(end - start) / 2;
+      out = out * ext + middle;
+      return 2 ** out;
+    } else if (x > 1 - 1 / (2 * periods)) {
+      const start = Math.log2(t13.id13(1 - 1 / (2 * periods)));
+      const end = Math.log2(t13.freqs[0]);
+      const middle = (end + start) / 2;
+      const ext = Math.abs(end - start) / 2;
+      out = out * ext + middle;
+      return 2 ** out;
+    } else {
+      return 2 ** (out * extent / 2 + vertOffset + Math.log2(t13.freqs[0]));
+    }
+  };
+  pts.forEach((x, i) => {
+    expect(t13.id13(x)).toBeCloseTo(expected13(x));
+  });
+});
+
+
+test('invalid consonant and vowel helpers', () => {
+  const t = new Trajectory();
+  t.updateVowel('zz');
+  expect(t.vowelHindi).toBeUndefined();
+  expect(t.vowelIpa).toBeUndefined();
+  t.addConsonant('zz');
+  expect(t.startConsonantHindi).toBeUndefined();
+  expect(t.startConsonantIpa).toBeUndefined();
+  const art = new Articulation({ name: 'consonant', stroke: 'zz' });
+  t.articulations['0.50'] = art;
+  expect(() => t.convertCIsoToHindiAndIpa()).not.toThrow();
+  expect(t.articulations['0.50'].hindi).toBeUndefined();
+});
+
