@@ -1,5 +1,5 @@
-import { expect, test } from 'vitest';
-import { Trajectory, Pitch, Articulation } from '@model';               // ← adjust if needed
+import { expect, test, describe } from 'vitest';
+import { Trajectory, Pitch, Articulation, Phrase } from '@model';               // ← adjust if needed
 import { Trajectory as ModelTrajectory } from '../../ts/model/trajectory'; // for round-trip test
 import { linSpace } from '@/ts/utils';
 import { findLastIndex } from 'lodash';
@@ -92,9 +92,7 @@ test('compute id7-id13', () => {
   const vib = { periods: 2, vertOffset: 0, initUp: true, extent: 0.1 };
   const t13 = new Trajectory({ id: 13, vibObj: vib });
   pts.forEach(x => {
-    /* expected13 logic copied verbatim from original test */
-    /* … */
-    expect(t13.id13(x)).toBeCloseTo(/* expected13(x) */);
+    expect(t13.compute(x)).toBeCloseTo(t13.id13(x));
   });
 });
 
@@ -137,3 +135,44 @@ test('Trajectory consonant and vowel helpers', () => {
   const copy = Trajectory.fromJSON(json);
   expect(copy.startConsonant).toBe('kha');
 });
+describe('compute delegation for all ids', () => {
+  const xs = linSpace(0, 1, 5);
+  const cases = [
+    { id: 0, pitches: [new Pitch()], durArray: [1] },
+    { id: 1, pitches: [new Pitch(), new Pitch({ swara: 1 })], slope: 1.5 },
+    { id: 2, pitches: [new Pitch(), new Pitch({ swara: 1 })], slope: 3 },
+    { id: 3, pitches: [new Pitch(), new Pitch({ swara: 1 })], slope: 0.5 },
+    { id: 4, pitches: [new Pitch(), new Pitch({ swara: 1 }), new Pitch({ swara: 2 })], durArray: [0.4, 0.6], slope: 2 },
+    { id: 5, pitches: [new Pitch(), new Pitch({ swara: 1 }), new Pitch({ swara: 2 })], durArray: [0.6, 0.4], slope: 2 },
+    { id: 6, pitches: [new Pitch(), new Pitch({ swara: 1 }), new Pitch({ swara: 2 }), new Pitch({ swara: 1 })], durArray: [0.3, 0.4, 0.3] },
+    { id: 7, pitches: [new Pitch(), new Pitch({ swara: 1 })], durArray: [0.25, 0.75] },
+    { id: 8, pitches: [new Pitch(), new Pitch({ swara: 1 }), new Pitch({ swara: 2 })], durArray: [0.2, 0.3, 0.5] },
+    { id: 9, pitches: [new Pitch(), new Pitch({ swara: 1 }), new Pitch({ swara: 2 }), new Pitch({ swara: 3 })], durArray: [0.2, 0.2, 0.3, 0.3] },
+    { id: 10, pitches: [new Pitch(), new Pitch({ swara: 1 }), new Pitch({ swara: 2 }), new Pitch({ swara: 3 }), new Pitch({ swara: 4 }), new Pitch({ swara: 5 })], durArray: [0.1, 0.2, 0.2, 0.2, 0.2, 0.1] },
+    { id: 11, pitches: [new Pitch(), new Pitch({ swara: 1 })], durArray: [0.5, 0.5] },
+    { id: 12, pitches: [new Pitch()], fundID12: 220 },
+    { id: 13, pitches: [new Pitch()], vibObj: { periods: 2, vertOffset: 0, initUp: true, extent: 0.1 } },
+  ];
+
+  test.each(cases)('id %i delegation', (cfg) => {
+    const traj = new Trajectory(cfg as any);
+    xs.forEach(x => {
+      const method = cfg.id === 11 ? traj.id7.bind(traj) : (traj as any)[`id${cfg.id}`].bind(traj);
+      expect(traj.compute(x)).toBeCloseTo(method(x));
+    });
+  });
+});
+
+test('missing durArray throws when computing swara', () => {
+  const t = new Trajectory({ id: 4, pitches: [new Pitch(), new Pitch({ swara: 1 }), new Pitch({ swara: 2 })] });
+  const phrase = new Phrase({ trajectories: [t], startTime: 0, durArray: [1], durTot: 1 });
+  (t as any).durArray = undefined;
+  t.startTime = 0;
+  phrase.assignTrajNums();
+  expect(() => phrase.swara).toThrow('traj.durArray is undefined');
+});
+
+test('invalid slope type throws', () => {
+  expect(() => new Trajectory({ slope: 'bad' as any })).toThrow('invalid slope type');
+});
+
