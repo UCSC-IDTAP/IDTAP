@@ -177,7 +177,7 @@ test('defaultRaga', () => {
     name: 'Yaman',
     fundamental: 261.63,
     ratios: baseRatios,
-    tuning: r.tuning,
+    tuning: baseTuning,
   };
   expect(r.toJSON()).toEqual(json_obj);
 })
