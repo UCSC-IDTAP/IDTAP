@@ -257,3 +257,9 @@ def test_numbered_pitch():
     p = Pitch({ 'swara': 3, 'raised': False, 'oct': 1 })
     assert p.numbered_pitch == 17
 
+
+def test_serialization_round_trip():
+    p = Pitch({'swara': 'ga', 'raised': False, 'oct': 1, 'logOffset': 0.2})
+    json_obj = p.to_JSON()
+    copy = Pitch(json_obj)
+    assert copy.to_JSON() == json_obj
