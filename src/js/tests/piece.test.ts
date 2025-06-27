@@ -488,3 +488,12 @@ test('addMeter overlap detection and removeMeter correctness', () => {
   expect(piece.meters.length).toBe(1);
   expect(piece.meters[0]).toBe(m2);
 });
+
+test('allDisplayVowels throws for non-vocal instrumentation', () => {
+  const raga = new Raga();
+  const traj = new Trajectory({ num: 0, pitches: [new Pitch()], durTot: 1 });
+  const phrase = new Phrase({ trajectories: [traj], raga });
+  const piece = new Piece({ phrases: [phrase], raga, instrumentation: [Instrument.Sitar] });
+
+  expect(() => piece.allDisplayVowels()).toThrow('instrumentation is not vocal');
+});
