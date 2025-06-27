@@ -71,3 +71,9 @@ test('model raga core utilities', () => {
   ];
   expect(r.swaraObjects).toEqual(objs);
 });
+
+test('ratioIdxToTuningTuple out of range', () => {
+  const r = new Raga();
+  const invalidIdx = r.ruleSetNumPitches; // index larger than highest valid
+  expect(r.ratioIdxToTuningTuple(invalidIdx)).toBeUndefined();
+});
