@@ -112,3 +112,26 @@ test('pitchNumberToScaleNumber edge cases', () => {
     expect(() => r.pitchNumberToScaleNumber(pn)).toThrow();
   });
 });
+
+test('raga conversion helpers', () => {
+  const r = new Raga({ ruleSet, fundamental });
+  const pitchNumbers = [0, 1, 4, 5, 6, 7, 9, 10];
+  const letters = ['S', 'r', 'G', 'm', 'M', 'P', 'D', 'n'];
+
+  pitchNumbers.forEach((pn, idx) => {
+    expect(r.pitchNumberToSargamLetter(pn)).toBe(letters[idx]);
+    expect(r.pitchNumberToScaleNumber(pn)).toBe(idx);
+    expect(r.scaleNumberToPitchNumber(idx)).toBe(pn);
+    expect(r.scaleNumberToSargamLetter(idx)).toBe(letters[idx]);
+  });
+
+  const len = pitchNumbers.length;
+  expect(r.scaleNumberToPitchNumber(len)).toBe(pitchNumbers[0] + 12);
+  expect(r.scaleNumberToPitchNumber(len + 1)).toBe(pitchNumbers[1] + 12);
+
+  const invalidPNs = [2, 3, 8, 11];
+  invalidPNs.forEach(pn => {
+    expect(r.pitchNumberToSargamLetter(pn)).toBeUndefined();
+    expect(() => r.pitchNumberToScaleNumber(pn)).toThrow();
+  });
+});
