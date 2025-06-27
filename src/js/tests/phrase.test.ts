@@ -1,4 +1,4 @@
-import { expect, test } from 'vitest';
+import { expect, test, vi } from 'vitest';
 import {
   Phrase,
   Trajectory,
@@ -173,4 +173,31 @@ test('compute returns null for empty durArray', () => {
   const p = new Phrase();
   expect(p.durArray).toEqual([]);
   expect(p.compute(0.5)).toBeNull();
+});
+
+test('durTot and durArray preserved with empty trajectories', () => {
+  const spy = vi.spyOn(Phrase.prototype as any, 'durArrayFromTrajectories');
+  const p = new Phrase({ durTot: 2, durArray: [1] });
+  expect(p.durTot).toBe(2);
+  expect(p.durArray).toEqual([1]);
+  expect(spy).not.toHaveBeenCalled();
+  spy.mockRestore();
+});
+
+test('constructor pads grids to instrumentation length', () => {
+  const t1 = new Trajectory();
+  const trajectoryGrid = [[t1]];
+  const chikariGrid = [{}];
+  const instrumentation = ['Sitar', 'Violin'];
+  const phrase = new Phrase({
+    trajectoryGrid,
+    chikariGrid,
+    instrumentation,
+  });
+  expect(phrase.trajectoryGrid).toBe(trajectoryGrid);
+  expect(phrase.chikariGrid).toBe(chikariGrid);
+  expect(phrase.trajectoryGrid.length).toBe(instrumentation.length);
+  expect(phrase.chikariGrid.length).toBe(instrumentation.length);
+  expect(phrase.trajectoryGrid[1]).toEqual([]);
+  expect(phrase.chikariGrid[1]).toEqual({});
 });
