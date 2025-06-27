@@ -161,3 +161,21 @@ test('Phrase utility functions', () => {
   p.consolidateSilentTrajs();
   expect(p.trajectories.length).toBe(3);
 });
+
+test('constructor pads grids to instrumentation length', () => {
+  const t1 = new Trajectory();
+  const trajectoryGrid = [[t1]];
+  const chikariGrid = [{}];
+  const instrumentation = ['Sitar', 'Violin'];
+  const phrase = new Phrase({
+    trajectoryGrid,
+    chikariGrid,
+    instrumentation,
+  });
+  expect(phrase.trajectoryGrid).toBe(trajectoryGrid);
+  expect(phrase.chikariGrid).toBe(chikariGrid);
+  expect(phrase.trajectoryGrid.length).toBe(instrumentation.length);
+  expect(phrase.chikariGrid.length).toBe(instrumentation.length);
+  expect(phrase.trajectoryGrid[1]).toEqual([]);
+  expect(phrase.chikariGrid[1]).toEqual({});
+});
