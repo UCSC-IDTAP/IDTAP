@@ -375,3 +375,14 @@ test('proportionsOfFixedPitches via Piece for all output types', () => {
   expect(piece.proportionsOfFixedPitches({ outputType: 'sargamLetter' })).toEqual({ [sarg1]: 1 / 3, [sarg2]: 2 / 3 });
 });
 
+test('sloped getter by id and endTime calculation', () => {
+  const ids = Array.from({ length: 14 }, (_, i) => i);
+  ids.forEach(id => {
+    const traj = new Trajectory({ id, durTot: 1 });
+    traj.startTime = 5;
+    const shouldBeSloped = id >= 2 && id <= 5;
+    expect(traj.sloped).toBe(shouldBeSloped);
+    expect(traj.endTime).toBe(6);
+  });
+});
+
