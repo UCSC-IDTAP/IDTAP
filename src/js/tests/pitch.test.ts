@@ -491,6 +491,11 @@ test('invalid ratio values trigger errors', () => {
   expect(() => badGa.setOct(0)).toThrow(SyntaxError);
 });
 
+test('westernPitch note name', () => {
+  const p = new Pitch({ swara: 're', raised: true });
+  expect(p.westernPitch).toBe('D');
+});
+
 test('constructor rejects undefined ratios', () => {
   const baseRatios = [
     1,
