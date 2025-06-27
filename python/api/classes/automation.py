@@ -166,3 +166,6 @@ class Automation:
     @staticmethod
     def from_json(obj: Dict) -> 'Automation':
         return Automation(obj)
+
+    def to_json(self) -> Dict:
+        return {'values': self.values}
