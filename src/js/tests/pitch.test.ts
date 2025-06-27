@@ -389,6 +389,12 @@ test('constructor error conditions', () => {
   expect(() => new Pitch({ raised: 1 as any })).toThrow(SyntaxError);
   expect(() => new Pitch({ swara: [] as any })).toThrow(SyntaxError);
   expect(() => new Pitch({ swara: 'foo' })).toThrow(SyntaxError);
+  expect(() => new Pitch({ oct: 0.5 })).toThrow(SyntaxError);
+  expect(() => new Pitch({ oct: '1' as any })).toThrow(SyntaxError);
+  expect(() => new Pitch({ fundamental: 'A4' as any })).toThrow(SyntaxError);
+  expect(() => new Pitch({ swara: 'x' })).toThrow(SyntaxError);
+  expect(() => new Pitch({ swara: -1 })).toThrow(SyntaxError);
+  expect(() => new Pitch({ swara: 7 })).toThrow(SyntaxError);
 });
 
 test('setOct invalid swara and ratio inputs', () => {
@@ -454,6 +460,17 @@ test('a440CentsDeviation and movableCCentsDeviation edge octaves', () => {
   }
 });
 
+test('octaved display strings extreme octaves', () => {
+  const low = new Pitch({ swara: 'Sa', oct: -3 });
+  const high = new Pitch({ swara: 'Sa', oct: 3 });
+  expect(low.octavedSargamLetter).toBe('S\u20E8');
+  expect(high.octavedSargamLetter).toBe('S\u20DB');
+  expect(low.octavedSolfegeLetter).toBe('Do\u20E8');
+  expect(high.octavedSolfegeLetter).toBe('Do\u20DB');
+  expect(low.octavedChroma).toBe('0\u20E8');
+  expect(high.octavedChroma).toBe('0\u20DB');
+});
+
 test('numberedPitch invalid swara values', () => {
   const p = new Pitch();
   (p as any).swara = -1;
@@ -483,4 +500,29 @@ test('invalid ratio values trigger errors', () => {
   (badGa as any).ratios[2] = 5;
   expect(() => badGa.frequency).toThrow(SyntaxError);
   expect(() => badGa.setOct(0)).toThrow(SyntaxError);
+});
+
+test('westernPitch note name', () => {
+  const p = new Pitch({ swara: 're', raised: true });
+  expect(p.westernPitch).toBe('D');
+});
+
+test('constructor rejects undefined ratios', () => {
+  const baseRatios = [
+    1,
+    [2 ** (1 / 12), 2 ** (2 / 12)],
+    [2 ** (3 / 12), 2 ** (4 / 12)],
+    [2 ** (5 / 12), 2 ** (6 / 12)],
+    2 ** (7 / 12),
+    [2 ** (8 / 12), 2 ** (9 / 12)],
+    [2 ** (10 / 12), 2 ** (11 / 12)]
+  ];
+
+  const ratios1 = [...baseRatios];
+  ratios1[0] = undefined as any;
+  expect(() => new Pitch({ ratios: ratios1 as any })).toThrow(SyntaxError);
+
+  const ratios2 = [...baseRatios];
+  ratios2[1] = [2 ** (1 / 12), undefined] as any;
+  expect(() => new Pitch({ ratios: ratios2 as any })).toThrow(SyntaxError);
 });
