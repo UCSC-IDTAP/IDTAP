@@ -163,3 +163,14 @@ test('partition with zero-length segment', () => {
     expect(env3[i]).toBeCloseTo(expected3[i]);
   }
 });
+
+
+test('valueAtX throws when x before first value', () => {
+  const auto = new Automation({
+    values: [
+      { normTime: 0.2, value: 0.5 },
+      { normTime: 1, value: 1 }
+    ]
+  });
+  expect(() => auto.valueAtX(0.1)).toThrow(SyntaxError);
+});
