@@ -1,5 +1,5 @@
 import { expect, test, describe } from 'vitest';
-import { Trajectory, Pitch, Articulation, Phrase, Automation } from '@model';               // ← adjust if needed
+import { Trajectory, Pitch, Articulation, Phrase, Automation, durationsOfFixedPitches } from '@model';
 import { Trajectory as ModelTrajectory } from '../../ts/model/trajectory'; // for round-trip test
 import { linSpace } from '@/ts/utils';
 import { findLastIndex } from 'lodash';
@@ -252,5 +252,91 @@ test('toJSON/fromJSON preserves articulations and automation', () => {
   expect(round.toJSON()).toEqual(json);
   expect(round.automation?.values).toEqual(auto.values);
   expect(round.articulations['0.00'].stroke).toBe('ka');
+});
+
+
+test('durations and proportions for each output type', () => {
+  const t1 = new Trajectory({ id: 0, pitches: [new Pitch({ swara: 0 })], durTot: 1 });
+  const t2 = new Trajectory({ id: 0, pitches: [new Pitch({ swara: 1 })], durTot: 2 });
+  const trajs = [t1, t2];
+
+  const np1 = t1.pitches[0].numberedPitch;
+  const np2 = t2.pitches[0].numberedPitch;
+
+  const durPN = durationsOfFixedPitches(trajs);
+  expect(durPN).toEqual({ [np1]: 1, [np2]: 2 });
+
+  const propPN = durationsOfFixedPitches(trajs, { countType: 'proportional' });
+  expect(propPN[np1]).toBeCloseTo(1 / 3);
+  expect(propPN[np2]).toBeCloseTo(2 / 3);
+
+  const c1 = Pitch.pitchNumberToChroma(np1);
+  const c2 = Pitch.pitchNumberToChroma(np2);
+  expect(durationsOfFixedPitches(trajs, { outputType: 'chroma' })).toEqual({ [c1]: 1, [c2]: 2 });
+  expect(durationsOfFixedPitches(trajs, { outputType: 'chroma', countType: 'proportional' })).toEqual({ [c1]: 1 / 3, [c2]: 2 / 3 });
+
+  const sd1 = Pitch.chromaToScaleDegree(c1)[0];
+  const sd2 = Pitch.chromaToScaleDegree(c2)[0];
+  expect(durationsOfFixedPitches(trajs, { outputType: 'scaleDegree' })).toEqual({ [sd1]: 1, [sd2]: 2 });
+  expect(durationsOfFixedPitches(trajs, { outputType: 'scaleDegree', countType: 'proportional' })).toEqual({ [sd1]: 1 / 3, [sd2]: 2 / 3 });
+
+  const sarg1 = Pitch.fromPitchNumber(np1).sargamLetter;
+  const sarg2 = Pitch.fromPitchNumber(np2).sargamLetter;
+  expect(durationsOfFixedPitches(trajs, { outputType: 'sargamLetter' })).toEqual({ [sarg1]: 1, [sarg2]: 2 });
+  expect(durationsOfFixedPitches(trajs, { outputType: 'sargamLetter', countType: 'proportional' })).toEqual({ [sarg1]: 1 / 3, [sarg2]: 2 / 3 });
+});
+
+
+test('convertCIsoToHindiAndIpa with provided start/end consonants and vowels', () => {
+  const artStart = new Articulation({ name: 'consonant', stroke: 'ka' });
+  const artEnd = new Articulation({ name: 'consonant', stroke: 'ga' });
+  const traj = new Trajectory({
+    pitches: [new Pitch()],
+    articulations: { '0.00': artStart, '1.00': artEnd },
+    startConsonant: 'ka',
+    endConsonant: 'ga',
+    vowel: 'a',
+  });
+
+  traj.convertCIsoToHindiAndIpa();
+
+  expect(traj.startConsonantHindi).toBe('क');
+  expect(traj.endConsonantHindi).toBe('ग');
+  expect(traj.vowelHindi).toBe('अ');
+  expect(traj.startConsonantIpa).toBe('k');
+  expect(traj.endConsonantIpa).toBe('g');
+  expect(traj.vowelIpa).toBe('ə');
+  expect(traj.articulations['0.00'].hindi).toBe('क');
+  expect(traj.articulations['1.00'].ipa).toBe('g');
+});
+
+
+test('toJSON/fromJSON round trip with full articulation and automation', () => {
+  const auto = new Automation({ values: [
+    { normTime: 0, value: 1 },
+    { normTime: 0.5, value: 0.3 },
+    { normTime: 1, value: 0.8 },
+  ]});
+  const art = new Articulation({
+    name: 'consonant',
+    stroke: 'kha',
+    hindi: 'ख',
+    ipa: 'kʰ',
+    engTrans: 'kha',
+    strokeNickname: 'da',
+  });
+  const traj = new Trajectory({
+    id: 7,
+    pitches: [new Pitch(), new Pitch({ swara: 1 })],
+    durArray: [0.5, 0.5],
+    articulations: { '0.00': art },
+    automation: auto,
+  });
+
+  const json = traj.toJSON();
+  const round = ModelTrajectory.fromJSON(json);
+  expect(round.toJSON()).toEqual(json);
+  expect(round.automation?.values).toEqual(auto.values);
+  expect(round.articulations['0.00'].engTrans).toBe('kha');
 });
 
