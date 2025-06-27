@@ -162,6 +162,36 @@ test('Phrase utility functions', () => {
   expect(p.trajectories.length).toBe(3);
 });
 
+// Additional swara edge cases
+test('swara handles durArray shorter than pitches', () => {
+  const t = new Trajectory({
+    id: 1,
+    pitches: [new Pitch(), new Pitch({ swara: 1 })],
+    durArray: [1],
+    durTot: 1,
+  });
+  const phrase = makePhrase([t], 0);
+  const sw = phrase.swara as any[];
+  expect(sw.length).toBe(1);
+  expect(sw[0].pitch).toBe(t.pitches[0]);
+  expect(sw[0].time).toBeCloseTo(0);
+});
+
+test('swara handles durArray equal to pitches', () => {
+  const t = new Trajectory({
+    id: 7,
+    pitches: [new Pitch(), new Pitch({ swara: 1 })],
+    durArray: [0.4, 0.6],
+    durTot: 1,
+  });
+  const phrase = makePhrase([t], 0);
+  const sw = phrase.swara as any[];
+  expect(sw.length).toBe(2);
+  expect(sw[0].time).toBeCloseTo(0);
+  expect(sw[1].time).toBeCloseTo(0.4);
+});
+
+
 test('consolidateSilentTrajs collapses middle and trailing silences', () => {
   const t1 = new Trajectory({ num: 0, durTot: 0.5, pitches: [new Pitch()] });
   const s1 = new Trajectory({ num: 1, id: 12, durTot: 0.1, pitches: [new Pitch()] });
