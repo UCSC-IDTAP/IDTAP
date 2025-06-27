@@ -454,7 +454,7 @@ function buildGroupedPiece() {
 
 test('trackFromTrajUId throws when id not found', () => {
   const { piece } = buildSimplePieceFull();
-  expect(() => piece.trackFromTrajUId('missing')).toThrow();
+  expect(() => piece.trackFromTrajUId('missing')).toThrow('Trajectory not found');
 });
 
 test('pIdxFromGroup works across phrases', () => {
@@ -482,7 +482,7 @@ test('addMeter overlap detection and removeMeter correctness', () => {
   piece.addMeter(m1);
   piece.addMeter(m2);
   const overlap = new Meter({ startTime: 3, tempo: 60 });
-  expect(() => piece.addMeter(overlap)).toThrow();
+  expect(() => piece.addMeter(overlap)).toThrow('meters overlap');
 
   piece.removeMeter(m1);
   expect(piece.meters.length).toBe(1);
