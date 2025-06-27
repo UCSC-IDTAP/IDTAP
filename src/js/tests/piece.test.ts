@@ -275,6 +275,19 @@ test('Piece method coverage', () => {
   expect(piece.sIdxFromPIdx(1)).toBe(0);
 });
 
+test('Piece allPitches removes sequential duplicates when repetition=false', () => {
+  const raga = new Raga();
+  const p1 = new Pitch({ swara: 'sa' });
+  const t1 = new Trajectory({ num: 0, phraseIdx: 0, pitches: [p1] });
+  const t2 = new Trajectory({ num: 1, phraseIdx: 0, pitches: [new Pitch({ swara: 'sa' })] });
+  const t3 = new Trajectory({ num: 2, phraseIdx: 0, pitches: [new Pitch({ swara: 're' })] });
+  const phrase = new Phrase({ trajectories: [t1, t2, t3], raga });
+  const piece = new Piece({ phrases: [phrase], raga, instrumentation: [Instrument.Sitar] });
+
+  expect(piece.allPitches().length).toBe(3);
+  expect(piece.allPitches({ repetition: false })).toEqual([p1, t3.pitches[0]]);
+});
+
 test('Piece display and sections', () => {
   const { piece, meter } = buildVocalPiece();
 
