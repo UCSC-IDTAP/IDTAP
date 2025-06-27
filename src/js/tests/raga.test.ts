@@ -310,6 +310,15 @@ test('pitchFromLogFreq octave rounding', () => {
   expect(p2.oct).toBe(1);
 })
 
+test('pitchFromLogFreq near exact octave offset', () => {
+  const fundamental = 128.5 - 1e-12;
+  const r = new Raga({ fundamental });
+  const logFreq = Math.log2(fundamental * 2);
+  const p = r.pitchFromLogFreq(logFreq);
+  expect(p.sargamLetter).toBe('S');
+  expect(p.oct).toBe(1);
+})
+
 test('ratioIdxToTuningTuple mixed rule set', () => {
   const r = new Raga({ ruleSet: customRuleSet });
   const mapping: Array<[string, string | undefined]> = [
