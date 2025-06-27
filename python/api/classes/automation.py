@@ -50,9 +50,14 @@ class AutomationOptionsType(TypedDict, total=False):
 class Automation:
     def __init__(self, options: Optional[AutomationOptionsType] = None) -> None:
         opts = decamelize(options or {})
-        self.values: List[AutomationValueType] = [
-            {'norm_time': v['norm_time'], 'value': v['value']} for v in opts.get('values', [])
-        ]
+        self.values: List[AutomationValueType] = []
+        for v in opts.get('values', []):
+            if 'norm_time' in v:
+                nt = v['norm_time']
+            else:
+                nt = v.get('normTime')
+            val = v['value']
+            self.values.append({'norm_time': nt, 'value': val})
         if len(self.values) == 0:
             self.values.append({'norm_time': 0.0, 'value': 1.0})
             self.values.append({'norm_time': 1.0, 'value': 1.0})
