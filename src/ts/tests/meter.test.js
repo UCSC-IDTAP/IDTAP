@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { Meter, Pulse, PulseStructure, findClosestIdxs } from './meter';
+import { Meter, Pulse, PulseStructure, findClosestIdxs } from '@/js/meter';
 
 test('meter reset tempo for hierarchy.length === 1 (and 2)', () => {
   const m = new Meter();
