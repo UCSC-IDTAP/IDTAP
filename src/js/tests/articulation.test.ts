@@ -28,6 +28,16 @@ test('strokeNickname defaults to da for d stroke', () => {
   expect(a.engTrans).toBeUndefined();
 });
 
+test('strokeNickname defaults to da for d stroke', () => {
+  const a = new Articulation({ stroke: 'd' });
+  expect(a.strokeNickname).toBe('da');
+  expect(a.name).toBe('pluck');
+  expect(a.stroke).toBe('d');
+  expect(a.hindi).toBeUndefined();
+  expect(a.ipa).toBeUndefined();
+  expect(a.engTrans).toBeUndefined();
+});
+
 test('stroke r sets strokeNickname', () => {
   const a = new Articulation({ stroke: 'r' });
   expect(a.strokeNickname).toBe('ra');
