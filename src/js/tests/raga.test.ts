@@ -1,5 +1,6 @@
 import { expect, test } from 'vitest';
 import { Raga, Pitch } from '../classes';
+import { Raga as ModelRaga } from '@model';
 
 const yamanRuleSet = {
   sa: true,
@@ -60,6 +61,44 @@ const baseRatios = [
   baseTuning.dha.raised,
   baseTuning.ni.raised,
 ]
+
+const customRuleSet = {
+  sa: true,
+  re: { lowered: true, raised: false },
+  ga: { lowered: false, raised: true },
+  ma: { lowered: true, raised: true },
+  pa: true,
+  dha: { lowered: true, raised: false },
+  ni: { lowered: false, raised: true },
+}
+
+const ratioMapping = [
+  ['sa', true],
+  ['re', false],
+  ['ga', true],
+  ['ma', false],
+  ['ma', true],
+  ['pa', true],
+  ['dha', false],
+  ['ni', true],
+] as const
+
+function computeExpectedPitches(r: Raga, low = 100, high = 800) {
+  const pitches: Pitch[] = []
+  ratioMapping.forEach(([swara, raised]) => {
+    const ratio = (r.tuning[swara] as any)[raised ? 'raised' : 'lowered'] ?? r.tuning[swara]
+    const freq = ratio * r.fundamental
+    const lowExp = Math.ceil(Math.log2(low / freq))
+    const highExp = Math.floor(Math.log2(high / freq))
+    for (let i = lowExp; i <= highExp; i++) {
+      pitches.push(
+        new Pitch({ swara, oct: i, raised, fundamental: r.fundamental, ratios: r.stratifiedRatios })
+      )
+    }
+  })
+  pitches.sort((a, b) => a.frequency - b.frequency)
+  return pitches.filter(p => p.frequency >= low && p.frequency <= high)
+}
 
 test('defaultRaga', () => {
   const r = new Raga();
@@ -230,4 +269,86 @@ test('ratioIdxToTuningTuple', () => {
   mapping.forEach((tuple, idx) => {
     expect(r.ratioIdxToTuningTuple(idx)).toEqual(tuple);
   });
+})
+
+test('custom rule set pitch numbers and invalid conversions', () => {
+  const r = new Raga({ ruleSet: customRuleSet, fundamental: 200 });
+  const expected = [0, 1, 4, 5, 6, 7, 8, 11];
+  expect(r.ruleSetNumPitches).toBe(expected.length);
+  expect(r.getPitchNumbers(0, 11)).toEqual(expected);
+  expected.forEach((pn, idx) => {
+    expect(r.pitchNumberToScaleNumber(pn)).toBe(idx);
+  });
+  const disallowed = [2, 3, 9, 10];
+  disallowed.forEach(pn => {
+    expect(() => r.pitchNumberToScaleNumber(pn)).toThrow();
+  });
+})
+
+test('getPitches with lowered and raised notes', () => {
+  const r = new Raga({ ruleSet: customRuleSet, fundamental: 200 });
+  const expected = computeExpectedPitches(r);
+  const result = r.getPitches();
+  expect(result.length).toBe(expected.length);
+  result.forEach((p, idx) => {
+    expect(p.frequency).toBeCloseTo(expected[idx].frequency);
+    expect(p.swara).toEqual(expected[idx].swara);
+    expect(p.oct).toBe(expected[idx].oct);
+    expect(p.raised).toBe(expected[idx].raised);
+  });
+})
+
+test('pitchFromLogFreq octave rounding', () => {
+  const r = new Raga();
+  const base = Math.log2(r.fundamental);
+  const near = base + 1 - 5e-7;
+  const p1 = r.pitchFromLogFreq(near);
+  expect(p1.sargamLetter).toBe('S');
+  expect(p1.oct).toBe(1);
+  const p2 = r.pitchFromLogFreq(base + 1 + 5e-7);
+  expect(p2.sargamLetter).toBe('S');
+  expect(p2.oct).toBe(1);
+})
+
+test('ratioIdxToTuningTuple mixed rule set', () => {
+  const r = new Raga({ ruleSet: customRuleSet });
+  const mapping: Array<[string, string | undefined]> = [
+    ['sa', undefined],
+    ['re', 'lowered'],
+    ['ga', 'raised'],
+    ['ma', 'lowered'],
+    ['ma', 'raised'],
+    ['pa', undefined],
+    ['dha', 'lowered'],
+    ['ni', 'raised'],
+  ];
+  mapping.forEach((tuple, idx) => {
+    expect(r.ratioIdxToTuningTuple(idx)).toEqual(tuple);
+  });
+})
+
+test('JSON round trip with custom tuning', () => {
+  const tuning = {
+    sa: 1.01,
+    re: { lowered: 1.02, raised: 1.035 },
+    ga: { lowered: 1.04, raised: 1.05 },
+    ma: { lowered: 1.06, raised: 1.07 },
+    pa: 1.08,
+    dha: { lowered: 1.09, raised: 1.1 },
+    ni: { lowered: 1.11, raised: 1.12 },
+  };
+  const ratios = [
+    tuning.sa,
+    tuning.re.lowered,
+    tuning.ga.raised,
+    tuning.ma.lowered,
+    tuning.ma.raised,
+    tuning.pa,
+    tuning.dha.lowered,
+    tuning.ni.raised,
+  ];
+  const r = new ModelRaga({ name: 'Custom', fundamental: 300, ruleSet: customRuleSet, tuning, ratios });
+  const json = r.toJSON();
+  const round = ModelRaga.fromJSON({ ...json, ruleSet: customRuleSet });
+  expect(round.toJSON()).toEqual(json);
 })
