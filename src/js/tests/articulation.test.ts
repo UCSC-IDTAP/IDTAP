@@ -17,3 +17,13 @@ test('Articulation fromJSON', () => {
   expect(a.stroke).toBe('d');
   expect(a.strokeNickname).toBe('da');
 });
+
+test('strokeNickname defaults to da for d stroke', () => {
+  const a = new Articulation({ stroke: 'd' });
+  expect(a.strokeNickname).toBe('da');
+  expect(a.name).toBe('pluck');
+  expect(a.stroke).toBe('d');
+  expect(a.hindi).toBeUndefined();
+  expect(a.ipa).toBeUndefined();
+  expect(a.engTrans).toBeUndefined();
+});
