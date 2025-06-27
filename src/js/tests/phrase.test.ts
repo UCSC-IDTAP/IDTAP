@@ -329,6 +329,21 @@ test('constructor pads grids to instrumentation length', () => {
   expect(phrase.chikariGrid[1]).toEqual({});
 });
 
+test('constructor scales trajectories when durTot and durArray passed', () => {
+  const t1 = new Trajectory({ durTot: 1, pitches: [new Pitch()] });
+  const t2 = new Trajectory({ durTot: 1, pitches: [new Pitch({ swara: 'r' })] });
+  const durArray = [0.2, 0.8];
+  const phrase = new Phrase({
+    trajectories: [t1, t2],
+    durTot: 4,
+    durArray,
+  });
+  expect(phrase.durTot).toBeCloseTo(4);
+  expect(phrase.durArray).toEqual(durArray);
+  expect(t1.durTot).toBeCloseTo(0.8);
+  expect(t2.durTot).toBeCloseTo(3.2);
+});
+
 test('constructor fills missing trajectory/chikari grids when undefined', () => {
   const traj = new Trajectory();
   const instrumentation = ['Sitar', 'Violin', 'Sarod'];
