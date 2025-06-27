@@ -161,3 +161,16 @@ test('Phrase utility functions', () => {
   p.consolidateSilentTrajs();
   expect(p.trajectories.length).toBe(3);
 });
+
+test('compute throws when durArray undefined', () => {
+  const p = new Phrase();
+  // @ts-ignore - intentionally unset durArray
+  p.durArray = undefined;
+  expect(() => p.compute(0.5)).toThrow('durArray is undefined');
+});
+
+test('compute returns null for empty durArray', () => {
+  const p = new Phrase();
+  expect(p.durArray).toEqual([]);
+  expect(p.compute(0.5)).toBeNull();
+});
