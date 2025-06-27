@@ -459,6 +459,8 @@ test('updateFundamental updates all contained pitches', () => {
   traj.pitches.forEach(p => {
     expect(p.fundamental).toBeCloseTo(440);
   });
+});
+
 test('sloped getter by id and endTime calculation', () => {
   const ids = Array.from({ length: 14 }, (_, i) => i);
   ids.forEach(id => {
