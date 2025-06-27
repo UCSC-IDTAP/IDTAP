@@ -1,5 +1,5 @@
 import { expect, test, describe } from 'vitest';
-import { Raga, Pitch } from '../classes';
+import { Raga, Pitch } from '../model';
 import { Raga as ModelRaga, Pitch as ModelPitch } from '@model';
 
 const yamanRuleSet = {
@@ -637,4 +637,174 @@ test('model raga string getters', () => {
   expect(r.solfegeStrings).toEqual(solfege);
   expect(r.pcStrings).toEqual(pcs);
   expect(r.westernPitchStrings).toEqual(western);
+});
+
+
+
+// Verify that providing a custom ratios array without a tuning object
+// causes the constructor to update internal tuning values accordingly.
+
+// Ensure that when custom tuning is provided without ratios,
+// the constructor computes ratios via setRatios and overwrites
+// the provided tuning values with those ratios.
+
+test('constructor overwrites provided tuning when ratios are undefined', () => {
+  const customTuning = {
+    sa: 0,
+    re: { lowered: 0, raised: 0 },
+    ga: { lowered: 0, raised: 0 },
+    ma: { lowered: 0, raised: 0 },
+    pa: 0,
+    dha: { lowered: 0, raised: 0 },
+    ni: { lowered: 0, raised: 0 },
+  } as any;
+
+  const raga = new Raga({ tuning: customTuning });
+
+  const expectedRatios = [
+    2 ** 0,
+    2 ** (2 / 12),
+    2 ** (4 / 12),
+    2 ** (6 / 12),
+    2 ** (7 / 12),
+    2 ** (9 / 12),
+    2 ** (11 / 12),
+  ];
+
+  expect(raga.ratios).toEqual(expectedRatios);
+
+  // customTuning object should have been overwritten by constructor
+  expect(customTuning.sa).toBeCloseTo(expectedRatios[0]);
+  expect(customTuning.re.raised).toBeCloseTo(expectedRatios[1]);
+  expect(customTuning.ga.raised).toBeCloseTo(expectedRatios[2]);
+  expect(customTuning.ma.raised).toBeCloseTo(expectedRatios[3]);
+  expect(customTuning.pa).toBeCloseTo(expectedRatios[4]);
+  expect(customTuning.dha.raised).toBeCloseTo(expectedRatios[5]);
+  expect(customTuning.ni.raised).toBeCloseTo(expectedRatios[6]);
+
+  // raga.tuning should reference the same object instance
+expect(raga.tuning).toBe(customTuning);
+});
+
+// Ensure that when custom tuning is provided without ratios,
+
+function buildExpectedPitches(r: Raga) {
+  const swaras = [
+    5, 6,
+    0, 1, 2, 3, 4, 5, 6,
+    0, 1, 2, 3, 4, 5, 6,
+    0, 1, 2, 3, 4,
+  ];
+  const octs = [
+    -2, -2,
+    -1, -1, -1, -1, -1, -1, -1,
+    0, 0, 0, 0, 0, 0, 0,
+    1, 1, 1, 1, 1,
+  ];
+  return swaras.map((s, idx) => new Pitch({ swara: s, oct: octs[idx] }));
+}
+
+test('model raga core utilities', () => {
+  const r = new Raga();
+
+  const expectedPitches = buildExpectedPitches(r);
+  expect(r.getPitches()).toEqual(expectedPitches);
+
+  const expectedRatios = [
+    2 ** 0,
+    [2 ** (1 / 12), 2 ** (2 / 12)],
+    [2 ** (3 / 12), 2 ** (4 / 12)],
+    [2 ** (5 / 12), 2 ** (6 / 12)],
+    2 ** (7 / 12),
+    [2 ** (8 / 12), 2 ** (9 / 12)],
+    [2 ** (10 / 12), 2 ** (11 / 12)],
+  ];
+  expect(r.stratifiedRatios).toEqual(expectedRatios);
+
+  expect(r.chikariPitches).toEqual([
+    new Pitch({ swara: 's', oct: 2, fundamental: r.fundamental }),
+    new Pitch({ swara: 's', oct: 1, fundamental: r.fundamental }),
+  ]);
+
+  const hardCodedFreqs = [
+    110.00186456141468, 123.47291821345574,
+               130.815, 146.83487284959062,
+    164.81657214199782, 185.00034716183643,
+     196.0010402616231, 220.00372912282936,
+    246.94583642691148,             261.63,
+    293.66974569918125, 329.63314428399565,
+    370.00069432367286,  392.0020805232462,
+     440.0074582456587, 493.89167285382297,
+                523.26,  587.3394913983625,
+     659.2662885679913,  740.0013886473457,
+     784.0041610464924,
+  ];
+
+  r.getFrequencies().forEach((freq, idx) => {
+    expect(freq).toBeCloseTo(expectedPitches[idx].frequency);
+    expect(freq).toBeCloseTo(hardCodedFreqs[idx]);
+  });
+
+  expect(r.sargamNames).toEqual(['Sa', 'Re', 'Ga', 'Ma', 'Pa', 'Dha', 'Ni']);
+
+  const objs = [
+    { swara: 0, raised: true },
+    { swara: 1, raised: true },
+    { swara: 2, raised: true },
+    { swara: 3, raised: true },
+    { swara: 4, raised: true },
+    { swara: 5, raised: true },
+    { swara: 6, raised: true },
+  ];
+  expect(r.swaraObjects).toEqual(objs);
+});
+
+test('pitchNumberToSargamLetter handles negative numbers', () => {
+  const r = new Raga();
+
+  // -1 corresponds to Ni in the previous octave
+  expect(r.pitchNumberToSargamLetter(-1)).toBe('N');
+
+  // -13 is two octaves below Ni and should also map to Ni
+  expect(r.pitchNumberToSargamLetter(-13)).toBe('N');
+
+  // -12 should resolve to Sa one octave below
+  expect(r.pitchNumberToSargamLetter(-12)).toBe('S');
+});
+
+
+test('ratioIdxToTuningTuple out of range', () => {
+  const r = new Raga();
+  const invalidIdx = r.ruleSetNumPitches; // index larger than highest valid
+  expect(r.ratioIdxToTuningTuple(invalidIdx)).toBeUndefined();
+});
+// the constructor computes ratios via setRatios and overwrites
+// the provided tuning values with those ratios.
+// Verify that providing a custom ratios array without a tuning object
+// causes the constructor to update internal tuning values accordingly.
+test('constructor applies custom ratios to tuning', () => {
+  const ratios = [1, 1.07, 1.2, 1.33, 1.5, 1.67, 1.9];
+  const fundamental = 100;
+
+  const raga = new Raga({ fundamental, ratios });
+
+  // ratios property should match provided array
+  expect(raga.ratios).toEqual(ratios);
+
+  // tuning entries should be overridden by the ratios
+  expect(raga.tuning.sa).toBe(ratios[0]);
+  expect((raga.tuning.re as any).raised).toBe(ratios[1]);
+  expect((raga.tuning.ga as any).raised).toBe(ratios[2]);
+  expect((raga.tuning.ma as any).raised).toBe(ratios[3]);
+  expect(raga.tuning.pa).toBe(ratios[4]);
+  expect((raga.tuning.dha as any).raised).toBe(ratios[5]);
+  expect((raga.tuning.ni as any).raised).toBe(ratios[6]);
+
+  // build a couple of pitches and ensure the frequencies reflect
+  // the supplied ratios times the fundamental
+  const sa = new Pitch({ swara: 'sa', fundamental, ratios: raga.stratifiedRatios });
+  const re = new Pitch({ swara: 're', raised: true, fundamental, ratios: raga.stratifiedRatios });
+
+  expect(sa.frequency).toBeCloseTo(ratios[0] * fundamental);
+  expect(re.frequency).toBeCloseTo(ratios[1] * fundamental);
 });

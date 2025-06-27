@@ -534,3 +534,13 @@ test('constructor rejects undefined ratios', () => {
   ratios2[1] = [2 ** (1 / 12), undefined] as any;
   expect(() => new Pitch({ ratios: ratios2 as any })).toThrow(SyntaxError);
 });
+
+import { expect, test } from 'vitest';
+import { Pitch } from '../model';
+
+test('Pitch model serialization', () => {
+  const p = new Pitch({ swara: 'ga', raised: false, oct: 1, logOffset: 0.2 });
+  const json = p.toJSON();
+  const copy = Pitch.fromJSON(json);
+  expect(copy.toJSON()).toEqual(json);
+});

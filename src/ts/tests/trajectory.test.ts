@@ -10,7 +10,7 @@ import {
   Raga,
 } from '@model';
 import { Instrument } from '@shared/enums';
-import { Trajectory as ModelTrajectory } from '../../ts/model/trajectory'; // for round-trip test
+import { Trajectory as ModelTrajectory } from '../model/trajectory'; // for round-trip test
 import { linSpace } from '@/ts/utils';
 import { findLastIndex } from 'lodash';
 
@@ -529,3 +529,88 @@ describe('durationsOfFixedPitches switch coverage', () => {
   });
 });
 
+
+import { expect, test } from 'vitest';
+import { Trajectory, Articulation } from '../model';
+
+test('numeric articulation keys are normalized to decimals', () => {
+  const art = new Articulation({ name: 'pluck', stroke: 'd' });
+  const traj = new Trajectory({ articulations: { 0: art } });
+
+  expect(traj.articulations['0.00']).toBeInstanceOf(Articulation);
+  expect(traj.articulations['0']).toBeUndefined();
+});
+import { expect, test, vi } from 'vitest';
+import { Trajectory, Pitch } from '../model';
+
+/**
+ * Ensure that a trajectory with id 6 generates a default durArray
+ * and that id6() computes frequencies correctly.
+ */
+test('id6 default durArray and console log path', () => {
+  const p0 = new Pitch();
+  const p1 = new Pitch({ swara: 1 });
+  const p2 = new Pitch({ swara: 2 });
+  const pitches = [p0, p1, p2];
+
+  const traj = new Trajectory({ id: 6, pitches, durArray: undefined });
+
+  const expectedDur = Array(pitches.length - 1).fill(1 / (pitches.length - 1));
+  expect(traj.durArray).toEqual(expectedDur);
+
+  const freq = traj.id6(0.5);
+  expect(typeof freq).toBe('number');
+  expect(freq).toBeGreaterThan(0);
+
+  const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
+  expect(() => traj.id6(-0.1)).toThrow();
+  expect(spy).toHaveBeenCalled();
+  spy.mockRestore();
+});
+import { expect, test } from 'vitest';
+import { Trajectory, Pitch } from '../model';
+
+// minLogFreq and maxLogFreq should reflect the range of log frequencies
+
+test('minLogFreq and maxLogFreq compute from pitches', () => {
+  const c4 = Pitch.fromPitchNumber(0); // C4 ~261.63 Hz
+  const g4 = Pitch.fromPitchNumber(7); // G4 ~392 Hz
+  const traj = new Trajectory({ pitches: [c4, g4] });
+
+  const minFreq = Math.min(c4.frequency, g4.frequency);
+  const maxFreq = Math.max(c4.frequency, g4.frequency);
+  expect(traj.minLogFreq).toBeCloseTo(Math.log2(minFreq));
+  expect(traj.maxLogFreq).toBeCloseTo(Math.log2(maxFreq));
+});
+import { expect, test } from 'vitest';
+import { Trajectory } from '../model';
+
+test('Trajectory.names matches instance names', () => {
+  const staticNames = Trajectory.names();
+  const instance = new Trajectory();
+  expect(staticNames).toEqual(instance.names);
+});
+import { expect, test } from 'vitest';
+import { Trajectory, Pitch } from '../model';
+
+// Ensure zero-duration segments are removed during construction
+
+test('constructor removes zero-duration segments', () => {
+  const p0 = new Pitch();
+  const p1 = new Pitch({ swara: 1 });
+  const p2 = new Pitch({ swara: 2 });
+
+  const traj = new Trajectory({
+    id: 7,
+    pitches: [p0, p1, p2],
+    durArray: [0.3, 0, 0.7]
+  });
+
+  expect(traj.durArray).toEqual([0.3, 0.7]);
+  expect(traj.pitches.length).toBe(2);
+  expect(traj.pitches[0]).toBe(p0);
+  // pitch following the zero-duration segment should be removed
+  expect(traj.pitches[1]).toBe(p1);
+  expect(traj.freqs.length).toBe(2);
+  expect(traj.logFreqs.length).toBe(2);
+});
