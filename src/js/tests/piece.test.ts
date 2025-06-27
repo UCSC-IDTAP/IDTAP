@@ -488,3 +488,73 @@ test('addMeter overlap detection and removeMeter correctness', () => {
   expect(piece.meters.length).toBe(1);
   expect(piece.meters[0]).toBe(m2);
 });
+
+// -------------------------------------------------------
+//  Extra constructor coverage for Codex task
+// -------------------------------------------------------
+
+test('durArray branch and empty sectionCatGrid', () => {
+  const raga = new Raga();
+  const traj = new Trajectory({ num: 0, pitches: [new Pitch()], durTot: 1 });
+  const phrase = new Phrase({ trajectories: [traj], raga });
+
+  const piece = new Piece({
+    phrases: [phrase],
+    durTot: 1,
+    durArray: [1],
+    instrumentation: [Instrument.Sitar],
+    raga,
+    sectionStarts: [0],
+    sectionCatGrid: [],
+  });
+
+  expect(piece.durArrayGrid).toEqual([[1]]);
+  expect(piece.sectionCatGrid.length).toBe(1);
+  expect(piece.sectionCatGrid[0].length).toBe(piece.sectionStartsGrid[0].length);
+});
+
+test('sectionCategorization cleanup and defaults with multi instrumentation', () => {
+  const raga = new Raga();
+  const sc = [initSecCategorization()];
+  // remove fields so cleanup runs
+  // @ts-ignore
+  delete sc[0]['Improvisation'];
+  // @ts-ignore
+  delete sc[0]['Other'];
+  // @ts-ignore
+  delete sc[0]['Top Level'];
+
+  const piece = new Piece({
+    sectionStarts: [0],
+    sectionCategorization: sc,
+    instrumentation: [Instrument.Sitar, Instrument.Vocal_M],
+    raga,
+    phrases: [],
+  });
+
+  expect(sc[0]['Improvisation']).toBeDefined();
+  expect(sc[0]['Other']).toBeDefined();
+  expect(sc[0]['Top Level']).toBeDefined();
+  expect(piece.adHocSectionCatGrid.length).toBe(2);
+  expect(piece.durTot).toBe(1);
+  expect(piece.explicitPermissions).toEqual({ edit: [], view: [], publicView: true });
+  expect(piece.assemblageDescriptors).toEqual([]);
+});
+
+test('durTot provided and explicitPermissions persist', () => {
+  const raga = new Raga();
+  const perms = { edit: ['a'], view: ['b'], publicView: false };
+
+  const piece = new Piece({
+    phrases: [],
+    durTot: 5,
+    instrumentation: [Instrument.Sitar],
+    raga,
+    explicitPermissions: perms,
+  });
+
+  expect(piece.durTot).toBe(5);
+  expect(piece.durArray).toEqual([]);
+  expect(piece.explicitPermissions).toEqual(perms);
+  expect(piece.assemblageDescriptors).toEqual([]);
+});
