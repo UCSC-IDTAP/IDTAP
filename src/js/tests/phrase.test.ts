@@ -328,3 +328,19 @@ test('constructor pads grids to instrumentation length', () => {
   expect(phrase.trajectoryGrid[1]).toEqual([]);
   expect(phrase.chikariGrid[1]).toEqual({});
 });
+
+test('constructor fills missing trajectory/chikari grids when undefined', () => {
+  const traj = new Trajectory();
+  const instrumentation = ['Sitar', 'Violin', 'Sarod'];
+  const phrase = new Phrase({ trajectories: [traj], instrumentation });
+
+  expect(phrase.trajectoryGrid.length).toBe(instrumentation.length);
+  expect(phrase.chikariGrid.length).toBe(instrumentation.length);
+
+  expect(phrase.trajectoryGrid[0]).toEqual([traj]);
+  expect(phrase.chikariGrid[0]).toEqual({});
+  expect(phrase.trajectoryGrid[1]).toEqual([]);
+  expect(phrase.trajectoryGrid[2]).toEqual([]);
+  expect(phrase.chikariGrid[1]).toEqual({});
+  expect(phrase.chikariGrid[2]).toEqual({});
+});
