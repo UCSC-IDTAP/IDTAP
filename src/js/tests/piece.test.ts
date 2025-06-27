@@ -490,6 +490,23 @@ test('addMeter overlap detection and removeMeter correctness', () => {
   expect(piece.meters[0]).toBe(m2);
 });
 
+test('durStarts throws when durArray is missing', () => {
+  const piece = buildSimplePiece();
+  // @ts-ignore - simulate deleted property
+  piece.durArray = undefined;
+  expect(() => piece.durStarts()).toThrow('durArray is undefined');
+});
+
+test('durStarts throws when durTot is missing', () => {
+  const piece = buildSimplePiece();
+  // Ensure durArray exists
+  piece.durArray = [0.5, 0.5];
+  // @ts-ignore - remove durTot
+  piece.durTot = undefined;
+  expect(() => piece.durStarts()).toThrow('durTot is undefined');
+});
+
+
 test('addMeter rejects meter that encloses an existing meter', () => {
   const raga = new Raga();
   const traj = new Trajectory({ num: 0, pitches: [new Pitch()], durTot: 1 });
