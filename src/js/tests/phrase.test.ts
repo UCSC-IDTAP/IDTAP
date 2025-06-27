@@ -1,4 +1,4 @@
-import { expect, test } from 'vitest';
+import { expect, test, vi } from 'vitest';
 import {
   Phrase,
   Trajectory,
@@ -191,4 +191,62 @@ test('consolidateSilentTrajs throws when traj num missing', () => {
   const p = new Phrase({ trajectories: [good, badSilent], raga: new Raga() });
   p.trajectories[1].num = undefined;
   expect(() => p.consolidateSilentTrajs()).toThrow('traj.num is undefined');
+});
+
+
+test('realignPitches replaces pitch objects with raga ratios', () => {
+  const t1 = new Trajectory({ pitches: [new Pitch(), new Pitch({ swara: 'r' })] });
+  const t2 = new Trajectory({ pitches: [new Pitch({ swara: 'g' })] });
+  const r = new Raga();
+  const phrase = new Phrase({ trajectories: [t1, t2], raga: r });
+  const originals = phrase.trajectories.map(t => t.pitches.slice());
+
+  phrase.realignPitches();
+
+  phrase.trajectories.forEach((traj, ti) => {
+    traj.pitches.forEach((p, pi) => {
+      expect(p).not.toBe(originals[ti][pi]);
+      expect(p.ratios).toStrictEqual(r.stratifiedRatios);
+    });
+  });
+});
+
+test('compute throws when durArray undefined', () => {
+  const p = new Phrase();
+  // @ts-ignore - intentionally unset durArray
+  p.durArray = undefined;
+  expect(() => p.compute(0.5)).toThrow('durArray is undefined');
+});
+
+test('compute returns null for empty durArray', () => {
+  const p = new Phrase();
+  expect(p.durArray).toEqual([]);
+  expect(p.compute(0.5)).toBeNull();
+});
+
+test('durTot and durArray preserved with empty trajectories', () => {
+  const spy = vi.spyOn(Phrase.prototype as any, 'durArrayFromTrajectories');
+  const p = new Phrase({ durTot: 2, durArray: [1] });
+  expect(p.durTot).toBe(2);
+  expect(p.durArray).toEqual([1]);
+  expect(spy).not.toHaveBeenCalled();
+  spy.mockRestore();
+});
+
+test('constructor pads grids to instrumentation length', () => {
+  const t1 = new Trajectory();
+  const trajectoryGrid = [[t1]];
+  const chikariGrid = [{}];
+  const instrumentation = ['Sitar', 'Violin'];
+  const phrase = new Phrase({
+    trajectoryGrid,
+    chikariGrid,
+    instrumentation,
+  });
+  expect(phrase.trajectoryGrid).toBe(trajectoryGrid);
+  expect(phrase.chikariGrid).toBe(chikariGrid);
+  expect(phrase.trajectoryGrid.length).toBe(instrumentation.length);
+  expect(phrase.chikariGrid.length).toBe(instrumentation.length);
+  expect(phrase.trajectoryGrid[1]).toEqual([]);
+  expect(phrase.chikariGrid[1]).toEqual({});
 });
