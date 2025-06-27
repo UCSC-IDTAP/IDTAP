@@ -1,5 +1,6 @@
 from python.api.classes.pitch import Pitch
 import math
+import pytest
 
 # since its python, everything should be in snake_case
 
@@ -256,4 +257,290 @@ def test_numbered_pitch():
     assert p.numbered_pitch == 4
     p = Pitch({ 'swara': 3, 'raised': False, 'oct': 1 })
     assert p.numbered_pitch == 17
+
+
+def test_same_as():
+    p1 = Pitch({ 'swara': 're', 'raised': False, 'oct': 1 })
+    p2 = Pitch({ 'swara': 1, 'raised': False, 'oct': 1 })
+    p3 = Pitch({ 'swara': 1, 'raised': True, 'oct': 1 })
+    assert p1 == p2
+    assert not (p1 == p3)
+
+
+def test_from_pitch_number_and_helpers():
+    p = Pitch.from_pitch_number(4)
+    assert p.swara == 2
+    assert p.raised is True
+    assert p.oct == 0
+
+    p = Pitch.from_pitch_number(-1)
+    assert p.swara == 6
+    assert p.raised is True
+    assert p.oct == -1
+
+    assert Pitch.pitch_number_to_chroma(14) == 2
+    assert Pitch.pitch_number_to_chroma(-1) == 11
+
+    sd, raised = Pitch.chroma_to_scale_degree(3)
+    assert sd == 2
+    assert raised is False
+    sd, raised = Pitch.chroma_to_scale_degree(11)
+    assert sd == 6
+    assert raised is True
+
+
+def test_display_properties():
+    p_down = Pitch({ 'swara': 'g', 'raised': False, 'oct': -1 })
+    assert p_down.solfege_letter == 'Me'
+    assert p_down.octaved_scale_degree == '3\u0323'
+    assert p_down.octaved_solfege_letter == 'Me\u0323'
+    assert p_down.octaved_solfege_letter_with_cents == 'Me\u0323 (+0\u00A2)'
+    assert p_down.octaved_chroma == '3\u0323'
+    assert p_down.octaved_chroma_with_cents == '3\u0323 (+0\u00A2)'
+    assert p_down.cents_string == '+0\u00A2'
+    assert p_down.a440_cents_deviation == 'D#3 (+0\u00A2)'
+    assert p_down.movable_c_cents_deviation == 'D# (+0\u00A2)'
+
+    p_up = Pitch({ 'swara': 'Sa', 'oct': 2 })
+    assert p_up.solfege_letter == 'Do'
+    assert p_up.octaved_scale_degree == '1\u0308'
+    assert p_up.octaved_solfege_letter == 'Do\u0308'
+    assert p_up.octaved_solfege_letter_with_cents == 'Do\u0308 (+0\u00A2)'
+    assert p_up.octaved_chroma == '0\u0308'
+    assert p_up.octaved_chroma_with_cents == '0\u0308 (+0\u00A2)'
+    assert p_up.cents_string == '+0\u00A2'
+    assert p_up.a440_cents_deviation == 'C6 (+0\u00A2)'
+    assert p_up.movable_c_cents_deviation == 'C (+0\u00A2)'
+
+
+def test_frequency_and_set_oct_error_handling():
+    p1 = Pitch()
+    p1.swara = 0
+    p1.ratios[0] = 'bad'
+    with pytest.raises(SyntaxError):
+        _ = p1.frequency
+    with pytest.raises(SyntaxError):
+        p1.set_oct(1)
+
+    p2 = Pitch()
+    p2.swara = 're'
+    with pytest.raises(SyntaxError):
+        _ = p2.frequency
+    with pytest.raises(SyntaxError):
+        p2.set_oct(0)
+
+    p3 = Pitch()
+    p3.swara = 1
+    p3.ratios[1] = 0
+    with pytest.raises(SyntaxError):
+        _ = p3.frequency
+
+
+def test_formatted_string_getters_across_octaves():
+    expected = {
+        -2: 'C2 (+0\u00A2)',
+        -1: 'C3 (+0\u00A2)',
+        0: 'C4 (+0\u00A2)',
+        1: 'C5 (+0\u00A2)',
+        2: 'C6 (+0\u00A2)'
+    }
+    for i in range(-2, 3):
+        p = Pitch({ 'swara': 'Sa', 'oct': i })
+        assert p.a440_cents_deviation == expected[i]
+        assert p.movable_c_cents_deviation == 'C (+0\u00A2)'
+
+
+def test_chroma_to_scale_degree_all_mappings():
+    expected = [
+        (0, True), (1, False), (1, True), (2, False), (2, True),
+        (3, False), (3, True), (4, True), (5, False), (5, True),
+        (6, False), (6, True)
+    ]
+    for c in range(12):
+        sd, raised = Pitch.chroma_to_scale_degree(c)
+        assert sd == expected[c][0]
+        assert raised == expected[c][1]
+
+
+def test_numbered_pitch_edge_cases():
+    low = Pitch({ 'swara': 'Sa', 'oct': -3 })
+    assert low.numbered_pitch == -36
+    high = Pitch({ 'swara': 'ni', 'raised': True, 'oct': 3 })
+    assert high.numbered_pitch == 47
+    bad = Pitch()
+    bad.swara = 7
+    with pytest.raises(SyntaxError):
+        _ = bad.numbered_pitch
+
+
+def test_constructor_error_conditions():
+    with pytest.raises(SyntaxError):
+        Pitch({ 'raised': 1 })
+    with pytest.raises(SyntaxError):
+        Pitch({ 'swara': [] })
+    with pytest.raises(SyntaxError):
+        Pitch({ 'swara': 'foo' })
+    with pytest.raises(SyntaxError):
+        Pitch({ 'oct': 0.5 })
+    with pytest.raises(SyntaxError):
+        Pitch({ 'oct': '1' })
+    with pytest.raises(SyntaxError):
+        Pitch({ 'fundamental': 'A4' })
+    with pytest.raises(SyntaxError):
+        Pitch({ 'swara': 'x' })
+    with pytest.raises(SyntaxError):
+        Pitch({ 'swara': -1 })
+    with pytest.raises(SyntaxError):
+        Pitch({ 'swara': 7 })
+
+
+def test_set_oct_invalid_swara_and_ratio_inputs():
+    bad_sa = Pitch()
+    bad_sa.swara = 0
+    bad_sa.ratios[0] = 'bad'
+    with pytest.raises(SyntaxError):
+        bad_sa.set_oct(1)
+
+    bad_pa = Pitch({ 'swara': 'pa' })
+    bad_pa.ratios[4] = None
+    with pytest.raises(SyntaxError):
+        bad_pa.set_oct(0)
+
+    bad_nested = Pitch({ 'swara': 're' })
+    bad_nested.swara = 1
+    bad_nested.ratios[1] = 0
+    with pytest.raises(SyntaxError):
+        bad_nested.set_oct(2)
+
+    wrong_type = Pitch()
+    wrong_type.swara = 're'
+    with pytest.raises(SyntaxError):
+        wrong_type.set_oct(0)
+
+
+def test_non_offset_frequency_and_formatted_string_getters():
+    sa = Pitch({ 'swara': 'Sa', 'log_offset': 0.1 })
+    assert pytest.approx(sa.non_offset_frequency, rel=1e-2) == 261.63
+    assert pytest.approx(sa.non_offset_log_freq, rel=1e-2) == math.log2(261.63)
+    assert sa.cents_string == '+120\u00A2'
+    assert sa.a440_cents_deviation == 'C#4 (+20\u00A2)'
+    assert sa.movable_c_cents_deviation == 'C (+120\u00A2)'
+    assert sa.octaved_sargam_letter_with_cents == 'S (+120\u00A2)'
+
+    ga = Pitch({ 'swara': 'ga', 'raised': False, 'log_offset': -0.05 })
+    ga_base = 261.63 * (2 ** (3 / 12))
+    assert pytest.approx(ga.non_offset_frequency, rel=1e-2) == ga_base
+    assert pytest.approx(ga.non_offset_log_freq, rel=1e-2) == math.log2(ga_base)
+    assert ga.cents_string == '-60\u00A2'
+    assert ga.a440_cents_deviation == 'D4 (+40\u00A2)'
+    assert ga.movable_c_cents_deviation == 'D# (-60\u00A2)'
+    assert ga.octaved_sargam_letter_with_cents == 'g (-60\u00A2)'
+
+
+def test_serialization_round_trip():
+    p = Pitch({ 'swara': 'ga', 'raised': False, 'oct': 1, 'log_offset': 0.2 })
+    json_data = p.to_JSON()
+    copy = Pitch.from_JSON(json_data)
+    assert copy.to_JSON() == json_data
+
+
+def test_a440_cents_edge_octaves():
+    expected = {
+        -3: 'C1 (+0\u00A2)',
+        -2: 'C2 (+0\u00A2)',
+        -1: 'C3 (+0\u00A2)',
+        0: 'C4 (+0\u00A2)',
+        1: 'C5 (+0\u00A2)',
+        2: 'C6 (+0\u00A2)',
+        3: 'C7 (+0\u00A2)'
+    }
+    for i in range(-3, 4):
+        p = Pitch({ 'swara': 'Sa', 'oct': i })
+        assert p.a440_cents_deviation == expected[i]
+        assert p.movable_c_cents_deviation == 'C (+0\u00A2)'
+
+
+def test_octaved_display_strings_extreme_octaves():
+    low = Pitch({ 'swara': 'Sa', 'oct': -3 })
+    high = Pitch({ 'swara': 'Sa', 'oct': 3 })
+    assert low.octaved_sargam_letter == 'S\u20E8'
+    assert high.octaved_sargam_letter == 'S\u20DB'
+    assert low.octaved_solfege_letter == 'Do\u20E8'
+    assert high.octaved_solfege_letter == 'Do\u20DB'
+    assert low.octaved_chroma == '0\u20E8'
+    assert high.octaved_chroma == '0\u20DB'
+
+
+def test_numbered_pitch_invalid_swara_values():
+    p = Pitch()
+    p.swara = -1
+    with pytest.raises(SyntaxError):
+        _ = p.numbered_pitch
+    p.swara = 7
+    with pytest.raises(SyntaxError):
+        _ = p.numbered_pitch
+    p.swara = 'ni'
+    with pytest.raises(SyntaxError):
+        _ = p.numbered_pitch
+
+
+def test_toJSON_fromJSON_preserves_log_offset():
+    orig = Pitch({ 'swara': 'ni', 'raised': False, 'oct': 2, 'log_offset': -0.3 })
+    round_trip = Pitch.from_JSON(orig.to_JSON())
+    assert round_trip.to_JSON() == orig.to_JSON()
+    assert pytest.approx(round_trip.frequency, rel=1e-2) == orig.frequency
+
+
+def test_invalid_ratio_values_trigger_errors():
+    bad_re = Pitch({ 'swara': 're' })
+    bad_re.swara = 1
+    bad_re.ratios[1] = 'bad'
+    with pytest.raises(SyntaxError):
+        _ = bad_re.frequency
+    with pytest.raises(SyntaxError):
+        bad_re.set_oct(1)
+
+    bad_ga = Pitch({ 'swara': 'ga' })
+    bad_ga.swara = 2
+    bad_ga.ratios[2] = 5
+    with pytest.raises(SyntaxError):
+        _ = bad_ga.frequency
+    with pytest.raises(SyntaxError):
+        bad_ga.set_oct(0)
+
+
+def test_western_pitch_note_name():
+    p = Pitch({ 'swara': 're', 'raised': True })
+    assert p.western_pitch == 'D'
+
+
+def test_a440_cents_gt_50_cents_handling():
+    re = Pitch({ 'swara': 're', 'raised': True, 'log_offset': 0.05 })
+    assert re.a440_cents_deviation == 'E4 (-40\u00A2)'
+
+    ni = Pitch({ 'swara': 'ni', 'raised': True, 'log_offset': 0.05 })
+    assert ni.a440_cents_deviation == 'C#4 (-40\u00A2)'
+
+
+def test_constructor_rejects_undefined_ratios():
+    base_ratios = [
+        1,
+        [2 ** (1 / 12), 2 ** (2 / 12)],
+        [2 ** (3 / 12), 2 ** (4 / 12)],
+        [2 ** (5 / 12), 2 ** (6 / 12)],
+        2 ** (7 / 12),
+        [2 ** (8 / 12), 2 ** (9 / 12)],
+        [2 ** (10 / 12), 2 ** (11 / 12)]
+    ]
+
+    ratios1 = list(base_ratios)
+    ratios1[0] = None
+    with pytest.raises(SyntaxError):
+        Pitch({ 'ratios': ratios1 })
+
+    ratios2 = list(base_ratios)
+    ratios2[1] = [2 ** (1 / 12), None]
+    with pytest.raises(SyntaxError):
+        Pitch({ 'ratios': ratios2 })
+
 
