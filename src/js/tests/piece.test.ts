@@ -490,6 +490,93 @@ test('addMeter overlap detection and removeMeter correctness', () => {
   expect(piece.meters[0]).toBe(m2);
 });
 
+
+// -------------------------------------------------------
+//  Tests for cleanUpSectionCategorization paths
+// -------------------------------------------------------
+
+test('cleanUpSectionCategorization populates defaults when fields missing', () => {
+  const piece = buildSimplePiece();
+  const c = initSecCategorization();
+  // remove several fields
+  // @ts-ignore
+  delete c['Improvisation'];
+  // @ts-ignore
+  delete c['Other'];
+  // @ts-ignore
+  delete c['Top Level'];
+  piece.cleanUpSectionCategorization(c as any);
+  expect(c['Improvisation']).toBeDefined();
+  expect(c['Other']).toBeDefined();
+  expect(c['Top Level']).toBe('None');
+});
+
+test('Comp.-section/Tempo fallback replaces old field', () => {
+  const piece = buildSimplePiece();
+  const c = initSecCategorization();
+  // simulate old field
+  // @ts-ignore
+  delete c['Comp.-section/Tempo'];
+  // @ts-ignore
+  c['Composition-section/Tempo'] = { 'Madhya': true };
+  // @ts-ignore
+  delete c['Top Level'];
+  piece.cleanUpSectionCategorization(c as any);
+  expect(c['Comp.-section/Tempo']['Madhya']).toBe(true);
+  // @ts-ignore
+  expect(c['Composition-section/Tempo']).toBeUndefined();
+  expect(c['Top Level']).toBe('Composition');
+});
+
+const topLevelCases = [
+  {
+    label: 'Pre-Chiz Alap',
+    modify: (c: any) => { c['Pre-Chiz Alap']['Pre-Chiz Alap'] = true; },
+    expected: 'Pre-Chiz Alap',
+  },
+  {
+    label: 'Alap section',
+    modify: (c: any) => { c['Alap']['Alap'] = true; },
+    expected: 'Alap',
+  },
+  {
+    label: 'Composition type',
+    modify: (c: any) => { c['Composition Type']['Bandish'] = true; },
+    expected: 'Composition',
+  },
+  {
+    label: 'Comp.-section/Tempo',
+    modify: (c: any) => { c['Comp.-section/Tempo']['Vilambit'] = true; },
+    expected: 'Composition',
+  },
+  {
+    label: 'Improvisation',
+    modify: (c: any) => { c['Improvisation']['Improvisation'] = true; },
+    expected: 'Improvisation',
+  },
+  {
+    label: 'Other',
+    modify: (c: any) => { c['Other']['Other'] = true; },
+    expected: 'Other',
+  },
+  {
+    label: 'None',
+    modify: (_c: any) => {},
+    expected: 'None',
+  },
+];
+
+test.each(topLevelCases)('Top Level classification %s', ({ modify, expected }) => {
+  const piece = buildSimplePiece();
+  const c = initSecCategorization();
+  // remove top level so the function computes it
+  // @ts-ignore
+  delete c['Top Level'];
+  modify(c);
+  piece.cleanUpSectionCategorization(c as any);
+  expect(c['Top Level']).toBe(expected);
+});
+
 test('allDisplayVowels throws for non-vocal instrumentation', () => {
   const raga = new Raga();
   const traj = new Trajectory({ num: 0, pitches: [new Pitch()], durTot: 1 });
