@@ -56,6 +56,16 @@ test('defaultTrajectory', () => {
   /* … all original id0-id6 assertions … */
 });
 
+test.each([Instrument.Vocal_M, Instrument.Vocal_F])('vocal instrumentation removes pluck (%s)', (inst) => {
+  const t = new Trajectory({
+    instrumentation: inst,
+    articulations: {
+      '0.00': new Articulation({ name: 'pluck', stroke: 'd' })
+    }
+  });
+  expect(t.articulations).toEqual({});
+});
+
 /* ───────────────────────── JSON round-trip ───────────────────────── */
 
 test('trajectory JSON round trip', () => {
