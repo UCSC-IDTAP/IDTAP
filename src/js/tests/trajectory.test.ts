@@ -56,6 +56,16 @@ test('defaultTrajectory', () => {
   /* … all original id0-id6 assertions … */
 });
 
+test.each([Instrument.Vocal_M, Instrument.Vocal_F])('vocal instrumentation removes pluck (%s)', (inst) => {
+  const t = new Trajectory({
+    instrumentation: inst,
+    articulations: {
+      '0.00': new Articulation({ name: 'pluck', stroke: 'd' })
+    }
+  });
+  expect(t.articulations).toEqual({});
+});
+
 /* ───────────────────────── JSON round-trip ───────────────────────── */
 
 test('trajectory JSON round trip', () => {
@@ -209,6 +219,27 @@ test('missing durArray throws when computing swara', () => {
 
 test('invalid slope type throws', () => {
   expect(() => new Trajectory({ slope: 'bad' as any })).toThrow('invalid slope type');
+});
+
+test('non-integer id throws SyntaxError', () => {
+  expect(() => new Trajectory({ id: 1.5 })).toThrow(SyntaxError);
+});
+
+test('invalid pitches array throws SyntaxError', () => {
+  // @ts-expect-error intentionally wrong type
+  expect(() => new Trajectory({ pitches: [new Pitch(), {} as any] })).toThrow(SyntaxError);
+  // @ts-expect-error intentionally not an array
+  expect(() => new Trajectory({ pitches: {} as any })).toThrow(SyntaxError);
+});
+
+test('non-number durTot throws SyntaxError', () => {
+  // @ts-expect-error intentionally wrong type
+  expect(() => new Trajectory({ durTot: 'bad' as any })).toThrow(SyntaxError);
+});
+
+test('non-object articulations throws SyntaxError', () => {
+  // @ts-expect-error intentionally wrong type
+  expect(() => new Trajectory({ articulations: 5 as any })).toThrow(SyntaxError);
 });
 
 test('convertCIsoToHindiAndIpa fills missing fields', () => {
@@ -386,6 +417,15 @@ test('updateFundamental updates all contained pitches', () => {
 
   traj.pitches.forEach(p => {
     expect(p.fundamental).toBeCloseTo(440);
+  });
+test('sloped getter by id and endTime calculation', () => {
+  const ids = Array.from({ length: 14 }, (_, i) => i);
+  ids.forEach(id => {
+    const traj = new Trajectory({ id, durTot: 1 });
+    traj.startTime = 5;
+    const shouldBeSloped = id >= 2 && id <= 5;
+    expect(traj.sloped).toBe(shouldBeSloped);
+    expect(traj.endTime).toBe(6);
   });
 });
 
