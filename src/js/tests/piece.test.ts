@@ -488,3 +488,31 @@ test('addMeter overlap detection and removeMeter correctness', () => {
   expect(piece.meters.length).toBe(1);
   expect(piece.meters[0]).toBe(m2);
 });
+
+
+test('allPitches throws when a pitch array contains a number', () => {
+  const raga = new Raga();
+  const traj = new Trajectory({ num: 0, pitches: [new Pitch()], durTot: 1 });
+  (traj.pitches as any).push(0);
+  const phrase = new Phrase({ trajectories: [traj], raga });
+  const piece = new Piece({ phrases: [phrase], raga, instrumentation: [Instrument.Sitar] });
+  expect(() => piece.allPitches({ repetition: false })).toThrow('pitch is a number');
+});
+
+test('allPitches returns numbers with pitchNumber option', () => {
+  const piece = buildSimplePiece();
+  const nums = piece.allPitches({ pitchNumber: true }) as number[];
+  expect(nums.every(n => typeof n === 'number')).toBe(true);
+  expect(nums.length).toBeGreaterThan(0);
+});
+
+test('trajFromTime after last trajectory returns undefined', () => {
+  const piece = buildSimplePiece();
+  const after = (piece.durTot ?? 0) + 1;
+  expect(piece.trajFromTime(after, 0)).toBeUndefined();
+});
+
+test('trajFromUId throws when not found', () => {
+  const piece = buildSimplePiece();
+  expect(() => piece.trajFromUId('missing', 0)).toThrow('Trajectory not found');
+});
