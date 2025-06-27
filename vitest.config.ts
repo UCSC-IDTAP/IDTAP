@@ -12,7 +12,7 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       include: ['src/ts/model/assemblage.ts'],
-      reporter: ['text','json'],
+      reporter: ['text', 'json'],
     },
   },
 });
