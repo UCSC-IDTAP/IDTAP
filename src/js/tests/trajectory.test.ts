@@ -56,6 +56,16 @@ test('defaultTrajectory', () => {
   /* … all original id0-id6 assertions … */
 });
 
+test.each([Instrument.Vocal_M, Instrument.Vocal_F])('vocal instrumentation removes pluck (%s)', (inst) => {
+  const t = new Trajectory({
+    instrumentation: inst,
+    articulations: {
+      '0.00': new Articulation({ name: 'pluck', stroke: 'd' })
+    }
+  });
+  expect(t.articulations).toEqual({});
+});
+
 /* ───────────────────────── JSON round-trip ───────────────────────── */
 
 test('trajectory JSON round trip', () => {
@@ -170,6 +180,40 @@ test('Trajectory consonant and vowel helpers', () => {
   const copy = Trajectory.fromJSON(json);
   expect(copy.startConsonant).toBe('kha');
 });
+
+test('removeConsonant(true) clears start consonant data', () => {
+  const t = new Trajectory({ pitches: [new Pitch()], durTot: 1 });
+  t.addConsonant('ka');
+  t.addConsonant('ga', false);
+
+  t.removeConsonant(true);
+
+  expect(t.startConsonant).toBeUndefined();
+  expect(t.startConsonantHindi).toBeUndefined();
+  expect(t.startConsonantIpa).toBeUndefined();
+  expect(t.startConsonantEngTrans).toBeUndefined();
+  expect(t.articulations['0.00']).toBeUndefined();
+
+  expect(t.endConsonant).toBe('ga');
+  expect(t.articulations['1.00']).toBeDefined();
+});
+
+test('removeConsonant(false) clears end consonant data', () => {
+  const t = new Trajectory({ pitches: [new Pitch()], durTot: 1 });
+  t.addConsonant('ka');
+  t.addConsonant('ga', false);
+
+  t.removeConsonant(false);
+
+  expect(t.endConsonant).toBeUndefined();
+  expect(t.endConsonantHindi).toBeUndefined();
+  expect(t.endConsonantIpa).toBeUndefined();
+  expect(t.endConsonantEngTrans).toBeUndefined();
+  expect(t.articulations['1.00']).toBeUndefined();
+
+  expect(t.startConsonant).toBe('ka');
+  expect(t.articulations['0.00']).toBeDefined();
+});
 describe('compute delegation for all ids', () => {
   const xs = linSpace(0, 1, 5);
   const cases = [
@@ -209,6 +253,34 @@ test('missing durArray throws when computing swara', () => {
 
 test('invalid slope type throws', () => {
   expect(() => new Trajectory({ slope: 'bad' as any })).toThrow('invalid slope type');
+});
+
+test('convertCIsoToHindiAndIpa throws when stroke is not a string', () => {
+  const art = new Articulation({ name: 'consonant', stroke: {} as any });
+  const traj = new Trajectory({ pitches: [new Pitch()] });
+  traj.articulations['0.00'] = art;
+  expect(() => traj.convertCIsoToHindiAndIpa()).toThrow('stroke is not a string');
+})
+
+test('non-integer id throws SyntaxError', () => {
+  expect(() => new Trajectory({ id: 1.5 })).toThrow(SyntaxError);
+});
+
+test('invalid pitches array throws SyntaxError', () => {
+  // @ts-expect-error intentionally wrong type
+  expect(() => new Trajectory({ pitches: [new Pitch(), {} as any] })).toThrow(SyntaxError);
+  // @ts-expect-error intentionally not an array
+  expect(() => new Trajectory({ pitches: {} as any })).toThrow(SyntaxError);
+});
+
+test('non-number durTot throws SyntaxError', () => {
+  // @ts-expect-error intentionally wrong type
+  expect(() => new Trajectory({ durTot: 'bad' as any })).toThrow(SyntaxError);
+});
+
+test('non-object articulations throws SyntaxError', () => {
+  // @ts-expect-error intentionally wrong type
+  expect(() => new Trajectory({ articulations: 5 as any })).toThrow(SyntaxError);
 });
 
 test('convertCIsoToHindiAndIpa fills missing fields', () => {
@@ -373,5 +445,30 @@ test('proportionsOfFixedPitches via Piece for all output types', () => {
   const sarg1 = Pitch.fromPitchNumber(np1).sargamLetter;
   const sarg2 = Pitch.fromPitchNumber(np2).sargamLetter;
   expect(piece.proportionsOfFixedPitches({ outputType: 'sargamLetter' })).toEqual({ [sarg1]: 1 / 3, [sarg2]: 2 / 3 });
+});
+
+/* ───────────────────── updateFundamental ───────────────────── */
+
+test('updateFundamental updates all contained pitches', () => {
+  const p1 = new Pitch();
+  const p2 = new Pitch({ swara: 1 });
+  const traj = new Trajectory({ pitches: [p1, p2] });
+
+  traj.updateFundamental(440);
+
+  traj.pitches.forEach(p => {
+    expect(p.fundamental).toBeCloseTo(440);
+  });
+});
+
+test('sloped getter by id and endTime calculation', () => {
+  const ids = Array.from({ length: 14 }, (_, i) => i);
+  ids.forEach(id => {
+    const traj = new Trajectory({ id, durTot: 1 });
+    traj.startTime = 5;
+    const shouldBeSloped = id >= 2 && id <= 5;
+    expect(traj.sloped).toBe(shouldBeSloped);
+    expect(traj.endTime).toBe(6);
+  });
 });
 
