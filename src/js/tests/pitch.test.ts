@@ -507,6 +507,14 @@ test('westernPitch note name', () => {
   expect(p.westernPitch).toBe('D');
 });
 
+test('a440CentsDeviation > 50 cents handling', () => {
+  const re = new Pitch({ swara: 're', raised: true, logOffset: 0.05 });
+  expect(re.a440CentsDeviation).toBe('E4 (-40\u00A2)');
+
+  const ni = new Pitch({ swara: 'ni', raised: true, logOffset: 0.05 });
+  expect(ni.a440CentsDeviation).toBe('C#4 (-40\u00A2)');
+});
+
 test('constructor rejects undefined ratios', () => {
   const baseRatios = [
     1,
