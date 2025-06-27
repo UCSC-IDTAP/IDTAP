@@ -436,3 +436,51 @@ test('serialization round trip', () => {
   const copy = Pitch.fromJSON(json);
   expect(copy.toJSON()).toEqual(json);
 });
+
+test('a440CentsDeviation and movableCCentsDeviation edge octaves', () => {
+  const expected: Record<string, string> = {
+    '-3': 'C1 (+0\u00A2)',
+    '-2': 'C2 (+0\u00A2)',
+    '-1': 'C3 (+0\u00A2)',
+    '0': 'C4 (+0\u00A2)',
+    '1': 'C5 (+0\u00A2)',
+    '2': 'C6 (+0\u00A2)',
+    '3': 'C7 (+0\u00A2)',
+  };
+  for (let i = -3; i <= 3; i++) {
+    const p = new Pitch({ swara: 'Sa', oct: i });
+    expect(p.a440CentsDeviation).toEqual(expected[i]);
+    expect(p.movableCCentsDeviation).toEqual('C (+0\u00A2)');
+  }
+});
+
+test('numberedPitch invalid swara values', () => {
+  const p = new Pitch();
+  (p as any).swara = -1;
+  expect(() => p.numberedPitch).toThrow(SyntaxError);
+  (p as any).swara = 7;
+  expect(() => p.numberedPitch).toThrow(SyntaxError);
+  (p as any).swara = 'ni';
+  expect(() => p.numberedPitch).toThrow(SyntaxError);
+});
+
+test('toJSON/fromJSON preserves logOffset', () => {
+  const orig = new Pitch({ swara: 'ni', raised: false, oct: 2, logOffset: -0.3 });
+  const round = Pitch.fromJSON(orig.toJSON());
+  expect(round.toJSON()).toEqual(orig.toJSON());
+  expect(round.frequency).toBeCloseTo(orig.frequency);
+});
+
+test('invalid ratio values trigger errors', () => {
+  const badRe = new Pitch({ swara: 're' });
+  (badRe as any).swara = 1;
+  (badRe as any).ratios[1] = 'bad';
+  expect(() => badRe.frequency).toThrow(SyntaxError);
+  expect(() => badRe.setOct(1)).toThrow(SyntaxError);
+
+  const badGa = new Pitch({ swara: 'ga' });
+  (badGa as any).swara = 2;
+  (badGa as any).ratios[2] = 5;
+  expect(() => badGa.frequency).toThrow(SyntaxError);
+  expect(() => badGa.setOct(0)).toThrow(SyntaxError);
+});
