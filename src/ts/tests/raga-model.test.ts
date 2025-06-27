@@ -72,6 +72,20 @@ test('model raga core utilities', () => {
   expect(r.swaraObjects).toEqual(objs);
 });
 
+test('pitchNumberToSargamLetter handles negative numbers', () => {
+  const r = new Raga();
+
+  // -1 corresponds to Ni in the previous octave
+  expect(r.pitchNumberToSargamLetter(-1)).toBe('N');
+
+  // -13 is two octaves below Ni and should also map to Ni
+  expect(r.pitchNumberToSargamLetter(-13)).toBe('N');
+
+  // -12 should resolve to Sa one octave below
+  expect(r.pitchNumberToSargamLetter(-12)).toBe('S');
+});
+
+
 test('ratioIdxToTuningTuple out of range', () => {
   const r = new Raga();
   const invalidIdx = r.ruleSetNumPitches; // index larger than highest valid
