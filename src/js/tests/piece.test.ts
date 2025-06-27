@@ -429,3 +429,62 @@ test('durations and proportions for each output type', () => {
   expect(piece.durationsOfFixedPitches({ outputType: 'sargamLetter' })).toEqual({ [sarg1]: 1, [sarg2]: 2 });
   expect(piece.proportionsOfFixedPitches({ outputType: 'sargamLetter' })).toEqual({ [sarg1]: 1 / 3, [sarg2]: 2 / 3 });
 });
+
+/* -------------------------------------------------------
+   Additional tests requested by Codex task
+------------------------------------------------------- */
+
+function buildGroupedPiece() {
+  const raga = new Raga();
+  const t1 = new Trajectory({ num: 0, pitches: [new Pitch()], durTot: 0.5 });
+  const t2 = new Trajectory({ num: 1, pitches: [new Pitch()], durTot: 0.5 });
+  const g1 = new Group({ trajectories: [t1, t2] });
+  const p1 = new Phrase({ trajectories: [t1, t2], raga });
+  p1.groupsGrid[0].push(g1);
+
+  const t3 = new Trajectory({ num: 0, pitches: [new Pitch()], durTot: 0.5 });
+  const t4 = new Trajectory({ num: 1, pitches: [new Pitch()], durTot: 0.5 });
+  const g2 = new Group({ trajectories: [t3, t4] });
+  const p2 = new Phrase({ trajectories: [t3, t4], raga });
+  p2.groupsGrid[0].push(g2);
+
+  const piece = new Piece({ phrases: [p1, p2], raga, instrumentation: [Instrument.Sitar] });
+  return { piece, g1, g2 };
+}
+
+test('trackFromTrajUId throws when id not found', () => {
+  const { piece } = buildSimplePieceFull();
+  expect(() => piece.trackFromTrajUId('missing')).toThrow();
+});
+
+test('pIdxFromGroup works across phrases', () => {
+  const { piece, g1, g2 } = buildGroupedPiece();
+  expect(piece.pIdxFromGroup(g1)).toBe(0);
+  expect(piece.pIdxFromGroup(g2)).toBe(1);
+});
+
+test('mostRecentTraj and chikariFreqs with chikaris', () => {
+  const { piece } = buildVocalPiece();
+  const firstTraj = piece.phraseGrid[0][0].trajectories[0];
+  const chikari = piece.phraseGrid[0][0].chikaris['0.25'];
+  expect(piece.mostRecentTraj(0.6, 0)).toBe(firstTraj);
+  expect(piece.chikariFreqs(0)).toEqual(chikari.pitches.slice(0, 2).map(p => p.frequency));
+});
+
+test('addMeter overlap detection and removeMeter correctness', () => {
+  const raga = new Raga();
+  const traj = new Trajectory({ num: 0, pitches: [new Pitch()], durTot: 1 });
+  const phrase = new Phrase({ trajectories: [traj], raga });
+  const piece = new Piece({ phrases: [phrase], raga, instrumentation: [Instrument.Sitar] });
+
+  const m1 = new Meter({ startTime: 0, tempo: 60 });
+  const m2 = new Meter({ startTime: 5, tempo: 60 });
+  piece.addMeter(m1);
+  piece.addMeter(m2);
+  const overlap = new Meter({ startTime: 3, tempo: 60 });
+  expect(() => piece.addMeter(overlap)).toThrow();
+
+  piece.removeMeter(m1);
+  expect(piece.meters.length).toBe(1);
+  expect(piece.meters[0]).toBe(m2);
+});
