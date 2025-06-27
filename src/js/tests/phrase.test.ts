@@ -180,6 +180,18 @@ test('toNoteViewPhrase includes pitches from id 0 trajectory with articulations'
   expect(nv.pitches[0]).toBe(pitch);
 });
 
+test('toNoteViewPhrase includes pitches from nonzero id trajectory with no articulations', () => {
+  const pitch = new Pitch({ swara: 'ma' });
+  const traj = new Trajectory({
+    id: 2,
+    pitches: [pitch],
+    articulations: {},
+  });
+  const phrase = new Phrase({ trajectories: [traj] });
+  const nv = phrase.toNoteViewPhrase();
+  expect(nv.pitches).toContain(pitch);
+});
+
 
 test('fromJSON reconstructs trajectory and chikari grids', () => {
   const t1 = new Trajectory({ num: 0, pitches: [new Pitch()] });
@@ -329,6 +341,7 @@ test('constructor pads grids to instrumentation length', () => {
   expect(phrase.chikariGrid[1]).toEqual({});
 });
 
+
 test('fromJSON uses fallbacks for missing grids', () => {
   const obj = {
     trajectories: [],
@@ -340,4 +353,42 @@ test('fromJSON uses fallbacks for missing grids', () => {
   expect(phrase.chikariGrid.length).toBe(obj.instrumentation.length);
   phrase.trajectoryGrid.forEach(row => expect(row).toEqual([]));
   phrase.chikariGrid.forEach(col => expect(col).toEqual({}));
+});
+
+test('chikaris setter updates grid', () => {
+  const phrase = new Phrase();
+  const c = new Chikari({});
+  phrase.chikaris = { '0.1': c };
+  expect(phrase.chikariGrid[0]['0.1']).toBe(c);
+});
+
+test('constructor scales trajectories when durTot and durArray passed', () => {
+  const t1 = new Trajectory({ durTot: 1, pitches: [new Pitch()] });
+  const t2 = new Trajectory({ durTot: 1, pitches: [new Pitch({ swara: 'r' })] });
+  const durArray = [0.2, 0.8];
+  const phrase = new Phrase({
+    trajectories: [t1, t2],
+    durTot: 4,
+    durArray,
+  });
+  expect(phrase.durTot).toBeCloseTo(4);
+  expect(phrase.durArray).toEqual(durArray);
+  expect(t1.durTot).toBeCloseTo(0.8);
+  expect(t2.durTot).toBeCloseTo(3.2);
+});
+
+test('constructor fills missing trajectory/chikari grids when undefined', () => {
+  const traj = new Trajectory();
+  const instrumentation = ['Sitar', 'Violin', 'Sarod'];
+  const phrase = new Phrase({ trajectories: [traj], instrumentation });
+
+  expect(phrase.trajectoryGrid.length).toBe(instrumentation.length);
+  expect(phrase.chikariGrid.length).toBe(instrumentation.length);
+
+  expect(phrase.trajectoryGrid[0]).toEqual([traj]);
+  expect(phrase.chikariGrid[0]).toEqual({});
+  expect(phrase.trajectoryGrid[1]).toEqual([]);
+  expect(phrase.trajectoryGrid[2]).toEqual([]);
+  expect(phrase.chikariGrid[1]).toEqual({});
+  expect(phrase.chikariGrid[2]).toEqual({});
 });

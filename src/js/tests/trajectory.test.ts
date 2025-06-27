@@ -477,3 +477,55 @@ test('sloped getter by id and endTime calculation', () => {
   });
 });
 
+describe('durationsOfFixedPitches switch coverage', () => {
+  const p0 = new Pitch({ swara: 0 });
+  const p1 = new Pitch({ swara: 1 });
+  const p2 = new Pitch({ swara: 2 });
+  const p3 = new Pitch({ swara: 3 });
+
+  const np0 = p0.numberedPitch;
+  const np1 = p1.numberedPitch;
+  const np2 = p2.numberedPitch;
+  const np3 = p3.numberedPitch;
+
+  const cases: Array<{ id: number; pitches: Pitch[]; durArray?: number[]; expected: Record<number, number> }> = [
+    { id: 1, pitches: [p0, p0], expected: { [np0]: 1 } },
+    { id: 2, pitches: [p0, p0], expected: { [np0]: 1 } },
+    { id: 3, pitches: [p0, p0], expected: { [np0]: 1 } },
+    { id: 4, pitches: [p0, p0, p1], durArray: [0.6, 0.4], expected: { [np0]: 0.6 } },
+    { id: 5, pitches: [p0, p1, p1], durArray: [0.4, 0.6], expected: { [np1]: 0.6 } },
+    { id: 6, pitches: [p0, p1, p1, p2, p2], durArray: [0.2, 0.2, 0.3, 0.3], expected: { [np1]: 0.2, [np2]: 0.3 } },
+    { id: 7, pitches: [p0, p1], durArray: [0.7, 0.3], expected: { [np0]: 0.7, [np1]: 0.3 } },
+    { id: 8, pitches: [p0, p1, p2], durArray: [0.2, 0.3, 0.5], expected: { [np0]: 0.2, [np1]: 0.3, [np2]: 0.5 } },
+    { id: 9, pitches: [p0, p1, p2, p3], durArray: [0.25, 0.25, 0.25, 0.25], expected: { [np0]: 0.25, [np1]: 0.25, [np2]: 0.25, [np3]: 0.25 } },
+    { id: 10, pitches: [p0, p1, p2, p3, p0, p1], durArray: [0.1, 0.2, 0.2, 0.2, 0.2, 0.1], expected: { [np0]: 0.1 + 0.2, [np1]: 0.2 + 0.1, [np2]: 0.2, [np3]: 0.2 } },
+    { id: 11, pitches: [p0, p1], durArray: [0.5, 0.5], expected: { [np0]: 0.5, [np1]: 0.5 } },
+  ];
+
+  test.each(cases.map(c => [c.id, c]))('id %i pitchNumber', (_, cfg) => {
+    const { id, pitches, durArray, expected } = cfg as any;
+    const traj = new Trajectory({ id, pitches, durArray, durTot: 1 });
+    expect(traj.durationsOfFixedPitches()).toEqual(expected);
+  });
+
+  test('output type conversions and invalid type', () => {
+    const traj = new Trajectory({ id: 7, pitches: [p0, p1], durArray: [0.7, 0.3], durTot: 1 });
+    const base = { [np0]: 0.7, [np1]: 0.3 };
+    expect(traj.durationsOfFixedPitches()).toEqual(base);
+
+    const c0 = Pitch.pitchNumberToChroma(np0);
+    const c1 = Pitch.pitchNumberToChroma(np1);
+    expect(traj.durationsOfFixedPitches({ outputType: 'chroma' })).toEqual({ [c0]: 0.7, [c1]: 0.3 });
+
+    const sd0 = Pitch.chromaToScaleDegree(c0)[0];
+    const sd1 = Pitch.chromaToScaleDegree(c1)[0];
+    expect(traj.durationsOfFixedPitches({ outputType: 'scaleDegree' })).toEqual({ [sd0]: 0.7, [sd1]: 0.3 });
+
+    const s0 = Pitch.fromPitchNumber(np0).sargamLetter;
+    const s1 = Pitch.fromPitchNumber(np1).sargamLetter;
+    expect(traj.durationsOfFixedPitches({ outputType: 'sargamLetter' })).toEqual({ [s0]: 0.7, [s1]: 0.3 });
+
+    expect(() => traj.durationsOfFixedPitches({ outputType: 'bad' as any })).toThrow('outputType not recognized');
+  });
+});
+
