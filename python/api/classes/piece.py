@@ -1,8 +1,59 @@
 from __future__ import annotations
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Union
 
 from .phrase import Phrase
 from .trajectory import Trajectory
+
+
+SecCatType = Dict[str, Union[Dict[str, bool], str]]
+
+
+def init_sec_categorization() -> SecCatType:
+    return {
+        "Pre-Chiz Alap": {
+            "Pre-Chiz Alap": False,
+        },
+        "Alap": {
+            "Alap": False,
+            "Jor": False,
+            "Alap-Jhala": False,
+        },
+        "Composition Type": {
+            "Dhrupad": False,
+            "Bandish": False,
+            "Thumri": False,
+            "Ghazal": False,
+            "Qawwali": False,
+            "Dhun": False,
+            "Tappa": False,
+            "Bhajan": False,
+            "Kirtan": False,
+            "Kriti": False,
+            "Masitkhani Gat": False,
+            "Razakhani Gat": False,
+            "Ferozkhani Gat": False,
+        },
+        "Comp.-section/Tempo": {
+            "Ati Vilambit": False,
+            "Vilambit": False,
+            "Madhya": False,
+            "Drut": False,
+            "Ati Drut": False,
+            "Jhala": False,
+        },
+        "Tala": {
+            "Ektal": False,
+            "Tintal": False,
+            "Rupak": False,
+        },
+        "Improvisation": {
+            "Improvisation": False,
+        },
+        "Other": {
+            "Other": False,
+        },
+        "Top Level": "None",
+    }
 from .raga import Raga
 from ..enums import Instrument
 
