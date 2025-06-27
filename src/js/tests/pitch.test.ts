@@ -389,6 +389,9 @@ test('constructor error conditions', () => {
   expect(() => new Pitch({ raised: 1 as any })).toThrow(SyntaxError);
   expect(() => new Pitch({ swara: [] as any })).toThrow(SyntaxError);
   expect(() => new Pitch({ swara: 'foo' })).toThrow(SyntaxError);
+  expect(() => new Pitch({ oct: 0.5 })).toThrow(SyntaxError);
+  expect(() => new Pitch({ oct: '1' as any })).toThrow(SyntaxError);
+  expect(() => new Pitch({ fundamental: 'A4' as any })).toThrow(SyntaxError);
 });
 
 test('setOct invalid swara and ratio inputs', () => {
