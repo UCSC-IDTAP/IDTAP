@@ -1,4 +1,4 @@
-import { expect, test } from 'vitest';
+import { expect, test, vi } from 'vitest';
 import {
   Phrase,
   Trajectory,
@@ -160,6 +160,15 @@ test('Phrase utility functions', () => {
   expect(chiks.length).toBe(1);
   p.consolidateSilentTrajs();
   expect(p.trajectories.length).toBe(3);
+});
+
+test('durTot and durArray preserved with empty trajectories', () => {
+  const spy = vi.spyOn(Phrase.prototype as any, 'durArrayFromTrajectories');
+  const p = new Phrase({ durTot: 2, durArray: [1] });
+  expect(p.durTot).toBe(2);
+  expect(p.durArray).toEqual([1]);
+  expect(spy).not.toHaveBeenCalled();
+  spy.mockRestore();
 });
 
 test('constructor pads grids to instrumentation length', () => {
