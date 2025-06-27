@@ -180,6 +180,40 @@ test('Trajectory consonant and vowel helpers', () => {
   const copy = Trajectory.fromJSON(json);
   expect(copy.startConsonant).toBe('kha');
 });
+
+test('removeConsonant(true) clears start consonant data', () => {
+  const t = new Trajectory({ pitches: [new Pitch()], durTot: 1 });
+  t.addConsonant('ka');
+  t.addConsonant('ga', false);
+
+  t.removeConsonant(true);
+
+  expect(t.startConsonant).toBeUndefined();
+  expect(t.startConsonantHindi).toBeUndefined();
+  expect(t.startConsonantIpa).toBeUndefined();
+  expect(t.startConsonantEngTrans).toBeUndefined();
+  expect(t.articulations['0.00']).toBeUndefined();
+
+  expect(t.endConsonant).toBe('ga');
+  expect(t.articulations['1.00']).toBeDefined();
+});
+
+test('removeConsonant(false) clears end consonant data', () => {
+  const t = new Trajectory({ pitches: [new Pitch()], durTot: 1 });
+  t.addConsonant('ka');
+  t.addConsonant('ga', false);
+
+  t.removeConsonant(false);
+
+  expect(t.endConsonant).toBeUndefined();
+  expect(t.endConsonantHindi).toBeUndefined();
+  expect(t.endConsonantIpa).toBeUndefined();
+  expect(t.endConsonantEngTrans).toBeUndefined();
+  expect(t.articulations['1.00']).toBeUndefined();
+
+  expect(t.startConsonant).toBe('ka');
+  expect(t.articulations['0.00']).toBeDefined();
+});
 describe('compute delegation for all ids', () => {
   const xs = linSpace(0, 1, 5);
   const cases = [
