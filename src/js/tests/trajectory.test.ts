@@ -66,6 +66,11 @@ test.each([Instrument.Vocal_M, Instrument.Vocal_F])('vocal instrumentation remov
   expect(t.articulations).toEqual({});
 });
 
+test('vocal instrumentation default articulations are empty', () => {
+  const traj = new Trajectory({ instrumentation: Instrument.Vocal_M });
+  expect(traj.articulations).toEqual({});
+});
+
 /* ───────────────────────── JSON round-trip ───────────────────────── */
 
 test('trajectory JSON round trip', () => {
