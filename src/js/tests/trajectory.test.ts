@@ -1,5 +1,5 @@
 import { expect, test, describe } from 'vitest';
-import { Trajectory, Pitch, Articulation, Phrase } from '@model';               // ← adjust if needed
+import { Trajectory, Pitch, Articulation, Phrase, Automation } from '@model';               // ← adjust if needed
 import { Trajectory as ModelTrajectory } from '../../ts/model/trajectory'; // for round-trip test
 import { linSpace } from '@/ts/utils';
 import { findLastIndex } from 'lodash';
@@ -199,5 +199,58 @@ test('missing durArray throws when computing swara', () => {
 
 test('invalid slope type throws', () => {
   expect(() => new Trajectory({ slope: 'bad' as any })).toThrow('invalid slope type');
+});
+
+test('convertCIsoToHindiAndIpa fills missing fields', () => {
+  const artStart = new Articulation({ name: 'consonant', stroke: 'ka' });
+  const artEnd = new Articulation({ name: 'consonant', stroke: 'ga' });
+  const traj = new Trajectory({
+    pitches: [new Pitch()],
+    articulations: { '0.00': artStart, '1.00': artEnd },
+    startConsonant: 'ka',
+    endConsonant: 'ga',
+    vowel: 'a',
+  });
+
+  traj.startConsonantHindi = undefined;
+  traj.startConsonantIpa = undefined;
+  traj.endConsonantHindi = undefined;
+  traj.endConsonantIpa = undefined;
+  traj.vowelHindi = undefined;
+  traj.vowelIpa = undefined;
+  traj.articulations['0.00'].hindi = undefined;
+  traj.articulations['0.00'].ipa = undefined;
+  traj.articulations['1.00'].hindi = undefined;
+  traj.articulations['1.00'].ipa = undefined;
+
+  traj.convertCIsoToHindiAndIpa();
+
+  expect(traj.startConsonantHindi).toBe('क');
+  expect(traj.endConsonantHindi).toBe('ग');
+  expect(traj.vowelHindi).toBe('अ');
+  expect(traj.startConsonantIpa).toBe('k');
+  expect(traj.endConsonantIpa).toBe('g');
+  expect(traj.vowelIpa).toBe('ə');
+  expect(traj.articulations['0.00'].hindi).toBe('क');
+  expect(traj.articulations['1.00'].ipa).toBe('g');
+});
+
+test('toJSON/fromJSON preserves articulations and automation', () => {
+  const auto = new Automation();
+  auto.addValue(0.5, 0.5);
+  const arts = { '0.00': new Articulation({ name: 'consonant', stroke: 'ka' }) };
+  const traj = new Trajectory({
+    id: 7,
+    pitches: [new Pitch(), new Pitch({ swara: 1 })],
+    durArray: [0.5, 0.5],
+    articulations: arts,
+    automation: auto,
+  });
+
+  const json = traj.toJSON();
+  const round = ModelTrajectory.fromJSON(json);
+  expect(round.toJSON()).toEqual(json);
+  expect(round.automation?.values).toEqual(auto.values);
+  expect(round.articulations['0.00'].stroke).toBe('ka');
 });
 

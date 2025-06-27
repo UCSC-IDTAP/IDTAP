@@ -319,3 +319,68 @@ test('display properties', () => {
   expect(pUp.a440CentsDeviation).toEqual('C6 (+0\u00A2)');
   expect(pUp.movableCCentsDeviation).toEqual('C (+0\u00A2)');
 })
+
+test('frequency and setOct error handling', () => {
+  const p1 = new Pitch();
+  (p1 as any).swara = 0;
+  (p1 as any).ratios[0] = 'bad';
+  expect(() => p1.frequency).toThrow(SyntaxError);
+  expect(() => p1.setOct(1)).toThrow(SyntaxError);
+
+  const p2 = new Pitch();
+  (p2 as any).swara = 're';
+  expect(() => p2.frequency).toThrow(SyntaxError);
+  expect(() => p2.setOct(0)).toThrow(SyntaxError);
+
+  const p3 = new Pitch();
+  (p3 as any).swara = 1;
+  (p3 as any).ratios[1] = 0;
+  expect(() => p3.frequency).toThrow(SyntaxError);
+});
+
+test('formatted string getters across octaves', () => {
+  const expected = {
+    '-2': 'C2 (+0\u00A2)',
+    '-1': 'C3 (+0\u00A2)',
+    '0': 'C4 (+0\u00A2)',
+    '1': 'C5 (+0\u00A2)',
+    '2': 'C6 (+0\u00A2)'
+  };
+  for (let i = -2; i <= 2; i++) {
+    const p = new Pitch({ swara: 'Sa', oct: i });
+    expect(p.a440CentsDeviation).toEqual(expected[i]);
+    expect(p.movableCCentsDeviation).toEqual('C (+0\u00A2)');
+  }
+});
+
+test('chromaToScaleDegree all mappings', () => {
+  const expected = [
+    [0, true],
+    [1, false],
+    [1, true],
+    [2, false],
+    [2, true],
+    [3, false],
+    [3, true],
+    [4, true],
+    [5, false],
+    [5, true],
+    [6, false],
+    [6, true],
+  ];
+  for (let c = 0; c < 12; c++) {
+    const [sd, raised] = Pitch.chromaToScaleDegree(c);
+    expect(sd).toBe(expected[c][0]);
+    expect(raised).toBe(expected[c][1]);
+  }
+});
+
+test('numberedPitch edge cases', () => {
+  const low = new Pitch({ swara: 'Sa', oct: -3 });
+  expect(low.numberedPitch).toBe(-36);
+  const high = new Pitch({ swara: 'ni', raised: true, oct: 3 });
+  expect(high.numberedPitch).toBe(47);
+  const bad = new Pitch();
+  (bad as any).swara = 7;
+  expect(() => bad.numberedPitch).toThrow(SyntaxError);
+});
