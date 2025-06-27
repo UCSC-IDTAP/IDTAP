@@ -8,7 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
 import  findLastIndex  from 'lodash/findLastIndex';
 import { getStarts } from '@/ts/utils';
 
-const initPhraseCategorization = (): PhraseCatType => {
+export const initPhraseCategorization = (): PhraseCatType => {
   return {
     "Phrase": {
       "Mohra": false,
