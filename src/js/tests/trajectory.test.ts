@@ -211,6 +211,27 @@ test('invalid slope type throws', () => {
   expect(() => new Trajectory({ slope: 'bad' as any })).toThrow('invalid slope type');
 });
 
+test('non-integer id throws SyntaxError', () => {
+  expect(() => new Trajectory({ id: 1.5 })).toThrow(SyntaxError);
+});
+
+test('invalid pitches array throws SyntaxError', () => {
+  // @ts-expect-error intentionally wrong type
+  expect(() => new Trajectory({ pitches: [new Pitch(), {} as any] })).toThrow(SyntaxError);
+  // @ts-expect-error intentionally not an array
+  expect(() => new Trajectory({ pitches: {} as any })).toThrow(SyntaxError);
+});
+
+test('non-number durTot throws SyntaxError', () => {
+  // @ts-expect-error intentionally wrong type
+  expect(() => new Trajectory({ durTot: 'bad' as any })).toThrow(SyntaxError);
+});
+
+test('non-object articulations throws SyntaxError', () => {
+  // @ts-expect-error intentionally wrong type
+  expect(() => new Trajectory({ articulations: 5 as any })).toThrow(SyntaxError);
+});
+
 test('convertCIsoToHindiAndIpa fills missing fields', () => {
   const artStart = new Articulation({ name: 'consonant', stroke: 'ka' });
   const artEnd = new Articulation({ name: 'consonant', stroke: 'ga' });
