@@ -3,6 +3,7 @@ import {
   Phrase,
   Trajectory,
   Pitch,
+  Articulation,
   Group,    // <-- if Group lives in a different module, change this path
   Raga,
   Chikari,
@@ -160,4 +161,21 @@ test('Phrase utility functions', () => {
   expect(chiks.length).toBe(1);
   p.consolidateSilentTrajs();
   expect(p.trajectories.length).toBe(3);
+});
+
+/* ------------------------------------------------------------------
+   toNoteViewPhrase with id 0 trajectory
+------------------------------------------------------------------ */
+
+test('toNoteViewPhrase includes pitches from id 0 trajectory with articulations', () => {
+  const pitch = new Pitch({ swara: 'ga' });
+  const traj = new Trajectory({
+    id: 0,
+    pitches: [pitch],
+    articulations: { '0.00': new Articulation({ name: 'pluck' }) },
+  });
+  const phrase = new Phrase({ trajectories: [traj] });
+  const nv = phrase.toNoteViewPhrase();
+  expect(nv.pitches.length).toBe(1);
+  expect(nv.pitches[0]).toBe(pitch);
 });
