@@ -488,3 +488,20 @@ test('addMeter overlap detection and removeMeter correctness', () => {
   expect(piece.meters.length).toBe(1);
   expect(piece.meters[0]).toBe(m2);
 });
+
+test('addMeter rejects meter that encloses an existing meter', () => {
+  const raga = new Raga();
+  const traj = new Trajectory({ num: 0, pitches: [new Pitch()], durTot: 1 });
+  const phrase = new Phrase({ trajectories: [traj], raga });
+  const piece = new Piece({ phrases: [phrase], raga, instrumentation: [Instrument.Sitar] });
+
+  const base = new Meter({ startTime: 0, tempo: 60 });
+  piece.addMeter(base);
+
+  const enclosing = new Meter({ startTime: -1, hierarchy: [8], tempo: 60 });
+  expect(() => piece.addMeter(enclosing)).toThrow('meters overlap');
+
+  const later = new Meter({ startTime: 5, tempo: 60 });
+  piece.addMeter(later);
+  expect(piece.meters).toEqual([base, later]);
+});
