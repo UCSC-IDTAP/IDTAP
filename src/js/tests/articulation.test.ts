@@ -17,3 +17,14 @@ test('Articulation fromJSON', () => {
   expect(a.stroke).toBe('d');
   expect(a.strokeNickname).toBe('da');
 });
+
+test('stroke r sets strokeNickname', () => {
+  const a = new Articulation({ stroke: 'r' });
+  expect(a.strokeNickname).toBe('ra');
+});
+
+test('stroke r via fromJSON sets strokeNickname', () => {
+  const obj = { name: 'pluck', stroke: 'r' };
+  const a = Articulation.fromJSON(obj);
+  expect(a.strokeNickname).toBe('ra');
+});
