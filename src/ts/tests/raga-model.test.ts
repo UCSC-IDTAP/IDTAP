@@ -84,3 +84,10 @@ test('pitchNumberToSargamLetter handles negative numbers', () => {
   // -12 should resolve to Sa one octave below
   expect(r.pitchNumberToSargamLetter(-12)).toBe('S');
 });
+
+
+test('ratioIdxToTuningTuple out of range', () => {
+  const r = new Raga();
+  const invalidIdx = r.ruleSetNumPitches; // index larger than highest valid
+  expect(r.ratioIdxToTuningTuple(invalidIdx)).toBeUndefined();
+});
