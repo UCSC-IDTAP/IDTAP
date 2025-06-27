@@ -8,7 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
 import  findLastIndex  from 'lodash/findLastIndex';
 import { getStarts } from '@/ts/utils';
 
-const initPhraseCategorization = (): PhraseCatType => {
+export const initPhraseCategorization = (): PhraseCatType => {
   return {
     "Phrase": {
       "Mohra": false,
@@ -131,13 +131,8 @@ class Phrase {
       }
     }
     if (this.trajectories.length === 0) {
-      if (durTot === undefined) {
-        this.durTot = 1;
-        this.durArray = [];
-      } else {
-        this.durTot = durTot;
-        this.durArray = []
-      }
+      this.durTot = durTot === undefined ? 1 : durTot;
+      this.durArray = durArray === undefined ? [] : durArray;
     } else {
       this.durTotFromTrajectories();
       this.durArrayFromTrajectories();

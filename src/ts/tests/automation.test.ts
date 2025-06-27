@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { Automation } from '../../js/classes.js';
+import { Automation } from '../model';
 
 
 test('Automation', () => {
@@ -105,3 +105,72 @@ test('partition', () => {
 
 
 })
+
+test('fromJSON round-trip', () => {
+  const orig = new Automation();
+  orig.addValue(0.3, 0.7);
+  orig.addValue(0.8, 0.4);
+  const json = JSON.parse(JSON.stringify(orig));
+  const clone = Automation.fromJSON(json);
+  expect(clone).toBeInstanceOf(Automation);
+  expect(clone.values).toEqual(orig.values);
+});
+
+test('removeValue bounds', () => {
+  const a = new Automation();
+  a.addValue(0.5, 0.5);
+  const len = a.values.length;
+  expect(() => a.removeValue(-1)).toThrow(SyntaxError);
+  expect(() => a.removeValue(len)).toThrow(SyntaxError);
+  expect(() => a.removeValue(0)).toThrow(SyntaxError);
+  expect(() => a.removeValue(len - 1)).toThrow(SyntaxError);
+  expect(() => a.removeValue(1)).not.toThrow();
+  expect(a.values.length).toBe(len - 1);
+});
+
+test('valueAtX bounds', () => {
+  const a = new Automation();
+  expect(() => a.valueAtX(-0.1)).toThrow(SyntaxError);
+  expect(() => a.valueAtX(1.1)).toThrow(SyntaxError);
+});
+
+test('partition with zero-length segment', () => {
+  const orig = new Automation();
+  orig.addValue(1, 0);
+  const durArray = [0.4, 0, 0.6];
+  const parts = orig.partition(durArray);
+  expect(parts.length).toBe(3);
+
+  const env1 = parts[0].generateValueCurve(0.1, 1);
+  const env2 = parts[1].generateValueCurve(0.1, 1);
+  const env3 = parts[2].generateValueCurve(0.1, 1);
+
+  const expected1 = [
+    1, 0.96, 0.92, 0.88, 0.84,
+    0.8, 0.76, 0.72, 0.68,
+    0.64, 0.6
+  ];
+  for (let i = 0; i < env1.length; i++) {
+    expect(env1[i]).toBeCloseTo(expected1[i]);
+  }
+
+  for (let i = 0; i < env2.length; i++) {
+    expect(env2[i]).toBeCloseTo(0.6);
+  }
+
+  const expected3 = [0.6, 0.54, 0.48, 0.42, 0.36, 0.3, 0.24, 0.18, 0.12, 0.06, 0];
+  for (let i = 0; i < env3.length; i++) {
+    expect(env3[i]).toBeCloseTo(expected3[i]);
+  }
+});
+
+
+test('valueAtX throws when x before first value', () => {
+  const auto = new Automation({
+    values: [
+      { normTime: 0.2, value: 0.5 },
+      { normTime: 1, value: 1 }
+    ]
+  });
+  expect(() => auto.valueAtX(0.1)).toThrow(SyntaxError);
+});

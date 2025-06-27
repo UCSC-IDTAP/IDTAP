@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { Pitch } from '../classes';
+import { Pitch } from '@model';
 
 test('defaultPitch', () => {
   const p = new Pitch();
@@ -264,3 +264,273 @@ test('numberedPitch', () => {
   p = new Pitch({ swara: 3, raised: false, oct: 1 })
   expect(p.numberedPitch).toEqual(17);
 })
+
+test('sameAs', () => {
+  const p1 = new Pitch({ swara: 're', raised: false, oct: 1 });
+  const p2 = new Pitch({ swara: 1, raised: false, oct: 1 });
+  const p3 = new Pitch({ swara: 1, raised: true, oct: 1 });
+  expect(p1.sameAs(p2)).toBe(true);
+  expect(p1.sameAs(p3)).toBe(false);
+})
+
+test('fromPitchNumber and helpers', () => {
+  let p = Pitch.fromPitchNumber(4);
+  expect(p.swara).toEqual(2);
+  expect(p.raised).toEqual(true);
+  expect(p.oct).toEqual(0);
+
+  p = Pitch.fromPitchNumber(-1);
+  expect(p.swara).toEqual(6);
+  expect(p.raised).toEqual(true);
+  expect(p.oct).toEqual(-1);
+
+  expect(Pitch.pitchNumberToChroma(14)).toEqual(2);
+  expect(Pitch.pitchNumberToChroma(-1)).toEqual(11);
+
+  let sd, raised;
+  [sd, raised] = Pitch.chromaToScaleDegree(3);
+  expect(sd).toEqual(2);
+  expect(raised).toEqual(false);
+  [sd, raised] = Pitch.chromaToScaleDegree(11);
+  expect(sd).toEqual(6);
+  expect(raised).toEqual(true);
+})
+
+test('display properties', () => {
+  const pDown = new Pitch({ swara: 'g', raised: false, oct: -1 });
+  expect(pDown.solfegeLetter).toEqual('Me');
+  expect(pDown.octavedScaleDegree).toEqual('3\u0323');
+  expect(pDown.octavedSolfegeLetter).toEqual('Me\u0323');
+  expect(pDown.octavedSolfegeLetterWithCents).toEqual('Me\u0323 (+0\u00A2)');
+  expect(pDown.octavedChroma).toEqual('3\u0323');
+  expect(pDown.octavedChromaWithCents).toEqual('3\u0323 (+0\u00A2)');
+  expect(pDown.centsString).toEqual('+0\u00A2');
+  expect(pDown.a440CentsDeviation).toEqual('D#3 (+0\u00A2)');
+  expect(pDown.movableCCentsDeviation).toEqual('D# (+0\u00A2)');
+
+  const pUp = new Pitch({ swara: 'Sa', oct: 2 });
+  expect(pUp.solfegeLetter).toEqual('Do');
+  expect(pUp.octavedScaleDegree).toEqual('1\u0308');
+  expect(pUp.octavedSolfegeLetter).toEqual('Do\u0308');
+  expect(pUp.octavedSolfegeLetterWithCents).toEqual('Do\u0308 (+0\u00A2)');
+  expect(pUp.octavedChroma).toEqual('0\u0308');
+  expect(pUp.octavedChromaWithCents).toEqual('0\u0308 (+0\u00A2)');
+  expect(pUp.centsString).toEqual('+0\u00A2');
+  expect(pUp.a440CentsDeviation).toEqual('C6 (+0\u00A2)');
+  expect(pUp.movableCCentsDeviation).toEqual('C (+0\u00A2)');
+})
+
+test('frequency and setOct error handling', () => {
+  const p1 = new Pitch();
+  (p1 as any).swara = 0;
+  (p1 as any).ratios[0] = 'bad';
+  expect(() => p1.frequency).toThrow(SyntaxError);
+  expect(() => p1.setOct(1)).toThrow(SyntaxError);
+
+  const p2 = new Pitch();
+  (p2 as any).swara = 're';
+  expect(() => p2.frequency).toThrow(SyntaxError);
+  expect(() => p2.setOct(0)).toThrow(SyntaxError);
+
+  const p3 = new Pitch();
+  (p3 as any).swara = 1;
+  (p3 as any).ratios[1] = 0;
+  expect(() => p3.frequency).toThrow(SyntaxError);
+});
+
+test('formatted string getters across octaves', () => {
+  const expected = {
+    '-2': 'C2 (+0\u00A2)',
+    '-1': 'C3 (+0\u00A2)',
+    '0': 'C4 (+0\u00A2)',
+    '1': 'C5 (+0\u00A2)',
+    '2': 'C6 (+0\u00A2)'
+  };
+  for (let i = -2; i <= 2; i++) {
+    const p = new Pitch({ swara: 'Sa', oct: i });
+    expect(p.a440CentsDeviation).toEqual(expected[i]);
+    expect(p.movableCCentsDeviation).toEqual('C (+0\u00A2)');
+  }
+});
+
+test('chromaToScaleDegree all mappings', () => {
+  const expected = [
+    [0, true],
+    [1, false],
+    [1, true],
+    [2, false],
+    [2, true],
+    [3, false],
+    [3, true],
+    [4, true],
+    [5, false],
+    [5, true],
+    [6, false],
+    [6, true],
+  ];
+  for (let c = 0; c < 12; c++) {
+    const [sd, raised] = Pitch.chromaToScaleDegree(c);
+    expect(sd).toBe(expected[c][0]);
+    expect(raised).toBe(expected[c][1]);
+  }
+});
+
+test('numberedPitch edge cases', () => {
+  const low = new Pitch({ swara: 'Sa', oct: -3 });
+  expect(low.numberedPitch).toBe(-36);
+  const high = new Pitch({ swara: 'ni', raised: true, oct: 3 });
+  expect(high.numberedPitch).toBe(47);
+  const bad = new Pitch();
+  (bad as any).swara = 7;
+  expect(() => bad.numberedPitch).toThrow(SyntaxError);
+});
+
+test('constructor error conditions', () => {
+  expect(() => new Pitch({ raised: 1 as any })).toThrow(SyntaxError);
+  expect(() => new Pitch({ swara: [] as any })).toThrow(SyntaxError);
+  expect(() => new Pitch({ swara: 'foo' })).toThrow(SyntaxError);
+  expect(() => new Pitch({ oct: 0.5 })).toThrow(SyntaxError);
+  expect(() => new Pitch({ oct: '1' as any })).toThrow(SyntaxError);
+  expect(() => new Pitch({ fundamental: 'A4' as any })).toThrow(SyntaxError);
+  expect(() => new Pitch({ swara: 'x' })).toThrow(SyntaxError);
+  expect(() => new Pitch({ swara: -1 })).toThrow(SyntaxError);
+  expect(() => new Pitch({ swara: 7 })).toThrow(SyntaxError);
+});
+
+test('setOct invalid swara and ratio inputs', () => {
+  const badSa = new Pitch();
+  (badSa as any).swara = 0;
+  (badSa as any).ratios[0] = 'bad';
+  expect(() => badSa.setOct(1)).toThrow(SyntaxError);
+
+  const badPa = new Pitch({ swara: 'pa' });
+  (badPa as any).ratios[4] = null;
+  expect(() => badPa.setOct(0)).toThrow(SyntaxError);
+
+  const badNestedType = new Pitch({ swara: 're' });
+  (badNestedType as any).swara = 1;
+  (badNestedType as any).ratios[1] = 0;
+  expect(() => badNestedType.setOct(2)).toThrow(SyntaxError);
+
+  const wrongSwaraType = new Pitch();
+  (wrongSwaraType as any).swara = 're';
+  expect(() => wrongSwaraType.setOct(0)).toThrow(SyntaxError);
+});
+
+test('nonOffsetFrequency and formatted string getters', () => {
+  const sa = new Pitch({ swara: 'Sa', logOffset: 0.1 });
+  expect(sa.nonOffsetFrequency).toBeCloseTo(261.63);
+  expect(sa.nonOffsetLogFreq).toBeCloseTo(Math.log2(261.63));
+  expect(sa.centsString).toBe('+120\u00A2');
+  expect(sa.a440CentsDeviation).toBe('C#4 (+20\u00A2)');
+  expect(sa.movableCCentsDeviation).toBe('C (+120\u00A2)');
+  expect(sa.octavedSargamLetterWithCents).toBe('S (+120\u00A2)');
+
+  const ga = new Pitch({ swara: 'ga', raised: false, logOffset: -0.05 });
+  const gaBase = 261.63 * Math.pow(2, 3 / 12);
+  expect(ga.nonOffsetFrequency).toBeCloseTo(gaBase);
+  expect(ga.nonOffsetLogFreq).toBeCloseTo(Math.log2(gaBase));
+  expect(ga.centsString).toBe('-60\u00A2');
+  expect(ga.a440CentsDeviation).toBe('D4 (+40\u00A2)');
+  expect(ga.movableCCentsDeviation).toBe('D# (-60\u00A2)');
+  expect(ga.octavedSargamLetterWithCents).toBe('g (-60\u00A2)');
+});
+
+test('serialization round trip', () => {
+  const p = new Pitch({ swara: 'ga', raised: false, oct: 1, logOffset: 0.2 });
+  const json = p.toJSON();
+  const copy = Pitch.fromJSON(json);
+  expect(copy.toJSON()).toEqual(json);
+});
+
+test('a440CentsDeviation and movableCCentsDeviation edge octaves', () => {
+  const expected: Record<string, string> = {
+    '-3': 'C1 (+0\u00A2)',
+    '-2': 'C2 (+0\u00A2)',
+    '-1': 'C3 (+0\u00A2)',
+    '0': 'C4 (+0\u00A2)',
+    '1': 'C5 (+0\u00A2)',
+    '2': 'C6 (+0\u00A2)',
+    '3': 'C7 (+0\u00A2)',
+  };
+  for (let i = -3; i <= 3; i++) {
+    const p = new Pitch({ swara: 'Sa', oct: i });
+    expect(p.a440CentsDeviation).toEqual(expected[i]);
+    expect(p.movableCCentsDeviation).toEqual('C (+0\u00A2)');
+  }
+});
+
+test('octaved display strings extreme octaves', () => {
+  const low = new Pitch({ swara: 'Sa', oct: -3 });
+  const high = new Pitch({ swara: 'Sa', oct: 3 });
+  expect(low.octavedSargamLetter).toBe('S\u20E8');
+  expect(high.octavedSargamLetter).toBe('S\u20DB');
+  expect(low.octavedSolfegeLetter).toBe('Do\u20E8');
+  expect(high.octavedSolfegeLetter).toBe('Do\u20DB');
+  expect(low.octavedChroma).toBe('0\u20E8');
+  expect(high.octavedChroma).toBe('0\u20DB');
+});
+
+test('numberedPitch invalid swara values', () => {
+  const p = new Pitch();
+  (p as any).swara = -1;
+  expect(() => p.numberedPitch).toThrow(SyntaxError);
+  (p as any).swara = 7;
+  expect(() => p.numberedPitch).toThrow(SyntaxError);
+  (p as any).swara = 'ni';
+  expect(() => p.numberedPitch).toThrow(SyntaxError);
+});
+
+test('toJSON/fromJSON preserves logOffset', () => {
+  const orig = new Pitch({ swara: 'ni', raised: false, oct: 2, logOffset: -0.3 });
+  const round = Pitch.fromJSON(orig.toJSON());
+  expect(round.toJSON()).toEqual(orig.toJSON());
+  expect(round.frequency).toBeCloseTo(orig.frequency);
+});
+
+test('invalid ratio values trigger errors', () => {
+  const badRe = new Pitch({ swara: 're' });
+  (badRe as any).swara = 1;
+  (badRe as any).ratios[1] = 'bad';
+  expect(() => badRe.frequency).toThrow(SyntaxError);
+  expect(() => badRe.setOct(1)).toThrow(SyntaxError);
+
+  const badGa = new Pitch({ swara: 'ga' });
+  (badGa as any).swara = 2;
+  (badGa as any).ratios[2] = 5;
+  expect(() => badGa.frequency).toThrow(SyntaxError);
+  expect(() => badGa.setOct(0)).toThrow(SyntaxError);
+});
+
+test('westernPitch note name', () => {
+  const p = new Pitch({ swara: 're', raised: true });
+  expect(p.westernPitch).toBe('D');
+});
+
+test('a440CentsDeviation > 50 cents handling', () => {
+  const re = new Pitch({ swara: 're', raised: true, logOffset: 0.05 });
+  expect(re.a440CentsDeviation).toBe('E4 (-40\u00A2)');
+
+  const ni = new Pitch({ swara: 'ni', raised: true, logOffset: 0.05 });
+  expect(ni.a440CentsDeviation).toBe('C#4 (-40\u00A2)');
+});
+
+test('constructor rejects undefined ratios', () => {
+  const baseRatios = [
+    1,
+    [2 ** (1 / 12), 2 ** (2 / 12)],
+    [2 ** (3 / 12), 2 ** (4 / 12)],
+    [2 ** (5 / 12), 2 ** (6 / 12)],
+    2 ** (7 / 12),
+    [2 ** (8 / 12), 2 ** (9 / 12)],
+    [2 ** (10 / 12), 2 ** (11 / 12)]
+  ];
+
+  const ratios1 = [...baseRatios];
+  ratios1[0] = undefined as any;
+  expect(() => new Pitch({ ratios: ratios1 as any })).toThrow(SyntaxError);
+
+  const ratios2 = [...baseRatios];
+  ratios2[1] = [2 ** (1 / 12), undefined] as any;
+  expect(() => new Pitch({ ratios: ratios2 as any })).toThrow(SyntaxError);
+});
