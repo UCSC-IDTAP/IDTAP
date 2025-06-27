@@ -63,3 +63,30 @@ test('Group constructor rejects trajectories from different phrases', () => {
   t2.phraseIdx = 1;
   expect(() => new Group({ trajectories: [t1, t2] })).toThrow('Trajectories are not adjacent');
 });
+
+test('Group allPitches preserves repeats when repetition=true', () => {
+  const p1 = new Pitch({ swara: 'sa' });
+  const p2 = new Pitch({ swara: 'sa' });
+  const t1 = new Trajectory({ num: 0, phraseIdx: 0, pitches: [p1] });
+  const t2 = new Trajectory({ num: 1, phraseIdx: 0, pitches: [p2] });
+  const g = new Group({ trajectories: [t1, t2] });
+  expect(g.allPitches(true)).toEqual([p1, p2]);
+});
+
+test('testForAdjacency false for trajectories from different phrases', () => {
+  const t1 = new Trajectory({ num: 0, phraseIdx: 0, pitches: [new Pitch()] });
+  const t2 = new Trajectory({ num: 1, phraseIdx: 0, pitches: [new Pitch({ swara: 'r' })] });
+  const g = new Group({ trajectories: [t1, t2] });
+  t2.phraseIdx = 1;
+  expect(g.testForAdjacency()).toBe(false);
+});
+
+test('addTraj updates groupId and keeps adjacency', () => {
+  const t1 = new Trajectory({ num: 0, phraseIdx: 0, pitches: [new Pitch()] });
+  const t2 = new Trajectory({ num: 1, phraseIdx: 0, pitches: [new Pitch({ swara: 'r' })] });
+  const g = new Group({ trajectories: [t1, t2] });
+  const t3 = new Trajectory({ num: 2, phraseIdx: 0, pitches: [new Pitch({ swara: 'g' })] });
+  g.addTraj(t3);
+  expect(t3.groupId).toBe(g.id);
+  expect(g.testForAdjacency()).toBe(true);
+});
