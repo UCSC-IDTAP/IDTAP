@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { Pitch } from '../classes';
+import { Pitch } from '@model';
 
 test('defaultPitch', () => {
   const p = new Pitch();
@@ -383,4 +383,56 @@ test('numberedPitch edge cases', () => {
   const bad = new Pitch();
   (bad as any).swara = 7;
   expect(() => bad.numberedPitch).toThrow(SyntaxError);
+});
+
+test('constructor error conditions', () => {
+  expect(() => new Pitch({ raised: 1 as any })).toThrow(SyntaxError);
+  expect(() => new Pitch({ swara: [] as any })).toThrow(SyntaxError);
+  expect(() => new Pitch({ swara: 'foo' })).toThrow(SyntaxError);
+});
+
+test('setOct invalid swara and ratio inputs', () => {
+  const badSa = new Pitch();
+  (badSa as any).swara = 0;
+  (badSa as any).ratios[0] = 'bad';
+  expect(() => badSa.setOct(1)).toThrow(SyntaxError);
+
+  const badPa = new Pitch({ swara: 'pa' });
+  (badPa as any).ratios[4] = null;
+  expect(() => badPa.setOct(0)).toThrow(SyntaxError);
+
+  const badNestedType = new Pitch({ swara: 're' });
+  (badNestedType as any).swara = 1;
+  (badNestedType as any).ratios[1] = 0;
+  expect(() => badNestedType.setOct(2)).toThrow(SyntaxError);
+
+  const wrongSwaraType = new Pitch();
+  (wrongSwaraType as any).swara = 're';
+  expect(() => wrongSwaraType.setOct(0)).toThrow(SyntaxError);
+});
+
+test('nonOffsetFrequency and formatted string getters', () => {
+  const sa = new Pitch({ swara: 'Sa', logOffset: 0.1 });
+  expect(sa.nonOffsetFrequency).toBeCloseTo(261.63);
+  expect(sa.nonOffsetLogFreq).toBeCloseTo(Math.log2(261.63));
+  expect(sa.centsString).toBe('+120\u00A2');
+  expect(sa.a440CentsDeviation).toBe('C#4 (+20\u00A2)');
+  expect(sa.movableCCentsDeviation).toBe('C (+120\u00A2)');
+  expect(sa.octavedSargamLetterWithCents).toBe('S (+120\u00A2)');
+
+  const ga = new Pitch({ swara: 'ga', raised: false, logOffset: -0.05 });
+  const gaBase = 261.63 * Math.pow(2, 3 / 12);
+  expect(ga.nonOffsetFrequency).toBeCloseTo(gaBase);
+  expect(ga.nonOffsetLogFreq).toBeCloseTo(Math.log2(gaBase));
+  expect(ga.centsString).toBe('-60\u00A2');
+  expect(ga.a440CentsDeviation).toBe('D4 (+40\u00A2)');
+  expect(ga.movableCCentsDeviation).toBe('D# (-60\u00A2)');
+  expect(ga.octavedSargamLetterWithCents).toBe('g (-60\u00A2)');
+});
+
+test('serialization round trip', () => {
+  const p = new Pitch({ swara: 'ga', raised: false, oct: 1, logOffset: 0.2 });
+  const json = p.toJSON();
+  const copy = Pitch.fromJSON(json);
+  expect(copy.toJSON()).toEqual(json);
 });
