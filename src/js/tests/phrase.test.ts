@@ -328,3 +328,16 @@ test('constructor pads grids to instrumentation length', () => {
   expect(phrase.trajectoryGrid[1]).toEqual([]);
   expect(phrase.chikariGrid[1]).toEqual({});
 });
+
+test('fromJSON uses fallbacks for missing grids', () => {
+  const obj = {
+    trajectories: [],
+    instrumentation: ['Sitar', 'Violin'],
+    startTime: 0,
+  };
+  const phrase = Phrase.fromJSON(obj);
+  expect(phrase.trajectoryGrid.length).toBe(obj.instrumentation.length);
+  expect(phrase.chikariGrid.length).toBe(obj.instrumentation.length);
+  phrase.trajectoryGrid.forEach(row => expect(row).toEqual([]));
+  phrase.chikariGrid.forEach(col => expect(col).toEqual({}));
+});
