@@ -22,6 +22,7 @@ from .chikari import Chikari
 from .group import Group
 from .pitch import Pitch
 from .automation import get_starts
+from .note_view_phrase import NoteViewPhrase
 
 
 PhraseCatType = Dict[str, Dict[str, bool]]
@@ -463,10 +464,3 @@ class Phrase:
         self.assign_traj_nums()
 
 
-class NoteViewPhrase:
-    def __init__(self, options: Optional[Dict[str, Any]] = None) -> None:
-        opts = options or {}
-        self.pitches: List[Pitch] = opts.get('pitches', [])
-        self.dur_tot: Optional[float] = opts.get('dur_tot')
-        self.raga: Optional[Raga] = opts.get('raga')
-        self.start_time: Optional[float] = opts.get('start_time')
