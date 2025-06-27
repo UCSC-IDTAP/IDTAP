@@ -309,3 +309,36 @@ test('Piece display and sections', () => {
   const pid = meter.allPulses[0].uniqueId;
   expect(piece.pulseFromId(pid)).toBe(meter.allPulses[0]);
 });
+
+test('durations and proportions for each output type', () => {
+  const raga = new Raga();
+  const t1 = new Trajectory({ id: 0, pitches: [new Pitch({ swara: 0 })], durTot: 1 });
+  const t2 = new Trajectory({ id: 0, pitches: [new Pitch({ swara: 1 })], durTot: 2 });
+  const phrase = new Phrase({ trajectories: [t1, t2], raga });
+  const piece = new Piece({ phrases: [phrase], raga, instrumentation: [Instrument.Sitar] });
+
+  const np1 = t1.pitches[0].numberedPitch;
+  const np2 = t2.pitches[0].numberedPitch;
+
+  const durPN = piece.durationsOfFixedPitches();
+  expect(durPN).toEqual({ [np1]: 1, [np2]: 2 });
+
+  const propPN = piece.proportionsOfFixedPitches();
+  expect(propPN[np1]).toBeCloseTo(1 / 3);
+  expect(propPN[np2]).toBeCloseTo(2 / 3);
+
+  const c1 = Pitch.pitchNumberToChroma(np1);
+  const c2 = Pitch.pitchNumberToChroma(np2);
+  expect(piece.durationsOfFixedPitches({ outputType: 'chroma' })).toEqual({ [c1]: 1, [c2]: 2 });
+  expect(piece.proportionsOfFixedPitches({ outputType: 'chroma' })).toEqual({ [c1]: 1 / 3, [c2]: 2 / 3 });
+
+  const sd1 = Pitch.chromaToScaleDegree(c1)[0];
+  const sd2 = Pitch.chromaToScaleDegree(c2)[0];
+  expect(piece.durationsOfFixedPitches({ outputType: 'scaleDegree' })).toEqual({ [sd1]: 1, [sd2]: 2 });
+  expect(piece.proportionsOfFixedPitches({ outputType: 'scaleDegree' })).toEqual({ [sd1]: 1 / 3, [sd2]: 2 / 3 });
+
+  const sarg1 = Pitch.fromPitchNumber(np1).sargamLetter;
+  const sarg2 = Pitch.fromPitchNumber(np2).sargamLetter;
+  expect(piece.durationsOfFixedPitches({ outputType: 'sargamLetter' })).toEqual({ [sarg1]: 1, [sarg2]: 2 });
+  expect(piece.proportionsOfFixedPitches({ outputType: 'sargamLetter' })).toEqual({ [sarg1]: 1 / 3, [sarg2]: 2 / 3 });
+});
