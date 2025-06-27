@@ -328,3 +328,10 @@ test('constructor pads grids to instrumentation length', () => {
   expect(phrase.trajectoryGrid[1]).toEqual([]);
   expect(phrase.chikariGrid[1]).toEqual({});
 });
+
+test('chikaris setter updates grid', () => {
+  const phrase = new Phrase();
+  const c = new Chikari({});
+  phrase.chikaris = { '0.1': c };
+  expect(phrase.chikariGrid[0]['0.1']).toBe(c);
+});
