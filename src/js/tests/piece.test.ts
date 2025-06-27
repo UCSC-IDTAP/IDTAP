@@ -488,3 +488,15 @@ test('addMeter overlap detection and removeMeter correctness', () => {
   expect(piece.meters.length).toBe(1);
   expect(piece.meters[0]).toBe(m2);
 });
+
+test('trackFromTraj throws when trajectory not found', () => {
+  const { piece } = buildSimplePieceFull();
+  const missing = new Trajectory({ num: 99, pitches: [new Pitch()], durTot: 1 });
+  expect(() => piece.trackFromTraj(missing)).toThrow('Trajectory not found');
+});
+
+test('phraseFromUId and trackFromPhraseUId throw when id not found', () => {
+  const { piece } = buildSimplePieceFull();
+  expect(() => piece.phraseFromUId('missing')).toThrow('Phrase not found');
+  expect(() => piece.trackFromPhraseUId('missing')).toThrow('Phrase not found');
+});
