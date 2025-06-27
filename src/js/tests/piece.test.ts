@@ -395,6 +395,7 @@ test('excerptRange and assemblageDescriptors serialization', () => {
   const copy = Piece.fromJSON(json);
   expect(copy.excerptRange).toEqual(piece.excerptRange);
   expect(copy.assemblageDescriptors).toEqual(piece.assemblageDescriptors);
+});
   
 test('durations and proportions for each output type', () => {
   const raga = new Raga();
