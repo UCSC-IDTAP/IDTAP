@@ -1,5 +1,18 @@
 from typing import List, Dict, TypedDict, Optional, Union
-import humps
+try:
+    import humps
+    decamelize = humps.decamelize  # type: ignore
+except Exception:  # fallback if humps is missing or has no decamelize
+    import re
+
+    def decamelize(obj):
+        if isinstance(obj, dict):
+            out = {}
+            for k, v in obj.items():
+                s = re.sub(r'(?<!^)(?=[A-Z])', '_', k).lower()
+                out[s] = decamelize(v) if isinstance(v, dict) else v
+            return out
+        return obj
 import math
 
 # this should all be implemented in snake_case, even though the TypeScript 
@@ -20,7 +33,7 @@ class Pitch:
             options = {}
         else:
             # convert camelCase incoming keys to snake_case
-            options = humps.decamelize(options)
+            options = decamelize(options)
 
         self.log_offset = options.get('log_offset', 0.0)
 
