@@ -211,6 +211,13 @@ test('invalid slope type throws', () => {
   expect(() => new Trajectory({ slope: 'bad' as any })).toThrow('invalid slope type');
 });
 
+test('convertCIsoToHindiAndIpa throws when stroke is not a string', () => {
+  const art = new Articulation({ name: 'consonant', stroke: {} as any });
+  const traj = new Trajectory({ pitches: [new Pitch()] });
+  traj.articulations['0.00'] = art;
+  expect(() => traj.convertCIsoToHindiAndIpa()).toThrow('stroke is not a string');
+});
+
 test('convertCIsoToHindiAndIpa fills missing fields', () => {
   const artStart = new Articulation({ name: 'consonant', stroke: 'ka' });
   const artEnd = new Articulation({ name: 'consonant', stroke: 'ga' });
