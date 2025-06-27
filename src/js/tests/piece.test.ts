@@ -14,6 +14,7 @@ import {
   Chikari,
   Assemblage,
   initSecCategorization,
+  durationsOfFixedPitches,
 } from '@model';              // ← adjust if your alias is different
 import { Meter } from '@/js/meter'; // or '../meter'
 import { Instrument } from '@shared/enums';
@@ -504,4 +505,98 @@ test('addMeter rejects meter that encloses an existing meter', () => {
   const later = new Meter({ startTime: 5, tempo: 60 });
   piece.addMeter(later);
   expect(piece.meters).toEqual([base, later]);
+});
+// -------------------------------------------------------
+//  Extra constructor coverage for Codex task
+// -------------------------------------------------------
+
+test('durArray branch and empty sectionCatGrid', () => {
+  const raga = new Raga();
+  const traj = new Trajectory({ num: 0, pitches: [new Pitch()], durTot: 1 });
+  const phrase = new Phrase({ trajectories: [traj], raga });
+
+  const piece = new Piece({
+    phrases: [phrase],
+    durTot: 1,
+    durArray: [1],
+    instrumentation: [Instrument.Sitar],
+    raga,
+    sectionStarts: [0],
+    sectionCatGrid: [],
+  });
+
+  expect(piece.durArrayGrid).toEqual([[1]]);
+  expect(piece.sectionCatGrid.length).toBe(1);
+  expect(piece.sectionCatGrid[0].length).toBe(piece.sectionStartsGrid[0].length);
+});
+
+test('sectionCategorization cleanup and defaults with multi instrumentation', () => {
+  const raga = new Raga();
+  const sc = [initSecCategorization()];
+  // remove fields so cleanup runs
+  // @ts-ignore
+  delete sc[0]['Improvisation'];
+  // @ts-ignore
+  delete sc[0]['Other'];
+  // @ts-ignore
+  delete sc[0]['Top Level'];
+
+  const piece = new Piece({
+    sectionStarts: [0],
+    sectionCategorization: sc,
+    instrumentation: [Instrument.Sitar, Instrument.Vocal_M],
+    raga,
+    phrases: [],
+  });
+
+  expect(sc[0]['Improvisation']).toBeDefined();
+  expect(sc[0]['Other']).toBeDefined();
+  expect(sc[0]['Top Level']).toBeDefined();
+  expect(piece.adHocSectionCatGrid.length).toBe(2);
+  expect(piece.durTot).toBe(1);
+  expect(piece.explicitPermissions).toEqual({ edit: [], view: [], publicView: true });
+  expect(piece.assemblageDescriptors).toEqual([]);
+});
+
+test('durTot provided and explicitPermissions persist', () => {
+  const raga = new Raga();
+  const perms = { edit: ['a'], view: ['b'], publicView: false };
+
+  const piece = new Piece({
+    phrases: [],
+    durTot: 5,
+    instrumentation: [Instrument.Sitar],
+    raga,
+    explicitPermissions: perms,
+  });
+
+  expect(piece.durTot).toBe(5);
+  expect(piece.durArray).toEqual([]);
+  expect(piece.explicitPermissions).toEqual(perms);
+  expect(piece.assemblageDescriptors).toEqual([]);
+});
+
+//  Tests for standalone durationsOfFixedPitches helper
+// -------------------------------------------------------
+
+test('durationsOfFixedPitches throws SyntaxError for invalid traj output', () => {
+  const badTraj = {
+    durationsOfFixedPitches: () => 5,
+  } as unknown as Trajectory;
+
+  expect(() => durationsOfFixedPitches([badTraj])).toThrow(SyntaxError);
+});
+
+test('durationsOfFixedPitches proportional count normalizes totals', () => {
+  const t1 = new Trajectory({ id: 0, pitches: [new Pitch({ swara: 0 })], durTot: 1 });
+  const t2 = new Trajectory({ id: 0, pitches: [new Pitch({ swara: 1 })], durTot: 2 });
+  const np1 = t1.pitches[0].numberedPitch;
+  const np2 = t2.pitches[0].numberedPitch;
+
+  const result = durationsOfFixedPitches([t1, t2], { countType: 'proportional' });
+
+  expect(result[np1]).toBeCloseTo(1 / 3);
+  expect(result[np2]).toBeCloseTo(2 / 3);
+  const total = Object.values(result).reduce((a, b) => a + (b as number), 0);
+  expect(total).toBeCloseTo(1);
 });
