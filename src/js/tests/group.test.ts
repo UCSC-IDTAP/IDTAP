@@ -124,3 +124,61 @@ test('addTraj updates groupId and maintains sorted adjacency', () => {
   expect(g.trajectories.map(tr => tr.num)).toEqual([0, 1, 2]);
   expect(g.testForAdjacency()).toBe(true);
 });
+
+test('constructor throws when a trajectory lacks num', () => {
+  const good = new Trajectory({ num: 0, phraseIdx: 0, pitches: [new Pitch()] });
+  const bad = new Trajectory({ phraseIdx: 0, pitches: [new Pitch()] });
+  expect(() => new Group({ trajectories: [good, bad] })).toThrow('Trajectory must have a num');
+});
+
+test('addTraj throws when trajectory lacks num', () => {
+  const t1 = new Trajectory({ num: 0, phraseIdx: 0, pitches: [new Pitch()] });
+  const t2 = new Trajectory({ num: 1, phraseIdx: 0, pitches: [new Pitch()] });
+  const g = new Group({ trajectories: [t1, t2] });
+  const bad = new Trajectory({ phraseIdx: 0, pitches: [new Pitch()] });
+  expect(() => g.addTraj(bad)).toThrow('Trajectory must have a num');
+});
+
+test('testForAdjacency throws when a trajectory num is undefined', () => {
+  const t1 = new Trajectory({ num: 0, phraseIdx: 0, pitches: [new Pitch()] });
+  const t2 = new Trajectory({ num: 1, phraseIdx: 0, pitches: [new Pitch()] });
+  const g = new Group({ trajectories: [t1, t2] });
+  const bad = new Trajectory({ phraseIdx: 0, pitches: [new Pitch()] });
+  g.trajectories.push(bad); // bypass checks
+  expect(() => g.testForAdjacency()).toThrow('Trajectory must have a num');
+});
+
+test('constructor uses provided id', () => {
+  const custom = 'my-group-id';
+  const t1 = new Trajectory({ num: 0, phraseIdx: 0, pitches: [new Pitch()] });
+  const t2 = new Trajectory({ num: 1, phraseIdx: 0, pitches: [new Pitch()] });
+  const g = new Group({ trajectories: [t1, t2], id: custom });
+  expect(g.id).toBe(custom);
+  expect(t1.groupId).toBe(custom);
+});
+
+test('allPitches ignores trajectories with id 12', () => {
+  const p1 = new Pitch({ swara: 'sa' });
+  const p2 = new Pitch({ swara: 're' });
+  const p3 = new Pitch({ swara: 'ga' });
+  const t1 = new Trajectory({ id: 0, num: 0, phraseIdx: 0, pitches: [p1] });
+  const t2 = new Trajectory({ id: 12, num: 1, phraseIdx: 0, pitches: [p2] });
+  const t3 = new Trajectory({ id: 1, num: 2, phraseIdx: 0, pitches: [p3] });
+  const g = new Group({ trajectories: [t1, t2, t3] });
+  expect(g.allPitches()).toEqual([p1, p3]);
+});
+
+test('constructor requires at least two trajectories', () => {
+  const only = new Trajectory({ num: 0, phraseIdx: 0, pitches: [new Pitch()] });
+  expect(() => new Group({ trajectories: [only] })).toThrow('Group must have at least 2 trajectories');
+});
+
+test('testForAdjacency checks num after sort', () => {
+  const t1 = new Trajectory({ num: 0, phraseIdx: 0, pitches: [new Pitch()] });
+  const t2 = new Trajectory({ num: 1, phraseIdx: 0, pitches: [new Pitch()] });
+  const g = new Group({ trajectories: [t1, t2] });
+  // remove num after construction to skip comparator
+  (t1 as any).num = undefined;
+  g.trajectories = [t1];
+  expect(() => g.testForAdjacency()).toThrow('Trajectory must have a num');
+});
