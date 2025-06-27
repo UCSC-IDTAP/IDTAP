@@ -490,6 +490,14 @@ test('addMeter overlap detection and removeMeter correctness', () => {
   expect(piece.meters[0]).toBe(m2);
 });
 
+test('allDisplayVowels throws for non-vocal instrumentation', () => {
+  const raga = new Raga();
+  const traj = new Trajectory({ num: 0, pitches: [new Pitch()], durTot: 1 });
+  const phrase = new Phrase({ trajectories: [traj], raga });
+  const piece = new Piece({ phrases: [phrase], raga, instrumentation: [Instrument.Sitar] });
+
+  expect(() => piece.allDisplayVowels()).toThrow('instrumentation is not vocal');
+});
 
 test('allPitches throws when a pitch array contains a number', () => {
   const raga = new Raga();
@@ -658,4 +666,5 @@ test('durationsOfFixedPitches proportional count normalizes totals', () => {
   expect(result[np2]).toBeCloseTo(2 / 3);
   const total = Object.values(result).reduce((a, b) => a + (b as number), 0);
   expect(total).toBeCloseTo(1);
+
 });
