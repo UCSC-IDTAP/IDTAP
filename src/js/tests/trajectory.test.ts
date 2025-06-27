@@ -1,5 +1,15 @@
 import { expect, test, describe } from 'vitest';
-import { Trajectory, Pitch, Articulation, Phrase, Automation, durationsOfFixedPitches } from '@model';
+import {
+  Trajectory,
+  Pitch,
+  Articulation,
+  Phrase,
+  Automation,
+  durationsOfFixedPitches,
+  Piece,
+  Raga,
+} from '@model';
+import { Instrument } from '@shared/enums';
 import { Trajectory as ModelTrajectory } from '../../ts/model/trajectory'; // for round-trip test
 import { linSpace } from '@/ts/utils';
 import { findLastIndex } from 'lodash';
@@ -338,5 +348,30 @@ test('toJSON/fromJSON round trip with full articulation and automation', () => {
   expect(round.toJSON()).toEqual(json);
   expect(round.automation?.values).toEqual(auto.values);
   expect(round.articulations['0.00'].engTrans).toBe('kha');
+});
+
+test('proportionsOfFixedPitches via Piece for all output types', () => {
+  const raga = new Raga();
+  const t1 = new Trajectory({ id: 0, pitches: [new Pitch({ swara: 0 })], durTot: 1 });
+  const t2 = new Trajectory({ id: 0, pitches: [new Pitch({ swara: 1 })], durTot: 2 });
+  const phrase = new Phrase({ trajectories: [t1, t2], raga });
+  const piece = new Piece({ phrases: [phrase], raga, instrumentation: [Instrument.Sitar] });
+
+  const np1 = t1.pitches[0].numberedPitch;
+  const np2 = t2.pitches[0].numberedPitch;
+
+  expect(piece.proportionsOfFixedPitches()).toEqual({ [np1]: 1 / 3, [np2]: 2 / 3 });
+
+  const c1 = Pitch.pitchNumberToChroma(np1);
+  const c2 = Pitch.pitchNumberToChroma(np2);
+  expect(piece.proportionsOfFixedPitches({ outputType: 'chroma' })).toEqual({ [c1]: 1 / 3, [c2]: 2 / 3 });
+
+  const sd1 = Pitch.chromaToScaleDegree(c1)[0];
+  const sd2 = Pitch.chromaToScaleDegree(c2)[0];
+  expect(piece.proportionsOfFixedPitches({ outputType: 'scaleDegree' })).toEqual({ [sd1]: 1 / 3, [sd2]: 2 / 3 });
+
+  const sarg1 = Pitch.fromPitchNumber(np1).sargamLetter;
+  const sarg2 = Pitch.fromPitchNumber(np2).sargamLetter;
+  expect(piece.proportionsOfFixedPitches({ outputType: 'sargamLetter' })).toEqual({ [sarg1]: 1 / 3, [sarg2]: 2 / 3 });
 });
 
