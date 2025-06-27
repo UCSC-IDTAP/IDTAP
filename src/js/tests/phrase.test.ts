@@ -161,3 +161,24 @@ test('Phrase utility functions', () => {
   p.consolidateSilentTrajs();
   expect(p.trajectories.length).toBe(3);
 });
+
+test('fromJSON reconstructs trajectory and chikari grids', () => {
+  const t1 = new Trajectory({ num: 0, pitches: [new Pitch()] });
+  const t2 = new Trajectory({ num: 1, pitches: [new Pitch({ swara: 'r' })] });
+  const c1 = new Chikari({});
+  const obj = {
+    trajectoryGrid: [[t1.toJSON(), t2.toJSON()]],
+    chikariGrid: [{ '0.5': c1.toJSON() }],
+    instrumentation: ['Sitar', 'Violin'],
+    startTime: 0,
+  };
+  const phrase = Phrase.fromJSON(obj);
+  expect(phrase.trajectoryGrid[0][0]).toBeInstanceOf(Trajectory);
+  expect(phrase.trajectoryGrid[0][1]).toBeInstanceOf(Trajectory);
+  expect(phrase.trajectoryGrid.length).toBe(2);
+  expect(Array.isArray(phrase.trajectoryGrid[1])).toBe(true);
+  expect(phrase.trajectoryGrid[1].length).toBe(0);
+  expect(phrase.chikariGrid[0]['0.5']).toBeInstanceOf(Chikari);
+  expect(phrase.chikariGrid.length).toBe(2);
+  expect(Object.keys(phrase.chikariGrid[1]).length).toBe(0);
+});
