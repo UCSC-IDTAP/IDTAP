@@ -397,6 +397,26 @@ test('excerptRange and assemblageDescriptors serialization', () => {
   expect(copy.excerptRange).toEqual(piece.excerptRange);
   expect(copy.assemblageDescriptors).toEqual(piece.assemblageDescriptors);
 });
+
+test('Piece serialization reconnects groups and fixes slide articulation', () => {
+  const raga = new Raga();
+  const artics = { '0.00': new Articulation({ name: 'slide' }) };
+  const t1 = new Trajectory({ num: 0, pitches: [new Pitch()], durTot: 0.5, articulations: artics });
+  const t2 = new Trajectory({ num: 1, pitches: [new Pitch()], durTot: 0.5 });
+  const phrase = new Phrase({ trajectories: [t1, t2], raga });
+  const group = new Group({ trajectories: [t1, t2] });
+  phrase.groupsGrid[0].push(group);
+
+  const piece = new Piece({ phrases: [phrase], raga, instrumentation: [Instrument.Sitar] });
+
+  const clone = Piece.fromJSON(piece.toJSON());
+
+  const reconstructed = clone.phrases[0].groupsGrid[0][0];
+  expect(reconstructed).toBeInstanceOf(Group);
+  expect(reconstructed.trajectories[0]).toBe(clone.phrases[0].trajectoryGrid[0][0]);
+  expect(reconstructed.trajectories[1]).toBe(clone.phrases[0].trajectoryGrid[0][1]);
+  expect(clone.phrases[0].trajectoryGrid[0][0].articulations['0.00'].name).toBe('pluck');
+});
   
 test('durations and proportions for each output type', () => {
   const raga = new Raga();
