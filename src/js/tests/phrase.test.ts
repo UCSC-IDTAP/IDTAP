@@ -162,6 +162,19 @@ test('Phrase utility functions', () => {
   expect(p.trajectories.length).toBe(3);
 });
 
+test('compute throws when durArray undefined', () => {
+  const p = new Phrase();
+  // @ts-ignore - intentionally unset durArray
+  p.durArray = undefined;
+  expect(() => p.compute(0.5)).toThrow('durArray is undefined');
+});
+
+test('compute returns null for empty durArray', () => {
+  const p = new Phrase();
+  expect(p.durArray).toEqual([]);
+  expect(p.compute(0.5)).toBeNull();
+});
+
 test('durTot and durArray preserved with empty trajectories', () => {
   const spy = vi.spyOn(Phrase.prototype as any, 'durArrayFromTrajectories');
   const p = new Phrase({ durTot: 2, durArray: [1] });
