@@ -406,6 +406,18 @@ test('proportionsOfFixedPitches via Piece for all output types', () => {
   expect(piece.proportionsOfFixedPitches({ outputType: 'sargamLetter' })).toEqual({ [sarg1]: 1 / 3, [sarg2]: 2 / 3 });
 });
 
+/* ───────────────────── updateFundamental ───────────────────── */
+
+test('updateFundamental updates all contained pitches', () => {
+  const p1 = new Pitch();
+  const p2 = new Pitch({ swara: 1 });
+  const traj = new Trajectory({ pitches: [p1, p2] });
+
+  traj.updateFundamental(440);
+
+  traj.pitches.forEach(p => {
+    expect(p.fundamental).toBeCloseTo(440);
+  });
 test('sloped getter by id and endTime calculation', () => {
   const ids = Array.from({ length: 14 }, (_, i) => i);
   ids.forEach(id => {
