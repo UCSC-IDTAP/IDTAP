@@ -180,6 +180,18 @@ test('toNoteViewPhrase includes pitches from id 0 trajectory with articulations'
   expect(nv.pitches[0]).toBe(pitch);
 });
 
+test('toNoteViewPhrase includes pitches from nonzero id trajectory with no articulations', () => {
+  const pitch = new Pitch({ swara: 'ma' });
+  const traj = new Trajectory({
+    id: 2,
+    pitches: [pitch],
+    articulations: {},
+  });
+  const phrase = new Phrase({ trajectories: [traj] });
+  const nv = phrase.toNoteViewPhrase();
+  expect(nv.pitches).toContain(pitch);
+});
+
 
 test('fromJSON reconstructs trajectory and chikari grids', () => {
   const t1 = new Trajectory({ num: 0, pitches: [new Pitch()] });
