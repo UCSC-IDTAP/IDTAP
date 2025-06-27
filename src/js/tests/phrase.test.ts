@@ -162,6 +162,38 @@ test('Phrase utility functions', () => {
   expect(p.trajectories.length).toBe(3);
 });
 
+test('consolidateSilentTrajs collapses middle and trailing silences', () => {
+  const t1 = new Trajectory({ num: 0, durTot: 0.5, pitches: [new Pitch()] });
+  const s1 = new Trajectory({ num: 1, id: 12, durTot: 0.1, pitches: [new Pitch()] });
+  const s2 = new Trajectory({ num: 2, id: 12, durTot: 0.2, pitches: [new Pitch()] });
+  const t2 = new Trajectory({ num: 3, durTot: 0.5, pitches: [new Pitch({ swara: 'r' })] });
+  const s3 = new Trajectory({ num: 4, id: 12, durTot: 0.1, pitches: [new Pitch()] });
+  const s4 = new Trajectory({ num: 5, id: 12, durTot: 0.2, pitches: [new Pitch()] });
+  const t3 = new Trajectory({ num: 6, durTot: 0.5, pitches: [new Pitch({ swara: 'g' })] });
+  const s5 = new Trajectory({ num: 7, id: 12, durTot: 0.1, pitches: [new Pitch()] });
+  const s6 = new Trajectory({ num: 8, id: 12, durTot: 0.2, pitches: [new Pitch()] });
+
+  const p = new Phrase({
+    trajectories: [t1, s1, s2, t2, s3, s4, t3, s5, s6],
+    raga: new Raga(),
+    startTime: 0,
+  });
+  p.consolidateSilentTrajs();
+  expect(p.trajectories.length).toBe(6);
+  expect(p.trajectories[1].durTot).toBeCloseTo(0.3);
+  expect(p.trajectories[3].durTot).toBeCloseTo(0.3);
+  expect(p.trajectories[5].durTot).toBeCloseTo(0.3);
+});
+
+test('consolidateSilentTrajs throws when traj num missing', () => {
+  const good = new Trajectory({ num: 0, durTot: 0.5, pitches: [new Pitch()] });
+  const badSilent = new Trajectory({ id: 12, durTot: 0.5, pitches: [new Pitch()] });
+  const p = new Phrase({ trajectories: [good, badSilent], raga: new Raga() });
+  p.trajectories[1].num = undefined;
+  expect(() => p.consolidateSilentTrajs()).toThrow('traj.num is undefined');
+});
+
+
 test('realignPitches replaces pitch objects with raga ratios', () => {
   const t1 = new Trajectory({ pitches: [new Pitch(), new Pitch({ swara: 'r' })] });
   const t2 = new Trajectory({ pitches: [new Pitch({ swara: 'g' })] });
