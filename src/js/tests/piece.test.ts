@@ -14,6 +14,7 @@ import {
   Chikari,
   Assemblage,
   initSecCategorization,
+  durationsOfFixedPitches,
 } from '@model';              // ← adjust if your alias is different
 import { Meter } from '@/js/meter'; // or '../meter'
 import { Instrument } from '@shared/enums';
@@ -557,4 +558,29 @@ test('durTot provided and explicitPermissions persist', () => {
   expect(piece.durArray).toEqual([]);
   expect(piece.explicitPermissions).toEqual(perms);
   expect(piece.assemblageDescriptors).toEqual([]);
+});
+
+//  Tests for standalone durationsOfFixedPitches helper
+// -------------------------------------------------------
+
+test('durationsOfFixedPitches throws SyntaxError for invalid traj output', () => {
+  const badTraj = {
+    durationsOfFixedPitches: () => 5,
+  } as unknown as Trajectory;
+
+  expect(() => durationsOfFixedPitches([badTraj])).toThrow(SyntaxError);
+});
+
+test('durationsOfFixedPitches proportional count normalizes totals', () => {
+  const t1 = new Trajectory({ id: 0, pitches: [new Pitch({ swara: 0 })], durTot: 1 });
+  const t2 = new Trajectory({ id: 0, pitches: [new Pitch({ swara: 1 })], durTot: 2 });
+  const np1 = t1.pitches[0].numberedPitch;
+  const np2 = t2.pitches[0].numberedPitch;
+
+  const result = durationsOfFixedPitches([t1, t2], { countType: 'proportional' });
+
+  expect(result[np1]).toBeCloseTo(1 / 3);
+  expect(result[np2]).toBeCloseTo(2 / 3);
+  const total = Object.values(result).reduce((a, b) => a + (b as number), 0);
+  expect(total).toBeCloseTo(1);
 });
