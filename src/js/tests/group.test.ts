@@ -90,3 +90,37 @@ test('addTraj updates groupId and keeps adjacency', () => {
   expect(t3.groupId).toBe(g.id);
   expect(g.testForAdjacency()).toBe(true);
 });
+
+test('allPitches(false) collapses only sequential duplicates', () => {
+  const p1 = new Pitch({ swara: 'sa' });
+  const p2 = new Pitch({ swara: 'sa' });
+  const p3 = new Pitch({ swara: 're' });
+  const p4 = new Pitch({ swara: 'sa' });
+  const t1 = new Trajectory({ num: 0, phraseIdx: 0, pitches: [p1] });
+  const t2 = new Trajectory({ num: 1, phraseIdx: 0, pitches: [p2] });
+  const t3 = new Trajectory({ num: 2, phraseIdx: 0, pitches: [p3] });
+  const t4 = new Trajectory({ num: 3, phraseIdx: 0, pitches: [p4] });
+  const g = new Group({ trajectories: [t1, t2, t3, t4] });
+  expect(g.allPitches(false)).toEqual([p1, p3, p4]);
+});
+
+test('testForAdjacency returns false when a trajectory phraseIdx differs', () => {
+  const t1 = new Trajectory({ num: 0, phraseIdx: 0, pitches: [new Pitch()] });
+  const t2 = new Trajectory({ num: 1, phraseIdx: 0, pitches: [new Pitch()] });
+  const g = new Group({ trajectories: [t1, t2] });
+  const t3 = new Trajectory({ num: 2, phraseIdx: 1, pitches: [new Pitch()] });
+  t3.phraseIdx = 1;
+  g.trajectories.push(t3); // bypass addTraj
+  expect(g.testForAdjacency()).toBe(false);
+});
+
+test('addTraj updates groupId and maintains sorted adjacency', () => {
+  const t1 = new Trajectory({ num: 1, phraseIdx: 0, pitches: [new Pitch()] });
+  const t2 = new Trajectory({ num: 2, phraseIdx: 0, pitches: [new Pitch({ swara: 'r' })] });
+  const g = new Group({ trajectories: [t1, t2] });
+  const t0 = new Trajectory({ num: 0, phraseIdx: 0, pitches: [new Pitch({ swara: 'g' })] });
+  g.addTraj(t0);
+  expect(t0.groupId).toBe(g.id);
+  expect(g.trajectories.map(tr => tr.num)).toEqual([0, 1, 2]);
+  expect(g.testForAdjacency()).toBe(true);
+});
