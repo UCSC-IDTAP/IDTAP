@@ -460,6 +460,17 @@ test('a440CentsDeviation and movableCCentsDeviation edge octaves', () => {
   }
 });
 
+test('octaved display strings extreme octaves', () => {
+  const low = new Pitch({ swara: 'Sa', oct: -3 });
+  const high = new Pitch({ swara: 'Sa', oct: 3 });
+  expect(low.octavedSargamLetter).toBe('S\u20E8');
+  expect(high.octavedSargamLetter).toBe('S\u20DB');
+  expect(low.octavedSolfegeLetter).toBe('Do\u20E8');
+  expect(high.octavedSolfegeLetter).toBe('Do\u20DB');
+  expect(low.octavedChroma).toBe('0\u20E8');
+  expect(high.octavedChroma).toBe('0\u20DB');
+});
+
 test('numberedPitch invalid swara values', () => {
   const p = new Pitch();
   (p as any).swara = -1;
