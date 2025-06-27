@@ -1,4 +1,4 @@
-import { expect, test, describe } from 'vitest';
+import { expect, test, describe, vi } from 'vitest';
 import {
   Trajectory,
   Pitch,
@@ -530,9 +530,6 @@ describe('durationsOfFixedPitches switch coverage', () => {
 });
 
 
-import { expect, test } from 'vitest';
-import { Trajectory, Articulation } from '../model';
-
 test('numeric articulation keys are normalized to decimals', () => {
   const art = new Articulation({ name: 'pluck', stroke: 'd' });
   const traj = new Trajectory({ articulations: { 0: art } });
@@ -540,8 +537,6 @@ test('numeric articulation keys are normalized to decimals', () => {
   expect(traj.articulations['0.00']).toBeInstanceOf(Articulation);
   expect(traj.articulations['0']).toBeUndefined();
 });
-import { expect, test, vi } from 'vitest';
-import { Trajectory, Pitch } from '../model';
 
 /**
  * Ensure that a trajectory with id 6 generates a default durArray
@@ -567,9 +562,6 @@ test('id6 default durArray and console log path', () => {
   expect(spy).toHaveBeenCalled();
   spy.mockRestore();
 });
-import { expect, test } from 'vitest';
-import { Trajectory, Pitch } from '../model';
-
 // minLogFreq and maxLogFreq should reflect the range of log frequencies
 
 test('minLogFreq and maxLogFreq compute from pitches', () => {
@@ -582,17 +574,11 @@ test('minLogFreq and maxLogFreq compute from pitches', () => {
   expect(traj.minLogFreq).toBeCloseTo(Math.log2(minFreq));
   expect(traj.maxLogFreq).toBeCloseTo(Math.log2(maxFreq));
 });
-import { expect, test } from 'vitest';
-import { Trajectory } from '../model';
-
 test('Trajectory.names matches instance names', () => {
   const staticNames = Trajectory.names();
   const instance = new Trajectory();
   expect(staticNames).toEqual(instance.names);
 });
-import { expect, test } from 'vitest';
-import { Trajectory, Pitch } from '../model';
-
 // Ensure zero-duration segments are removed during construction
 
 test('constructor removes zero-duration segments', () => {
