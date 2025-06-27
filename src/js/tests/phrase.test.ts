@@ -162,6 +162,23 @@ test('Phrase utility functions', () => {
   expect(p.trajectories.length).toBe(3);
 });
 
+test('realignPitches replaces pitch objects with raga ratios', () => {
+  const t1 = new Trajectory({ pitches: [new Pitch(), new Pitch({ swara: 'r' })] });
+  const t2 = new Trajectory({ pitches: [new Pitch({ swara: 'g' })] });
+  const r = new Raga();
+  const phrase = new Phrase({ trajectories: [t1, t2], raga: r });
+  const originals = phrase.trajectories.map(t => t.pitches.slice());
+
+  phrase.realignPitches();
+
+  phrase.trajectories.forEach((traj, ti) => {
+    traj.pitches.forEach((p, pi) => {
+      expect(p).not.toBe(originals[ti][pi]);
+      expect(p.ratios).toStrictEqual(r.stratifiedRatios);
+    });
+  });
+});
+
 test('compute throws when durArray undefined', () => {
   const p = new Phrase();
   // @ts-ignore - intentionally unset durArray
