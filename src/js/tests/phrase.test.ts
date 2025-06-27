@@ -161,3 +161,10 @@ test('Phrase utility functions', () => {
   p.consolidateSilentTrajs();
   expect(p.trajectories.length).toBe(3);
 });
+
+test('trajIdxFromTime throws when time not in any trajectory', () => {
+  const t1 = new Trajectory({ num: 0, durTot: 0.5, pitches: [new Pitch()] });
+  const t2 = new Trajectory({ num: 1, durTot: 0.5, pitches: [new Pitch()] });
+  const phrase = new Phrase({ trajectories: [t1, t2], startTime: 0 });
+  expect(() => phrase.trajIdxFromTime(1.1)).toThrow('No trajectory found');
+});
