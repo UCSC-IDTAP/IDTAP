@@ -12,6 +12,7 @@ import {
   Group,
   Articulation,
   Chikari,
+  Assemblage,
   initSecCategorization,
 } from '@model';              // ← adjust if your alias is different
 import { Meter } from '@/js/meter'; // or '../meter'
@@ -310,6 +311,91 @@ test('Piece display and sections', () => {
   expect(piece.pulseFromId(pid)).toBe(meter.allPulses[0]);
 });
 
+// -------------------------------------------------------
+//  Additional tests for multi-track functionality and
+//  serialization of optional Piece properties
+// -------------------------------------------------------
+
+function buildMultiTrackPiece() {
+  const raga = new Raga({ fundamental: 200 });
+  const tA1 = new Trajectory({ num: 0, pitches: [new Pitch()], durTot: 0.5 });
+  const tA2 = new Trajectory({ num: 1, pitches: [new Pitch()], durTot: 0.5 });
+  const group = new Group({ trajectories: [tA1, tA2] });
+  const pA = new Phrase({ trajectories: [tA1, tA2], raga });
+  pA.groupsGrid[0].push(group);
+
+  const tB1 = new Trajectory({ num: 0, pitches: [new Pitch()], durTot: 1 });
+  const pB = new Phrase({ trajectories: [tB1], raga });
+
+  const piece = new Piece({
+    phraseGrid: [[pA], [pB]],
+    instrumentation: [Instrument.Sitar, Instrument.Vocal_M],
+    raga,
+  });
+
+  return { piece, group, tA1, tA2, tB1 };
+}
+
+test('track and group helpers on multiple tracks', () => {
+  const { piece, group, tA1, tA2, tB1 } = buildMultiTrackPiece();
+
+  expect(piece.trackFromTraj(tA1)).toBe(0);
+  expect(piece.trackFromTraj(tB1)).toBe(1);
+  expect(piece.trackFromTrajUId(tA2.uniqueId!)).toBe(0);
+  expect(piece.pIdxFromGroup(group)).toBe(0);
+  expect(piece.mostRecentTraj(0.75, 0)).toBe(tA1);
+
+  // add a chikari so frequencies come from it
+  const chikari = new Chikari({ fundamental: piece.raga.fundamental });
+  piece.phraseGrid[0][0].chikaris['0.00'] = chikari;
+  expect(piece.chikariFreqs(0)).toEqual(chikari.pitches.slice(0, 2).map(p => p.frequency));
+});
+
+test('meters and instrumentation update duration arrays', () => {
+  const piece = buildSimplePiece();
+  const original = JSON.stringify(piece.durArrayGrid);
+
+  const m = new Meter({ startTime: 2.1, tempo: 60, hierarchy: [1] });
+  piece.addMeter(m);
+  piece.removeMeter(m);
+  expect(JSON.stringify(piece.durArrayGrid)).toBe(original);
+
+  // add a second track
+  piece.instrumentation.push(Instrument.Vocal_M);
+  const newPhrase = new Phrase({ trajectories: [new Trajectory({ num: 0, pitches: [new Pitch()], durTot: 2 })], raga: piece.raga });
+  piece.phraseGrid.push([newPhrase]);
+  piece.durArrayGrid.push([]);
+  piece.sectionStartsGrid.push([0]);
+  piece.sectionCatGrid.push(piece.sectionCatGrid[0].map(() => initSecCategorization()));
+  piece.adHocSectionCatGrid.push(piece.adHocSectionCatGrid[0].map(() => []));
+  piece.durArrayFromPhrases();
+  expect(piece.durArrayGrid.length).toBe(2);
+
+  // remove the track
+  piece.instrumentation.pop();
+  piece.phraseGrid.pop();
+  piece.durArrayGrid.pop();
+  piece.sectionStartsGrid.pop();
+  piece.sectionCatGrid.pop();
+  piece.adHocSectionCatGrid.pop();
+  piece.durArrayFromPhrases();
+  expect(JSON.stringify(piece.durArrayGrid)).toBe(original);
+});
+
+test('excerptRange and assemblageDescriptors serialization', () => {
+  const p = new Phrase({ trajectories: [new Trajectory()] });
+  const piece = new Piece({ phrases: [p], raga: new Raga() });
+  piece.excerptRange = { start: 1, end: 2 };
+
+  const assemblage = new Assemblage(Instrument.Sitar, 'a');
+  assemblage.addPhrase(p);
+  piece.assemblageDescriptors = [assemblage.descriptor];
+
+  const json = piece.toJSON();
+  const copy = Piece.fromJSON(json);
+  expect(copy.excerptRange).toEqual(piece.excerptRange);
+  expect(copy.assemblageDescriptors).toEqual(piece.assemblageDescriptors);
+  
 test('durations and proportions for each output type', () => {
   const raga = new Raga();
   const t1 = new Trajectory({ id: 0, pitches: [new Pitch({ swara: 0 })], durTot: 1 });
