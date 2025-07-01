@@ -20,7 +20,9 @@ from python.api.classes.articulation import Articulation
 from python.api.classes.group import Group
 from python.api.classes.chikari import Chikari
 from python.api.classes.meter import Meter
+from python.api.classes.assemblage import Assemblage
 from python.api.enums import Instrument
+from datetime import datetime
 
 
 # Helper builders
@@ -145,3 +147,149 @@ def test_helper_durations_invalid_and_proportional():
     assert pytest.approx(result[np2]) == 2/3
     total = sum(result.values())
     assert pytest.approx(total) == 1
+
+
+# -------------------------------------------------------
+#  New tests mirroring additional Piece features
+# -------------------------------------------------------
+
+def build_multi_track_piece():
+    raga = Raga({'fundamental': 200})
+    tA1 = Trajectory({'num': 0, 'pitches': [Pitch()], 'dur_tot': 0.5})
+    tA2 = Trajectory({'num': 1, 'pitches': [Pitch()], 'dur_tot': 0.5})
+    group = Group({'trajectories': [tA1, tA2]})
+    pA = Phrase({'trajectories': [tA1, tA2], 'raga': raga})
+    pA.groups_grid[0].append(group)
+
+    tB1 = Trajectory({'num': 0, 'pitches': [Pitch()], 'dur_tot': 1})
+    pB = Phrase({'trajectories': [tB1], 'raga': raga})
+
+    piece = Piece({
+        'phraseGrid': [[pA], [pB]],
+        'instrumentation': [Instrument.Sitar, Instrument.Vocal_M],
+        'raga': raga,
+    })
+
+    return piece
+
+
+def test_optional_fields_round_trip():
+    opts = {
+        'title': 'my title',
+        'dateCreated': datetime(2020, 1, 1),
+        'dateModified': datetime(2020, 1, 2),
+        'location': 'home',
+        '_id': 'id1',
+        'audioID': 'a1',
+        'audio_DB_ID': 'db1',
+        'userID': 'u1',
+        'name': 'name',
+        'family_name': 'fam',
+        'given_name': 'giv',
+        'permissions': 'perm',
+        'explicitPermissions': {'edit': ['e'], 'view': ['v'], 'publicView': False},
+        'soloist': 'solo',
+        'soloInstrument': 'sitar',
+        'instrumentation': [Instrument.Sitar],
+        'phrases': [],
+        'raga': Raga(),
+    }
+    piece = Piece(opts)
+    copy = Piece.from_json(piece.to_json())
+    assert copy.title == opts['title']
+    assert copy.dateCreated.isoformat() == opts['dateCreated'].isoformat()
+    assert copy.dateModified.isoformat() == opts['dateModified'].isoformat()
+    assert copy.location == opts['location']
+    assert copy._id == opts['_id']
+    assert copy.audioID == opts['audioID']
+    assert copy.userID == opts['userID']
+    assert copy.name == opts['name']
+    assert copy.family_name == opts['family_name']
+    assert copy.given_name == opts['given_name']
+    assert copy.permissions == opts['permissions']
+    assert copy.explicitPermissions == opts['explicitPermissions']
+    assert copy.soloist == opts['soloist']
+    assert copy.soloInstrument == opts['soloInstrument']
+
+
+def test_getters_and_setters_modify_grids():
+    raga = Raga()
+    t1 = Trajectory({'num': 0, 'pitches': [Pitch()], 'dur_tot': 1})
+    p1 = Phrase({'trajectories': [t1], 'raga': raga})
+    piece = Piece({'phrases': [p1], 'raga': raga, 'instrumentation': [Instrument.Sitar]})
+
+    t2 = Trajectory({'num': 0, 'pitches': [Pitch()], 'dur_tot': 1})
+    p2 = Phrase({'trajectories': [t2], 'raga': raga})
+    piece.phrases = [p2]
+    assert piece.phraseGrid[0][0] is p2
+
+    piece.durArray = [1]
+    assert piece.durArrayGrid[0] == [1]
+
+    piece.sectionStarts = [0]
+    assert piece.sectionStartsGrid[0] == [0]
+
+    sc = [init_sec_categorization()]
+    piece.sectionCategorization = sc
+    assert piece.sectionCatGrid[0] is sc
+
+
+def test_assemblages_getter():
+    raga = Raga()
+    traj = Trajectory({'num': 0, 'pitches': [Pitch()], 'dur_tot': 1})
+    phrase = Phrase({'trajectories': [traj], 'raga': raga})
+    asm = Assemblage(Instrument.Sitar, 'a')
+    asm.add_phrase(phrase)
+    piece = Piece({'phrases': [phrase], 'raga': raga, 'instrumentation': [Instrument.Sitar]})
+    piece.assemblageDescriptors = [asm.descriptor]
+    aggs = piece.assemblages
+    assert len(aggs) == 1
+    assert isinstance(aggs[0], Assemblage)
+    assert aggs[0].phrases[0] is phrase
+
+
+def test_update_start_times_recalc():
+    raga = Raga()
+    p1 = Phrase({'trajectories': [Trajectory({'dur_tot': 1})], 'raga': raga})
+    p2 = Phrase({'trajectories': [Trajectory({'dur_tot': 1})], 'raga': raga})
+    piece = Piece({'phrases': [p1, p2], 'raga': raga, 'instrumentation': [Instrument.Sitar]})
+    piece.durArrayGrid[0] = [0.25, 0.75]
+    piece.durTot = 2
+    piece.update_start_times()
+    assert pytest.approx(p2.start_time, rel=1e-6) == piece.dur_starts()[1]
+    assert p2.piece_idx == 1
+
+
+def test_track_specific_helpers():
+    piece = build_multi_track_piece()
+    assert piece.dur_starts(1) == [0]
+    assert piece.traj_start_times(1) == [0]
+    assert len(piece.all_pitches(track=1)) == 1
+    traj = piece.phraseGrid[1][0].trajectories[0]
+    assert piece.most_recent_traj(1.2, 1) is traj
+
+
+def test_ad_hoc_grid_expansion():
+    raga = Raga()
+    traj = Trajectory({'dur_tot': 1})
+    phrase = Phrase({'trajectories': [traj], 'raga': raga})
+    piece = Piece({
+        'phraseGrid': [[phrase]],
+        'instrumentation': [Instrument.Sitar, Instrument.Vocal_M],
+        'raga': raga,
+        'adHocSectionCatGrid': [[]],
+    })
+    assert len(piece.adHocSectionCatGrid) == 2
+
+
+def test_section_cat_grid_expansion():
+    raga = Raga()
+    phrase = Phrase({'trajectories': [Trajectory({'dur_tot': 1})], 'raga': raga})
+    piece = Piece({
+        'phrases': [phrase],
+        'raga': raga,
+        'instrumentation': [Instrument.Sitar],
+        'sectionStarts': [0, 1],
+        'sectionCatGrid': [[init_sec_categorization()]],
+    })
+    assert len(piece.sectionCatGrid[0]) == 2
