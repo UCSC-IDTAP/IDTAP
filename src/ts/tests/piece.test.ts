@@ -820,3 +820,130 @@ test('durArrayFromPhrases removes NaN trajectories', () => {
   expect(phrase.trajectories.length).toBe(1);
   expect(phrase.durTot).toBeCloseTo(1);
 });
+
+// -------------------------------------------------------
+//  New tests for additional Piece features
+// -------------------------------------------------------
+
+test('optional Piece fields persist through serialization', () => {
+  const opts = {
+    title: 'my title',
+    dateCreated: new Date('2020-01-01'),
+    dateModified: new Date('2020-01-02'),
+    location: 'home',
+    _id: 'id1',
+    audioID: 'a1',
+    audio_DB_ID: 'db1',
+    userID: 'u1',
+    name: 'name',
+    family_name: 'fam',
+    given_name: 'giv',
+    permissions: 'perm',
+    explicitPermissions: { edit: ['e'], view: ['v'], publicView: false },
+    soloist: 'solo',
+    soloInstrument: 'sitar',
+    instrumentation: [Instrument.Sitar],
+    phrases: [],
+    raga: new Raga(),
+  };
+  const piece = new Piece(opts);
+  const copy = Piece.fromJSON(piece.toJSON());
+  expect(copy.title).toBe(opts.title);
+  expect(copy.dateCreated.toISOString()).toBe(opts.dateCreated.toISOString());
+  expect(copy.dateModified.toISOString()).toBe(opts.dateModified.toISOString());
+  expect(copy.location).toBe(opts.location);
+  expect(copy._id).toBe(opts._id);
+  expect(copy.audioID).toBe(opts.audioID);
+  // audio_DB_ID is not included in JSON output
+  expect(copy.userID).toBe(opts.userID);
+  expect(copy.name).toBe(opts.name);
+  expect(copy.family_name).toBe(opts.family_name);
+  expect(copy.given_name).toBe(opts.given_name);
+  expect(copy.permissions).toBe(opts.permissions);
+  expect(copy.explicitPermissions).toEqual(opts.explicitPermissions);
+  expect(copy.soloist).toBe(opts.soloist);
+  expect(copy.soloInstrument).toBe(opts.soloInstrument);
+});
+
+test('piece getters and setters modify internal grids', () => {
+  const raga = new Raga();
+  const t1 = new Trajectory({ num: 0, pitches: [new Pitch()], durTot: 1 });
+  const p1 = new Phrase({ trajectories: [t1], raga });
+  const piece = new Piece({ phrases: [p1], raga, instrumentation: [Instrument.Sitar] });
+
+  const t2 = new Trajectory({ num: 0, pitches: [new Pitch()], durTot: 1 });
+  const p2 = new Phrase({ trajectories: [t2], raga });
+  piece.phrases = [p2];
+  expect(piece.phraseGrid[0][0]).toBe(p2);
+
+  piece.durArray = [1];
+  expect(piece.durArrayGrid[0]).toEqual([1]);
+
+  piece.sectionStarts = [0];
+  expect(piece.sectionStartsGrid[0]).toEqual([0]);
+
+  const sc = [initSecCategorization()];
+  piece.sectionCategorization = sc;
+  expect(piece.sectionCatGrid[0]).toBe(sc);
+});
+
+test('assemblages getter reconstructs Assemblage objects', () => {
+  const raga = new Raga();
+  const traj = new Trajectory({ num: 0, pitches: [new Pitch()], durTot: 1 });
+  const phrase = new Phrase({ trajectories: [traj], raga });
+  const asm = new Assemblage(Instrument.Sitar, 'a');
+  asm.addPhrase(phrase);
+  const piece = new Piece({ phrases: [phrase], raga, instrumentation: [Instrument.Sitar] });
+  piece.assemblageDescriptors = [asm.descriptor];
+  const aggs = piece.assemblages;
+  expect(aggs.length).toBe(1);
+  expect(aggs[0]).toBeInstanceOf(Assemblage);
+  expect(aggs[0].phrases[0]).toBe(phrase);
+});
+
+test('updateStartTimes recalculates phrase positions', () => {
+  const raga = new Raga();
+  const p1 = new Phrase({ trajectories: [new Trajectory({ durTot: 1 })], raga });
+  const p2 = new Phrase({ trajectories: [new Trajectory({ durTot: 1 })], raga });
+  const piece = new Piece({ phrases: [p1, p2], raga, instrumentation: [Instrument.Sitar] });
+  piece.durArrayGrid[0] = [0.25, 0.75];
+  piece.durTot = 2;
+  piece.updateStartTimes();
+  expect(p2.startTime).toBeCloseTo(piece.durStarts()[1]);
+  expect(p2.pieceIdx).toBe(1);
+});
+
+test('track specific helpers operate on second track', () => {
+  const { piece } = buildMultiTrackPiece();
+  expect(piece.durStarts(1)).toEqual([0]);
+  expect(piece.trajStartTimes(1)).toEqual([0]);
+  expect(piece.allPitches({}, 1).length).toBe(1);
+  const traj = piece.phraseGrid[1][0].trajectories[0];
+  expect(piece.mostRecentTraj(1.2, 1)).toBe(traj);
+});
+
+test('adHocSectionCatGrid expands to match instrumentation', () => {
+  const raga = new Raga();
+  const traj = new Trajectory({ durTot: 1 });
+  const phrase = new Phrase({ trajectories: [traj], raga });
+  const piece = new Piece({
+    phraseGrid: [[phrase]],
+    instrumentation: [Instrument.Sitar, Instrument.Vocal_M],
+    raga,
+    adHocSectionCatGrid: [[]],
+  });
+  expect(piece.adHocSectionCatGrid.length).toBe(2);
+});
+
+test('sectionCatGrid expands when fewer categories than section starts', () => {
+  const raga = new Raga();
+  const phrase = new Phrase({ trajectories: [new Trajectory({ durTot: 1 })], raga });
+  const piece = new Piece({
+    phrases: [phrase],
+    raga,
+    instrumentation: [Instrument.Sitar],
+    sectionStarts: [0, 1],
+    sectionCatGrid: [[initSecCategorization()]],
+  });
+  expect(piece.sectionCatGrid[0].length).toBe(2);
+});
