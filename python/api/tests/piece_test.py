@@ -293,3 +293,86 @@ def test_section_cat_grid_expansion():
         'sectionCatGrid': [[init_sec_categorization()]],
     })
     assert len(piece.sectionCatGrid[0]) == 2
+
+
+def test_all_pitches_no_repetition():
+    raga = Raga()
+    p1 = Pitch({'swara': 'sa'})
+    t1 = Trajectory({'num': 0, 'phrase_idx': 0, 'pitches': [p1]})
+    t2 = Trajectory({'num': 1, 'phrase_idx': 0, 'pitches': [Pitch({'swara': 'sa'})]})
+    t3 = Trajectory({'num': 2, 'phrase_idx': 0, 'pitches': [Pitch({'swara': 're'})]})
+    phrase = Phrase({'trajectories': [t1, t2, t3], 'raga': raga})
+    piece = Piece({'phrases': [phrase], 'raga': raga, 'instrumentation': [Instrument.Sitar]})
+    assert len(piece.all_pitches()) == 3
+    assert piece.all_pitches(repetition=False) == [p1, t3.pitches[0]]
+
+
+def test_all_pitches_pitch_number_option():
+    piece = build_simple_piece()
+    nums = piece.all_pitches(pitch_number=True)
+    assert all(isinstance(n, (int, float)) for n in nums)
+    assert len(nums) > 0
+
+
+def test_update_fundamental_and_chikari_freqs():
+    piece, p1, *_ = build_simple_piece_full()
+    base = piece.raga.fundamental
+    assert piece.chikari_freqs(0) == [base * 2, base * 4]
+    piece.update_fundamental(300)
+    assert piece.raga.fundamental == 300
+    assert p1.trajectories[0].pitches[0].fundamental == 300
+    piece.put_raga_in_phrase()
+    assert p1.raga is piece.raga
+    chikari = Chikari({'fundamental': piece.raga.fundamental})
+    p1.chikaris['0.00'] = chikari
+    assert piece.chikari_freqs(0) == [c.frequency for c in chikari.pitches[:2]]
+    nums = [p.numbered_pitch for p in piece.all_pitches()]
+    assert piece.highestPitchNumber == max(nums)
+    assert piece.lowestPitchNumber == min(nums)
+
+
+def test_dur_starts_errors():
+    piece = build_simple_piece()
+    saved = piece.durArrayGrid
+    piece.durArrayGrid = None
+    with pytest.raises(Exception):
+        piece.dur_starts()
+    piece.durArrayGrid = saved
+    piece.durTot = None
+    with pytest.raises(Exception):
+        piece.dur_starts()
+
+
+def test_excerpt_range_and_assemblage_serialization():
+    p = Phrase({'trajectories': [Trajectory()]})
+    piece = Piece({'phrases': [p], 'raga': Raga()})
+    piece.excerptRange = {'start': 1, 'end': 2}
+    asm = Assemblage(Instrument.Sitar, 'a')
+    asm.add_phrase(p)
+    piece.assemblageDescriptors = [asm.descriptor]
+    copy = Piece.from_json(piece.to_json())
+    assert copy.excerptRange == piece.excerptRange
+    assert copy.assemblageDescriptors == piece.assemblageDescriptors
+
+
+def test_dur_tot_and_permissions_persist():
+    perms = {'edit': ['a'], 'view': ['b'], 'publicView': False}
+    piece = Piece({'phrases': [], 'durTot': 5, 'instrumentation': [Instrument.Sitar], 'raga': Raga(), 'explicitPermissions': perms})
+    # durTot is recalculated from phrases and becomes 0
+    assert piece.durTot == 0
+    assert piece.durArray == []
+    assert piece.explicitPermissions == perms
+    assert piece.assemblageDescriptors == []
+
+
+def test_clean_up_section_cat_defaults_multi_inst():
+    sc = [init_sec_categorization()]
+    del sc[0]['Improvisation']
+    del sc[0]['Other']
+    del sc[0]['Top Level']
+    piece = Piece({'sectionStarts': [0], 'sectionCategorization': sc, 'instrumentation': [Instrument.Sitar, Instrument.Vocal_M], 'raga': Raga(), 'phrases': []})
+    assert 'Improvisation' in sc[0]
+    assert 'Other' in sc[0]
+    assert 'Top Level' in sc[0]
+    assert len(piece.adHocSectionCatGrid) == 2
+    assert piece.durTot == 0
