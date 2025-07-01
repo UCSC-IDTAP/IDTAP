@@ -11,6 +11,10 @@ from .chikari import Chikari
 from .group import Group
 from .automation import get_starts, get_ends
 import math
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .section import Section
 
 SecCatType = Dict[str, Union[Dict[str, bool], str]]
 
@@ -324,6 +328,34 @@ class Piece:
         for phrases in self.phraseGrid:
             for p in phrases:
                 p.raga = self.raga
+
+    # ------------------------------------------------------------------
+    @property
+    def sections_grid(self) -> List[List["Section"]]:
+        from .section import Section
+        grid: List[List["Section"]] = []
+        for i, starts in enumerate(self.sectionStartsGrid):
+            sections: List["Section"] = []
+            for j, s in enumerate(starts):
+                if j == len(starts) - 1:
+                    slice_phrases = self.phraseGrid[i][s:]
+                else:
+                    slice_phrases = self.phraseGrid[i][s:starts[j + 1]]
+                sections.append(
+                    Section(
+                        {
+                            "phrases": slice_phrases,
+                            "categorization": self.sectionCatGrid[i][j],
+                            "ad_hoc_categorization": self.adHocSectionCatGrid[i][j],
+                        }
+                    )
+                )
+            grid.append(sections)
+        return grid
+
+    @property
+    def sections(self) -> List["Section"]:
+        return self.sections_grid[0]
 
     def add_meter(self, meter: Meter) -> None:
         for m in self.meters:
