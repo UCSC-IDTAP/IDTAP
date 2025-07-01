@@ -1,6 +1,7 @@
 """Python API package exposing IDTAP data classes and client."""
 
 from .client import SwaraClient
+from .auth import login_google
 
 from .classes.articulation import Articulation
 from .classes.automation import Automation  # type: ignore
@@ -34,4 +35,5 @@ __all__ = [
     "Section",
     "Trajectory",
     "Instrument",
+    "login_google",
 ]

@@ -4,18 +4,46 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional
 
+import json
+from pathlib import Path
+
 import requests
+import os
 
 
 class SwaraClient:
     """Minimal client wrapping the public API served at https://swara.studio."""
 
-    def __init__(self, base_url: str = "https://swara.studio/") -> None:
+    def __init__(self, base_url: str = "https://swara.studio/", token_path: str | Path | None = None) -> None:
         self.base_url = base_url.rstrip("/") + "/"
+        self.token_path = Path(token_path or os.environ.get("SWARA_TOKEN_PATH", "~/.swara/token.json")).expanduser()
+        self.token: Optional[str] = None
+        self.user: Optional[Dict[str, Any]] = None
+        self.load_token()
+
+    # ---- auth utilities ----
+    def load_token(self, token_path: Optional[str | Path] = None) -> None:
+        """Load saved token and profile information if available."""
+        path = Path(token_path or self.token_path)
+        if not path.exists():
+            return
+        try:
+            with path.open("r", encoding="utf-8") as f:
+                data = json.load(f)
+        except Exception:
+            return
+        self.token = data.get("token")
+        self.user = data.get("profile") or data.get("user")
+
+    def _auth_headers(self) -> Dict[str, str]:
+        if self.token:
+            return {"Authorization": f"Bearer {self.token}"}
+        return {}
 
     def _post_json(self, endpoint: str, payload: Dict[str, Any]) -> Any:
         url = self.base_url + endpoint
-        response = requests.post(url, json=payload)
+        headers = self._auth_headers()
+        response = requests.post(url, json=payload, headers=headers)
         response.raise_for_status()
         if response.content:
             return response.json()
@@ -23,7 +51,8 @@ class SwaraClient:
 
     def _get(self, endpoint: str, params: Optional[Dict[str, Any]] = None) -> Any:
         url = self.base_url + endpoint
-        response = requests.get(url, params=params)
+        headers = self._auth_headers()
+        response = requests.get(url, params=params, headers=headers)
         response.raise_for_status()
         ctype = response.headers.get("Content-Type", "")
         if ctype.startswith("application/json"):
