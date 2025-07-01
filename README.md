@@ -52,3 +52,27 @@ For more information, and for citing this project, please see our [preprint arti
 This project has been supported by grants from the National Endowment for the Humanities Office of Digital Humanities, the Arts Research Institute at UC Santa Cruz, and the Hasan & Ali Akbar Khan Endowment for Classical Indian Music.
 
 This project is tested with BrowserStack
+
+## Python API
+
+The `python/api` package provides data classes and a small client for
+interacting with the API served at [swara.studio](https://swara.studio).
+Install it with `pip` and the provided `pyproject.toml`:
+
+```bash
+pip install -e python/api
+```
+
+Basic usage:
+
+```python
+from python.api import SwaraClient, Piece
+client = SwaraClient()
+piece_json = client.get_piece("abc123")
+```
+
+Unit tests can be run with `pytest`:
+
+```bash
+pytest python/api/tests
+```

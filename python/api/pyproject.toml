@@ -1,0 +1,8 @@
+[project]
+name = "idtap_api"
+version = "0.1.0"
+description = "Python API client and data classes for the IDTAP project"
+dependencies = ["requests", "pymongo"]
+
+[project.optional-dependencies]
+test = ["pytest", "responses"]
