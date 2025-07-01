@@ -19,6 +19,15 @@ class BiquadFilter {
     const a2 = (1 - beta) / (1 + beta);
     return new BiquadFilter(b0, b1, b2, a1, a2);
   }
+  calculateBandpass(sr, freq, q) {
+    const w = 2 * Math.PI * freq / sr;
+    const beta = Math.sin(w) / (2 * q);
+    this.b0 = (Math.sin(w) / 2) / (1 + beta);
+    this.b1 = 0;
+    this.b2 = -this.b0;
+    this.a1 = -2 * Math.cos(w) / (1 + beta);
+    this.a2 = (1 - beta) / (1 + beta);
+  }
   static notch(sr, freq, bw) {
     const w0 = 2 * Math.PI * freq / sr;
     const alpha = Math.sin(w0) * Math.sinh(Math.log(2) / 2 * bw * w0 / Math.sin(w0));
@@ -37,7 +46,7 @@ class SimpleLP {
   process(x) { const y = (1 - this.c) * x + this.c * this.s; this.s = y; return y; }
 }
 
-const sampleRate = 48000;
+const sampleRate = globalThis.sampleRate || 48000;
 const MAX_DELAY = 4096;
 const MASK = MAX_DELAY - 1;
 
@@ -145,7 +154,7 @@ class Processor extends AudioWorkletProcessor {
       const nutRef = -nutLP.process(nutOut);
       const stringVel = bridgeRef + nutRef;
       const deltaV = bowVel - stringVel;
-      const newVel = bowPressure * Math.tanh(deltaV * 5);
+      const newVel = bowPressure * Math.sign(deltaV) * (1 - Math.exp(-Math.abs(deltaV) * 5));
       neckDelay.tick(bridgeRef + newVel);
       bridgeDelay.tick(nutRef + newVel);
 
