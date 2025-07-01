@@ -14,7 +14,7 @@ BASE = 'https://swara.studio/'
 def test_authorization_header(tmp_path):
     token_path = tmp_path / 'token.json'
     token_path.write_text(json.dumps({'token': 'abc', 'profile': {'_id': 'u1'}}))
-    client = SwaraClient(token_path=token_path)
+    client = SwaraClient(token_path=token_path, auto_login=False)
     endpoint = BASE + 'pieceExists'
     responses.get(endpoint, json={'ok': 1}, status=200)
     client.piece_exists('1')
@@ -22,8 +22,26 @@ def test_authorization_header(tmp_path):
 
 @responses.activate
 def test_no_token_header(tmp_path):
-    client = SwaraClient(token_path=tmp_path / 'missing.json')
+    client = SwaraClient(token_path=tmp_path / 'missing.json', auto_login=False)
     endpoint = BASE + 'pieceExists'
     responses.get(endpoint, json={'ok': 1}, status=200)
     client.piece_exists('1')
     assert 'Authorization' not in responses.calls[0].request.headers
+
+
+@responses.activate
+def test_auto_login(monkeypatch, tmp_path):
+    calls = []
+
+    def fake_login_google(client_secrets, base_url="https://swara.studio/", token_path=None, scopes=None):
+        calls.append(True)
+        Path(token_path).write_text(json.dumps({"token": "zzz", "profile": {"_id": "u9"}}))
+        return {"_id": "u9"}
+
+    monkeypatch.setattr('python.api.client.login_google', fake_login_google)
+    token_path = tmp_path / 'token.json'
+    secrets = tmp_path / 'client.json'
+    secrets.write_text('{}')
+    client = SwaraClient(token_path=token_path, client_secrets=str(secrets))
+    assert calls
+    assert client.token == 'zzz'

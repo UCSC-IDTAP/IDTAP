@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 
 import json
 from pathlib import Path
@@ -10,16 +10,32 @@ from pathlib import Path
 import requests
 import os
 
+from .auth import login_google
+
 
 class SwaraClient:
     """Minimal client wrapping the public API served at https://swara.studio."""
 
-    def __init__(self, base_url: str = "https://swara.studio/", token_path: str | Path | None = None) -> None:
+    def __init__(
+        self,
+        base_url: str = "https://swara.studio/",
+        token_path: str | Path | None = None,
+        client_secrets: Optional[Union[str, Dict[str, Any]]] = None,
+        auto_login: bool = True,
+    ) -> None:
         self.base_url = base_url.rstrip("/") + "/"
         self.token_path = Path(token_path or os.environ.get("SWARA_TOKEN_PATH", "~/.swara/token.json")).expanduser()
+        self.client_secrets = client_secrets or os.environ.get("SWARA_CLIENT_SECRETS")
+        self.auto_login = auto_login
         self.token: Optional[str] = None
         self.user: Optional[Dict[str, Any]] = None
         self.load_token()
+        if self.token is None and self.auto_login and self.client_secrets:
+            try:
+                login_google(self.client_secrets, base_url=self.base_url, token_path=self.token_path)
+                self.load_token()
+            except Exception:
+                pass
 
     # ---- auth utilities ----
     def load_token(self, token_path: Optional[str | Path] = None) -> None:
