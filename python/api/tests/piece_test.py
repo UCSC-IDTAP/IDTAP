@@ -571,3 +571,71 @@ def test_dur_array_from_phrases_removes_nan():
     piece.dur_array_from_phrases()
     assert len(phrase.trajectories) == 1
     assert pytest.approx(phrase.dur_tot) == 1
+
+
+def test_display_helpers_and_meters():
+    piece = build_simple_piece()
+
+    divs = piece.all_phrase_divs()
+    assert len(divs) == 1
+    assert pytest.approx(divs[0]['time'], rel=1e-6) == 1
+
+    div_chunks = piece.chunked_phrase_divs(0, 1)
+    assert len(div_chunks) == 2
+    assert len(div_chunks[0]) == 0
+    assert len(div_chunks[1]) == 1
+
+    sargam = piece.all_display_sargam()
+    assert sargam[0]['sargam'] is not None
+    sargam_chunks = piece.chunked_display_sargam(0, 1)
+    assert len(sargam_chunks) == 2
+    assert sum(len(c) for c in sargam_chunks) == len(sargam)
+
+    meter_chunks = piece.chunked_meters(1)
+    assert len(meter_chunks) == 2
+    assert meter_chunks[0][0].start_time == 0
+    assert meter_chunks[1][0].start_time == 1
+
+    with pytest.raises(ValueError):
+        piece.add_meter(Meter([1], tempo=60, start_time=0.5))
+
+
+def test_piece_method_helpers():
+    piece, p1, p2, t1, t2, t3, group, meter = build_simple_piece_full()
+
+    chunks = piece.chunked_trajs(0, 1)
+    assert len(chunks[0]) == 2
+    assert len(chunks[1]) == 1
+
+    chunks_small = piece.chunked_trajs(0, 0.75)
+    assert len(chunks_small) == 3
+    assert len(chunks_small[0]) == 2
+    assert len(chunks_small[1]) == 2
+    assert len(chunks_small[2]) == 1
+
+    bols = piece.all_display_bols()
+    assert len(bols) > 0
+    assert len(piece.chunked_display_bols(0, 1)[0]) == len([b for b in bols if b['time'] < 1])
+
+    piece.add_meter(meter)
+    pid = meter.all_pulses[0].unique_id
+    assert piece.pulse_from_id(pid) == meter.all_pulses[0]
+
+
+def test_vocal_display_helpers():
+    piece, meter = build_vocal_piece()
+
+    vowels = piece.all_display_vowels()
+    assert len(vowels) > 0
+    assert len(piece.chunked_display_vowels(0, 1)[0]) == len([v for v in vowels if v['time'] < 1])
+
+    cons = piece.all_display_ending_consonants()
+    assert len(cons) > 0
+    assert len(piece.chunked_display_consonants(0, 1)[0]) == len([c for c in cons if c['time'] < 1])
+
+    chiks = piece.all_display_chikaris()
+    assert len(chiks) > 0
+    assert len(piece.chunked_display_chikaris(0, 1)[0]) == len([c for c in chiks if c['time'] < 1])
+
+    pid = meter.all_pulses[0].unique_id
+    assert piece.pulse_from_id(pid) == meter.all_pulses[0]

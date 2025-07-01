@@ -9,7 +9,7 @@ from .meter import Meter
 from ..enums import Instrument
 from .chikari import Chikari
 from .group import Group
-from .automation import get_starts
+from .automation import get_starts, get_ends
 import math
 
 SecCatType = Dict[str, Union[Dict[str, bool], str]]
@@ -529,6 +529,265 @@ class Piece:
         latest = max([et for et in end_times if et <= time], default=-float("inf"))
         idx = end_times.index(latest)
         return trajs[idx]
+
+    # ------------------------------------------------------------------
+    def chunked_trajs(self, inst: int = 0, duration: float = 30) -> List[List[Trajectory]]:
+        trajs = self.all_trajectories(inst)
+        durs = [t.dur_tot for t in trajs]
+        starts = get_starts(durs)
+        ends = get_ends(durs)
+        chunks: List[List[Trajectory]] = []
+        if self.durTot is None:
+            self.dur_tot_from_phrases()
+        dur_tot = self.durTot or 0.0
+        i = 0.0
+        while i < dur_tot:
+            def f1(st: float) -> bool:
+                return st >= i and st < i + duration
+
+            def f2(et: float) -> bool:
+                return et > i and et <= i + duration
+
+            def f3(st: float, et: float) -> bool:
+                return st < i and et > i + duration
+
+            chunk = [trajs[j] for j in range(len(trajs)) if f1(starts[j]) or f2(ends[j]) or f3(starts[j], ends[j])]
+            chunks.append(chunk)
+            i += duration
+        return chunks
+
+    def all_display_bols(self, inst: int = 0) -> List[Dict[str, Any]]:
+        trajs = self.all_trajectories(inst)
+        starts = self.traj_start_times(inst)
+        idxs: List[int] = []
+        bol_trajs: List[Trajectory] = []
+        for idx, t in enumerate(trajs):
+            art = t.articulations.get("0.00")
+            if art and art.name == "pluck":
+                idxs.append(idx)
+                bol_trajs.append(t)
+        bols = []
+        for i, t in enumerate(bol_trajs):
+            art = t.articulations["0.00"]
+            bols.append({
+                "time": starts[idxs[i]],
+                "bol": getattr(art, "stroke_nickname", None),
+                "uId": t.unique_id,
+                "logFreq": t.log_freqs[0],
+                "track": inst,
+            })
+        return bols
+
+    def all_display_sargam(self, inst: int = 0) -> List[Dict[str, Any]]:
+        trajs = self.all_trajectories(inst)
+        starts = self.traj_start_times(inst)
+        sargams: List[Dict[str, Any]] = []
+        last_pitch: Dict[str, Optional[float]] = {"logFreq": None, "time": None}
+        for i, t in enumerate(trajs):
+            if t.id != 12:
+                sub_durs = [d * t.dur_tot for d in (t.dur_array or [])]
+                time_pts = get_starts(sub_durs)
+                time_pts.append(t.dur_tot)
+                time_pts = [tp + starts[i] for tp in time_pts]
+                for tp_idx, tp in enumerate(time_pts):
+                    log_freq = t.log_freqs[tp_idx] if tp_idx < len(t.log_freqs) else t.log_freqs[tp_idx - 1]
+                    c_lf = last_pitch["logFreq"] == log_freq
+                    c_t = last_pitch["time"] == tp
+                    if not (c_lf or (c_lf and c_t)):
+                        pitch = t.pitches[min(tp_idx, len(t.pitches)-1)]
+                        sargams.append({
+                            "logFreq": log_freq,
+                            "sargam": pitch.sargam_letter,
+                            "time": tp,
+                            "uId": t.unique_id,
+                            "track": inst,
+                            "solfege": pitch.solfege_letter,
+                            "pitchClass": str(pitch.chroma),
+                            "westernPitch": pitch.western_pitch,
+                        })
+                    last_pitch = {"logFreq": log_freq, "time": tp}
+        phrase_divs = [p.start_time + p.dur_tot for p in self.phraseGrid[inst]]
+        pwr = 10 ** 5
+        rounded_pds = [round(pd * pwr) / pwr for pd in phrase_divs]
+        for s_idx, s in enumerate(sargams):
+            pos = 1
+            last_higher = True
+            next_higher = True
+            if s_idx != 0 and s_idx != len(sargams) - 1:
+                last_s = sargams[s_idx - 1]
+                next_s = sargams[s_idx + 1]
+                last_higher = last_s["logFreq"] > s["logFreq"]
+                next_higher = next_s["logFreq"] > s["logFreq"]
+            if last_higher and next_higher:
+                pos = 0
+            elif not last_higher and not next_higher:
+                pos = 1
+            elif last_higher and not next_higher:
+                pos = 3
+            elif not last_higher and next_higher:
+                pos = 2
+            if round(s["time"] * pwr) / pwr in rounded_pds:
+                pos = 5 if next_higher else 4
+            s["pos"] = pos
+        return sargams
+
+    def all_phrase_divs(self, inst: int = 0) -> List[Dict[str, Any]]:
+        objs: List[Dict[str, Any]] = []
+        for p_idx, p in enumerate(self.phraseGrid[inst]):
+            if p_idx != 0:
+                objs.append({
+                    "time": p.start_time,
+                    "type": "section" if p_idx in self.sectionStartsGrid[inst] else "phrase",
+                    "idx": p_idx,
+                    "track": inst,
+                    "uId": p.unique_id,
+                })
+        return objs
+
+    def all_display_vowels(self, inst: int = 0) -> List[Dict[str, Any]]:
+        vocal = [Instrument.Vocal_M, Instrument.Vocal_F]
+        if self.instrumentation[inst] not in vocal:
+            raise Exception("instrumentation is not vocal")
+        display_vowels: List[Dict[str, Any]] = []
+        for phrase in self.phraseGrid[inst]:
+            first_idxs = phrase.first_traj_idxs()
+            phrase_start = phrase.start_time or 0
+            for t_idx in first_idxs:
+                traj = phrase.trajectories[t_idx]
+                time = phrase_start + (traj.start_time or 0)
+                log_freq = traj.log_freqs[0]
+                with_c = traj.start_consonant is not None
+                art = traj.articulations.get("0.00") if with_c else None
+                ipa_text = (art.ipa if art else "") + (traj.vowel_ipa or "")
+                devanagari_text = (art.hindi if art else "") + (traj.vowel_hindi or "")
+                english_text = (art.eng_trans if art else "") + (traj.vowel_eng_trans or "")
+                display_vowels.append({
+                    "time": time,
+                    "logFreq": log_freq,
+                    "ipaText": ipa_text,
+                    "devanagariText": devanagari_text,
+                    "englishText": english_text,
+                    "uId": traj.unique_id,
+                })
+        return display_vowels
+
+    def all_display_ending_consonants(self, inst: int = 0) -> List[Dict[str, Any]]:
+        display: List[Dict[str, Any]] = []
+        trajs = self.all_trajectories(inst)
+        for t in trajs:
+            if t.end_consonant is not None:
+                phrase = next((p for p in self.phraseGrid[inst] if t in p.trajectories), None)
+                phrase_start = phrase.start_time if phrase else 0
+                time = phrase_start + (t.start_time or 0) + t.dur_tot
+                log_freq = t.log_freqs[-1]
+                art = t.articulations.get("1.00")
+                display.append({
+                    "time": time,
+                    "logFreq": log_freq,
+                    "ipaText": art.ipa if art else None,
+                    "devanagariText": art.hindi if art else None,
+                    "englishText": art.eng_trans if art else None,
+                    "uId": t.unique_id,
+                })
+        return display
+
+    def all_display_chikaris(self, inst: int = 0) -> List[Dict[str, Any]]:
+        display: List[Dict[str, Any]] = []
+        for p in self.phraseGrid[inst]:
+            for k, chikari in p.chikaris.items():
+                time = p.start_time + float(k)
+                display.append({
+                    "time": time,
+                    "phraseTimeKey": k,
+                    "phraseIdx": p.piece_idx,
+                    "track": inst,
+                    "chikari": chikari,
+                    "uId": chikari.unique_id,
+                })
+        return display
+
+    def chunked_display_chikaris(self, inst: int = 0, duration: float = 30) -> List[List[Dict[str, Any]]]:
+        display = self.all_display_chikaris(inst)
+        chunks: List[List[Dict[str, Any]]] = []
+        dur_tot = self.durTot or 0.0
+        i = 0.0
+        while i < dur_tot:
+            chunk = [c for c in display if c["time"] >= i and c["time"] < i + duration]
+            chunks.append(chunk)
+            i += duration
+        return chunks
+
+    def chunked_display_consonants(self, inst: int = 0, duration: float = 30) -> List[List[Dict[str, Any]]]:
+        display = self.all_display_ending_consonants(inst)
+        chunks: List[List[Dict[str, Any]]] = []
+        dur_tot = self.durTot or 0.0
+        i = 0.0
+        while i < dur_tot:
+            chunk = [c for c in display if c["time"] >= i and c["time"] < i + duration]
+            chunks.append(chunk)
+            i += duration
+        return chunks
+
+    def chunked_display_vowels(self, inst: int = 0, duration: float = 30) -> List[List[Dict[str, Any]]]:
+        display = self.all_display_vowels(inst)
+        chunks: List[List[Dict[str, Any]]] = []
+        dur_tot = self.durTot or 0.0
+        i = 0.0
+        while i < dur_tot:
+            chunk = [v for v in display if v["time"] >= i and v["time"] < i + duration]
+            chunks.append(chunk)
+            i += duration
+        return chunks
+
+    def chunked_display_sargam(self, inst: int = 0, duration: float = 30) -> List[List[Dict[str, Any]]]:
+        display = self.all_display_sargam(inst)
+        chunks: List[List[Dict[str, Any]]] = []
+        dur_tot = self.durTot or 0.0
+        i = 0.0
+        while i < dur_tot:
+            chunk = [s for s in display if s["time"] >= i and s["time"] < i + duration]
+            chunks.append(chunk)
+            i += duration
+        return chunks
+
+    def chunked_display_bols(self, inst: int = 0, duration: float = 30) -> List[List[Dict[str, Any]]]:
+        display = self.all_display_bols(inst)
+        chunks: List[List[Dict[str, Any]]] = []
+        dur_tot = self.durTot or 0.0
+        i = 0.0
+        while i < dur_tot:
+            chunk = [b for b in display if b["time"] >= i and b["time"] < i + duration]
+            chunks.append(chunk)
+            i += duration
+        return chunks
+
+    def chunked_phrase_divs(self, inst: int = 0, duration: float = 30) -> List[List[Dict[str, Any]]]:
+        phrase_divs = self.all_phrase_divs(inst)
+        chunks: List[List[Dict[str, Any]]] = []
+        dur_tot = self.durTot or 0.0
+        i = 0.0
+        while i < dur_tot:
+            chunk = [pd for pd in phrase_divs if pd["time"] >= i and pd["time"] < i + duration]
+            chunks.append(chunk)
+            i += duration
+        return chunks
+
+    def chunked_meters(self, duration: float = 30) -> List[List[Meter]]:
+        chunks: List[List[Meter]] = []
+        dur_tot = self.durTot or 0.0
+        i = 0.0
+        while i < dur_tot:
+            chunk = [m for m in self.meters if m.start_time >= i and m.start_time < i + duration]
+            chunks.append(chunk)
+            i += duration
+        return chunks
+
+    def pulse_from_id(self, id: str):
+        all_pulses = [p for m in self.meters for p in m.all_pulses]
+        for pulse in all_pulses:
+            if pulse.unique_id == id:
+                return pulse
+        return None
 
     # ------------------------------------------------------------------
     def clean_up_section_categorization(self, c: SecCatType) -> None:
