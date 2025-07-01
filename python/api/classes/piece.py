@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import List, Optional, Dict, Union, Any
+from datetime import datetime
 
 from .phrase import Phrase
 from .trajectory import Trajectory
@@ -80,7 +81,26 @@ class Piece:
         self.raga: Raga = raga_opt or Raga()
 
         instrumentation = opts.get("instrumentation", [Instrument.Sitar])
-        self.instrumentation: List[Instrument] = instrumentation
+        inst_list: List[Instrument] = []
+        for i in instrumentation:
+            if isinstance(i, Instrument):
+                inst_list.append(i)
+            else:
+                try:
+                    inst_list.append(Instrument(i))
+                except ValueError:
+                    inst_list.append(i)
+        self.instrumentation = inst_list
+
+        self.possibleTrajs: Dict[Instrument, List[int]] = {
+            Instrument.Sitar: list(range(14)),
+            Instrument.Vocal_M: [0, 1, 2, 3, 4, 5, 6, 12, 13],
+            Instrument.Vocal_F: [0, 1, 2, 3, 4, 5, 6, 12, 13],
+        }
+
+        first_inst = self.instrumentation[0]
+        self.trajIdxs = self.possibleTrajs.get(first_inst, [])
+        self.trajIdxsGrid = [self.possibleTrajs.get(i, []) for i in self.instrumentation]
 
         phrase_grid = opts.get("phraseGrid")
         if phrase_grid is None:
@@ -97,12 +117,77 @@ class Piece:
             grid.append(new_row)
         self.phraseGrid = grid
 
+        self.title: str = opts.get("title", "untitled")
+        self.dateCreated: datetime = opts.get("dateCreated", datetime.now())
+        self.dateModified: datetime = opts.get("dateModified", datetime.now())
+        self.location: str = opts.get("location", "Santa Cruz")
+        self._id: Optional[str] = opts.get("_id")
+        self.audioID: Optional[str] = opts.get("audioID")
+        self.audio_DB_ID: Optional[str] = opts.get("audio_DB_ID")
+        self.userID: Optional[str] = opts.get("userID")
+        self.name: Optional[str] = opts.get("name")
+        self.family_name: Optional[str] = opts.get("family_name")
+        self.given_name: Optional[str] = opts.get("given_name")
+        self.permissions: Optional[str] = opts.get("permissions")
+        self.soloist: Optional[str] = opts.get("soloist")
+        self.soloInstrument: Optional[str] = opts.get("soloInstrument")
+        self.explicitPermissions: Dict[str, Any] = opts.get(
+            "explicitPermissions",
+            {"edit": [], "view": [], "publicView": True},
+        )
+
         self.meters: List[Meter] = []
         for m in opts.get("meters", []):
             if isinstance(m, Meter):
                 self.meters.append(m)
             else:
                 self.meters.append(Meter.from_json(m))
+
+        ss_grid = opts.get("sectionStartsGrid")
+        if ss_grid is None:
+            ss = opts.get("sectionStarts", [0])
+            ss_grid = [ss]
+        for _ in range(len(ss_grid), len(self.instrumentation)):
+            ss_grid.append([0])
+        self.sectionStartsGrid: List[List[float]] = [sorted(list(s)) for s in ss_grid]
+
+        sc_grid = opts.get("sectionCatGrid")
+        if sc_grid is None:
+            section_cat = opts.get("sectionCategorization")
+            sc_grid = []
+            for i, ss in enumerate(self.sectionStartsGrid):
+                if i == 0:
+                    if section_cat is not None:
+                        for c in section_cat:
+                            self.clean_up_section_categorization(c)
+                        row = section_cat
+                    else:
+                        row = [init_sec_categorization() for _ in ss]
+                else:
+                    row = [init_sec_categorization() for _ in ss]
+                sc_grid.append(row)
+        self.sectionCatGrid: List[List[SecCatType]] = sc_grid
+        for i, ss in enumerate(self.sectionStartsGrid):
+            while len(self.sectionCatGrid) <= i:
+                self.sectionCatGrid.append([init_sec_categorization() for _ in ss])
+            if len(self.sectionCatGrid[i]) < len(ss):
+                diff = len(ss) - len(self.sectionCatGrid[i])
+                for _ in range(diff):
+                    self.sectionCatGrid[i].append(init_sec_categorization())
+
+        ad_hoc = opts.get("adHocSectionCatGrid")
+        if ad_hoc is None:
+            self.adHocSectionCatGrid = [[[] for _ in row] for row in self.sectionCatGrid]
+        else:
+            self.adHocSectionCatGrid = [
+                [ [f for f in fields if f != ""] for fields in track ]
+                for track in ad_hoc
+            ]
+        while len(self.adHocSectionCatGrid) < len(self.sectionStartsGrid):
+            self.adHocSectionCatGrid.append([[] for _ in self.adHocSectionCatGrid[0]])
+
+        self.excerptRange = opts.get("excerptRange")
+        self.assemblageDescriptors = opts.get("assemblageDescriptors", [])
 
         self.durTot: Optional[float] = opts.get("durTot")
         self.durArrayGrid: Optional[List[List[float]]] = opts.get("durArrayGrid")
@@ -116,9 +201,42 @@ class Piece:
     def phrases(self) -> List[Phrase]:
         return self.phraseGrid[0]
 
+    @phrases.setter
+    def phrases(self, arr: List[Phrase]) -> None:
+        self.phraseGrid[0] = arr
+
     @property
     def durArray(self) -> List[float]:
         return self.durArrayGrid[0] if self.durArrayGrid else []
+
+    @durArray.setter
+    def durArray(self, arr: List[float]) -> None:
+        if self.durArrayGrid is None:
+            self.durArrayGrid = [arr]
+        else:
+            self.durArrayGrid[0] = arr
+
+    @property
+    def sectionStarts(self) -> List[float]:
+        return self.sectionStartsGrid[0]
+
+    @sectionStarts.setter
+    def sectionStarts(self, arr: List[float]) -> None:
+        self.sectionStartsGrid[0] = arr
+
+    @property
+    def sectionCategorization(self) -> List[SecCatType]:
+        return self.sectionCatGrid[0]
+
+    @sectionCategorization.setter
+    def sectionCategorization(self, arr: List[SecCatType]) -> None:
+        self.sectionCatGrid[0] = arr
+
+    @property
+    def assemblages(self) -> List["Assemblage"]:
+        from .assemblage import Assemblage
+        flat_phrases = [p for row in self.phraseGrid for p in row]
+        return [Assemblage.from_descriptor(d, flat_phrases) for d in self.assemblageDescriptors]
 
     # ------------------------------------------------------------------
     def update_start_times(self) -> None:
@@ -212,6 +330,59 @@ class Piece:
         return [f * 2, f * 4]
 
     # ------------------------------------------------------------------
+    def dur_starts(self, track: int = 0) -> List[float]:
+        if self.durArrayGrid is None:
+            raise Exception("durArray is undefined")
+        if self.durTot is None:
+            raise Exception("durTot is undefined")
+        return get_starts([d * self.durTot for d in self.durArrayGrid[track]])
+
+    def traj_start_times(self, inst: int = 0) -> List[float]:
+        trajs = self.all_trajectories(inst)
+        times = [0.0]
+        for t in trajs[:-1]:
+            times.append(times[-1] + t.dur_tot)
+        return times
+
+    def all_pitches(self, repetition: bool = True, pitch_number: bool = False, track: int = 0) -> List[Any]:
+        pitches: List[Any] = []
+        for p in self.phraseGrid[track]:
+            pitches.extend(p.all_pitches(True))
+        if not repetition:
+            out: List[Any] = []
+            for i, pitch in enumerate(pitches):
+                if i == 0:
+                    out.append(pitch)
+                else:
+                    prev = out[-1]
+                    if not (pitch.swara == prev.swara and pitch.oct == prev.oct and pitch.raised == prev.raised):
+                        out.append(pitch)
+            pitches = out
+        if pitch_number:
+            return [p.numbered_pitch for p in pitches]
+        return pitches
+
+    @property
+    def highestPitchNumber(self) -> float:
+        return max(self.all_pitches(pitch_number=True))
+
+    @property
+    def lowestPitchNumber(self) -> float:
+        return min(self.all_pitches(pitch_number=True))
+
+    def most_recent_traj(self, time: float, inst: int = 0) -> Trajectory:
+        trajs = self.all_trajectories(inst)
+        end_times: List[float] = []
+        for t in trajs:
+            phrase = next((p for p in self.phraseGrid[inst] if t in p.trajectories), None)
+            if phrase is None:
+                continue
+            end_times.append((phrase.start_time or 0) + (t.start_time or 0) + t.dur_tot)
+        latest = max([et for et in end_times if et <= time], default=-float("inf"))
+        idx = end_times.index(latest)
+        return trajs[idx]
+
+    # ------------------------------------------------------------------
     def clean_up_section_categorization(self, c: SecCatType) -> None:
         if "Improvisation" not in c:
             c["Improvisation"] = {"Improvisation": False}
@@ -239,10 +410,29 @@ class Piece:
         return {
             "raga": self.raga.to_json(),
             "phraseGrid": [[p.to_json() for p in row] for row in self.phraseGrid],
-            "instrumentation": [int(i) if isinstance(i, Instrument) else i for i in self.instrumentation],
+            "instrumentation": [i.value if isinstance(i, Instrument) else i for i in self.instrumentation],
             "durTot": self.durTot,
             "durArrayGrid": self.durArrayGrid,
             "meters": [m.to_json() for m in self.meters],
+            "title": self.title,
+            "dateCreated": self.dateCreated.isoformat(),
+            "dateModified": self.dateModified.isoformat(),
+            "location": self.location,
+            "_id": self._id,
+            "audioID": self.audioID,
+            "userID": self.userID,
+            "permissions": self.permissions,
+            "name": self.name,
+            "family_name": self.family_name,
+            "given_name": self.given_name,
+            "sectionStartsGrid": self.sectionStartsGrid,
+            "sectionCatGrid": self.sectionCatGrid,
+            "explicitPermissions": self.explicitPermissions,
+            "soloist": self.soloist,
+            "soloInstrument": self.soloInstrument,
+            "excerptRange": self.excerptRange,
+            "adHocSectionCatGrid": self.adHocSectionCatGrid,
+            "assemblageDescriptors": self.assemblageDescriptors,
         }
 
     @staticmethod
@@ -257,4 +447,14 @@ class Piece:
             new_obj["phraseGrid"] = pg
         if "meters" in new_obj:
             new_obj["meters"] = [Meter.from_json(m) for m in new_obj["meters"]]
+        if "dateCreated" in new_obj:
+            dc = new_obj["dateCreated"]
+            if isinstance(dc, dict) and "$date" in dc:
+                dc = dc["$date"]
+            new_obj["dateCreated"] = datetime.fromisoformat(str(dc).replace('Z',''))
+        if "dateModified" in new_obj:
+            dm = new_obj["dateModified"]
+            if isinstance(dm, dict) and "$date" in dm:
+                dm = dm["$date"]
+            new_obj["dateModified"] = datetime.fromisoformat(str(dm).replace('Z',''))
         return Piece(new_obj)
