@@ -922,7 +922,34 @@ class Piece:
             if isinstance(dm, dict) and "$date" in dm:
                 dm = dm["$date"]
             new_obj["dateModified"] = datetime.fromisoformat(str(dm).replace('Z',''))
+
         piece = Piece(new_obj)
+
+        # reconnect groups to actual trajectories
+        for phrases in piece.phraseGrid:
+            for phrase in phrases:
+                new_group_grid: List[List[Group]] = []
+                for group_list in phrase.groups_grid:
+                    rebuilt: List[Group] = []
+                    for g in group_list:
+                        if not isinstance(g, Group):
+                            g = Group.from_json(g)
+                        new_trajs: List[Trajectory] = []
+                        for t in g.trajectories:
+                            if t.num is None:
+                                raise Exception("traj.num is undefined")
+                            new_trajs.append(phrase.trajectory_grid[0][t.num])
+                        rebuilt.append(Group({"trajectories": new_trajs, "id": g.id}))
+                    new_group_grid.append(rebuilt)
+                phrase.groups_grid = new_group_grid
+
+                for traj in phrase.trajectories:
+                    art = traj.articulations.get("0.00")
+                    if art and art.name == "slide":
+                        art.name = "pluck"
+                phrase.consolidate_silent_trajs()
+
         piece.dur_array_from_phrases()
-        piece.sectionStartsGrid = [list(dict.fromkeys(arr)) for arr in piece.sectionStartsGrid]
+        piece.sectionStartsGrid = [sorted(set(arr)) for arr in piece.sectionStartsGrid]
+
         return piece
