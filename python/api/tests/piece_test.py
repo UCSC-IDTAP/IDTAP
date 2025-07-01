@@ -625,6 +625,9 @@ def test_piece_method_helpers():
 def test_vocal_display_helpers():
     piece, meter = build_vocal_piece()
 
+    assert len(piece.sections) == 2
+    assert len(piece.sections_grid[0]) == 2
+
     vowels = piece.all_display_vowels()
     assert len(vowels) > 0
     assert len(piece.chunked_display_vowels(0, 1)[0]) == len([v for v in vowels if v['time'] < 1])

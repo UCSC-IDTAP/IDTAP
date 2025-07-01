@@ -11,6 +11,10 @@ from .chikari import Chikari
 from .group import Group
 from .automation import get_starts, get_ends
 import math
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .section import Section
 
 SecCatType = Dict[str, Union[Dict[str, bool], str]]
 
@@ -324,6 +328,34 @@ class Piece:
         for phrases in self.phraseGrid:
             for p in phrases:
                 p.raga = self.raga
+
+    # ------------------------------------------------------------------
+    @property
+    def sections_grid(self) -> List[List["Section"]]:
+        from .section import Section
+        grid: List[List["Section"]] = []
+        for i, starts in enumerate(self.sectionStartsGrid):
+            sections: List["Section"] = []
+            for j, s in enumerate(starts):
+                if j == len(starts) - 1:
+                    slice_phrases = self.phraseGrid[i][s:]
+                else:
+                    slice_phrases = self.phraseGrid[i][s:starts[j + 1]]
+                sections.append(
+                    Section(
+                        {
+                            "phrases": slice_phrases,
+                            "categorization": self.sectionCatGrid[i][j],
+                            "ad_hoc_categorization": self.adHocSectionCatGrid[i][j],
+                        }
+                    )
+                )
+            grid.append(sections)
+        return grid
+
+    @property
+    def sections(self) -> List["Section"]:
+        return self.sections_grid[0]
 
     def add_meter(self, meter: Meter) -> None:
         for m in self.meters:
@@ -853,7 +885,30 @@ class Piece:
         if "phraseGrid" in new_obj:
             pg = []
             for row in new_obj["phraseGrid"]:
-                pg.append([Phrase.from_json(p) for p in row])
+                phrase_row = [Phrase.from_json(p) for p in row]
+                pg.append(phrase_row)
+            # reconstruct groups so they reference existing trajectories
+            for row in pg:
+                for phrase in row:
+                    new_groups: List[List[Group]] = []
+                    for g_list in phrase.groups_grid:
+                        rebuilt: List[Group] = []
+                        for g in g_list:
+                            data = g if isinstance(g, dict) else g.to_json()
+                            trajs = []
+                            for t in data.get("trajectories", []):
+                                traj = t if isinstance(t, Trajectory) else Trajectory.from_json(t)
+                                num = traj.num
+                                if num is None or num >= len(phrase.trajectory_grid[0]):
+                                    continue
+                                real_traj = phrase.trajectory_grid[0][num]
+                                art = real_traj.articulations.get("0.00") or real_traj.articulations.get("0")
+                                if art and art.name == "slide":
+                                    art.name = "pluck"
+                                trajs.append(real_traj)
+                            rebuilt.append(Group({"trajectories": trajs, "id": data.get("id")}))
+                        new_groups.append(rebuilt)
+                    phrase.groups_grid = new_groups
             new_obj["phraseGrid"] = pg
         if "meters" in new_obj:
             new_obj["meters"] = [Meter.from_json(m) for m in new_obj["meters"]]
@@ -896,4 +951,5 @@ class Piece:
 
         piece.dur_array_from_phrases()
         piece.sectionStartsGrid = [sorted(set(arr)) for arr in piece.sectionStartsGrid]
+
         return piece
