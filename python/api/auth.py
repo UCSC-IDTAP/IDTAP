@@ -10,6 +10,18 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 
 DEFAULT_TOKEN_PATH = Path(os.environ.get("SWARA_TOKEN_PATH", "~/.swara/token.json")).expanduser()
 
+# Default OAuth client configured on the Swara server. Using these credentials
+# means users can simply call :func:`login_google` without supplying their own
+# client secrets.
+DEFAULT_CLIENT_SECRETS: Dict[str, Any] = {
+    "installed": {
+        "client_id": "324767655055-crhq76mdupavvrcedtde986glivug1nm.apps.googleusercontent.com",
+        "client_secret": "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",
+        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+        "token_uri": "https://oauth2.googleapis.com/token",
+    }
+}
+
 
 def _run_flow_get_code(flow: InstalledAppFlow, host: str = "localhost", port: int = 8080) -> str:
     """Run OAuth flow locally and return the authorization ``code``."""
@@ -50,7 +62,7 @@ def _run_flow_get_code(flow: InstalledAppFlow, host: str = "localhost", port: in
 
 
 def login_google(
-    client_secrets: Union[str, Dict[str, Any]],
+    client_secrets: Optional[Union[str, Dict[str, Any]]] = None,
     base_url: str = "https://swara.studio/",
     token_path: Path = DEFAULT_TOKEN_PATH,
     scopes: Optional[list[str]] = None,
@@ -59,7 +71,8 @@ def login_google(
 
     Args:
         client_secrets: Path to the client secrets JSON file or the loaded JSON
-            object.
+            object. If ``None``, a default client configured on the Swara
+            server will be used.
         base_url: Swara Studio API base URL.
         token_path: Location to store the resulting token information.
         scopes: OAuth scopes to request.
@@ -68,10 +81,17 @@ def login_google(
         The profile information returned by the Swara API.
     """
     scopes = scopes or ["openid", "email", "profile"]
-    if isinstance(client_secrets, str):
+    config: Dict[str, Any]
+    if client_secrets is None:
+        config = DEFAULT_CLIENT_SECRETS
+    elif isinstance(client_secrets, str):
         flow = InstalledAppFlow.from_client_secrets_file(client_secrets, scopes=scopes)
+        config = None  # type: ignore[assignment]
     else:
-        flow = InstalledAppFlow.from_client_config(client_secrets, scopes=scopes)
+        config = client_secrets
+
+    if config is not None:
+        flow = InstalledAppFlow.from_client_config(config, scopes=scopes)
 
     auth_code = _run_flow_get_code(flow)
 

@@ -33,15 +33,13 @@ def test_no_token_header(tmp_path):
 def test_auto_login(monkeypatch, tmp_path):
     calls = []
 
-    def fake_login_google(client_secrets, base_url="https://swara.studio/", token_path=None, scopes=None):
-        calls.append(True)
+    def fake_login_google(client_secrets=None, base_url="https://swara.studio/", token_path=None, scopes=None):
+        calls.append(client_secrets)
         Path(token_path).write_text(json.dumps({"token": "zzz", "profile": {"_id": "u9"}}))
         return {"_id": "u9"}
 
     monkeypatch.setattr('python.api.client.login_google', fake_login_google)
     token_path = tmp_path / 'token.json'
-    secrets = tmp_path / 'client.json'
-    secrets.write_text('{}')
-    client = SwaraClient(token_path=token_path, client_secrets=str(secrets))
+    client = SwaraClient(token_path=token_path)
     assert calls
     assert client.token == 'zzz'

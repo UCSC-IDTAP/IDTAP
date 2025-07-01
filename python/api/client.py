@@ -30,7 +30,7 @@ class SwaraClient:
         self.token: Optional[str] = None
         self.user: Optional[Dict[str, Any]] = None
         self.load_token()
-        if self.token is None and self.auto_login and self.client_secrets:
+        if self.token is None and self.auto_login:
             try:
                 login_google(self.client_secrets, base_url=self.base_url, token_path=self.token_path)
                 self.load_token()
