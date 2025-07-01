@@ -639,3 +639,54 @@ def test_vocal_display_helpers():
 
     pid = meter.all_pulses[0].unique_id
     assert piece.pulse_from_id(pid) == meter.all_pulses[0]
+
+
+def test_meters_and_instrumentation_update_duration_arrays():
+    piece = build_simple_piece()
+    original = json.dumps(piece.durArrayGrid)
+
+    m = Meter([1], start_time=2.1, tempo=60)
+    piece.add_meter(m)
+    piece.remove_meter(m)
+    assert json.dumps(piece.durArrayGrid) == original
+
+    piece.instrumentation.append(Instrument.Vocal_M)
+    new_phrase = Phrase({
+        'trajectories': [Trajectory({'num': 0, 'pitches': [Pitch()], 'dur_tot': 2})],
+        'raga': piece.raga,
+    })
+    piece.phraseGrid.append([new_phrase])
+    piece.durArrayGrid.append([])
+    piece.sectionStartsGrid.append([0])
+    piece.sectionCatGrid.append([init_sec_categorization() for _ in piece.sectionCatGrid[0]])
+    piece.adHocSectionCatGrid.append([[] for _ in piece.adHocSectionCatGrid[0]])
+    piece.dur_array_from_phrases()
+    assert len(piece.durArrayGrid) == 2
+
+    piece.instrumentation.pop()
+    piece.phraseGrid.pop()
+    piece.durArrayGrid.pop()
+    piece.sectionStartsGrid.pop()
+    piece.sectionCatGrid.pop()
+    piece.adHocSectionCatGrid.pop()
+    piece.dur_array_from_phrases()
+    assert json.dumps(piece.durArrayGrid) == original
+
+
+def test_piece_serialization_reconnects_groups_and_fixes_slide():
+    raga = Raga()
+    artics = {'0.00': Articulation({'name': 'slide'})}
+    t1 = Trajectory({'num': 0, 'pitches': [Pitch()], 'dur_tot': 0.5, 'articulations': artics})
+    t2 = Trajectory({'num': 1, 'pitches': [Pitch()], 'dur_tot': 0.5})
+    phrase = Phrase({'trajectories': [t1, t2], 'raga': raga})
+    group = Group({'trajectories': [t1, t2]})
+    phrase.groups_grid[0].append(group)
+
+    piece = Piece({'phrases': [phrase], 'raga': raga, 'instrumentation': [Instrument.Sitar]})
+    clone = Piece.from_json(piece.to_json())
+
+    reconstructed = clone.phrases[0].groups_grid[0][0]
+    assert isinstance(reconstructed, Group)
+    assert reconstructed.trajectories[0] is clone.phrases[0].trajectory_grid[0][0]
+    assert reconstructed.trajectories[1] is clone.phrases[0].trajectory_grid[0][1]
+    assert clone.phrases[0].trajectory_grid[0][0].articulations['0.00'].name == 'pluck'
