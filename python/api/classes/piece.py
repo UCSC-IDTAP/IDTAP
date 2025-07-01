@@ -8,7 +8,9 @@ from .raga import Raga
 from .meter import Meter
 from ..enums import Instrument
 from .chikari import Chikari
+from .group import Group
 from .automation import get_starts
+import math
 
 SecCatType = Dict[str, Union[Dict[str, bool], str]]
 
@@ -250,17 +252,39 @@ class Piece:
 
     # ------------------------------------------------------------------
     def dur_tot_from_phrases(self) -> None:
+        """Set ``durTot`` from contained phrases and pad shorter tracks."""
         totals = [sum(p.dur_tot for p in row) for row in self.phraseGrid]
-        self.durTot = max(totals) if totals else 0.0
+        max_dur = max(totals) if totals else 0.0
+        self.durTot = max_dur
+        for i, total in enumerate(totals):
+            if total != max_dur:
+                extra = max_dur - total
+                phrases = self.phraseGrid[i]
+                silent = Trajectory({"id": 12, "dur_tot": extra})
+                if phrases:
+                    phrases[-1].trajectory_grid[0].append(silent)
+                    phrases[-1].reset()
+                else:
+                    p = Phrase({"trajectories": [silent], "dur_tot": extra, "raga": self.raga})
+                    phrases.append(p)
+                    p.reset()
 
     def dur_array_from_phrases(self) -> None:
+        """Recompute ``durArrayGrid`` removing NaN trajectories."""
         self.dur_tot_from_phrases()
         self.durArrayGrid = []
         if self.durTot == 0:
             self.durArrayGrid.append([])
             return
         for row in self.phraseGrid:
-            arr = [p.dur_tot / self.durTot for p in row]
+            arr = []
+            for p in row:
+                if p.dur_tot is None:
+                    raise Exception("p.durTot is undefined")
+                if math.isnan(p.dur_tot):
+                    p.trajectory_grid[0] = [t for t in p.trajectories if not math.isnan(t.dur_tot)]
+                    p.dur_tot_from_trajectories()
+                arr.append(p.dur_tot / self.durTot)
             self.durArrayGrid.append(arr)
         self.update_start_times()
 
@@ -301,12 +325,126 @@ class Piece:
             for p in phrases:
                 p.raga = self.raga
 
+    def add_meter(self, meter: Meter) -> None:
+        for m in self.meters:
+            dur_m = m.cycle_dur
+            dur_new = meter.cycle_dur
+            c1 = m.start_time <= meter.start_time < m.start_time + dur_m
+            c2 = m.start_time < meter.start_time + dur_new <= m.start_time + dur_m
+            c3 = meter.start_time <= m.start_time and meter.start_time + dur_new >= m.start_time + dur_m
+            if c1 or c2 or c3:
+                raise ValueError("meters overlap")
+        self.meters.append(meter)
+
+    def remove_meter(self, meter: Meter) -> None:
+        if meter in self.meters:
+            self.meters.remove(meter)
+
     # ------------------------------------------------------------------
     def all_trajectories(self, inst: int = 0) -> List[Trajectory]:
         trajs: List[Trajectory] = []
         for p in self.phraseGrid[inst]:
             trajs.extend(p.trajectories)
         return trajs
+
+    # ------------------------------------------------------------------
+    def track_from_traj(self, traj: Trajectory) -> int:
+        for i in range(len(self.instrumentation)):
+            if traj in self.all_trajectories(i):
+                return i
+        raise ValueError("Trajectory not found")
+
+    def track_from_traj_uid(self, traj_uid: str) -> int:
+        for i in range(len(self.instrumentation)):
+            for t in self.all_trajectories(i):
+                if t.unique_id == traj_uid:
+                    return i
+        raise ValueError("Trajectory not found")
+
+    def phrase_from_uid(self, uid: str) -> Phrase:
+        for track in self.phraseGrid:
+            for p in track:
+                if p.unique_id == uid:
+                    return p
+        raise ValueError("Phrase not found")
+
+    def track_from_phrase_uid(self, uid: str) -> int:
+        for i, track in enumerate(self.phraseGrid):
+            if any(p.unique_id == uid for p in track):
+                return i
+        raise ValueError("Phrase not found")
+
+    def traj_from_uid(self, uid: str, track: int = 0) -> Trajectory:
+        for t in self.all_trajectories(track):
+            if t.unique_id == uid:
+                return t
+        raise ValueError("Trajectory not found")
+
+    def traj_from_time(self, time: float, track: int = 0) -> Optional[Trajectory]:
+        trajs = self.all_trajectories(track)
+        if not trajs:
+            return None
+        starts = self.traj_start_times(track)
+        end_times = [s + t.dur_tot for s, t in zip(starts, trajs)]
+        idx = -1
+        for i, s in enumerate(starts):
+            if time >= s:
+                idx = i
+        if idx == -1:
+            return trajs[0]
+        if time < end_times[idx]:
+            return trajs[idx]
+        if idx + 1 < len(trajs):
+            return trajs[idx + 1]
+        return None
+
+    def phrase_from_time(self, time: float, track: int = 0) -> Phrase:
+        starts = self.dur_starts(track)
+        idx = 0
+        for i, s in enumerate(starts):
+            if time >= s:
+                idx = i
+        return self.phraseGrid[track][idx]
+
+    def phrase_idx_from_time(self, time: float, track: int = 0) -> int:
+        starts = self.dur_starts(track)
+        idx = 0
+        for i, s in enumerate(starts):
+            if time >= s:
+                idx = i
+        return idx
+
+    def all_groups(self, instrument_idx: int = 0) -> List["Group"]:
+        groups: List["Group"] = []
+        for p in self.phraseGrid[instrument_idx]:
+            for g_list in p.groups_grid:
+                groups.extend(g_list)
+        return groups
+
+    def p_idx_from_group(self, g: "Group") -> int:
+        for i, p in enumerate(self.phraseGrid[0]):
+            for group_list in p.groups_grid:
+                if g in group_list:
+                    return i
+        return -1
+
+    def all_display_vowels(self, inst: int = 0) -> List[Any]:
+        vocal = [Instrument.Vocal_M, Instrument.Vocal_F]
+        if self.instrumentation[inst] not in vocal:
+            raise Exception("instrumentation is not vocal")
+        # placeholder minimal return
+        return []
+
+    def s_idx_from_p_idx(self, p_idx: int, inst: int = 0) -> int:
+        ss = self.sectionStartsGrid[inst]
+        s_idx = len(ss) - 1
+        for i, s in enumerate(ss):
+            if p_idx < s:
+                s_idx = i - 1
+                break
+        if s_idx < 0:
+            s_idx = 0
+        return s_idx
 
     def durations_of_fixed_pitches(
         self, inst: int = 0, output_type: str = "pitchNumber"
@@ -351,15 +489,25 @@ class Piece:
         if not repetition:
             out: List[Any] = []
             for i, pitch in enumerate(pitches):
+                if isinstance(pitch, (int, float)):
+                    raise ValueError("pitch is a number")
                 if i == 0:
                     out.append(pitch)
                 else:
                     prev = out[-1]
+                    if isinstance(prev, (int, float)):
+                        raise ValueError("lastP is a number")
                     if not (pitch.swara == prev.swara and pitch.oct == prev.oct and pitch.raised == prev.raised):
                         out.append(pitch)
             pitches = out
         if pitch_number:
-            return [p.numbered_pitch for p in pitches]
+            nums: List[Any] = []
+            for p in pitches:
+                if isinstance(p, (int, float)):
+                    nums.append(p)
+                else:
+                    nums.append(p.numbered_pitch)
+            return nums
         return pitches
 
     @property
@@ -388,6 +536,9 @@ class Piece:
             c["Improvisation"] = {"Improvisation": False}
         if "Other" not in c:
             c["Other"] = {"Other": False}
+        if "Comp.-section/Tempo" not in c and "Composition-section/Tempo" in c:
+            c["Comp.-section/Tempo"] = c["Composition-section/Tempo"]
+            del c["Composition-section/Tempo"]
         top_level = c.get("Top Level")
         if not top_level or top_level == "None":
             if any(c["Pre-Chiz Alap"].values()):

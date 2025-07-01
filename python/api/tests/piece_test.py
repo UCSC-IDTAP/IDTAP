@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 
 import pytest
+import math
 
 from python.api.classes.piece import (
     Piece,
@@ -376,3 +377,197 @@ def test_clean_up_section_cat_defaults_multi_inst():
     assert 'Top Level' in sc[0]
     assert len(piece.adHocSectionCatGrid) == 2
     assert piece.durTot == 0
+
+
+# ----------------------------------------------------------------------
+# Additional tests ported from the TypeScript suite
+# ----------------------------------------------------------------------
+
+def build_vocal_piece():
+    raga = Raga({'fundamental': 240})
+    art = {'0.00': Articulation({'stroke_nickname': 'da'})}
+    t1 = Trajectory({'num': 0, 'pitches': [Pitch()], 'dur_tot': 0.5, 'articulations': art})
+    t1.add_consonant('ka')
+    t1.update_vowel('a')
+    t1.add_consonant('ga', start=False)
+    t2 = Trajectory({'num': 1, 'pitches': [Pitch({'swara': 'r', 'raised': False})], 'dur_tot': 0.5, 'articulations': art})
+    t2.update_vowel('i')
+    p1 = Phrase({'trajectories': [t1, t2], 'raga': raga})
+    p1.chikaris['0.25'] = Chikari({})
+    p2 = Phrase({'trajectories': [Trajectory({'num': 0, 'pitches': [Pitch()], 'dur_tot': 1})], 'raga': raga})
+    piece = Piece({'phrases': [p1, p2], 'raga': raga, 'instrumentation': [Instrument.Vocal_M], 'sectionStarts': [0,1]})
+    meter = Meter(start_time=0, tempo=60)
+    piece.add_meter(meter)
+    return piece, meter
+
+
+def test_track_from_traj_uid_error():
+    piece, *_ = build_simple_piece_full()
+    with pytest.raises(ValueError):
+        piece.track_from_traj_uid('missing')
+
+
+def test_p_idx_from_group_across_phrases():
+    raga = Raga()
+    t1 = Trajectory({'num': 0, 'pitches': [Pitch()], 'dur_tot': 0.5})
+    t2 = Trajectory({'num': 1, 'pitches': [Pitch()], 'dur_tot': 0.5})
+    g1 = Group({'trajectories': [t1, t2]})
+    p1 = Phrase({'trajectories': [t1, t2], 'raga': raga})
+    p1.groups_grid[0].append(g1)
+    t3 = Trajectory({'num': 0, 'pitches': [Pitch()], 'dur_tot': 0.5})
+    t4 = Trajectory({'num': 1, 'pitches': [Pitch()], 'dur_tot': 0.5})
+    g2 = Group({'trajectories': [t3, t4]})
+    p2 = Phrase({'trajectories': [t3, t4], 'raga': raga})
+    p2.groups_grid[0].append(g2)
+    piece = Piece({'phrases': [p1, p2], 'raga': raga, 'instrumentation': [Instrument.Sitar]})
+    assert piece.p_idx_from_group(g1) == 0
+    assert piece.p_idx_from_group(g2) == 1
+
+
+def test_most_recent_traj_and_chikari_freqs():
+    piece, _ = build_vocal_piece()
+    first_traj = piece.phraseGrid[0][0].trajectories[0]
+    chikari = piece.phraseGrid[0][0].chikaris['0.25']
+    assert piece.most_recent_traj(0.6, 0) is first_traj
+    assert piece.chikari_freqs(0) == [c.frequency for c in chikari.pitches[:2]]
+
+
+def test_add_meter_overlap_and_remove():
+    raga = Raga()
+    traj = Trajectory({'num': 0, 'pitches': [Pitch()], 'dur_tot': 1})
+    phrase = Phrase({'trajectories': [traj], 'raga': raga})
+    piece = Piece({'phrases': [phrase], 'raga': raga, 'instrumentation': [Instrument.Sitar]})
+    m1 = Meter(start_time=0, tempo=60)
+    m2 = Meter(start_time=5, tempo=60)
+    piece.add_meter(m1)
+    piece.add_meter(m2)
+    with pytest.raises(ValueError):
+        piece.add_meter(Meter(start_time=3, tempo=60))
+    piece.remove_meter(m1)
+    assert piece.meters == [m2]
+
+
+def test_comp_section_tempo_fallback():
+    piece = build_simple_piece()
+    c = init_sec_categorization()
+    del c['Comp.-section/Tempo']
+    c['Composition-section/Tempo'] = {'Madhya': True}
+    del c['Top Level']
+    piece.clean_up_section_categorization(c)
+    assert c['Comp.-section/Tempo']['Madhya']
+    assert 'Composition-section/Tempo' not in c
+    assert c['Top Level'] == 'Composition'
+
+
+@pytest.mark.parametrize('modify,expected', [
+    (lambda c: c['Pre-Chiz Alap'].__setitem__('Pre-Chiz Alap', True), 'Pre-Chiz Alap'),
+    (lambda c: c['Alap'].__setitem__('Alap', True), 'Alap'),
+    (lambda c: c['Composition Type'].__setitem__('Bandish', True), 'Composition'),
+    (lambda c: c['Comp.-section/Tempo'].__setitem__('Vilambit', True), 'Composition'),
+    (lambda c: c['Improvisation'].__setitem__('Improvisation', True), 'Improvisation'),
+    (lambda c: c['Other'].__setitem__('Other', True), 'Other'),
+    (lambda c: None, 'None'),
+])
+def test_top_level_classification(modify, expected):
+    piece = build_simple_piece()
+    c = init_sec_categorization()
+    del c['Top Level']
+    modify(c)
+    piece.clean_up_section_categorization(c)
+    assert c['Top Level'] == expected
+
+
+def test_all_display_vowels_non_vocal():
+    raga = Raga()
+    traj = Trajectory({'num': 0, 'pitches': [Pitch()], 'dur_tot': 1})
+    phrase = Phrase({'trajectories': [traj], 'raga': raga})
+    piece = Piece({'phrases': [phrase], 'raga': raga, 'instrumentation': [Instrument.Sitar]})
+    with pytest.raises(Exception, match='instrumentation is not vocal'):
+        piece.all_display_vowels()
+
+
+def test_all_pitches_number_error():
+    raga = Raga()
+    traj = Trajectory({'num': 0, 'pitches': [Pitch()], 'dur_tot': 1})
+    traj.pitches.append(0)  # type: ignore
+    phrase = Phrase({'trajectories': [traj], 'raga': raga})
+    piece = Piece({'phrases': [phrase], 'raga': raga, 'instrumentation': [Instrument.Sitar]})
+    with pytest.raises(ValueError):
+        piece.all_pitches(repetition=False)
+
+
+def test_traj_from_time_after_last():
+    piece = build_simple_piece()
+    after = (piece.durTot or 0) + 1
+    assert piece.traj_from_time(after, 0) is None
+
+
+def test_traj_from_uid_error():
+    piece = build_simple_piece()
+    with pytest.raises(ValueError):
+        piece.traj_from_uid('missing', 0)
+
+
+def test_track_from_traj_error():
+    piece, *_ = build_simple_piece_full()
+    missing = Trajectory({'num': 99, 'pitches': [Pitch()], 'dur_tot': 1})
+    with pytest.raises(ValueError):
+        piece.track_from_traj(missing)
+
+
+def test_phrase_from_uid_and_track_from_phrase_uid_error():
+    piece, *_ = build_simple_piece_full()
+    with pytest.raises(ValueError):
+        piece.phrase_from_uid('missing')
+    with pytest.raises(ValueError):
+        piece.track_from_phrase_uid('missing')
+
+
+def test_add_meter_enclosing_rejects():
+    raga = Raga()
+    traj = Trajectory({'num': 0, 'pitches': [Pitch()], 'dur_tot': 1})
+    phrase = Phrase({'trajectories': [traj], 'raga': raga})
+    piece = Piece({'phrases': [phrase], 'raga': raga, 'instrumentation': [Instrument.Sitar]})
+    base = Meter(start_time=0, tempo=60)
+    piece.add_meter(base)
+    with pytest.raises(ValueError):
+        piece.add_meter(Meter(start_time=-1, hierarchy=[8], tempo=60))
+    later = Meter(start_time=5, tempo=60)
+    piece.add_meter(later)
+    assert piece.meters == [base, later]
+
+
+def test_dur_array_branch_empty_section_cat_grid():
+    raga = Raga()
+    traj = Trajectory({'num': 0, 'pitches': [Pitch()], 'dur_tot': 1})
+    phrase = Phrase({'trajectories': [traj], 'raga': raga})
+    piece = Piece({'phrases': [phrase], 'durTot': 1, 'durArray': [1], 'instrumentation': [Instrument.Sitar], 'raga': raga, 'sectionStarts': [0], 'sectionCatGrid': []})
+    assert piece.durArrayGrid == [[1]]
+    assert len(piece.sectionCatGrid) == 1
+    assert len(piece.sectionCatGrid[0]) == len(piece.sectionStartsGrid[0])
+
+
+def test_dur_tot_from_phrases_adds_silent_phrase():
+    raga = Raga()
+    t1 = Trajectory({'dur_tot': 1})
+    p1 = Phrase({'trajectories': [t1], 'raga': raga})
+    piece = Piece({'phraseGrid': [[p1], []], 'instrumentation': [Instrument.Sitar, Instrument.Sitar], 'raga': raga})
+    piece.dur_tot_from_phrases()
+    assert len(piece.phraseGrid[1]) == 1
+    silent = piece.phraseGrid[1][0].trajectories[0]
+    assert silent.id == 12
+    assert pytest.approx(silent.dur_tot) == 1
+
+
+def test_dur_array_from_phrases_removes_nan():
+    raga = Raga()
+    piece = Piece({'raga': raga, 'instrumentation': [Instrument.Sitar]})
+    good = Trajectory({'dur_tot': 1})
+    bad = Trajectory({'dur_tot': float('nan')})
+    phrase = Phrase({'trajectories': [good, bad], 'raga': raga})
+    phrase.dur_tot_from_trajectories()
+    piece.phraseGrid[0].append(phrase)
+    assert math.isnan(phrase.dur_tot)
+    piece.dur_array_from_phrases()
+    assert len(phrase.trajectories) == 1
+    assert pytest.approx(phrase.dur_tot) == 1
