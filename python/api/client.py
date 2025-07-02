@@ -34,8 +34,11 @@ class SwaraClient:
             try:
                 login_google(self.client_secrets, base_url=self.base_url, token_path=self.token_path)
                 self.load_token()
-            except Exception:
-                pass
+            except Exception as e:
+                print(f"Failed to log in to Swara Studio: {e}")
+                raise
+                
+                
 
     # ---- auth utilities ----
     def load_token(self, token_path: Optional[str | Path] = None) -> None:

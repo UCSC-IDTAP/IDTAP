@@ -102,9 +102,17 @@ def login_google(
 
     token_path = Path(token_path).expanduser()
     token_path.parent.mkdir(parents=True, exist_ok=True)
+    # Safely attempt to retrieve token credentials
+    try:
+        creds = flow.credentials
+        token = getattr(creds, "token", None)
+        refresh_token = getattr(creds, "refresh_token", None)
+    except Exception:
+        token = None
+        refresh_token = None
     data = {
-        "token": getattr(flow.credentials, "token", None),
-        "refresh_token": getattr(flow.credentials, "refresh_token", None),
+        "token": token,
+        "refresh_token": refresh_token,
         "profile": profile,
     }
     with token_path.open("w", encoding="utf-8") as f:
