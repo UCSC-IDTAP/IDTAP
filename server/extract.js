@@ -67496,7 +67496,7 @@ __export(extract_exports, {
 module.exports = __toCommonJS(extract_exports);
 
 // src/ts/model/articulation.ts
-var Articulation = class {
+var Articulation = class _Articulation {
   name;
   stroke;
   hindi;
@@ -67523,6 +67523,9 @@ var Articulation = class {
     } else if (this.stroke === "r" && this.strokeNickname === void 0) {
       this.strokeNickname = "ra";
     }
+  }
+  static fromJSON(obj2) {
+    return new _Articulation(obj2);
   }
 };
 
@@ -67691,6 +67694,9 @@ var Automation = class _Automation {
       }
     }
     return new _Automation({ values: allValues });
+  }
+  static fromJSON(obj2) {
+    return new _Automation(obj2);
   }
 };
 
@@ -68160,6 +68166,9 @@ var Pitch = class _Pitch {
       logOffset: this.logOffset
     };
   }
+  static fromJSON(obj2) {
+    return new _Pitch(obj2);
+  }
 };
 
 // node_modules/.pnpm/uuid@9.0.1/node_modules/uuid/dist/esm-node/rng.js
@@ -68210,7 +68219,7 @@ function v4(options, buf, offset) {
 var v4_default = v4;
 
 // src/ts/model/chikari.ts
-var Chikari = class {
+var Chikari = class _Chikari {
   fundamental;
   pitches;
   uniqueId;
@@ -68254,10 +68263,17 @@ var Chikari = class {
       uniqueId: this.uniqueId
     };
   }
+  static fromJSON(obj2) {
+    const pitches = (obj2.pitches || []).map((p) => Pitch.fromJSON(p));
+    return new _Chikari({
+      ...obj2,
+      pitches
+    });
+  }
 };
 
 // src/ts/model/group.ts
-var Group = class {
+var Group = class _Group {
   trajectories;
   id;
   //  a group of adjacent trajectories, cloneable for copy and paste
@@ -68362,897 +68378,11 @@ var Group = class {
       id: this.id
     };
   }
-};
-
-// src/ts/model/phrase.ts
-var import_findLastIndex = __toESM(require_findLastIndex(), 1);
-var initPhraseCategorization = () => {
-  return {
-    "Phrase": {
-      "Mohra": false,
-      "Mukra": false,
-      "Asthai": false,
-      "Antara": false,
-      "Manjha": false,
-      "Abhog": false,
-      "Sanchari": false,
-      "Jhala": false
-    },
-    "Elaboration": {
-      "Vistar": false,
-      "Barhat": false,
-      "Prastar": false,
-      "Bol Banao": false,
-      "Bol Alap": false,
-      "Bol Bandt": false,
-      "Behlava": false,
-      "Gat-kari": false,
-      "Tan (Sapat)": false,
-      "Tan (Gamak)": false,
-      "Laykari": false,
-      "Tihai": false,
-      "Chakradar": false
-    },
-    "Vocal Articulation": {
-      "Bol": false,
-      "Non-Tom": false,
-      "Tarana": false,
-      "Aakar": false,
-      "Sargam": false
-    },
-    "Instrumental Articulation": {
-      "Bol": false,
-      "Non-Bol": false
-    },
-    "Incidental": {
-      "Talk/Conversation": false,
-      "Praise ('Vah')": false,
-      "Tuning": false,
-      "Pause": false
-    }
-  };
-};
-var Phrase = class {
-  startTime;
-  raga;
-  trajectoryGrid;
-  chikariGrid;
-  instrumentation;
-  groupsGrid;
-  durTot;
-  durArray;
-  // chikaris: { [key: string]: Chikari };
-  pieceIdx;
-  categorizationGrid;
-  adHocCategorizationGrid;
-  uniqueId;
-  constructor({
-    trajectories = [],
-    durTot = void 0,
-    durArray = void 0,
-    chikaris = {},
-    raga = void 0,
-    startTime = void 0,
-    trajectoryGrid = void 0,
-    chikariGrid = void 0,
-    instrumentation = ["Sitar"],
-    groupsGrid = void 0,
-    categorizationGrid = void 0,
-    uniqueId = void 0,
-    adHocCategorizationGrid = void 0
-  } = {}) {
-    if (uniqueId === void 0) {
-      this.uniqueId = v4_default();
-    } else {
-      this.uniqueId = uniqueId;
-    }
-    this.startTime = startTime;
-    this.raga = raga;
-    if (trajectoryGrid !== void 0) {
-      this.trajectoryGrid = trajectoryGrid;
-      for (let i = trajectoryGrid.length; i < instrumentation.length; i++) {
-        this.trajectoryGrid.push([]);
-      }
-      this.trajectoryGrid.length = instrumentation.length;
-    } else {
-      this.trajectoryGrid = [trajectories];
-      for (let i = 1; i < instrumentation.length; i++) {
-        this.trajectoryGrid.push([]);
-      }
-    }
-    if (chikariGrid !== void 0) {
-      this.chikariGrid = chikariGrid;
-      for (let i = chikariGrid.length; i < instrumentation.length; i++) {
-        this.chikariGrid.push({});
-      }
-      this.chikariGrid.length = instrumentation.length;
-    } else {
-      this.chikariGrid = [chikaris];
-      for (let i = 1; i < instrumentation.length; i++) {
-        this.chikariGrid.push({});
-      }
-    }
-    if (this.trajectories.length === 0) {
-      if (durTot === void 0) {
-        this.durTot = 1;
-        this.durArray = [];
-      } else {
-        this.durTot = durTot;
-        this.durArray = [];
-      }
-    } else {
-      this.durTotFromTrajectories();
-      this.durArrayFromTrajectories();
-      if (durTot !== void 0 && this.durTot !== durTot) {
-        this.trajectories.forEach((t) => {
-          t.durTot = t.durTot * durTot / this.durTot;
-        });
-        this.durTot = durTot;
-      }
-      if (durArray !== void 0 && this.durArray !== durArray) {
-        this.trajectories.forEach((t, i) => {
-          t.durTot = t.durTot * durArray[i] / this.durArray[i];
-        });
-        this.durArray = durArray;
-        this.durTotFromTrajectories();
-      }
-    }
-    this.assignStartTimes();
-    this.assignTrajNums();
-    this.instrumentation = instrumentation;
-    if (groupsGrid !== void 0) {
-      this.groupsGrid = groupsGrid;
-    } else {
-      this.groupsGrid = this.instrumentation.map(() => []);
-    }
-    this.categorizationGrid = categorizationGrid || [];
-    if (this.categorizationGrid.length === 0) {
-      for (let i = 0; i < this.trajectoryGrid.length; i++) {
-        this.categorizationGrid.push(initPhraseCategorization());
-      }
-    }
-    if (this.categorizationGrid[0].Elaboration["Bol Alap"] === void 0) {
-      this.categorizationGrid.forEach((cat) => {
-        cat.Elaboration["Bol Alap"] = false;
-      });
-    }
-    if (adHocCategorizationGrid !== void 0) {
-      this.adHocCategorizationGrid = adHocCategorizationGrid;
-    } else {
-      this.adHocCategorizationGrid = [];
-    }
-  }
-  updateFundamental(fundamental) {
-    this.trajectories.forEach((traj) => traj.updateFundamental(fundamental));
-  }
-  getGroups(idx = 0) {
-    if (this.groupsGrid[idx] !== void 0) {
-      return this.groupsGrid[idx];
-    } else {
-      throw new Error("No groups for this index");
-    }
-  }
-  getGroupFromId(id) {
-    const allGroups = [];
-    this.groupsGrid.forEach((groups) => allGroups.push(...groups));
-    return allGroups.find((g) => g.id === id);
-  }
-  assignPhraseIdx() {
-    this.trajectories.forEach((traj) => traj.phraseIdx = this.pieceIdx);
-  }
-  assignTrajNums() {
-    this.trajectories.forEach((traj, i) => traj.num = i);
-  }
-  durTotFromTrajectories() {
-    this.durTot = this.trajectories.map((t) => t.durTot).reduce((a, b) => a + b, 0);
-  }
-  durArrayFromTrajectories() {
-    this.durTotFromTrajectories();
-    this.durArray = this.trajectories.map((t) => t.durTot / this.durTot);
-  }
-  compute(x, logScale = false) {
-    if (this.durArray === void 0) {
-      throw new Error("durArray is undefined");
-    }
-    if (this.durArray.length === 0) {
-      return null;
-    } else {
-      const starts = getStarts(this.durArray);
-      const index = (0, import_findLastIndex.default)(starts, (s) => x >= s);
-      const innerX = (x - starts[index]) / this.durArray[index];
-      const traj = this.trajectories[index];
-      return traj.compute(innerX, logScale);
-    }
-  }
-  realignPitches() {
-    this.trajectories.forEach((traj) => {
-      traj.pitches = traj.pitches.map((p) => {
-        p.ratios = this.raga.stratifiedRatios;
-        return new Pitch(p);
-      });
+  static fromJSON(obj2) {
+    return new _Group({
+      trajectories: obj2.trajectories,
+      id: obj2.id
     });
-  }
-  assignStartTimes() {
-    if (this.durArray === void 0) {
-      throw new Error("durArray is undefined");
-    }
-    if (this.durTot === void 0) {
-      throw new Error("durTot is undefined");
-    }
-    const starts = getStarts(this.durArray).map((s) => s * this.durTot);
-    this.trajectories.forEach((traj, i) => {
-      traj.startTime = starts[i];
-    });
-  }
-  getRange() {
-    const allPitches = this.trajectories.map((t) => t.pitches).flat();
-    allPitches.sort((a, b) => a.frequency - b.frequency);
-    let low = allPitches[0];
-    let high = allPitches[allPitches.length - 1];
-    const low_ = {
-      frequency: low == null ? void 0 : low.frequency,
-      swara: low == null ? void 0 : low.swara,
-      oct: low == null ? void 0 : low.oct,
-      raised: low == null ? void 0 : low.raised,
-      numberedPitch: low == null ? void 0 : low.numberedPitch
-    };
-    const high_ = {
-      frequency: high == null ? void 0 : high.frequency,
-      swara: high == null ? void 0 : high.swara,
-      oct: high == null ? void 0 : high.oct,
-      raised: high == null ? void 0 : high.raised,
-      numberedPitch: high == null ? void 0 : high.numberedPitch
-    };
-    return {
-      min: low_,
-      max: high_
-    };
-  }
-  consolidateSilentTrajs() {
-    let chain = false;
-    let start = void 0;
-    const delIdxs = [];
-    this.trajectories.forEach((traj, i) => {
-      if (traj.id === 12) {
-        if (chain === false) {
-          start = i;
-          chain = true;
-        }
-        if (i === this.trajectories.length - 1) {
-          if (start === void 0) {
-            throw new Error("start is undefined");
-          }
-          const extraDur = this.trajectories.slice(start + 1).map((t) => t.durTot).reduce((a, b) => a + b, 0);
-          this.trajectories[start].durTot += extraDur;
-          const dIdxs = [...Array(this.trajectories.length - start - 1)].map((_2, i2) => i2 + start + 1);
-          delIdxs.push(...dIdxs);
-        }
-      } else {
-        if (chain === true) {
-          if (start === void 0) {
-            throw new Error("start is undefined");
-          }
-          const extraDur = this.trajectories.slice(start + 1, i).map((t) => t.durTot).reduce((a, b) => a + b, 0);
-          const dIdxs = [...Array(i - (start + 1))].map((_2, i2) => i2 + start + 1);
-          this.trajectories[start].durTot += extraDur;
-          delIdxs.push(...dIdxs);
-          chain = false;
-          start = void 0;
-        }
-      }
-    });
-    const newTs = this.trajectories.filter((traj) => {
-      if (traj.num === void 0) {
-        console.log(traj);
-        throw new Error("traj.num is undefined");
-      }
-      return !delIdxs.includes(traj.num);
-    });
-    this.trajectoryGrid[0] = newTs;
-    this.durArrayFromTrajectories();
-    this.assignStartTimes();
-    this.assignTrajNums();
-    this.assignPhraseIdx();
-  }
-  chikarisDuringTraj(traj, track) {
-    const start = traj.startTime;
-    const dur = traj.durTot;
-    const end = start + dur;
-    const chikaris = this.chikariGrid[0];
-    const chikarisDuring = Object.keys(chikaris).filter((k) => {
-      const chikari = chikaris[k];
-      const time = Number(k);
-      return time >= start && time <= end;
-    }).map((k) => {
-      const realTime = Number(k) + this.startTime;
-      const cd = {
-        time: realTime,
-        phraseTimeKey: k,
-        phraseIdx: this.pieceIdx,
-        track,
-        chikari: chikaris[k],
-        uId: chikaris[k].uniqueId
-      };
-      return cd;
-    });
-    return chikarisDuring;
-  }
-  get trajectories() {
-    return this.trajectoryGrid[0];
-  }
-  get chikaris() {
-    return this.chikariGrid[0];
-  }
-  set chikaris(chikaris) {
-    this.chikariGrid[0] = chikaris;
-  }
-  get swara() {
-    const swara = [];
-    if (this.startTime === void 0) {
-      throw new Error("startTime is undefined");
-    }
-    this.trajectories.forEach((traj) => {
-      if (traj.id !== 12) {
-        if (traj.durArray === void 0) {
-          throw new Error("traj.durArray is undefined");
-        }
-        if (traj.startTime === void 0) {
-          throw new Error("traj.startTime is undefined");
-        }
-        if (traj.durArray.length === traj.pitches.length - 1) {
-          traj.pitches.slice(0, traj.pitches.length - 1).forEach((pitch, i) => {
-            const st = this.startTime + traj.startTime;
-            const obj2 = {
-              pitch,
-              time: st + getStarts(traj.durArray)[i] * traj.durTot
-            };
-            swara.push(obj2);
-          });
-        } else {
-          traj.pitches.forEach((pitch, i) => {
-            const st = this.startTime + traj.startTime;
-            const obj2 = {
-              pitch,
-              time: st + getStarts(traj.durArray)[i] * traj.durTot
-            };
-            obj2.pitch = pitch;
-            swara.push(obj2);
-          });
-        }
-      }
-    });
-    return swara;
-  }
-  allPitches(repetition = true) {
-    let allPitches = [];
-    this.trajectories.forEach((traj) => {
-      if (traj.id !== 12) {
-        allPitches.push(...traj.pitches);
-      }
-    });
-    if (!repetition) {
-      allPitches = allPitches.filter((pitch, i) => {
-        var _a, _b, _c;
-        const c1 = i === 0;
-        const c2 = pitch.swara === ((_a = allPitches[i - 1]) == null ? void 0 : _a.swara);
-        const c3 = pitch.oct === ((_b = allPitches[i - 1]) == null ? void 0 : _b.oct);
-        const c4 = pitch.raised === ((_c = allPitches[i - 1]) == null ? void 0 : _c.raised);
-        return c1 || !(c2 && c3 && c4);
-      });
-    }
-    return allPitches;
-  }
-  firstTrajIdxs() {
-    const idxs = [];
-    let ct = 0;
-    let silentTrigger = false;
-    let lastVowel = void 0;
-    let endConsonantTrigger = void 0;
-    this.trajectories.forEach((traj, tIdx) => {
-      if (traj.id !== 12) {
-        const c1 = ct === 0;
-        const c2 = silentTrigger;
-        const c3 = traj.startConsonant !== void 0;
-        const c4 = endConsonantTrigger;
-        const c5 = traj.vowel !== lastVowel;
-        if (c1 || c2 || c3 || c4 || c5) {
-          idxs.push(tIdx);
-        }
-        ct += 1;
-        endConsonantTrigger = traj.endConsonant !== void 0;
-        lastVowel = traj.vowel;
-      }
-      silentTrigger = traj.id === 12;
-    });
-    return idxs;
-  }
-  trajIdxFromTime(time) {
-    const phraseTime = time - this.startTime;
-    const trajs = this.trajectories.filter((traj) => {
-      const smallOffset = 1e-10;
-      const a = phraseTime >= traj.startTime - smallOffset;
-      const b = phraseTime < traj.startTime + traj.durTot;
-      return a && b;
-    });
-    if (trajs.length === 0) {
-      throw new Error("No trajectory found");
-    }
-    return trajs[0].num;
-  }
-  toJSON() {
-    return {
-      durTot: this.durTot,
-      durArray: this.durArray,
-      chikaris: this.chikaris,
-      raga: this.raga,
-      startTime: this.startTime,
-      trajectoryGrid: this.trajectoryGrid,
-      instrumentation: this.instrumentation,
-      groupsGrid: this.groupsGrid,
-      categorizationGrid: this.categorizationGrid,
-      uniqueId: this.uniqueId,
-      adHocCategorizationGrid: this.adHocCategorizationGrid
-    };
-  }
-  toNoteViewPhrase() {
-    const pitches = [];
-    this.trajectories.forEach((traj) => {
-      if (traj.id !== 0) {
-        traj.pitches.forEach((pitch) => pitches.push(pitch));
-      } else if (Object.keys(traj.articulations).length > 0) {
-        traj.pitches.forEach((pitch) => pitches.push(pitch));
-      }
-    });
-    const nvPhrase = new NoteViewPhrase({
-      pitches,
-      durTot: this.durTot,
-      raga: this.raga,
-      startTime: this.startTime
-    });
-    return nvPhrase;
-  }
-  reset() {
-    this.durArrayFromTrajectories();
-    this.assignStartTimes();
-    this.assignPhraseIdx();
-    this.assignTrajNums();
-  }
-};
-var NoteViewPhrase = class {
-  pitches;
-  durTot;
-  raga;
-  startTime;
-  constructor({
-    pitches = [],
-    durTot = void 0,
-    raga = void 0,
-    startTime = void 0
-  } = {}) {
-    this.pitches = pitches;
-    this.durTot = durTot;
-    this.raga = raga;
-    this.startTime = startTime;
-  }
-};
-
-// src/ts/model/raga.ts
-var yamanRuleSet = {
-  sa: true,
-  re: {
-    lowered: false,
-    raised: true
-  },
-  ga: {
-    lowered: false,
-    raised: true
-  },
-  ma: {
-    lowered: false,
-    raised: true
-  },
-  pa: true,
-  dha: {
-    lowered: false,
-    raised: true
-  },
-  ni: {
-    lowered: false,
-    raised: true
-  }
-};
-var etTuning = {
-  sa: 2 ** (0 / 12),
-  re: {
-    lowered: 2 ** (1 / 12),
-    raised: 2 ** (2 / 12)
-  },
-  ga: {
-    lowered: 2 ** (3 / 12),
-    raised: 2 ** (4 / 12)
-  },
-  ma: {
-    lowered: 2 ** (5 / 12),
-    raised: 2 ** (6 / 12)
-  },
-  pa: 2 ** (7 / 12),
-  dha: {
-    lowered: 2 ** (8 / 12),
-    raised: 2 ** (9 / 12)
-  },
-  ni: {
-    lowered: 2 ** (10 / 12),
-    raised: 2 ** (11 / 12)
-  }
-};
-var Raga = class {
-  name;
-  fundamental;
-  ruleSet;
-  tuning;
-  ratios;
-  constructor({
-    name = "Yaman",
-    fundamental = 261.63,
-    ruleSet = yamanRuleSet,
-    ratios = void 0,
-    tuning = void 0
-  } = {}) {
-    this.name = name;
-    this.ruleSet = ruleSet;
-    this.fundamental = fundamental;
-    this.tuning = tuning ? tuning : etTuning;
-    if (ratios === void 0 || ratios.length !== this.ruleSetNumPitches) {
-      this.ratios = this.setRatios(this.ruleSet);
-    } else {
-      this.ratios = ratios;
-    }
-    this.ratios.forEach((ratio, rIdx) => {
-      const tuningKeys = this.ratioIdxToTuningTuple(rIdx);
-      if (tuningKeys[0] === "sa" || tuningKeys[0] === "pa") {
-        this.tuning[tuningKeys[0]] = ratio;
-      } else {
-        this.tuning[tuningKeys[0]][tuningKeys[1]] = ratio;
-      }
-    });
-  }
-  get sargamLetters() {
-    const initSargam = ["sa", "re", "ga", "ma", "pa", "dha", "ni"];
-    const sl = [];
-    initSargam.forEach((s) => {
-      if (isObject2(this.ruleSet[s])) {
-        const ruleSet = this.ruleSet[s];
-        if (ruleSet.lowered) sl.push(s.slice(0, 1));
-        if (ruleSet.raised) sl.push(s.slice(0, 1).toUpperCase());
-      } else if (this.ruleSet[s]) {
-        sl.push(s.slice(0, 1).toUpperCase());
-      }
-    });
-    return sl;
-  }
-  get solfegeStrings() {
-    const pitches = this.getPitches({ low: this.fundamental, high: this.fundamental * 1.999 });
-    return pitches.map((p) => p.solfegeLetter);
-  }
-  get pcStrings() {
-    const pitches = this.getPitches({ low: this.fundamental, high: this.fundamental * 1.999 });
-    return pitches.map((p) => p.chroma.toString());
-  }
-  get westernPitchStrings() {
-    const westernPitches = [
-      "C",
-      "C#",
-      "D",
-      "D#",
-      "E",
-      "F",
-      "F#",
-      "G",
-      "G#",
-      "A",
-      "A#",
-      "B"
-    ];
-    const pitches = this.getPitches({ low: this.fundamental, high: this.fundamental * 1.999 });
-    return pitches.map((p) => westernPitches[p.chroma]);
-  }
-  get ruleSetNumPitches() {
-    let numPitches = 0;
-    const keys = Object.keys(this.ruleSet);
-    keys.forEach((key) => {
-      if (typeof this.ruleSet[key] === "boolean") {
-        if (this.ruleSet[key]) {
-          numPitches += 1;
-        }
-      } else {
-        const ruleSet = this.ruleSet[key];
-        if (ruleSet.lowered) numPitches += 1;
-        if (ruleSet.raised) numPitches += 1;
-      }
-    });
-    return numPitches;
-  }
-  pitchNumberToSargamLetter(pitchNumber) {
-    const oct = Math.floor(pitchNumber / 12);
-    let out;
-    let chroma = pitchNumber % 12;
-    while (chroma < 0) chroma += 12;
-    let scaleDegree, raised;
-    [scaleDegree, raised] = Pitch.chromaToScaleDegree(chroma);
-    const sargam = ["sa", "re", "ga", "ma", "pa", "dha", "ni"][scaleDegree];
-    if (typeof this.ruleSet[sargam] === "boolean") {
-      if (this.ruleSet[sargam]) {
-        out = sargam.slice(0, 1).toUpperCase();
-      }
-    } else {
-      const ruleSet = this.ruleSet[sargam];
-      if (ruleSet[raised ? "raised" : "lowered"]) {
-        out = raised ? sargam.slice(0, 1).toUpperCase() : sargam.slice(0, 1);
-      }
-    }
-    return out;
-  }
-  getPitchNumbers(low, high) {
-    let pitchNumbers = [];
-    for (let i = low; i <= high; i++) {
-      const oct = Math.floor(i / 12);
-      let chroma = i % 12;
-      while (chroma < 0) chroma += 12;
-      let scaleDegree, raised;
-      [scaleDegree, raised] = Pitch.chromaToScaleDegree(chroma);
-      const sargam = ["sa", "re", "ga", "ma", "pa", "dha", "ni"][scaleDegree];
-      if (typeof this.ruleSet[sargam] === "boolean") {
-        if (this.ruleSet[sargam]) {
-          pitchNumbers.push(i);
-        }
-      } else {
-        const ruleSet = this.ruleSet[sargam];
-        if (ruleSet[raised ? "raised" : "lowered"]) {
-          pitchNumbers.push(i);
-        }
-      }
-    }
-    return pitchNumbers;
-  }
-  pitchNumberToScaleNumber(pitchNumber) {
-    const oct = Math.floor(pitchNumber / 12);
-    let chroma = pitchNumber % 12;
-    while (chroma < 0) chroma += 12;
-    const mainOct = this.getPitchNumbers(0, 11);
-    const idx = mainOct.indexOf(chroma);
-    if (idx === -1) {
-      throw new Error("pitchNumberToScaleNumber: pitchNumber not in raga");
-    }
-    return idx + oct * mainOct.length;
-  }
-  scaleNumberToPitchNumber(scaleNumber) {
-    const mainOct = this.getPitchNumbers(0, 11);
-    const oct = Math.floor(scaleNumber / mainOct.length);
-    while (scaleNumber < 0) scaleNumber += mainOct.length;
-    const chroma = mainOct[scaleNumber % mainOct.length];
-    return chroma + oct * 12;
-  }
-  scaleNumberToSargamLetter(scaleNumber) {
-    const pn = this.scaleNumberToPitchNumber(scaleNumber);
-    return this.pitchNumberToSargamLetter(pn);
-  }
-  setRatios(ruleSet) {
-    const sargam = Object.keys(ruleSet);
-    const ratios = [];
-    sargam.forEach((s) => {
-      if (typeof etTuning[s] === "number" && ruleSet[s]) {
-        ratios.push(etTuning[s]);
-      } else {
-        const ruleSet2 = this.ruleSet[s];
-        const tuning = etTuning[s];
-        if (ruleSet2.lowered) ratios.push(tuning.lowered);
-        if (ruleSet2.raised) ratios.push(tuning.raised);
-      }
-    });
-    return ratios;
-  }
-  getPitches({ low = 100, high = 800 } = {}) {
-    const sargam = Object.keys(this.ruleSet);
-    let pitches = [];
-    sargam.forEach((s) => {
-      if (typeof this.ruleSet[s] === "boolean" && this.ruleSet[s]) {
-        const freq = this.tuning[s] * this.fundamental;
-        const octsBelow = Math.ceil(Math.log2(low / freq));
-        const octsAbove = Math.floor(Math.log2(high / freq));
-        for (let i = octsBelow; i <= octsAbove; i++) {
-          pitches.push(new Pitch({
-            swara: s,
-            oct: i,
-            fundamental: this.fundamental,
-            ratios: this.stratifiedRatios
-          }));
-        }
-      } else {
-        if (this.ruleSet[s].lowered) {
-          const freq = this.tuning[s].lowered * this.fundamental;
-          const octsBelow = Math.ceil(Math.log2(low / freq));
-          const octsAbove = Math.floor(Math.log2(high / freq));
-          for (let i = octsBelow; i <= octsAbove; i++) {
-            pitches.push(new Pitch({
-              swara: s,
-              oct: i,
-              raised: false,
-              fundamental: this.fundamental,
-              ratios: this.stratifiedRatios
-            }));
-          }
-        }
-        if (this.ruleSet[s].raised) {
-          const freq = this.tuning[s].raised * this.fundamental;
-          const octsBelow = Math.ceil(Math.log2(low / freq));
-          const octsAbove = Math.floor(Math.log2(high / freq));
-          for (let i = octsBelow; i <= octsAbove; i++) {
-            pitches.push(new Pitch({
-              swara: s,
-              oct: i,
-              raised: true,
-              fundamental: this.fundamental,
-              ratios: this.stratifiedRatios
-            }));
-          }
-        }
-      }
-    });
-    pitches.sort((a, b) => a.frequency - b.frequency);
-    pitches = pitches.filter((p) => {
-      return p.frequency >= low && p.frequency <= high;
-    });
-    return pitches;
-  }
-  get stratifiedRatios() {
-    const sargam = ["sa", "re", "ga", "ma", "pa", "dha", "ni"];
-    const ratios = [];
-    let ct = 0;
-    sargam.forEach((s, sIdx) => {
-      if (typeof this.ruleSet[s] === "boolean") {
-        if (this.ruleSet[s]) {
-          ratios.push(this.ratios[ct]);
-          ct++;
-        } else {
-          ratios.push(this.tuning[s]);
-        }
-      } else {
-        ratios.push([]);
-        if (this.ruleSet[s].lowered) {
-          ratios[sIdx].push(this.ratios[ct]);
-          ct++;
-        } else {
-          ratios[sIdx].push(this.tuning[s].lowered);
-        }
-        if (this.ruleSet[s].raised) {
-          ratios[sIdx].push(this.ratios[ct]);
-          ct++;
-        } else {
-          ratios[sIdx].push(this.tuning[s].raised);
-        }
-      }
-    });
-    return ratios;
-  }
-  get chikariPitches() {
-    return [
-      new Pitch({ swara: "s", oct: 2, fundamental: this.fundamental }),
-      new Pitch({ swara: "s", oct: 1, fundamental: this.fundamental })
-    ];
-  }
-  getFrequencies({
-    low = 100,
-    high = 800
-  } = {}) {
-    const baseFreqs = this.ratios.map((r) => r * this.fundamental);
-    const freqs = [];
-    baseFreqs.forEach((f) => {
-      const lowExp = Math.ceil(Math.log2(low / f));
-      const highExp = Math.floor(Math.log2(high / f));
-      let range2 = [...Array(highExp - lowExp + 1).keys()].map((i) => i + lowExp);
-      const exps = range2.map((r) => 2 ** r);
-      const additionalFreqs = exps.map((exp) => f * exp);
-      freqs.push(...additionalFreqs);
-    });
-    freqs.sort((a, b) => a - b);
-    return freqs;
-  }
-  get sargamNames() {
-    const names = [];
-    const sargam = Object.keys(this.ruleSet);
-    sargam.forEach((s) => {
-      if (typeof this.ruleSet[s] === "object") {
-        const obj2 = this.ruleSet[s];
-        if (obj2.lowered) {
-          const str = s.charAt(0).toLowerCase() + s.slice(1);
-          names.push(str);
-        }
-        if (obj2.raised) {
-          const str = s.charAt(0).toUpperCase() + s.slice(1);
-          names.push(str);
-        }
-      } else {
-        if (this.ruleSet[s]) {
-          const str = s.charAt(0).toUpperCase() + s.slice(1);
-          names.push(str);
-        }
-      }
-    });
-    return names;
-  }
-  get swaraObjects() {
-    const swaraObjs = [];
-    const sargam = Object.keys(this.ruleSet);
-    let idx = 0;
-    sargam.forEach((s) => {
-      if (typeof this.ruleSet[s] === "object") {
-        const obj2 = this.ruleSet[s];
-        if (obj2.lowered) {
-          swaraObjs.push({ swara: idx, raised: false });
-        }
-        if (obj2.raised) {
-          swaraObjs.push({ swara: idx, raised: true });
-        }
-        idx++;
-      } else {
-        if (this.ruleSet[s]) {
-          swaraObjs.push({ swara: idx, raised: true });
-        }
-        idx++;
-      }
-    });
-    return swaraObjs;
-  }
-  pitchFromLogFreq(logFreq) {
-    const epsilon = 1e-6;
-    const options = this.getFrequencies({ low: 75, high: 2400 }).map((f) => Math.log2(f));
-    const quantizedLogFreq = getClosest(options, logFreq);
-    const logOffset = logFreq - quantizedLogFreq;
-    let logDiff = quantizedLogFreq - Math.log2(this.fundamental);
-    const roundedLogDiff = Math.round(logDiff);
-    if (Math.abs(logDiff - roundedLogDiff) < epsilon) {
-      logDiff = roundedLogDiff;
-    }
-    const octOffset = Math.floor(logDiff);
-    logDiff -= octOffset;
-    const rIdx = this.ratios.findIndex((r) => closeTo(r, 2 ** logDiff));
-    const swara = this.sargamLetters[rIdx];
-    const raised = isUpperCase(swara);
-    return new Pitch({
-      swara,
-      oct: octOffset,
-      fundamental: this.fundamental,
-      ratios: this.stratifiedRatios,
-      logOffset,
-      raised
-    });
-  }
-  ratioIdxToTuningTuple(idx) {
-    const noteMapping = [];
-    const sargamKeys = ["sa", "re", "ga", "ma", "pa", "dha", "ni"];
-    sargamKeys.forEach((key) => {
-      if (typeof this.ruleSet[key] === "object") {
-        if (this.ruleSet[key].lowered) {
-          noteMapping.push([key, "lowered"]);
-        }
-        if (this.ruleSet[key].raised) {
-          noteMapping.push([key, "raised"]);
-        }
-      } else {
-        if (this.ruleSet[key]) {
-          noteMapping.push([key, void 0]);
-        }
-      }
-    });
-    return noteMapping[idx];
-  }
-  toJSON() {
-    return {
-      name: this.name,
-      fundamental: this.fundamental,
-      ratios: this.ratios,
-      tuning: this.tuning
-    };
   }
 };
 
@@ -70173,11 +69303,944 @@ var Trajectory = class _Trajectory {
       tags: this.tags
     };
   }
+  static fromJSON(obj2) {
+    const pitches = (obj2.pitches || []).map((p) => Pitch.fromJSON(p));
+    const articulations = {};
+    if (obj2.articulations) {
+      Object.keys(obj2.articulations).forEach((key) => {
+        const a = obj2.articulations[key];
+        if (a !== null && a !== void 0) {
+          articulations[key] = Articulation.fromJSON(a);
+        }
+      });
+    }
+    const automation = obj2.automation ? Automation.fromJSON(obj2.automation) : void 0;
+    return new _Trajectory({
+      ...obj2,
+      pitches,
+      articulations,
+      automation
+    });
+  }
   static names() {
     const traj = new _Trajectory();
     return traj.names;
   }
   // skip id 11, same code as id 7, just different articulation
+};
+
+// src/ts/model/phrase.ts
+var import_findLastIndex = __toESM(require_findLastIndex(), 1);
+var initPhraseCategorization = () => {
+  return {
+    "Phrase": {
+      "Mohra": false,
+      "Mukra": false,
+      "Asthai": false,
+      "Antara": false,
+      "Manjha": false,
+      "Abhog": false,
+      "Sanchari": false,
+      "Jhala": false
+    },
+    "Elaboration": {
+      "Vistar": false,
+      "Barhat": false,
+      "Prastar": false,
+      "Bol Banao": false,
+      "Bol Alap": false,
+      "Bol Bandt": false,
+      "Behlava": false,
+      "Gat-kari": false,
+      "Tan (Sapat)": false,
+      "Tan (Gamak)": false,
+      "Laykari": false,
+      "Tihai": false,
+      "Chakradar": false
+    },
+    "Vocal Articulation": {
+      "Bol": false,
+      "Non-Tom": false,
+      "Tarana": false,
+      "Aakar": false,
+      "Sargam": false
+    },
+    "Instrumental Articulation": {
+      "Bol": false,
+      "Non-Bol": false
+    },
+    "Incidental": {
+      "Talk/Conversation": false,
+      "Praise ('Vah')": false,
+      "Tuning": false,
+      "Pause": false
+    }
+  };
+};
+var Phrase = class _Phrase {
+  startTime;
+  raga;
+  trajectoryGrid;
+  chikariGrid;
+  instrumentation;
+  groupsGrid;
+  durTot;
+  durArray;
+  // chikaris: { [key: string]: Chikari };
+  pieceIdx;
+  categorizationGrid;
+  adHocCategorizationGrid;
+  uniqueId;
+  constructor({
+    trajectories = [],
+    durTot = void 0,
+    durArray = void 0,
+    chikaris = {},
+    raga = void 0,
+    startTime = void 0,
+    trajectoryGrid = void 0,
+    chikariGrid = void 0,
+    instrumentation = ["Sitar"],
+    groupsGrid = void 0,
+    categorizationGrid = void 0,
+    uniqueId = void 0,
+    adHocCategorizationGrid = void 0
+  } = {}) {
+    if (uniqueId === void 0) {
+      this.uniqueId = v4_default();
+    } else {
+      this.uniqueId = uniqueId;
+    }
+    this.startTime = startTime;
+    this.raga = raga;
+    if (trajectoryGrid !== void 0) {
+      this.trajectoryGrid = trajectoryGrid;
+      for (let i = trajectoryGrid.length; i < instrumentation.length; i++) {
+        this.trajectoryGrid.push([]);
+      }
+      this.trajectoryGrid.length = instrumentation.length;
+    } else {
+      this.trajectoryGrid = [trajectories];
+      for (let i = 1; i < instrumentation.length; i++) {
+        this.trajectoryGrid.push([]);
+      }
+    }
+    if (chikariGrid !== void 0) {
+      this.chikariGrid = chikariGrid;
+      for (let i = chikariGrid.length; i < instrumentation.length; i++) {
+        this.chikariGrid.push({});
+      }
+      this.chikariGrid.length = instrumentation.length;
+    } else {
+      this.chikariGrid = [chikaris];
+      for (let i = 1; i < instrumentation.length; i++) {
+        this.chikariGrid.push({});
+      }
+    }
+    if (this.trajectories.length === 0) {
+      this.durTot = durTot === void 0 ? 1 : durTot;
+      this.durArray = durArray === void 0 ? [] : durArray;
+    } else {
+      this.durTotFromTrajectories();
+      this.durArrayFromTrajectories();
+      if (durTot !== void 0 && this.durTot !== durTot) {
+        this.trajectories.forEach((t) => {
+          t.durTot = t.durTot * durTot / this.durTot;
+        });
+        this.durTot = durTot;
+      }
+      if (durArray !== void 0 && this.durArray !== durArray) {
+        this.trajectories.forEach((t, i) => {
+          t.durTot = t.durTot * durArray[i] / this.durArray[i];
+        });
+        this.durArray = durArray;
+        this.durTotFromTrajectories();
+      }
+    }
+    this.assignStartTimes();
+    this.assignTrajNums();
+    this.instrumentation = instrumentation;
+    if (groupsGrid !== void 0) {
+      this.groupsGrid = groupsGrid;
+    } else {
+      this.groupsGrid = this.instrumentation.map(() => []);
+    }
+    this.categorizationGrid = categorizationGrid || [];
+    if (this.categorizationGrid.length === 0) {
+      for (let i = 0; i < this.trajectoryGrid.length; i++) {
+        this.categorizationGrid.push(initPhraseCategorization());
+      }
+    }
+    if (this.categorizationGrid[0].Elaboration["Bol Alap"] === void 0) {
+      this.categorizationGrid.forEach((cat) => {
+        cat.Elaboration["Bol Alap"] = false;
+      });
+    }
+    if (adHocCategorizationGrid !== void 0) {
+      this.adHocCategorizationGrid = adHocCategorizationGrid;
+    } else {
+      this.adHocCategorizationGrid = [];
+    }
+  }
+  updateFundamental(fundamental) {
+    this.trajectories.forEach((traj) => traj.updateFundamental(fundamental));
+  }
+  getGroups(idx = 0) {
+    if (this.groupsGrid[idx] !== void 0) {
+      return this.groupsGrid[idx];
+    } else {
+      throw new Error("No groups for this index");
+    }
+  }
+  getGroupFromId(id) {
+    const allGroups = [];
+    this.groupsGrid.forEach((groups) => allGroups.push(...groups));
+    return allGroups.find((g) => g.id === id);
+  }
+  assignPhraseIdx() {
+    this.trajectories.forEach((traj) => traj.phraseIdx = this.pieceIdx);
+  }
+  assignTrajNums() {
+    this.trajectories.forEach((traj, i) => traj.num = i);
+  }
+  durTotFromTrajectories() {
+    this.durTot = this.trajectories.map((t) => t.durTot).reduce((a, b) => a + b, 0);
+  }
+  durArrayFromTrajectories() {
+    this.durTotFromTrajectories();
+    this.durArray = this.trajectories.map((t) => t.durTot / this.durTot);
+  }
+  compute(x, logScale = false) {
+    if (this.durArray === void 0) {
+      throw new Error("durArray is undefined");
+    }
+    if (this.durArray.length === 0) {
+      return null;
+    } else {
+      const starts = getStarts(this.durArray);
+      const index = (0, import_findLastIndex.default)(starts, (s) => x >= s);
+      const innerX = (x - starts[index]) / this.durArray[index];
+      const traj = this.trajectories[index];
+      return traj.compute(innerX, logScale);
+    }
+  }
+  realignPitches() {
+    this.trajectories.forEach((traj) => {
+      traj.pitches = traj.pitches.map((p) => {
+        p.ratios = this.raga.stratifiedRatios;
+        return new Pitch(p);
+      });
+    });
+  }
+  assignStartTimes() {
+    if (this.durArray === void 0) {
+      throw new Error("durArray is undefined");
+    }
+    if (this.durTot === void 0) {
+      throw new Error("durTot is undefined");
+    }
+    const starts = getStarts(this.durArray).map((s) => s * this.durTot);
+    this.trajectories.forEach((traj, i) => {
+      traj.startTime = starts[i];
+    });
+  }
+  getRange() {
+    const allPitches = this.trajectories.map((t) => t.pitches).flat();
+    allPitches.sort((a, b) => a.frequency - b.frequency);
+    let low = allPitches[0];
+    let high = allPitches[allPitches.length - 1];
+    const low_ = {
+      frequency: low == null ? void 0 : low.frequency,
+      swara: low == null ? void 0 : low.swara,
+      oct: low == null ? void 0 : low.oct,
+      raised: low == null ? void 0 : low.raised,
+      numberedPitch: low == null ? void 0 : low.numberedPitch
+    };
+    const high_ = {
+      frequency: high == null ? void 0 : high.frequency,
+      swara: high == null ? void 0 : high.swara,
+      oct: high == null ? void 0 : high.oct,
+      raised: high == null ? void 0 : high.raised,
+      numberedPitch: high == null ? void 0 : high.numberedPitch
+    };
+    return {
+      min: low_,
+      max: high_
+    };
+  }
+  consolidateSilentTrajs() {
+    let chain = false;
+    let start = void 0;
+    const delIdxs = [];
+    this.trajectories.forEach((traj, i) => {
+      if (traj.id === 12) {
+        if (chain === false) {
+          start = i;
+          chain = true;
+        }
+        if (i === this.trajectories.length - 1) {
+          if (start === void 0) {
+            throw new Error("start is undefined");
+          }
+          const extraDur = this.trajectories.slice(start + 1).map((t) => t.durTot).reduce((a, b) => a + b, 0);
+          this.trajectories[start].durTot += extraDur;
+          const dIdxs = [...Array(this.trajectories.length - start - 1)].map((_2, i2) => i2 + start + 1);
+          delIdxs.push(...dIdxs);
+        }
+      } else {
+        if (chain === true) {
+          if (start === void 0) {
+            throw new Error("start is undefined");
+          }
+          const extraDur = this.trajectories.slice(start + 1, i).map((t) => t.durTot).reduce((a, b) => a + b, 0);
+          const dIdxs = [...Array(i - (start + 1))].map((_2, i2) => i2 + start + 1);
+          this.trajectories[start].durTot += extraDur;
+          delIdxs.push(...dIdxs);
+          chain = false;
+          start = void 0;
+        }
+      }
+    });
+    const newTs = this.trajectories.filter((traj) => {
+      if (traj.num === void 0) {
+        console.log(traj);
+        throw new Error("traj.num is undefined");
+      }
+      return !delIdxs.includes(traj.num);
+    });
+    this.trajectoryGrid[0] = newTs;
+    this.durArrayFromTrajectories();
+    this.assignStartTimes();
+    this.assignTrajNums();
+    this.assignPhraseIdx();
+  }
+  chikarisDuringTraj(traj, track) {
+    const start = traj.startTime;
+    const dur = traj.durTot;
+    const end = start + dur;
+    const chikaris = this.chikariGrid[0];
+    const chikarisDuring = Object.keys(chikaris).filter((k) => {
+      const chikari = chikaris[k];
+      const time = Number(k);
+      return time >= start && time <= end;
+    }).map((k) => {
+      const realTime = Number(k) + this.startTime;
+      const cd = {
+        time: realTime,
+        phraseTimeKey: k,
+        phraseIdx: this.pieceIdx,
+        track,
+        chikari: chikaris[k],
+        uId: chikaris[k].uniqueId
+      };
+      return cd;
+    });
+    return chikarisDuring;
+  }
+  get trajectories() {
+    return this.trajectoryGrid[0];
+  }
+  get chikaris() {
+    return this.chikariGrid[0];
+  }
+  set chikaris(chikaris) {
+    this.chikariGrid[0] = chikaris;
+  }
+  get swara() {
+    const swara = [];
+    if (this.startTime === void 0) {
+      throw new Error("startTime is undefined");
+    }
+    this.trajectories.forEach((traj) => {
+      if (traj.id !== 12) {
+        if (traj.durArray === void 0) {
+          throw new Error("traj.durArray is undefined");
+        }
+        if (traj.startTime === void 0) {
+          throw new Error("traj.startTime is undefined");
+        }
+        if (traj.durArray.length === traj.pitches.length - 1) {
+          traj.pitches.slice(0, traj.pitches.length - 1).forEach((pitch, i) => {
+            const st = this.startTime + traj.startTime;
+            const obj2 = {
+              pitch,
+              time: st + getStarts(traj.durArray)[i] * traj.durTot
+            };
+            swara.push(obj2);
+          });
+        } else {
+          traj.pitches.forEach((pitch, i) => {
+            const st = this.startTime + traj.startTime;
+            const obj2 = {
+              pitch,
+              time: st + getStarts(traj.durArray)[i] * traj.durTot
+            };
+            obj2.pitch = pitch;
+            swara.push(obj2);
+          });
+        }
+      }
+    });
+    return swara;
+  }
+  allPitches(repetition = true) {
+    let allPitches = [];
+    this.trajectories.forEach((traj) => {
+      if (traj.id !== 12) {
+        allPitches.push(...traj.pitches);
+      }
+    });
+    if (!repetition) {
+      allPitches = allPitches.filter((pitch, i) => {
+        var _a, _b, _c;
+        const c1 = i === 0;
+        const c2 = pitch.swara === ((_a = allPitches[i - 1]) == null ? void 0 : _a.swara);
+        const c3 = pitch.oct === ((_b = allPitches[i - 1]) == null ? void 0 : _b.oct);
+        const c4 = pitch.raised === ((_c = allPitches[i - 1]) == null ? void 0 : _c.raised);
+        return c1 || !(c2 && c3 && c4);
+      });
+    }
+    return allPitches;
+  }
+  firstTrajIdxs() {
+    const idxs = [];
+    let ct = 0;
+    let silentTrigger = false;
+    let lastVowel = void 0;
+    let endConsonantTrigger = void 0;
+    this.trajectories.forEach((traj, tIdx) => {
+      if (traj.id !== 12) {
+        const c1 = ct === 0;
+        const c2 = silentTrigger;
+        const c3 = traj.startConsonant !== void 0;
+        const c4 = endConsonantTrigger;
+        const c5 = traj.vowel !== lastVowel;
+        if (c1 || c2 || c3 || c4 || c5) {
+          idxs.push(tIdx);
+        }
+        ct += 1;
+        endConsonantTrigger = traj.endConsonant !== void 0;
+        lastVowel = traj.vowel;
+      }
+      silentTrigger = traj.id === 12;
+    });
+    return idxs;
+  }
+  trajIdxFromTime(time) {
+    const phraseTime = time - this.startTime;
+    const trajs = this.trajectories.filter((traj) => {
+      const smallOffset = 1e-10;
+      const a = phraseTime >= traj.startTime - smallOffset;
+      const b = phraseTime < traj.startTime + traj.durTot;
+      return a && b;
+    });
+    if (trajs.length === 0) {
+      throw new Error("No trajectory found");
+    }
+    return trajs[0].num;
+  }
+  toJSON() {
+    return {
+      durTot: this.durTot,
+      durArray: this.durArray,
+      chikaris: this.chikaris,
+      raga: this.raga,
+      startTime: this.startTime,
+      trajectoryGrid: this.trajectoryGrid,
+      instrumentation: this.instrumentation,
+      groupsGrid: this.groupsGrid,
+      categorizationGrid: this.categorizationGrid,
+      uniqueId: this.uniqueId,
+      adHocCategorizationGrid: this.adHocCategorizationGrid
+    };
+  }
+  static fromJSON(obj2) {
+    const trajectoryGrid = obj2.trajectoryGrid ? obj2.trajectoryGrid.map((trajs) => trajs.map((t) => Trajectory.fromJSON(t))) : void 0;
+    const trajectories = obj2.trajectories ? obj2.trajectories.map((t) => Trajectory.fromJSON(t)) : void 0;
+    const chikaris = {};
+    if (obj2.chikaris) {
+      Object.keys(obj2.chikaris).forEach((k) => {
+        chikaris[k] = Chikari.fromJSON(obj2.chikaris[k]);
+      });
+    }
+    const chikariGrid = obj2.chikariGrid ? obj2.chikariGrid.map((cg) => {
+      const newObj = {};
+      Object.keys(cg).forEach((k) => {
+        newObj[k] = Chikari.fromJSON(cg[k]);
+      });
+      return newObj;
+    }) : void 0;
+    return new _Phrase({
+      ...obj2,
+      trajectories,
+      trajectoryGrid,
+      chikaris,
+      chikariGrid
+    });
+  }
+  toNoteViewPhrase() {
+    const pitches = [];
+    this.trajectories.forEach((traj) => {
+      if (traj.id !== 0) {
+        traj.pitches.forEach((pitch) => pitches.push(pitch));
+      } else if (Object.keys(traj.articulations).length > 0) {
+        traj.pitches.forEach((pitch) => pitches.push(pitch));
+      }
+    });
+    const nvPhrase = new NoteViewPhrase({
+      pitches,
+      durTot: this.durTot,
+      raga: this.raga,
+      startTime: this.startTime
+    });
+    return nvPhrase;
+  }
+  reset() {
+    this.durArrayFromTrajectories();
+    this.assignStartTimes();
+    this.assignPhraseIdx();
+    this.assignTrajNums();
+  }
+};
+var NoteViewPhrase = class {
+  pitches;
+  durTot;
+  raga;
+  startTime;
+  constructor({
+    pitches = [],
+    durTot = void 0,
+    raga = void 0,
+    startTime = void 0
+  } = {}) {
+    this.pitches = pitches;
+    this.durTot = durTot;
+    this.raga = raga;
+    this.startTime = startTime;
+  }
+};
+
+// src/ts/model/raga.ts
+var yamanRuleSet = {
+  sa: true,
+  re: {
+    lowered: false,
+    raised: true
+  },
+  ga: {
+    lowered: false,
+    raised: true
+  },
+  ma: {
+    lowered: false,
+    raised: true
+  },
+  pa: true,
+  dha: {
+    lowered: false,
+    raised: true
+  },
+  ni: {
+    lowered: false,
+    raised: true
+  }
+};
+var etTuning = {
+  sa: 2 ** (0 / 12),
+  re: {
+    lowered: 2 ** (1 / 12),
+    raised: 2 ** (2 / 12)
+  },
+  ga: {
+    lowered: 2 ** (3 / 12),
+    raised: 2 ** (4 / 12)
+  },
+  ma: {
+    lowered: 2 ** (5 / 12),
+    raised: 2 ** (6 / 12)
+  },
+  pa: 2 ** (7 / 12),
+  dha: {
+    lowered: 2 ** (8 / 12),
+    raised: 2 ** (9 / 12)
+  },
+  ni: {
+    lowered: 2 ** (10 / 12),
+    raised: 2 ** (11 / 12)
+  }
+};
+var Raga = class _Raga {
+  name;
+  fundamental;
+  ruleSet;
+  tuning;
+  ratios;
+  constructor({
+    name = "Yaman",
+    fundamental = 261.63,
+    ruleSet = yamanRuleSet,
+    ratios = void 0,
+    tuning = void 0
+  } = {}) {
+    this.name = name;
+    this.ruleSet = ruleSet;
+    this.fundamental = fundamental;
+    this.tuning = tuning ? tuning : etTuning;
+    if (ratios === void 0 || ratios.length !== this.ruleSetNumPitches) {
+      this.ratios = this.setRatios(this.ruleSet);
+    } else {
+      this.ratios = ratios;
+    }
+    this.ratios.forEach((ratio, rIdx) => {
+      const tuningKeys = this.ratioIdxToTuningTuple(rIdx);
+      if (tuningKeys[0] === "sa" || tuningKeys[0] === "pa") {
+        this.tuning[tuningKeys[0]] = ratio;
+      } else {
+        this.tuning[tuningKeys[0]][tuningKeys[1]] = ratio;
+      }
+    });
+  }
+  get sargamLetters() {
+    const initSargam = ["sa", "re", "ga", "ma", "pa", "dha", "ni"];
+    const sl = [];
+    initSargam.forEach((s) => {
+      if (isObject2(this.ruleSet[s])) {
+        const ruleSet = this.ruleSet[s];
+        if (ruleSet.lowered) sl.push(s.slice(0, 1));
+        if (ruleSet.raised) sl.push(s.slice(0, 1).toUpperCase());
+      } else if (this.ruleSet[s]) {
+        sl.push(s.slice(0, 1).toUpperCase());
+      }
+    });
+    return sl;
+  }
+  get solfegeStrings() {
+    const pitches = this.getPitches({ low: this.fundamental, high: this.fundamental * 1.999 });
+    return pitches.map((p) => p.solfegeLetter);
+  }
+  get pcStrings() {
+    const pitches = this.getPitches({ low: this.fundamental, high: this.fundamental * 1.999 });
+    return pitches.map((p) => p.chroma.toString());
+  }
+  get westernPitchStrings() {
+    const westernPitches = [
+      "C",
+      "C#",
+      "D",
+      "D#",
+      "E",
+      "F",
+      "F#",
+      "G",
+      "G#",
+      "A",
+      "A#",
+      "B"
+    ];
+    const pitches = this.getPitches({ low: this.fundamental, high: this.fundamental * 1.999 });
+    return pitches.map((p) => westernPitches[p.chroma]);
+  }
+  get ruleSetNumPitches() {
+    let numPitches = 0;
+    const keys = Object.keys(this.ruleSet);
+    keys.forEach((key) => {
+      if (typeof this.ruleSet[key] === "boolean") {
+        if (this.ruleSet[key]) {
+          numPitches += 1;
+        }
+      } else {
+        const ruleSet = this.ruleSet[key];
+        if (ruleSet.lowered) numPitches += 1;
+        if (ruleSet.raised) numPitches += 1;
+      }
+    });
+    return numPitches;
+  }
+  pitchNumberToSargamLetter(pitchNumber) {
+    const oct = Math.floor(pitchNumber / 12);
+    let out;
+    let chroma = pitchNumber % 12;
+    while (chroma < 0) chroma += 12;
+    let scaleDegree, raised;
+    [scaleDegree, raised] = Pitch.chromaToScaleDegree(chroma);
+    const sargam = ["sa", "re", "ga", "ma", "pa", "dha", "ni"][scaleDegree];
+    if (typeof this.ruleSet[sargam] === "boolean") {
+      if (this.ruleSet[sargam]) {
+        out = sargam.slice(0, 1).toUpperCase();
+      }
+    } else {
+      const ruleSet = this.ruleSet[sargam];
+      if (ruleSet[raised ? "raised" : "lowered"]) {
+        out = raised ? sargam.slice(0, 1).toUpperCase() : sargam.slice(0, 1);
+      }
+    }
+    return out;
+  }
+  getPitchNumbers(low, high) {
+    let pitchNumbers = [];
+    for (let i = low; i <= high; i++) {
+      const oct = Math.floor(i / 12);
+      let chroma = i % 12;
+      while (chroma < 0) chroma += 12;
+      let scaleDegree, raised;
+      [scaleDegree, raised] = Pitch.chromaToScaleDegree(chroma);
+      const sargam = ["sa", "re", "ga", "ma", "pa", "dha", "ni"][scaleDegree];
+      if (typeof this.ruleSet[sargam] === "boolean") {
+        if (this.ruleSet[sargam]) {
+          pitchNumbers.push(i);
+        }
+      } else {
+        const ruleSet = this.ruleSet[sargam];
+        if (ruleSet[raised ? "raised" : "lowered"]) {
+          pitchNumbers.push(i);
+        }
+      }
+    }
+    return pitchNumbers;
+  }
+  pitchNumberToScaleNumber(pitchNumber) {
+    const oct = Math.floor(pitchNumber / 12);
+    let chroma = pitchNumber % 12;
+    while (chroma < 0) chroma += 12;
+    const mainOct = this.getPitchNumbers(0, 11);
+    const idx = mainOct.indexOf(chroma);
+    if (idx === -1) {
+      throw new Error("pitchNumberToScaleNumber: pitchNumber not in raga");
+    }
+    return idx + oct * mainOct.length;
+  }
+  scaleNumberToPitchNumber(scaleNumber) {
+    const mainOct = this.getPitchNumbers(0, 11);
+    const oct = Math.floor(scaleNumber / mainOct.length);
+    while (scaleNumber < 0) scaleNumber += mainOct.length;
+    const chroma = mainOct[scaleNumber % mainOct.length];
+    return chroma + oct * 12;
+  }
+  scaleNumberToSargamLetter(scaleNumber) {
+    const pn = this.scaleNumberToPitchNumber(scaleNumber);
+    return this.pitchNumberToSargamLetter(pn);
+  }
+  setRatios(ruleSet) {
+    const sargam = Object.keys(ruleSet);
+    const ratios = [];
+    sargam.forEach((s) => {
+      if (typeof etTuning[s] === "number" && ruleSet[s]) {
+        ratios.push(etTuning[s]);
+      } else {
+        const ruleSet2 = this.ruleSet[s];
+        const tuning = etTuning[s];
+        if (ruleSet2.lowered) ratios.push(tuning.lowered);
+        if (ruleSet2.raised) ratios.push(tuning.raised);
+      }
+    });
+    return ratios;
+  }
+  getPitches({ low = 100, high = 800 } = {}) {
+    const sargam = Object.keys(this.ruleSet);
+    let pitches = [];
+    sargam.forEach((s) => {
+      if (typeof this.ruleSet[s] === "boolean" && this.ruleSet[s]) {
+        const freq = this.tuning[s] * this.fundamental;
+        const octsBelow = Math.ceil(Math.log2(low / freq));
+        const octsAbove = Math.floor(Math.log2(high / freq));
+        for (let i = octsBelow; i <= octsAbove; i++) {
+          pitches.push(new Pitch({
+            swara: s,
+            oct: i,
+            fundamental: this.fundamental,
+            ratios: this.stratifiedRatios
+          }));
+        }
+      } else {
+        if (this.ruleSet[s].lowered) {
+          const freq = this.tuning[s].lowered * this.fundamental;
+          const octsBelow = Math.ceil(Math.log2(low / freq));
+          const octsAbove = Math.floor(Math.log2(high / freq));
+          for (let i = octsBelow; i <= octsAbove; i++) {
+            pitches.push(new Pitch({
+              swara: s,
+              oct: i,
+              raised: false,
+              fundamental: this.fundamental,
+              ratios: this.stratifiedRatios
+            }));
+          }
+        }
+        if (this.ruleSet[s].raised) {
+          const freq = this.tuning[s].raised * this.fundamental;
+          const octsBelow = Math.ceil(Math.log2(low / freq));
+          const octsAbove = Math.floor(Math.log2(high / freq));
+          for (let i = octsBelow; i <= octsAbove; i++) {
+            pitches.push(new Pitch({
+              swara: s,
+              oct: i,
+              raised: true,
+              fundamental: this.fundamental,
+              ratios: this.stratifiedRatios
+            }));
+          }
+        }
+      }
+    });
+    pitches.sort((a, b) => a.frequency - b.frequency);
+    pitches = pitches.filter((p) => {
+      return p.frequency >= low && p.frequency <= high;
+    });
+    return pitches;
+  }
+  get stratifiedRatios() {
+    const sargam = ["sa", "re", "ga", "ma", "pa", "dha", "ni"];
+    const ratios = [];
+    let ct = 0;
+    sargam.forEach((s, sIdx) => {
+      if (typeof this.ruleSet[s] === "boolean") {
+        if (this.ruleSet[s]) {
+          ratios.push(this.ratios[ct]);
+          ct++;
+        } else {
+          ratios.push(this.tuning[s]);
+        }
+      } else {
+        ratios.push([]);
+        if (this.ruleSet[s].lowered) {
+          ratios[sIdx].push(this.ratios[ct]);
+          ct++;
+        } else {
+          ratios[sIdx].push(this.tuning[s].lowered);
+        }
+        if (this.ruleSet[s].raised) {
+          ratios[sIdx].push(this.ratios[ct]);
+          ct++;
+        } else {
+          ratios[sIdx].push(this.tuning[s].raised);
+        }
+      }
+    });
+    return ratios;
+  }
+  get chikariPitches() {
+    return [
+      new Pitch({ swara: "s", oct: 2, fundamental: this.fundamental }),
+      new Pitch({ swara: "s", oct: 1, fundamental: this.fundamental })
+    ];
+  }
+  getFrequencies({
+    low = 100,
+    high = 800
+  } = {}) {
+    const baseFreqs = this.ratios.map((r) => r * this.fundamental);
+    const freqs = [];
+    baseFreqs.forEach((f) => {
+      const lowExp = Math.ceil(Math.log2(low / f));
+      const highExp = Math.floor(Math.log2(high / f));
+      let range2 = [...Array(highExp - lowExp + 1).keys()].map((i) => i + lowExp);
+      const exps = range2.map((r) => 2 ** r);
+      const additionalFreqs = exps.map((exp) => f * exp);
+      freqs.push(...additionalFreqs);
+    });
+    freqs.sort((a, b) => a - b);
+    return freqs;
+  }
+  get sargamNames() {
+    const names = [];
+    const sargam = Object.keys(this.ruleSet);
+    sargam.forEach((s) => {
+      if (typeof this.ruleSet[s] === "object") {
+        const obj2 = this.ruleSet[s];
+        if (obj2.lowered) {
+          const str = s.charAt(0).toLowerCase() + s.slice(1);
+          names.push(str);
+        }
+        if (obj2.raised) {
+          const str = s.charAt(0).toUpperCase() + s.slice(1);
+          names.push(str);
+        }
+      } else {
+        if (this.ruleSet[s]) {
+          const str = s.charAt(0).toUpperCase() + s.slice(1);
+          names.push(str);
+        }
+      }
+    });
+    return names;
+  }
+  get swaraObjects() {
+    const swaraObjs = [];
+    const sargam = Object.keys(this.ruleSet);
+    let idx = 0;
+    sargam.forEach((s) => {
+      if (typeof this.ruleSet[s] === "object") {
+        const obj2 = this.ruleSet[s];
+        if (obj2.lowered) {
+          swaraObjs.push({ swara: idx, raised: false });
+        }
+        if (obj2.raised) {
+          swaraObjs.push({ swara: idx, raised: true });
+        }
+        idx++;
+      } else {
+        if (this.ruleSet[s]) {
+          swaraObjs.push({ swara: idx, raised: true });
+        }
+        idx++;
+      }
+    });
+    return swaraObjs;
+  }
+  pitchFromLogFreq(logFreq) {
+    const epsilon = 1e-6;
+    const options = this.getFrequencies({ low: 75, high: 2400 }).map((f) => Math.log2(f));
+    const quantizedLogFreq = getClosest(options, logFreq);
+    const logOffset = logFreq - quantizedLogFreq;
+    let logDiff = quantizedLogFreq - Math.log2(this.fundamental);
+    const roundedLogDiff = Math.round(logDiff);
+    if (Math.abs(logDiff - roundedLogDiff) < epsilon) {
+      logDiff = roundedLogDiff;
+    }
+    const octOffset = Math.floor(logDiff);
+    logDiff -= octOffset;
+    const rIdx = this.ratios.findIndex((r) => closeTo(r, 2 ** logDiff));
+    const swara = this.sargamLetters[rIdx];
+    const raised = isUpperCase(swara);
+    return new Pitch({
+      swara,
+      oct: octOffset,
+      fundamental: this.fundamental,
+      ratios: this.stratifiedRatios,
+      logOffset,
+      raised
+    });
+  }
+  ratioIdxToTuningTuple(idx) {
+    const noteMapping = [];
+    const sargamKeys = ["sa", "re", "ga", "ma", "pa", "dha", "ni"];
+    sargamKeys.forEach((key) => {
+      if (typeof this.ruleSet[key] === "object") {
+        if (this.ruleSet[key].lowered) {
+          noteMapping.push([key, "lowered"]);
+        }
+        if (this.ruleSet[key].raised) {
+          noteMapping.push([key, "raised"]);
+        }
+      } else {
+        if (this.ruleSet[key]) {
+          noteMapping.push([key, void 0]);
+        }
+      }
+    });
+    return noteMapping[idx];
+  }
+  toJSON() {
+    return {
+      name: this.name,
+      fundamental: this.fundamental,
+      ratios: this.ratios,
+      tuning: this.tuning
+    };
+  }
+  static fromJSON(obj2) {
+    return new _Raga(obj2);
+  }
 };
 
 // src/ts/model/assemblage.ts
@@ -70322,1133 +70385,6 @@ var Assemblage = class _Assemblage {
       id: this.id,
       loosePhraseIDs: this.loosePhrases.map((phrase) => phrase.uniqueId)
     };
-  }
-};
-
-// src/ts/model/piece.ts
-var import_lodash3 = __toESM(require_lodash(), 1);
-var initSecCategorization = () => {
-  return {
-    "Pre-Chiz Alap": {
-      "Pre-Chiz Alap": false
-    },
-    "Alap": {
-      "Alap": false,
-      "Jor": false,
-      "Alap-Jhala": false
-    },
-    "Composition Type": {
-      "Dhrupad": false,
-      "Bandish": false,
-      "Thumri": false,
-      "Ghazal": false,
-      "Qawwali": false,
-      "Dhun": false,
-      "Tappa": false,
-      "Bhajan": false,
-      "Kirtan": false,
-      "Kriti": false,
-      "Masitkhani Gat": false,
-      "Razakhani Gat": false,
-      "Ferozkhani Gat": false
-    },
-    "Comp.-section/Tempo": {
-      "Ati Vilambit": false,
-      "Vilambit": false,
-      "Madhya": false,
-      "Drut": false,
-      "Ati Drut": false,
-      "Jhala": false
-    },
-    "Tala": {
-      "Ektal": false,
-      "Tintal": false,
-      "Rupak": false
-    },
-    "Improvisation": {
-      "Improvisation": false
-    },
-    "Other": {
-      "Other": false
-    },
-    "Top Level": "None"
-  };
-};
-var durationsOfFixedPitches = (trajs, {
-  inst = 0,
-  outputType = "pitchNumber",
-  countType = "cumulative"
-  // 'cumulative' or 'proportional'
-} = {}) => {
-  const pitchDurs = {};
-  trajs.forEach((traj) => {
-    const trajPitchDurs = traj.durationsOfFixedPitches({
-      outputType
-    });
-    if (typeof trajPitchDurs !== "object" || trajPitchDurs === null) {
-      throw new SyntaxError(`invalid trajPitchDurs type, must be object: ${trajPitchDurs}`);
-    }
-    Object.keys(trajPitchDurs).forEach((pitchNumber) => {
-      if (pitchDurs[pitchNumber]) {
-        pitchDurs[pitchNumber] += trajPitchDurs[pitchNumber];
-      } else {
-        pitchDurs[pitchNumber] = trajPitchDurs[pitchNumber];
-      }
-    });
-  });
-  if (countType === "cumulative") {
-    return pitchDurs;
-  } else if (countType === "proportional") {
-    let totalDuration = 0;
-    Object.keys(pitchDurs).forEach((pitchNumber) => {
-      totalDuration += pitchDurs[pitchNumber];
-    });
-    Object.keys(pitchDurs).forEach((pitchNumber) => {
-      pitchDurs[pitchNumber] /= totalDuration;
-    });
-    return pitchDurs;
-  }
-};
-var Piece = class {
-  // phrases: Phrase[];
-  durTot;
-  // durArray?: number[];
-  raga;
-  title;
-  dateCreated;
-  dateModified;
-  location;
-  _id;
-  audioID;
-  audio_DB_ID;
-  userID;
-  name;
-  family_name;
-  given_name;
-  permissions;
-  instrumentation;
-  possibleTrajs;
-  meters;
-  explicitPermissions;
-  soloist;
-  soloInstrument;
-  phraseGrid;
-  durArrayGrid;
-  sectionStartsGrid;
-  sectionCatGrid;
-  excerptRange;
-  adHocSectionCatGrid;
-  assemblageDescriptors;
-  constructor({
-    phrases = [],
-    durTot = void 0,
-    durArray = void 0,
-    raga = new Raga(),
-    title = "untitled",
-    dateCreated = /* @__PURE__ */ new Date(),
-    dateModified = /* @__PURE__ */ new Date(),
-    location = "Santa Cruz",
-    _id = void 0,
-    audioID = void 0,
-    audio_DB_ID = void 0,
-    userID = void 0,
-    name = void 0,
-    family_name = void 0,
-    given_name = void 0,
-    permissions = void 0,
-    sectionStarts = void 0,
-    instrumentation = ["Sitar" /* Sitar */],
-    meters = [],
-    sectionCategorization = void 0,
-    explicitPermissions = void 0,
-    soloist = void 0,
-    soloInstrument = void 0,
-    phraseGrid = void 0,
-    durArrayGrid = void 0,
-    sectionStartsGrid = void 0,
-    sectionCatGrid = void 0,
-    excerptRange = void 0,
-    adHocSectionCatGrid = void 0,
-    assemblageDescriptors = void 0
-  } = {}) {
-    this.meters = meters;
-    if (phraseGrid !== void 0) {
-      this.phraseGrid = phraseGrid;
-    } else {
-      this.phraseGrid = [phrases];
-    }
-    for (let i = 1; i < instrumentation.length; i++) {
-      this.phraseGrid.push([]);
-    }
-    this.phraseGrid.length = instrumentation.length;
-    if (durArrayGrid !== void 0) {
-      this.durArrayGrid = durArrayGrid;
-    } else {
-      this.durArrayGrid = durArray === void 0 ? [[]] : [durArray];
-    }
-    for (let i = 1; i < instrumentation.length; i++) {
-      this.durArrayGrid.push([]);
-    }
-    this.durArrayGrid.length = instrumentation.length;
-    if (sectionStartsGrid !== void 0) {
-      this.sectionStartsGrid = sectionStartsGrid;
-    } else {
-      this.sectionStartsGrid = sectionStarts === void 0 ? [[0]] : [sectionStarts];
-    }
-    for (let i = 1; i < instrumentation.length; i++) {
-      this.sectionStartsGrid.push([0]);
-    }
-    this.sectionStartsGrid.length = instrumentation.length;
-    this.sectionStartsGrid.forEach((ss, i) => {
-      ss.sort((a, b) => a - b);
-    });
-    if (sectionCatGrid !== void 0) {
-      this.sectionCatGrid = sectionCatGrid;
-      if (this.sectionCatGrid.length === 0) {
-        const ss = this.sectionStartsGrid[0];
-        this.sectionCatGrid.push(ss.map(() => initSecCategorization()));
-      }
-      for (let i = 1; i < instrumentation.length; i++) {
-        const ss = this.sectionStartsGrid[i];
-        this.sectionCatGrid.push(ss.map(() => initSecCategorization()));
-      }
-    } else {
-      this.sectionCatGrid = this.sectionStartsGrid.map((ss, ssIdx) => {
-        if (ssIdx === 0) {
-          if (sectionCategorization !== void 0) {
-            const sc = sectionCategorization;
-            sc.forEach(this.cleanUpSectionCategorization);
-            return sc;
-          } else {
-            return ss.map(() => initSecCategorization());
-          }
-        }
-        return ss.map(() => initSecCategorization());
-      });
-    }
-    if (adHocSectionCatGrid !== void 0) {
-      this.adHocSectionCatGrid = adHocSectionCatGrid;
-      this.adHocSectionCatGrid = this.adHocSectionCatGrid.map(
-        (track) => track.map((fields) => fields.filter((field) => field !== ""))
-      );
-    } else {
-      this.adHocSectionCatGrid = this.sectionCatGrid.map((sc) => {
-        return sc.map(() => []);
-      });
-    }
-    while (this.adHocSectionCatGrid.length < this.sectionStartsGrid.length) {
-      this.adHocSectionCatGrid.push(this.adHocSectionCatGrid[0].map(() => []));
-    }
-    this.raga = raga;
-    if (this.phrases.length === 0) {
-      if (durTot === void 0) {
-        this.durTot = 1;
-        this.durArray = [];
-      } else {
-        this.durTot = durTot;
-        this.durArray = [];
-      }
-    } else {
-      this.durTotFromPhrases();
-      this.durArrayFromPhrases();
-      this.updateStartTimes();
-    }
-    this.putRagaInPhrase();
-    this.title = title;
-    this.dateCreated = dateCreated;
-    this.dateModified = dateModified;
-    this.location = location;
-    this._id = _id;
-    this.audioID = audioID;
-    this.audio_DB_ID = audio_DB_ID;
-    this.userID = userID;
-    this.permissions = permissions;
-    this.name = name;
-    this.family_name = family_name;
-    this.given_name = given_name;
-    this.soloist = soloist;
-    this.soloInstrument = soloInstrument;
-    this.instrumentation = instrumentation;
-    this.possibleTrajs = {
-      ["Sitar" /* Sitar */]: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
-      ["Vocal (M)" /* Vocal_M */]: [0, 1, 2, 3, 4, 5, 6, 12, 13],
-      ["Vocal (F)" /* Vocal_F */]: [0, 1, 2, 3, 4, 5, 6, 12, 13],
-      ["Bansuri" /* Bansuri */]: [0, 1, 2, 3, 4, 5, 6, 12, 13],
-      ["Esraj" /* Esraj */]: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
-      ["Sarangi" /* Sarangi */]: [0, 1, 2, 3, 4, 5, 6, 12, 13],
-      ["Rabab" /* Rabab */]: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
-      ["Santoor" /* Santoor */]: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
-      ["Sarod" /* Sarod */]: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
-      ["Shehnai" /* Shehnai */]: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
-      ["Surbahar" /* Surbahar */]: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
-      ["Veena (Saraswati)" /* Veena_Saraswati */]: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
-      ["Veena (Vichitra)" /* Veena_Vichitra */]: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
-      ["Veena (Rudra Bin)" /* Veena_Rudra_Bin */]: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
-      ["Violin" /* Violin */]: [0, 1, 2, 3, 4, 5, 6, 12, 13],
-      ["Harmonium" /* Harmonium */]: [0, 12, 13]
-    };
-    this.sectionStartsGrid.forEach((ss, ssIdx) => {
-      if (this.sectionCatGrid[ssIdx] === void 0) {
-        debugger;
-      }
-      if (ss.length > this.sectionCatGrid[ssIdx].length) {
-        console.log("this is where the fix is");
-        const dif = ss.length - this.sectionCatGrid[ssIdx].length;
-        for (let i = 0; i < dif; i++) {
-          this.sectionCatGrid[ssIdx].push(initSecCategorization());
-        }
-      }
-    });
-    if (explicitPermissions === void 0) {
-      this.explicitPermissions = {
-        edit: [],
-        view: [],
-        publicView: true
-      };
-    } else {
-      this.explicitPermissions = explicitPermissions;
-    }
-    this.excerptRange = excerptRange;
-    if (assemblageDescriptors === void 0) {
-      this.assemblageDescriptors = [];
-    } else {
-      this.assemblageDescriptors = assemblageDescriptors;
-    }
-  }
-  get phrases() {
-    return this.phraseGrid[0];
-  }
-  set phrases(arr) {
-    this.phraseGrid[0] = arr;
-  }
-  get durArray() {
-    return this.durArrayGrid[0];
-  }
-  set durArray(arr) {
-    this.durArrayGrid[0] = arr;
-  }
-  get sectionStarts() {
-    return this.sectionStartsGrid[0];
-  }
-  set sectionStarts(arr) {
-    this.sectionStartsGrid[0] = arr;
-  }
-  get sectionCategorization() {
-    return this.sectionCatGrid[0];
-  }
-  set sectionCategorization(arr) {
-    this.sectionCatGrid[0] = arr;
-  }
-  get assemblages() {
-    return this.assemblageDescriptors.map(
-      (ad) => Assemblage.fromDescriptor(ad, this.phraseGrid.flat())
-    );
-  }
-  chikariFreqs(instIdx) {
-    const allChikaris = [];
-    this.phraseGrid[instIdx].forEach((p) => {
-      const chikaris = Object.values(p.chikaris);
-      allChikaris.push(...chikaris);
-    });
-    if (allChikaris.length === 0) {
-      return [this.raga.fundamental * 2, this.raga.fundamental * 4];
-    } else {
-      return allChikaris[0].pitches.slice(0, 2).map((p) => p.frequency);
-    }
-  }
-  updateFundamental(fundamental) {
-    this.raga.fundamental = fundamental;
-    this.phraseGrid.forEach((phrases) => {
-      phrases.forEach((phrase) => phrase.updateFundamental(fundamental));
-    });
-  }
-  cleanUpSectionCategorization(c) {
-    if (c["Improvisation"] === void 0) {
-      c["Improvisation"] = { "Improvisation": false };
-    }
-    if (c["Other"] === void 0) {
-      c["Other"] = { "Other": false };
-    }
-    if (c["Top Level"] === void 0) {
-      const com = c["Composition Type"];
-      let comSecTemp = c["Comp.-section/Tempo"];
-      if (comSecTemp === void 0) {
-        comSecTemp = c["Composition-section/Tempo"];
-      }
-      const tala = c["Tala"];
-      const improv = c["Improvisation"];
-      const other = c["Other"];
-      const someTrue = (obj2) => {
-        return Object.values(obj2).some((v) => v);
-      };
-      if (c["Pre-Chiz Alap"]["Pre-Chiz Alap"]) {
-        c["Top Level"] = "Pre-Chiz Alap";
-      } else if (someTrue(c["Alap"])) {
-        c["Top Level"] = "Alap";
-      } else if (someTrue(com) || someTrue(comSecTemp) || someTrue(tala)) {
-        c["Top Level"] = "Composition";
-      } else if (improv["Improvisation"]) {
-        c["Top Level"] = "Improvisation";
-      } else if (other["Other"]) {
-        c["Top Level"] = "Other";
-      } else {
-        c["Top Level"] = "None";
-      }
-    }
-    if (c["Comp.-section/Tempo"] === void 0) {
-      c["Comp.-section/Tempo"] = c["Composition-section/Tempo"];
-      delete c["Composition-section/Tempo"];
-    }
-  }
-  putRagaInPhrase() {
-    this.phraseGrid.forEach((ps) => ps.forEach((p) => p.raga = this.raga));
-  }
-  addMeter(meter) {
-    if (this.meters.length === 0) {
-      this.meters.push(meter);
-    } else {
-      const start = meter.startTime;
-      const end = start + meter.durTot;
-      this.meters.forEach((m) => {
-        const c1 = m.startTime <= start && m.startTime + m.durTot >= start;
-        const c2 = m.startTime < end && m.startTime + m.durTot > end;
-        const c3 = m.startTime > start && m.startTime + m.durTot < end;
-        if (c1 || c2 || c3) {
-          throw new Error("meters overlap");
-        }
-      });
-      this.meters.push(meter);
-    }
-  }
-  removeMeter(meter) {
-    const idx = this.meters.indexOf(meter);
-    this.meters.splice(idx, 1);
-  }
-  durStarts(track = 0) {
-    if (this.durArray === void 0) {
-      throw new Error("durArray is undefined");
-    }
-    if (this.durTot === void 0) {
-      throw new Error("durTot is undefined");
-    }
-    const starts = getStarts(this.durArrayGrid[track].map((d) => d * this.durTot));
-    return starts;
-  }
-  get trajIdxs() {
-    return this.possibleTrajs[this.instrumentation[0]];
-  }
-  get trajIdxsGrid() {
-    return this.instrumentation.map((i) => this.possibleTrajs[i]);
-  }
-  allGroups({ instrumentIdx = 0 } = {}) {
-    const allGroups = [];
-    this.phrases.forEach((p) => {
-      allGroups.push(...p.getGroups(instrumentIdx));
-    });
-    return allGroups;
-  }
-  updateStartTimes() {
-    this.phraseGrid.forEach((phrases, idx) => {
-      phrases.forEach((p, i) => {
-        p.startTime = this.durStarts(idx)[i];
-        p.pieceIdx = i;
-        p.assignPhraseIdx();
-      });
-    });
-  }
-  durTotFromPhrases() {
-    const durTots = this.phraseGrid.map((ps) => {
-      return ps.map((p) => p.durTot).reduce((a, b) => a + b, 0);
-    });
-    const maxDurTot = Math.max(...durTots);
-    this.durTot = maxDurTot;
-    durTots.forEach((d, t) => {
-      if (d !== maxDurTot) {
-        const extra = maxDurTot - d;
-        const phrases = this.phraseGrid[t];
-        const extraSilent = new Trajectory({
-          id: 12,
-          durTot: extra,
-          fundID12: this.raga.fundamental
-        });
-        if (phrases.length === 0) {
-          phrases.push(new Phrase({
-            trajectories: [extraSilent],
-            durTot: extra,
-            raga: this.raga,
-            instrumentation: this.instrumentation
-          }));
-          phrases[0].reset();
-        } else {
-          const lastPhrase = phrases[phrases.length - 1];
-          lastPhrase.trajectories.push(extraSilent);
-          lastPhrase.reset();
-        }
-      }
-    });
-  }
-  durArrayFromPhrases() {
-    this.durTotFromPhrases();
-    this.phraseGrid.forEach((phrases, idx) => {
-      this.durArrayGrid[idx] = phrases.map((p) => {
-        if (p.durTot === void 0) {
-          throw new Error("p.durTot is undefined");
-        } else if (isNaN(p.durTot)) {
-          const removes = p.trajectories.filter((t) => isNaN(t.durTot));
-          removes.forEach((r) => {
-            const rIdx = p.trajectories.indexOf(r);
-            p.trajectories.splice(rIdx, 1);
-          });
-          p.durTot = p.trajectories.map((t) => {
-            return t.durTot;
-          }).reduce((a, b) => a + b, 0);
-        }
-        return p.durTot / this.durTot;
-      });
-      this.updateStartTimes();
-    });
-  }
-  realignPitches() {
-    this.phraseGrid.forEach((ps) => ps.forEach((p) => p.realignPitches()));
-  }
-  // set up for one instrumnet, shoudl still work as is.
-  get sections() {
-    return this.sectionsGrid[0];
-  }
-  get sectionsGrid() {
-    return this.sectionStartsGrid.map((ss, i) => {
-      const sections = [];
-      ss.forEach((s, j) => {
-        let slice;
-        if (j === ss.length - 1) {
-          slice = this.phraseGrid[i].slice(s);
-        } else {
-          slice = this.phraseGrid[i].slice(s, ss[j + 1]);
-        }
-        sections.push(new Section({
-          phrases: slice,
-          categorization: this.sectionCatGrid[i][j],
-          adHocCategorization: this.adHocSectionCatGrid[i][j]
-        }));
-      });
-      return sections;
-    });
-  }
-  trackFromTraj(traj) {
-    let track = void 0;
-    for (let i = 0; i < this.instrumentation.length; i++) {
-      const trajs = this.allTrajectories(i);
-      const trajUIds = trajs.map((t) => t.uniqueId);
-      if (trajUIds.includes(traj.uniqueId)) {
-        track = i;
-        break;
-      }
-    }
-    if (track === void 0) {
-      throw new Error("Trajectory not found");
-    }
-    return track;
-  }
-  trackFromTrajUId(trajUId) {
-    let track = void 0;
-    for (let i = 0; i < this.instrumentation.length; i++) {
-      const trajs = this.allTrajectories(i);
-      const trajUIds = trajs.map((t) => t.uniqueId);
-      if (trajUIds.includes(trajUId)) {
-        track = i;
-        break;
-      }
-    }
-    if (track === void 0) {
-      throw new Error("Trajectory not found");
-    }
-    return track;
-  }
-  phraseFromUId(uId) {
-    let phrase = void 0;
-    this.phraseGrid.forEach((ps) => {
-      ps.forEach((p) => {
-        if (p.uniqueId === uId) {
-          phrase = p;
-        }
-      });
-    });
-    if (phrase === void 0) {
-      throw new Error("Phrase not found");
-    }
-    return phrase;
-  }
-  trackFromPhraseUId(phraseUId) {
-    let track = void 0;
-    for (let i = 0; i < this.instrumentation.length; i++) {
-      const phrases = this.phraseGrid[i];
-      const phraseUIds = phrases.map((p) => p.uniqueId);
-      if (phraseUIds.includes(phraseUId)) {
-        track = i;
-        break;
-      }
-    }
-    if (track === void 0) {
-      console.log("here");
-      throw new Error("Phrase not found");
-    }
-    return track;
-  }
-  allPitches({ repetition = true, pitchNumber = false } = {}, track = 0) {
-    let allPitches = [];
-    const phrases = this.phraseGrid[track];
-    phrases.forEach((p) => allPitches.push(...p.allPitches()));
-    if (!repetition) {
-      allPitches = allPitches.filter((pitch, i) => {
-        if (typeof pitch === "number") {
-          throw new Error("pitch is a number");
-        }
-        const c1 = i === 0;
-        const lastP = allPitches[i - 1];
-        if (typeof lastP === "number") {
-          throw new Error("lastP is a number");
-        }
-        const c2 = pitch.swara === (lastP == null ? void 0 : lastP.swara);
-        const c3 = pitch.oct === (lastP == null ? void 0 : lastP.oct);
-        const c4 = pitch.raised === (lastP == null ? void 0 : lastP.raised);
-        return c1 || !(c2 && c3 && c4);
-      });
-    }
-    if (pitchNumber) {
-      const allPitchNumbers = allPitches.map((p) => {
-        if (typeof p === "number") {
-          throw new Error("p is a number");
-        }
-        return p.numberedPitch;
-      });
-      return allPitchNumbers;
-    } else {
-      return allPitches;
-    }
-  }
-  get highestPitchNumber() {
-    return Math.max(...this.allPitches({ pitchNumber: true }));
-  }
-  get lowestPitchNumber() {
-    return Math.min(...this.allPitches({ pitchNumber: true }));
-  }
-  allTrajectories(inst = 0) {
-    const allTrajectories = [];
-    this.phraseGrid[inst].forEach((p) => allTrajectories.push(...p.trajectories));
-    return allTrajectories;
-  }
-  trajFromTime(time, track) {
-    const trajs = this.allTrajectories(track);
-    const starts = this.trajStartTimes(track);
-    const endTimes = starts.map((s, i) => s + trajs[i].durTot);
-    const idx = (0, import_lodash3.findLastIndex)(starts, (s) => time >= s);
-    if (idx === -1) {
-      return trajs[0];
-    } else {
-      const eT = endTimes[idx];
-      if (time < eT) {
-        return trajs[idx];
-      } else {
-        return trajs[idx + 1];
-      }
-    }
-  }
-  trajFromUId(uId, track) {
-    const traj = this.allTrajectories(track).find((t) => t.uniqueId === uId);
-    if (traj === void 0) {
-      throw new Error("Trajectory not found");
-    }
-    return traj;
-  }
-  phraseFromTime(time, track) {
-    const starts = this.durStarts(track);
-    const idx = (0, import_lodash3.findLastIndex)(starts, (s) => time >= s);
-    return this.phraseGrid[track][idx];
-  }
-  phraseIdxFromTime(time, track) {
-    const starts = this.durStarts(track);
-    const idx = (0, import_lodash3.findLastIndex)(starts, (s) => time >= s);
-    return idx;
-  }
-  trajStartTimes(inst = 0) {
-    const trajs = this.allTrajectories(inst);
-    const durs = trajs.map((t) => t.durTot);
-    return durs.reduce((acc, dur, idx) => {
-      if (idx < durs.length - 1) {
-        acc.push(acc[acc.length - 1] + dur);
-      }
-      return acc;
-    }, [0]);
-  }
-  chunkedTrajs(inst = 0, duration = 30) {
-    const trajs = this.allTrajectories(inst);
-    const durs = trajs.map((t) => t.durTot);
-    const starts = getStarts(durs);
-    const endTimes = getEnds(durs);
-    const chunks = [];
-    for (let i = 0; i < this.durTot; i += duration) {
-      const f1 = (startTime) => {
-        return startTime >= i && startTime < i + duration;
-      };
-      const f2 = (endTime) => {
-        return endTime > i && endTime <= i + duration;
-      };
-      const f3 = (startTime, endTime) => {
-        return startTime < i && endTime > i + duration;
-      };
-      const chunk = trajs.filter((_2, j) => {
-        return f1(starts[j]) || f2(endTimes[j]) || f3(starts[j], endTimes[j]);
-      });
-      chunks.push(chunk);
-    }
-    const lastChunk = trajs.filter((_2, j) => {
-      return starts[j] >= this.durTot - duration;
-    });
-    return chunks;
-  }
-  allDisplayBols(inst = 0) {
-    const trajs = this.allTrajectories(inst);
-    const starts = this.trajStartTimes(inst);
-    const idxs = [];
-    const bols = trajs.filter((t, tIdx) => {
-      const c = t.articulations["0.00"] && t.articulations["0.00"].name === "pluck";
-      if (c) {
-        idxs.push(tIdx);
-      }
-      return c;
-    }).map((t, tIdx) => {
-      const time = starts[idxs[tIdx]];
-      const bol = t.articulations["0.00"].strokeNickname;
-      const uId = t.uniqueId;
-      const logFreq = t.logFreqs[0];
-      return { time, bol, uId, logFreq, track: inst };
-    });
-    return bols;
-  }
-  allDisplaySargam(inst = 0) {
-    const trajs = this.allTrajectories(inst);
-    const starts = this.trajStartTimes(inst);
-    const sargams = [];
-    let lastPitch = {
-      logFreq: void 0,
-      time: void 0
-    };
-    trajs.forEach((t, i) => {
-      if (t.id !== 12) {
-        const subDurs = t.durArray.map((d) => d * t.durTot);
-        let timePts = getStarts(subDurs);
-        timePts.push(t.durTot);
-        timePts = timePts.map((d) => d + starts[i]);
-        timePts.forEach((tp, tpIdx) => {
-          const logFreq = t.logFreqs[tpIdx] ? t.logFreqs[tpIdx] : t.logFreqs[tpIdx - 1];
-          const cLF = lastPitch.logFreq === logFreq;
-          const cT = lastPitch.time === tp;
-          if (!(cLF || cLF && cT)) {
-            sargams.push({
-              logFreq,
-              sargam: t.pitches[tpIdx].sargamLetter,
-              time: tp,
-              uId: t.uniqueId,
-              track: inst,
-              solfege: t.pitches[tpIdx].solfegeLetter,
-              pitchClass: t.pitches[tpIdx].chroma.toString(),
-              westernPitch: t.pitches[tpIdx].westernPitch
-            });
-          }
-          ;
-          lastPitch = {
-            logFreq,
-            time: tp
-          };
-        });
-      }
-    });
-    const phraseDivs = this.phraseGrid[inst].map((p) => p.startTime + p.durTot);
-    const pwr = 10 ** 5;
-    const roundedPDS = phraseDivs.map((pd) => Math.round(pd * pwr) / pwr);
-    sargams.forEach((s, sIdx) => {
-      let pos = 1;
-      let lastHigher = true;
-      let nextHigher = true;
-      if (sIdx !== 0 && sIdx !== sargams.length - 1) {
-        const lastS = sargams[sIdx - 1];
-        const nextS = sargams[sIdx + 1];
-        lastHigher = lastS.logFreq > s.logFreq;
-        nextHigher = nextS.logFreq > s.logFreq;
-      }
-      if (lastHigher && nextHigher) {
-        pos = 0;
-      } else if (!lastHigher && !nextHigher) {
-        pos = 1;
-      } else if (lastHigher && !nextHigher) {
-        pos = 3;
-      } else if (!lastHigher && nextHigher) {
-        pos = 2;
-      }
-      if (roundedPDS.includes(Math.round(s.time * pwr) / pwr)) {
-        if (nextHigher) {
-          pos = 5;
-        } else {
-          pos = 4;
-        }
-      }
-      s.pos = pos;
-    });
-    return sargams;
-  }
-  allPhraseDivs(inst = 0) {
-    const phraseDivObjs = [];
-    this.phraseGrid[inst].forEach((p, pIdx) => {
-      if (pIdx !== 0) {
-        phraseDivObjs.push({
-          time: p.startTime,
-          type: this.sectionStartsGrid[inst].includes(pIdx) ? "section" : "phrase",
-          idx: pIdx,
-          track: inst,
-          uId: p.uniqueId
-        });
-      }
-    });
-    return phraseDivObjs;
-  }
-  allDisplayVowels(inst = 0) {
-    const vocalInsts = ["Vocal (M)" /* Vocal_M */, "Vocal (F)" /* Vocal_F */];
-    const displayVowels = [];
-    if (vocalInsts.includes(this.instrumentation[inst])) {
-      this.phraseGrid[inst].forEach((phrase) => {
-        const firstTrajIdxs = phrase.firstTrajIdxs();
-        const phraseStart = phrase.startTime;
-        firstTrajIdxs.forEach((tIdx) => {
-          const traj = phrase.trajectories[tIdx];
-          const time = phraseStart + traj.startTime;
-          const logFreq = traj.logFreqs[0];
-          const withC = traj.startConsonant !== void 0;
-          const art = withC ? traj.articulations["0.00"] : void 0;
-          let text = "";
-          const ipaText = withC ? art.ipa + traj.vowelIpa : traj.vowelIpa;
-          const devanagariText = withC ? art.hindi + traj.vowelHindi : traj.vowelHindi;
-          const englishText = withC ? art.engTrans + traj.vowelEngTrans : traj.vowelEngTrans;
-          const uId = traj.uniqueId;
-          displayVowels.push({
-            time,
-            logFreq,
-            ipaText,
-            devanagariText,
-            englishText,
-            uId
-          });
-        });
-      });
-    } else {
-      throw new Error("instrumentation is not vocal");
-    }
-    return displayVowels;
-  }
-  allDisplayEndingConsonants(inst = 0) {
-    const vocalInsts = ["Vocal (M)", "Vocal (F)"];
-    const displayEndingConsonants = [];
-    const trajs = this.allTrajectories(inst);
-    trajs.forEach((t, i) => {
-      if (t.endConsonant !== void 0) {
-        const phrase = this.phraseGrid[inst].find((p) => p.trajectories.includes(t));
-        const phraseStart = phrase == null ? void 0 : phrase.startTime;
-        const time = phraseStart + t.startTime + t.durTot;
-        const logFreq = t.logFreqs[t.logFreqs.length - 1];
-        const art = t.articulations["1.00"];
-        const ipaText = art.ipa;
-        const devanagariText = art.hindi;
-        const englishText = art.engTrans;
-        const uId = t.uniqueId;
-        displayEndingConsonants.push({
-          time,
-          logFreq,
-          ipaText,
-          devanagariText,
-          englishText,
-          uId
-        });
-      }
-    });
-    return displayEndingConsonants;
-  }
-  allDisplayChikaris(inst = 0) {
-    const chikaris = [];
-    this.phraseGrid[inst].forEach((p) => {
-      const keys = Object.keys(p.chikaris);
-      keys.forEach((k) => {
-        const chikari = p.chikaris[k];
-        const time = p.startTime + Number(k);
-        chikaris.push({
-          time,
-          phraseTimeKey: k,
-          phraseIdx: p.pieceIdx,
-          track: inst,
-          chikari,
-          uId: chikari.uniqueId
-        });
-      });
-    });
-    return chikaris;
-  }
-  chunkedDisplayChikaris(inst = 0, duration = 30) {
-    const displayChikaris = this.allDisplayChikaris(inst);
-    const chunks = [];
-    for (let i = 0; i < this.durTot; i += duration) {
-      const chunk = displayChikaris.filter((c) => {
-        return c.time >= i && c.time < i + duration;
-      });
-      chunks.push(chunk);
-    }
-    return chunks;
-  }
-  chunkedDisplayConsonants(inst = 0, duration = 30) {
-    const displayEndingConsonants = this.allDisplayEndingConsonants(inst);
-    const chunks = [];
-    for (let i = 0; i < this.durTot; i += duration) {
-      const chunk = displayEndingConsonants.filter((c) => {
-        return c.time >= i && c.time < i + duration;
-      });
-      chunks.push(chunk);
-    }
-    return chunks;
-  }
-  chunkedDisplayVowels(inst = 0, duration = 30) {
-    const displayVowels = this.allDisplayVowels(inst);
-    const chunks = [];
-    for (let i = 0; i < this.durTot; i += duration) {
-      const chunk = displayVowels.filter((v) => {
-        return v.time >= i && v.time < i + duration;
-      });
-      chunks.push(chunk);
-    }
-    return chunks;
-  }
-  chunkedDisplaySargam(inst = 0, duration = 30) {
-    const displaySargam = this.allDisplaySargam(inst);
-    const chunks = [];
-    for (let i = 0; i < this.durTot; i += duration) {
-      const chunk = displaySargam.filter((s) => {
-        return s.time >= i && s.time < i + duration;
-      });
-      chunks.push(chunk);
-    }
-    return chunks;
-  }
-  chunkedDisplayBols(inst = 0, duration = 30) {
-    const displayBols = this.allDisplayBols(inst);
-    const chunks = [];
-    for (let i = 0; i < this.durTot; i += duration) {
-      const chunk = displayBols.filter((b) => {
-        return b.time >= i && b.time < i + duration;
-      });
-      chunks.push(chunk);
-    }
-    return chunks;
-  }
-  chunkedPhraseDivs(inst = 0, duration = 30) {
-    const phraseDivs = this.allPhraseDivs(inst);
-    const chunks = [];
-    for (let i = 0; i < this.durTot; i += duration) {
-      const chunk = phraseDivs.filter((pd) => {
-        return pd.time >= i && pd.time < i + duration;
-      });
-      chunks.push(chunk);
-    }
-    return chunks;
-  }
-  chunkedMeters(duration = 30) {
-    const meters = this.meters;
-    const chunks = [];
-    for (let i = 0; i < this.durTot; i += duration) {
-      const chunk = meters.filter((m) => {
-        return m.startTime >= i && m.startTime < i + duration;
-      });
-      chunks.push(chunk);
-    }
-    return chunks;
-  }
-  mostRecentTraj(time, inst = 0) {
-    const trajs = this.allTrajectories(inst);
-    const endTimes = trajs.map((t) => {
-      const phrase = this.phraseGrid[inst].find((p) => p.trajectories.includes(t));
-      const phraseStart = phrase == null ? void 0 : phrase.startTime;
-      return phraseStart + t.startTime + t.durTot;
-    });
-    const latestTime = endTimes.filter((t) => t <= time).reduce((max, t) => t > max ? t : max, -Infinity);
-    const idx = endTimes.indexOf(latestTime);
-    return trajs[idx];
-  }
-  durationsOfFixedPitches({
-    inst = 0,
-    outputType = "pitchNumber"
-  } = {}) {
-    const trajs = this.allTrajectories(inst);
-    return durationsOfFixedPitches(trajs, {
-      inst,
-      outputType
-    });
-  }
-  proportionsOfFixedPitches({
-    inst = 0,
-    outputType = "pitchNumber"
-  } = {}) {
-    const pitchDurs = this.durationsOfFixedPitches({
-      inst,
-      outputType
-    });
-    let totalDur = 0;
-    Object.keys(pitchDurs).forEach((key) => {
-      totalDur += pitchDurs[key];
-    });
-    const pitchProps = {};
-    for (let key in pitchDurs) {
-      pitchProps[key] = pitchDurs[key] / totalDur;
-    }
-    return pitchProps;
-  }
-  setDurTot(durTot) {
-    for (let inst = 0; inst < this.instrumentation.length; inst++) {
-      const phrases = this.phraseGrid[inst];
-      let lastPhrase = phrases[phrases.length - 1];
-      while (lastPhrase.durTot === 0) {
-        phrases.pop();
-        this.durTotFromPhrases();
-        this.durArrayFromPhrases();
-        lastPhrase = phrases[phrases.length - 1];
-      }
-      const trajs = lastPhrase.trajectories;
-      const lastTraj = trajs[trajs.length - 1];
-      if (lastTraj.id === 12) {
-        const extraDur = durTot - this.durTot;
-        lastTraj.durTot += extraDur;
-        lastPhrase.durTotFromTrajectories();
-        lastPhrase.durArrayFromTrajectories();
-        this.durArrayFromPhrases();
-        this.updateStartTimes();
-      }
-    }
-  }
-  pulseFromId(id) {
-    const allPulses = this.meters.map((m) => m.allPulses).flat();
-    const pulse = allPulses.find((p) => p.uniqueId === id);
-    return pulse;
-  }
-  sIdxFromPIdx(pIdx, inst = 0) {
-    const ss = this.sectionStartsGrid[inst];
-    const sIdx = ss.length - 1 - ss.slice().reverse().findIndex((s) => pIdx >= s);
-    return sIdx;
-  }
-  pIdxFromGroup(g) {
-    const pIdx = this.phrases.findIndex((p) => {
-      let bool = false;
-      p.groupsGrid.forEach((gg) => {
-        if (gg.includes(g)) {
-          bool = true;
-        }
-      });
-      return bool;
-    });
-    return pIdx;
-  }
-  toJSON() {
-    return {
-      raga: this.raga,
-      durTot: this.durTot,
-      durArray: this.durArray,
-      title: this.title,
-      dateCreated: this.dateCreated,
-      dateModified: this.dateModified,
-      location: this.location,
-      _id: this._id,
-      audioID: this.audioID,
-      userID: this.userID,
-      permissions: this.permissions,
-      name: this.name,
-      family_name: this.family_name,
-      given_name: this.given_name,
-      sectionStarts: this.sectionStarts,
-      instrumentation: this.instrumentation,
-      meters: this.meters,
-      sectionCategorization: this.sectionCategorization,
-      explicitPermissions: this.explicitPermissions,
-      soloist: this.soloist,
-      soloInstrument: this.soloInstrument,
-      phraseGrid: this.phraseGrid,
-      durArrayGrid: this.durArrayGrid,
-      sectionStartsGrid: this.sectionStartsGrid,
-      sectionCatGrid: this.sectionCatGrid,
-      excerptRange: this.excerptRange,
-      adHocSectionCatGrid: this.adHocSectionCatGrid,
-      assemblageDescriptors: this.assemblageDescriptors
-    };
-  }
-};
-
-// src/ts/model/section.ts
-var Section = class {
-  phrases;
-  categorization;
-  adHocCategorization;
-  constructor({
-    phrases = [],
-    categorization = void 0,
-    adHocCategorization = void 0
-  } = {}) {
-    this.phrases = phrases;
-    if (categorization !== void 0) {
-      this.categorization = categorization;
-    } else {
-      this.categorization = initSecCategorization();
-    }
-    if (adHocCategorization !== void 0) {
-      this.adHocCategorization = adHocCategorization;
-    } else {
-      this.adHocCategorization = [];
-    }
-  }
-  allPitches(repetition = true) {
-    let pitches = [];
-    this.phrases.forEach((p) => pitches.push(...p.allPitches(true)));
-    if (!repetition) {
-      pitches = pitches.filter((pitch, i) => {
-        var _a, _b, _c;
-        const c1 = i === 0;
-        const c2 = pitch.swara === ((_a = pitches[i - 1]) == null ? void 0 : _a.swara);
-        const c3 = pitch.oct === ((_b = pitches[i - 1]) == null ? void 0 : _b.oct);
-        const c4 = pitch.raised === ((_c = pitches[i - 1]) == null ? void 0 : _c.raised);
-        return c1 || !(c2 && c3 && c4);
-      });
-    }
-    return pitches;
-  }
-  get trajectories() {
-    const trajectories = [];
-    this.phrases.forEach((p) => trajectories.push(...p.trajectories));
-    return trajectories;
-  }
-};
-var etTuning2 = {
-  sa: 2 ** (0 / 12),
-  re: {
-    lowered: 2 ** (1 / 12),
-    raised: 2 ** (2 / 12)
-  },
-  ga: {
-    lowered: 2 ** (3 / 12),
-    raised: 2 ** (4 / 12)
-  },
-  ma: {
-    lowered: 2 ** (5 / 12),
-    raised: 2 ** (6 / 12)
-  },
-  pa: 2 ** (7 / 12),
-  dha: {
-    lowered: 2 ** (8 / 12),
-    raised: 2 ** (9 / 12)
-  },
-  ni: {
-    lowered: 2 ** (10 / 12),
-    raised: 2 ** (11 / 12)
   }
 };
 
@@ -72886,6 +71822,1181 @@ var findClosestIdxs = (trials, items) => {
   });
 };
 
+// src/ts/model/piece.ts
+var import_lodash3 = __toESM(require_lodash(), 1);
+var initSecCategorization = () => {
+  return {
+    "Pre-Chiz Alap": {
+      "Pre-Chiz Alap": false
+    },
+    "Alap": {
+      "Alap": false,
+      "Jor": false,
+      "Alap-Jhala": false
+    },
+    "Composition Type": {
+      "Dhrupad": false,
+      "Bandish": false,
+      "Thumri": false,
+      "Ghazal": false,
+      "Qawwali": false,
+      "Dhun": false,
+      "Tappa": false,
+      "Bhajan": false,
+      "Kirtan": false,
+      "Kriti": false,
+      "Masitkhani Gat": false,
+      "Razakhani Gat": false,
+      "Ferozkhani Gat": false
+    },
+    "Comp.-section/Tempo": {
+      "Ati Vilambit": false,
+      "Vilambit": false,
+      "Madhya": false,
+      "Drut": false,
+      "Ati Drut": false,
+      "Jhala": false
+    },
+    "Tala": {
+      "Ektal": false,
+      "Tintal": false,
+      "Rupak": false
+    },
+    "Improvisation": {
+      "Improvisation": false
+    },
+    "Other": {
+      "Other": false
+    },
+    "Top Level": "None"
+  };
+};
+var durationsOfFixedPitches = (trajs, {
+  inst = 0,
+  outputType = "pitchNumber",
+  countType = "cumulative"
+  // 'cumulative' or 'proportional'
+} = {}) => {
+  const pitchDurs = {};
+  trajs.forEach((traj) => {
+    const trajPitchDurs = traj.durationsOfFixedPitches({
+      outputType
+    });
+    if (typeof trajPitchDurs !== "object" || trajPitchDurs === null) {
+      throw new SyntaxError(`invalid trajPitchDurs type, must be object: ${trajPitchDurs}`);
+    }
+    Object.keys(trajPitchDurs).forEach((pitchNumber) => {
+      if (pitchDurs[pitchNumber]) {
+        pitchDurs[pitchNumber] += trajPitchDurs[pitchNumber];
+      } else {
+        pitchDurs[pitchNumber] = trajPitchDurs[pitchNumber];
+      }
+    });
+  });
+  if (countType === "cumulative") {
+    return pitchDurs;
+  } else if (countType === "proportional") {
+    let totalDuration = 0;
+    Object.keys(pitchDurs).forEach((pitchNumber) => {
+      totalDuration += pitchDurs[pitchNumber];
+    });
+    Object.keys(pitchDurs).forEach((pitchNumber) => {
+      pitchDurs[pitchNumber] /= totalDuration;
+    });
+    return pitchDurs;
+  }
+};
+var Piece = class _Piece {
+  // phrases: Phrase[];
+  durTot;
+  // durArray?: number[];
+  raga;
+  title;
+  dateCreated;
+  dateModified;
+  location;
+  _id;
+  audioID;
+  audio_DB_ID;
+  userID;
+  name;
+  family_name;
+  given_name;
+  permissions;
+  instrumentation;
+  possibleTrajs;
+  meters;
+  explicitPermissions;
+  soloist;
+  soloInstrument;
+  phraseGrid;
+  durArrayGrid;
+  sectionStartsGrid;
+  sectionCatGrid;
+  excerptRange;
+  adHocSectionCatGrid;
+  assemblageDescriptors;
+  constructor({
+    phrases = [],
+    durTot = void 0,
+    durArray = void 0,
+    raga = new Raga(),
+    title = "untitled",
+    dateCreated = /* @__PURE__ */ new Date(),
+    dateModified = /* @__PURE__ */ new Date(),
+    location = "Santa Cruz",
+    _id = void 0,
+    audioID = void 0,
+    audio_DB_ID = void 0,
+    userID = void 0,
+    name = void 0,
+    family_name = void 0,
+    given_name = void 0,
+    permissions = void 0,
+    sectionStarts = void 0,
+    instrumentation = ["Sitar" /* Sitar */],
+    meters = [],
+    sectionCategorization = void 0,
+    explicitPermissions = void 0,
+    soloist = void 0,
+    soloInstrument = void 0,
+    phraseGrid = void 0,
+    durArrayGrid = void 0,
+    sectionStartsGrid = void 0,
+    sectionCatGrid = void 0,
+    excerptRange = void 0,
+    adHocSectionCatGrid = void 0,
+    assemblageDescriptors = void 0
+  } = {}) {
+    this.meters = meters;
+    if (phraseGrid !== void 0) {
+      this.phraseGrid = phraseGrid;
+    } else {
+      this.phraseGrid = [phrases];
+    }
+    for (let i = 1; i < instrumentation.length; i++) {
+      this.phraseGrid.push([]);
+    }
+    this.phraseGrid.length = instrumentation.length;
+    if (durArrayGrid !== void 0) {
+      this.durArrayGrid = durArrayGrid;
+    } else {
+      this.durArrayGrid = durArray === void 0 ? [[]] : [durArray];
+    }
+    for (let i = 1; i < instrumentation.length; i++) {
+      this.durArrayGrid.push([]);
+    }
+    this.durArrayGrid.length = instrumentation.length;
+    if (sectionStartsGrid !== void 0) {
+      this.sectionStartsGrid = sectionStartsGrid;
+    } else {
+      this.sectionStartsGrid = sectionStarts === void 0 ? [[0]] : [sectionStarts];
+    }
+    for (let i = 1; i < instrumentation.length; i++) {
+      this.sectionStartsGrid.push([0]);
+    }
+    this.sectionStartsGrid.length = instrumentation.length;
+    this.sectionStartsGrid.forEach((ss, i) => {
+      ss.sort((a, b) => a - b);
+    });
+    if (sectionCatGrid !== void 0) {
+      this.sectionCatGrid = sectionCatGrid;
+      if (this.sectionCatGrid.length === 0) {
+        const ss = this.sectionStartsGrid[0];
+        this.sectionCatGrid.push(ss.map(() => initSecCategorization()));
+      }
+      for (let i = 1; i < instrumentation.length; i++) {
+        const ss = this.sectionStartsGrid[i];
+        this.sectionCatGrid.push(ss.map(() => initSecCategorization()));
+      }
+    } else {
+      this.sectionCatGrid = this.sectionStartsGrid.map((ss, ssIdx) => {
+        if (ssIdx === 0) {
+          if (sectionCategorization !== void 0) {
+            const sc = sectionCategorization;
+            sc.forEach(this.cleanUpSectionCategorization);
+            return sc;
+          } else {
+            return ss.map(() => initSecCategorization());
+          }
+        }
+        return ss.map(() => initSecCategorization());
+      });
+    }
+    if (adHocSectionCatGrid !== void 0) {
+      this.adHocSectionCatGrid = adHocSectionCatGrid;
+      this.adHocSectionCatGrid = this.adHocSectionCatGrid.map(
+        (track) => track.map((fields) => fields.filter((field) => field !== ""))
+      );
+    } else {
+      this.adHocSectionCatGrid = this.sectionCatGrid.map((sc) => {
+        return sc.map(() => []);
+      });
+    }
+    while (this.adHocSectionCatGrid.length < this.sectionStartsGrid.length) {
+      this.adHocSectionCatGrid.push(this.adHocSectionCatGrid[0].map(() => []));
+    }
+    this.raga = raga;
+    if (this.phrases.length === 0) {
+      if (durTot === void 0) {
+        this.durTot = 1;
+        this.durArray = [];
+      } else {
+        this.durTot = durTot;
+        this.durArray = [];
+      }
+    } else {
+      this.durTotFromPhrases();
+      this.durArrayFromPhrases();
+      this.updateStartTimes();
+    }
+    this.putRagaInPhrase();
+    this.title = title;
+    this.dateCreated = dateCreated;
+    this.dateModified = dateModified;
+    this.location = location;
+    this._id = _id;
+    this.audioID = audioID;
+    this.audio_DB_ID = audio_DB_ID;
+    this.userID = userID;
+    this.permissions = permissions;
+    this.name = name;
+    this.family_name = family_name;
+    this.given_name = given_name;
+    this.soloist = soloist;
+    this.soloInstrument = soloInstrument;
+    this.instrumentation = instrumentation;
+    this.possibleTrajs = {
+      ["Sitar" /* Sitar */]: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
+      ["Vocal (M)" /* Vocal_M */]: [0, 1, 2, 3, 4, 5, 6, 12, 13],
+      ["Vocal (F)" /* Vocal_F */]: [0, 1, 2, 3, 4, 5, 6, 12, 13],
+      ["Bansuri" /* Bansuri */]: [0, 1, 2, 3, 4, 5, 6, 12, 13],
+      ["Esraj" /* Esraj */]: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
+      ["Sarangi" /* Sarangi */]: [0, 1, 2, 3, 4, 5, 6, 12, 13],
+      ["Rabab" /* Rabab */]: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
+      ["Santoor" /* Santoor */]: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
+      ["Sarod" /* Sarod */]: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
+      ["Shehnai" /* Shehnai */]: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
+      ["Surbahar" /* Surbahar */]: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
+      ["Veena (Saraswati)" /* Veena_Saraswati */]: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
+      ["Veena (Vichitra)" /* Veena_Vichitra */]: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
+      ["Veena (Rudra Bin)" /* Veena_Rudra_Bin */]: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
+      ["Violin" /* Violin */]: [0, 1, 2, 3, 4, 5, 6, 12, 13],
+      ["Harmonium" /* Harmonium */]: [0, 12, 13]
+    };
+    this.sectionStartsGrid.forEach((ss, ssIdx) => {
+      if (this.sectionCatGrid[ssIdx] === void 0) {
+        debugger;
+      }
+      if (ss.length > this.sectionCatGrid[ssIdx].length) {
+        console.log("this is where the fix is");
+        const dif = ss.length - this.sectionCatGrid[ssIdx].length;
+        for (let i = 0; i < dif; i++) {
+          this.sectionCatGrid[ssIdx].push(initSecCategorization());
+        }
+      }
+    });
+    if (explicitPermissions === void 0) {
+      this.explicitPermissions = {
+        edit: [],
+        view: [],
+        publicView: true
+      };
+    } else {
+      this.explicitPermissions = explicitPermissions;
+    }
+    this.excerptRange = excerptRange;
+    if (assemblageDescriptors === void 0) {
+      this.assemblageDescriptors = [];
+    } else {
+      this.assemblageDescriptors = assemblageDescriptors;
+    }
+  }
+  get phrases() {
+    return this.phraseGrid[0];
+  }
+  set phrases(arr) {
+    this.phraseGrid[0] = arr;
+  }
+  get durArray() {
+    return this.durArrayGrid[0];
+  }
+  set durArray(arr) {
+    this.durArrayGrid[0] = arr;
+  }
+  get sectionStarts() {
+    return this.sectionStartsGrid[0];
+  }
+  set sectionStarts(arr) {
+    this.sectionStartsGrid[0] = arr;
+  }
+  get sectionCategorization() {
+    return this.sectionCatGrid[0];
+  }
+  set sectionCategorization(arr) {
+    this.sectionCatGrid[0] = arr;
+  }
+  get assemblages() {
+    return this.assemblageDescriptors.map(
+      (ad) => Assemblage.fromDescriptor(ad, this.phraseGrid.flat())
+    );
+  }
+  chikariFreqs(instIdx) {
+    const allChikaris = [];
+    this.phraseGrid[instIdx].forEach((p) => {
+      const chikaris = Object.values(p.chikaris);
+      allChikaris.push(...chikaris);
+    });
+    if (allChikaris.length === 0) {
+      return [this.raga.fundamental * 2, this.raga.fundamental * 4];
+    } else {
+      return allChikaris[0].pitches.slice(0, 2).map((p) => p.frequency);
+    }
+  }
+  updateFundamental(fundamental) {
+    this.raga.fundamental = fundamental;
+    this.phraseGrid.forEach((phrases) => {
+      phrases.forEach((phrase) => phrase.updateFundamental(fundamental));
+    });
+  }
+  cleanUpSectionCategorization(c) {
+    if (c["Improvisation"] === void 0) {
+      c["Improvisation"] = { "Improvisation": false };
+    }
+    if (c["Other"] === void 0) {
+      c["Other"] = { "Other": false };
+    }
+    if (c["Top Level"] === void 0) {
+      const com = c["Composition Type"];
+      let comSecTemp = c["Comp.-section/Tempo"];
+      if (comSecTemp === void 0) {
+        comSecTemp = c["Composition-section/Tempo"];
+      }
+      const tala = c["Tala"];
+      const improv = c["Improvisation"];
+      const other = c["Other"];
+      const someTrue = (obj2) => {
+        return Object.values(obj2).some((v) => v);
+      };
+      if (c["Pre-Chiz Alap"]["Pre-Chiz Alap"]) {
+        c["Top Level"] = "Pre-Chiz Alap";
+      } else if (someTrue(c["Alap"])) {
+        c["Top Level"] = "Alap";
+      } else if (someTrue(com) || someTrue(comSecTemp) || someTrue(tala)) {
+        c["Top Level"] = "Composition";
+      } else if (improv["Improvisation"]) {
+        c["Top Level"] = "Improvisation";
+      } else if (other["Other"]) {
+        c["Top Level"] = "Other";
+      } else {
+        c["Top Level"] = "None";
+      }
+    }
+    if (c["Comp.-section/Tempo"] === void 0) {
+      c["Comp.-section/Tempo"] = c["Composition-section/Tempo"];
+      delete c["Composition-section/Tempo"];
+    }
+  }
+  putRagaInPhrase() {
+    this.phraseGrid.forEach((ps) => ps.forEach((p) => p.raga = this.raga));
+  }
+  addMeter(meter) {
+    if (this.meters.length === 0) {
+      this.meters.push(meter);
+    } else {
+      const start = meter.startTime;
+      const end = start + meter.durTot;
+      this.meters.forEach((m) => {
+        const c1 = m.startTime <= start && m.startTime + m.durTot >= start;
+        const c2 = m.startTime < end && m.startTime + m.durTot > end;
+        const c3 = m.startTime > start && m.startTime + m.durTot < end;
+        if (c1 || c2 || c3) {
+          throw new Error("meters overlap");
+        }
+      });
+      this.meters.push(meter);
+    }
+  }
+  removeMeter(meter) {
+    const idx = this.meters.indexOf(meter);
+    this.meters.splice(idx, 1);
+  }
+  durStarts(track = 0) {
+    if (this.durArray === void 0) {
+      throw new Error("durArray is undefined");
+    }
+    if (this.durTot === void 0) {
+      throw new Error("durTot is undefined");
+    }
+    const starts = getStarts(this.durArrayGrid[track].map((d) => d * this.durTot));
+    return starts;
+  }
+  get trajIdxs() {
+    return this.possibleTrajs[this.instrumentation[0]];
+  }
+  get trajIdxsGrid() {
+    return this.instrumentation.map((i) => this.possibleTrajs[i]);
+  }
+  allGroups({ instrumentIdx = 0 } = {}) {
+    const allGroups = [];
+    this.phrases.forEach((p) => {
+      allGroups.push(...p.getGroups(instrumentIdx));
+    });
+    return allGroups;
+  }
+  updateStartTimes() {
+    this.phraseGrid.forEach((phrases, idx) => {
+      phrases.forEach((p, i) => {
+        p.startTime = this.durStarts(idx)[i];
+        p.pieceIdx = i;
+        p.assignPhraseIdx();
+      });
+    });
+  }
+  durTotFromPhrases() {
+    const durTots = this.phraseGrid.map((ps) => {
+      return ps.map((p) => p.durTot).reduce((a, b) => a + b, 0);
+    });
+    const maxDurTot = Math.max(...durTots);
+    this.durTot = maxDurTot;
+    durTots.forEach((d, t) => {
+      if (d !== maxDurTot) {
+        const extra = maxDurTot - d;
+        const phrases = this.phraseGrid[t];
+        const extraSilent = new Trajectory({
+          id: 12,
+          durTot: extra,
+          fundID12: this.raga.fundamental
+        });
+        if (phrases.length === 0) {
+          phrases.push(new Phrase({
+            trajectories: [extraSilent],
+            durTot: extra,
+            raga: this.raga,
+            instrumentation: this.instrumentation
+          }));
+          phrases[0].reset();
+        } else {
+          const lastPhrase = phrases[phrases.length - 1];
+          lastPhrase.trajectories.push(extraSilent);
+          lastPhrase.reset();
+        }
+      }
+    });
+  }
+  durArrayFromPhrases() {
+    this.durTotFromPhrases();
+    this.phraseGrid.forEach((phrases, idx) => {
+      this.durArrayGrid[idx] = phrases.map((p) => {
+        if (p.durTot === void 0) {
+          throw new Error("p.durTot is undefined");
+        } else if (isNaN(p.durTot)) {
+          const removes = p.trajectories.filter((t) => isNaN(t.durTot));
+          removes.forEach((r) => {
+            const rIdx = p.trajectories.indexOf(r);
+            p.trajectories.splice(rIdx, 1);
+          });
+          p.durTot = p.trajectories.map((t) => {
+            return t.durTot;
+          }).reduce((a, b) => a + b, 0);
+        }
+        return p.durTot / this.durTot;
+      });
+      this.updateStartTimes();
+    });
+  }
+  realignPitches() {
+    this.phraseGrid.forEach((ps) => ps.forEach((p) => p.realignPitches()));
+  }
+  // set up for one instrumnet, shoudl still work as is.
+  get sections() {
+    return this.sectionsGrid[0];
+  }
+  get sectionsGrid() {
+    return this.sectionStartsGrid.map((ss, i) => {
+      const sections = [];
+      ss.forEach((s, j) => {
+        let slice;
+        if (j === ss.length - 1) {
+          slice = this.phraseGrid[i].slice(s);
+        } else {
+          slice = this.phraseGrid[i].slice(s, ss[j + 1]);
+        }
+        sections.push(new Section({
+          phrases: slice,
+          categorization: this.sectionCatGrid[i][j],
+          adHocCategorization: this.adHocSectionCatGrid[i][j]
+        }));
+      });
+      return sections;
+    });
+  }
+  trackFromTraj(traj) {
+    let track = void 0;
+    for (let i = 0; i < this.instrumentation.length; i++) {
+      const trajs = this.allTrajectories(i);
+      const trajUIds = trajs.map((t) => t.uniqueId);
+      if (trajUIds.includes(traj.uniqueId)) {
+        track = i;
+        break;
+      }
+    }
+    if (track === void 0) {
+      throw new Error("Trajectory not found");
+    }
+    return track;
+  }
+  trackFromTrajUId(trajUId) {
+    let track = void 0;
+    for (let i = 0; i < this.instrumentation.length; i++) {
+      const trajs = this.allTrajectories(i);
+      const trajUIds = trajs.map((t) => t.uniqueId);
+      if (trajUIds.includes(trajUId)) {
+        track = i;
+        break;
+      }
+    }
+    if (track === void 0) {
+      throw new Error("Trajectory not found");
+    }
+    return track;
+  }
+  phraseFromUId(uId) {
+    let phrase = void 0;
+    this.phraseGrid.forEach((ps) => {
+      ps.forEach((p) => {
+        if (p.uniqueId === uId) {
+          phrase = p;
+        }
+      });
+    });
+    if (phrase === void 0) {
+      throw new Error("Phrase not found");
+    }
+    return phrase;
+  }
+  trackFromPhraseUId(phraseUId) {
+    let track = void 0;
+    for (let i = 0; i < this.instrumentation.length; i++) {
+      const phrases = this.phraseGrid[i];
+      const phraseUIds = phrases.map((p) => p.uniqueId);
+      if (phraseUIds.includes(phraseUId)) {
+        track = i;
+        break;
+      }
+    }
+    if (track === void 0) {
+      console.log("here");
+      throw new Error("Phrase not found");
+    }
+    return track;
+  }
+  allPitches({ repetition = true, pitchNumber = false } = {}, track = 0) {
+    let allPitches = [];
+    const phrases = this.phraseGrid[track];
+    phrases.forEach((p) => allPitches.push(...p.allPitches()));
+    if (!repetition) {
+      allPitches = allPitches.filter((pitch, i) => {
+        if (typeof pitch === "number") {
+          throw new Error("pitch is a number");
+        }
+        const c1 = i === 0;
+        const lastP = allPitches[i - 1];
+        if (typeof lastP === "number") {
+          throw new Error("lastP is a number");
+        }
+        const c2 = pitch.swara === (lastP == null ? void 0 : lastP.swara);
+        const c3 = pitch.oct === (lastP == null ? void 0 : lastP.oct);
+        const c4 = pitch.raised === (lastP == null ? void 0 : lastP.raised);
+        return c1 || !(c2 && c3 && c4);
+      });
+    }
+    if (pitchNumber) {
+      const allPitchNumbers = allPitches.map((p) => {
+        if (typeof p === "number") {
+          throw new Error("p is a number");
+        }
+        return p.numberedPitch;
+      });
+      return allPitchNumbers;
+    } else {
+      return allPitches;
+    }
+  }
+  get highestPitchNumber() {
+    return Math.max(...this.allPitches({ pitchNumber: true }));
+  }
+  get lowestPitchNumber() {
+    return Math.min(...this.allPitches({ pitchNumber: true }));
+  }
+  allTrajectories(inst = 0) {
+    const allTrajectories = [];
+    this.phraseGrid[inst].forEach((p) => allTrajectories.push(...p.trajectories));
+    return allTrajectories;
+  }
+  trajFromTime(time, track) {
+    const trajs = this.allTrajectories(track);
+    const starts = this.trajStartTimes(track);
+    const endTimes = starts.map((s, i) => s + trajs[i].durTot);
+    const idx = (0, import_lodash3.findLastIndex)(starts, (s) => time >= s);
+    if (idx === -1) {
+      return trajs[0];
+    } else {
+      const eT = endTimes[idx];
+      if (time < eT) {
+        return trajs[idx];
+      } else {
+        return trajs[idx + 1];
+      }
+    }
+  }
+  trajFromUId(uId, track) {
+    const traj = this.allTrajectories(track).find((t) => t.uniqueId === uId);
+    if (traj === void 0) {
+      throw new Error("Trajectory not found");
+    }
+    return traj;
+  }
+  phraseFromTime(time, track) {
+    const starts = this.durStarts(track);
+    const idx = (0, import_lodash3.findLastIndex)(starts, (s) => time >= s);
+    return this.phraseGrid[track][idx];
+  }
+  phraseIdxFromTime(time, track) {
+    const starts = this.durStarts(track);
+    const idx = (0, import_lodash3.findLastIndex)(starts, (s) => time >= s);
+    return idx;
+  }
+  trajStartTimes(inst = 0) {
+    const trajs = this.allTrajectories(inst);
+    const durs = trajs.map((t) => t.durTot);
+    return durs.reduce((acc, dur, idx) => {
+      if (idx < durs.length - 1) {
+        acc.push(acc[acc.length - 1] + dur);
+      }
+      return acc;
+    }, [0]);
+  }
+  chunkedTrajs(inst = 0, duration = 30) {
+    const trajs = this.allTrajectories(inst);
+    const durs = trajs.map((t) => t.durTot);
+    const starts = getStarts(durs);
+    const endTimes = getEnds(durs);
+    const chunks = [];
+    for (let i = 0; i < this.durTot; i += duration) {
+      const f1 = (startTime) => {
+        return startTime >= i && startTime < i + duration;
+      };
+      const f2 = (endTime) => {
+        return endTime > i && endTime <= i + duration;
+      };
+      const f3 = (startTime, endTime) => {
+        return startTime < i && endTime > i + duration;
+      };
+      const chunk = trajs.filter((_2, j) => {
+        return f1(starts[j]) || f2(endTimes[j]) || f3(starts[j], endTimes[j]);
+      });
+      chunks.push(chunk);
+    }
+    const lastChunk = trajs.filter((_2, j) => {
+      return starts[j] >= this.durTot - duration;
+    });
+    return chunks;
+  }
+  allDisplayBols(inst = 0) {
+    const trajs = this.allTrajectories(inst);
+    const starts = this.trajStartTimes(inst);
+    const idxs = [];
+    const bols = trajs.filter((t, tIdx) => {
+      const c = t.articulations["0.00"] && t.articulations["0.00"].name === "pluck";
+      if (c) {
+        idxs.push(tIdx);
+      }
+      return c;
+    }).map((t, tIdx) => {
+      const time = starts[idxs[tIdx]];
+      const bol = t.articulations["0.00"].strokeNickname;
+      const uId = t.uniqueId;
+      const logFreq = t.logFreqs[0];
+      return { time, bol, uId, logFreq, track: inst };
+    });
+    return bols;
+  }
+  allDisplaySargam(inst = 0) {
+    const trajs = this.allTrajectories(inst);
+    const starts = this.trajStartTimes(inst);
+    const sargams = [];
+    let lastPitch = {
+      logFreq: void 0,
+      time: void 0
+    };
+    trajs.forEach((t, i) => {
+      if (t.id !== 12) {
+        const subDurs = t.durArray.map((d) => d * t.durTot);
+        let timePts = getStarts(subDurs);
+        timePts.push(t.durTot);
+        timePts = timePts.map((d) => d + starts[i]);
+        timePts.forEach((tp, tpIdx) => {
+          const logFreq = t.logFreqs[tpIdx] ? t.logFreqs[tpIdx] : t.logFreqs[tpIdx - 1];
+          const cLF = lastPitch.logFreq === logFreq;
+          const cT = lastPitch.time === tp;
+          if (!(cLF || cLF && cT)) {
+            sargams.push({
+              logFreq,
+              sargam: t.pitches[tpIdx].sargamLetter,
+              time: tp,
+              uId: t.uniqueId,
+              track: inst,
+              solfege: t.pitches[tpIdx].solfegeLetter,
+              pitchClass: t.pitches[tpIdx].chroma.toString(),
+              westernPitch: t.pitches[tpIdx].westernPitch
+            });
+          }
+          ;
+          lastPitch = {
+            logFreq,
+            time: tp
+          };
+        });
+      }
+    });
+    const phraseDivs = this.phraseGrid[inst].map((p) => p.startTime + p.durTot);
+    const pwr = 10 ** 5;
+    const roundedPDS = phraseDivs.map((pd) => Math.round(pd * pwr) / pwr);
+    sargams.forEach((s, sIdx) => {
+      let pos = 1;
+      let lastHigher = true;
+      let nextHigher = true;
+      if (sIdx !== 0 && sIdx !== sargams.length - 1) {
+        const lastS = sargams[sIdx - 1];
+        const nextS = sargams[sIdx + 1];
+        lastHigher = lastS.logFreq > s.logFreq;
+        nextHigher = nextS.logFreq > s.logFreq;
+      }
+      if (lastHigher && nextHigher) {
+        pos = 0;
+      } else if (!lastHigher && !nextHigher) {
+        pos = 1;
+      } else if (lastHigher && !nextHigher) {
+        pos = 3;
+      } else if (!lastHigher && nextHigher) {
+        pos = 2;
+      }
+      if (roundedPDS.includes(Math.round(s.time * pwr) / pwr)) {
+        if (nextHigher) {
+          pos = 5;
+        } else {
+          pos = 4;
+        }
+      }
+      s.pos = pos;
+    });
+    return sargams;
+  }
+  allPhraseDivs(inst = 0) {
+    const phraseDivObjs = [];
+    this.phraseGrid[inst].forEach((p, pIdx) => {
+      if (pIdx !== 0) {
+        phraseDivObjs.push({
+          time: p.startTime,
+          type: this.sectionStartsGrid[inst].includes(pIdx) ? "section" : "phrase",
+          idx: pIdx,
+          track: inst,
+          uId: p.uniqueId
+        });
+      }
+    });
+    return phraseDivObjs;
+  }
+  allDisplayVowels(inst = 0) {
+    const vocalInsts = ["Vocal (M)" /* Vocal_M */, "Vocal (F)" /* Vocal_F */];
+    const displayVowels = [];
+    if (vocalInsts.includes(this.instrumentation[inst])) {
+      this.phraseGrid[inst].forEach((phrase) => {
+        const firstTrajIdxs = phrase.firstTrajIdxs();
+        const phraseStart = phrase.startTime;
+        firstTrajIdxs.forEach((tIdx) => {
+          const traj = phrase.trajectories[tIdx];
+          const time = phraseStart + traj.startTime;
+          const logFreq = traj.logFreqs[0];
+          const withC = traj.startConsonant !== void 0;
+          const art = withC ? traj.articulations["0.00"] : void 0;
+          let text = "";
+          const ipaText = withC ? art.ipa + traj.vowelIpa : traj.vowelIpa;
+          const devanagariText = withC ? art.hindi + traj.vowelHindi : traj.vowelHindi;
+          const englishText = withC ? art.engTrans + traj.vowelEngTrans : traj.vowelEngTrans;
+          const uId = traj.uniqueId;
+          displayVowels.push({
+            time,
+            logFreq,
+            ipaText,
+            devanagariText,
+            englishText,
+            uId
+          });
+        });
+      });
+    } else {
+      throw new Error("instrumentation is not vocal");
+    }
+    return displayVowels;
+  }
+  allDisplayEndingConsonants(inst = 0) {
+    const vocalInsts = ["Vocal (M)", "Vocal (F)"];
+    const displayEndingConsonants = [];
+    const trajs = this.allTrajectories(inst);
+    trajs.forEach((t, i) => {
+      if (t.endConsonant !== void 0) {
+        const phrase = this.phraseGrid[inst].find((p) => p.trajectories.includes(t));
+        const phraseStart = phrase == null ? void 0 : phrase.startTime;
+        const time = phraseStart + t.startTime + t.durTot;
+        const logFreq = t.logFreqs[t.logFreqs.length - 1];
+        const art = t.articulations["1.00"];
+        const ipaText = art.ipa;
+        const devanagariText = art.hindi;
+        const englishText = art.engTrans;
+        const uId = t.uniqueId;
+        displayEndingConsonants.push({
+          time,
+          logFreq,
+          ipaText,
+          devanagariText,
+          englishText,
+          uId
+        });
+      }
+    });
+    return displayEndingConsonants;
+  }
+  allDisplayChikaris(inst = 0) {
+    const chikaris = [];
+    this.phraseGrid[inst].forEach((p) => {
+      const keys = Object.keys(p.chikaris);
+      keys.forEach((k) => {
+        const chikari = p.chikaris[k];
+        const time = p.startTime + Number(k);
+        chikaris.push({
+          time,
+          phraseTimeKey: k,
+          phraseIdx: p.pieceIdx,
+          track: inst,
+          chikari,
+          uId: chikari.uniqueId
+        });
+      });
+    });
+    return chikaris;
+  }
+  chunkedDisplayChikaris(inst = 0, duration = 30) {
+    const displayChikaris = this.allDisplayChikaris(inst);
+    const chunks = [];
+    for (let i = 0; i < this.durTot; i += duration) {
+      const chunk = displayChikaris.filter((c) => {
+        return c.time >= i && c.time < i + duration;
+      });
+      chunks.push(chunk);
+    }
+    return chunks;
+  }
+  chunkedDisplayConsonants(inst = 0, duration = 30) {
+    const displayEndingConsonants = this.allDisplayEndingConsonants(inst);
+    const chunks = [];
+    for (let i = 0; i < this.durTot; i += duration) {
+      const chunk = displayEndingConsonants.filter((c) => {
+        return c.time >= i && c.time < i + duration;
+      });
+      chunks.push(chunk);
+    }
+    return chunks;
+  }
+  chunkedDisplayVowels(inst = 0, duration = 30) {
+    const displayVowels = this.allDisplayVowels(inst);
+    const chunks = [];
+    for (let i = 0; i < this.durTot; i += duration) {
+      const chunk = displayVowels.filter((v) => {
+        return v.time >= i && v.time < i + duration;
+      });
+      chunks.push(chunk);
+    }
+    return chunks;
+  }
+  chunkedDisplaySargam(inst = 0, duration = 30) {
+    const displaySargam = this.allDisplaySargam(inst);
+    const chunks = [];
+    for (let i = 0; i < this.durTot; i += duration) {
+      const chunk = displaySargam.filter((s) => {
+        return s.time >= i && s.time < i + duration;
+      });
+      chunks.push(chunk);
+    }
+    return chunks;
+  }
+  chunkedDisplayBols(inst = 0, duration = 30) {
+    const displayBols = this.allDisplayBols(inst);
+    const chunks = [];
+    for (let i = 0; i < this.durTot; i += duration) {
+      const chunk = displayBols.filter((b) => {
+        return b.time >= i && b.time < i + duration;
+      });
+      chunks.push(chunk);
+    }
+    return chunks;
+  }
+  chunkedPhraseDivs(inst = 0, duration = 30) {
+    const phraseDivs = this.allPhraseDivs(inst);
+    const chunks = [];
+    for (let i = 0; i < this.durTot; i += duration) {
+      const chunk = phraseDivs.filter((pd) => {
+        return pd.time >= i && pd.time < i + duration;
+      });
+      chunks.push(chunk);
+    }
+    return chunks;
+  }
+  chunkedMeters(duration = 30) {
+    const meters = this.meters;
+    const chunks = [];
+    for (let i = 0; i < this.durTot; i += duration) {
+      const chunk = meters.filter((m) => {
+        return m.startTime >= i && m.startTime < i + duration;
+      });
+      chunks.push(chunk);
+    }
+    return chunks;
+  }
+  mostRecentTraj(time, inst = 0) {
+    const trajs = this.allTrajectories(inst);
+    const endTimes = trajs.map((t) => {
+      const phrase = this.phraseGrid[inst].find((p) => p.trajectories.includes(t));
+      const phraseStart = phrase == null ? void 0 : phrase.startTime;
+      return phraseStart + t.startTime + t.durTot;
+    });
+    const latestTime = endTimes.filter((t) => t <= time).reduce((max, t) => t > max ? t : max, -Infinity);
+    const idx = endTimes.indexOf(latestTime);
+    return trajs[idx];
+  }
+  durationsOfFixedPitches({
+    inst = 0,
+    outputType = "pitchNumber"
+  } = {}) {
+    const trajs = this.allTrajectories(inst);
+    return durationsOfFixedPitches(trajs, {
+      inst,
+      outputType
+    });
+  }
+  proportionsOfFixedPitches({
+    inst = 0,
+    outputType = "pitchNumber"
+  } = {}) {
+    const pitchDurs = this.durationsOfFixedPitches({
+      inst,
+      outputType
+    });
+    let totalDur = 0;
+    Object.keys(pitchDurs).forEach((key) => {
+      totalDur += pitchDurs[key];
+    });
+    const pitchProps = {};
+    for (let key in pitchDurs) {
+      pitchProps[key] = pitchDurs[key] / totalDur;
+    }
+    return pitchProps;
+  }
+  setDurTot(durTot) {
+    for (let inst = 0; inst < this.instrumentation.length; inst++) {
+      const phrases = this.phraseGrid[inst];
+      let lastPhrase = phrases[phrases.length - 1];
+      while (lastPhrase.durTot === 0) {
+        phrases.pop();
+        this.durTotFromPhrases();
+        this.durArrayFromPhrases();
+        lastPhrase = phrases[phrases.length - 1];
+      }
+      const trajs = lastPhrase.trajectories;
+      const lastTraj = trajs[trajs.length - 1];
+      if (lastTraj.id === 12) {
+        const extraDur = durTot - this.durTot;
+        lastTraj.durTot += extraDur;
+        lastPhrase.durTotFromTrajectories();
+        lastPhrase.durArrayFromTrajectories();
+        this.durArrayFromPhrases();
+        this.updateStartTimes();
+      }
+    }
+  }
+  pulseFromId(id) {
+    const allPulses = this.meters.map((m) => m.allPulses).flat();
+    const pulse = allPulses.find((p) => p.uniqueId === id);
+    return pulse;
+  }
+  sIdxFromPIdx(pIdx, inst = 0) {
+    const ss = this.sectionStartsGrid[inst];
+    const sIdx = ss.length - 1 - ss.slice().reverse().findIndex((s) => pIdx >= s);
+    return sIdx;
+  }
+  pIdxFromGroup(g) {
+    const pIdx = this.phrases.findIndex((p) => {
+      let bool = false;
+      p.groupsGrid.forEach((gg) => {
+        if (gg.includes(g)) {
+          bool = true;
+        }
+      });
+      return bool;
+    });
+    return pIdx;
+  }
+  toJSON() {
+    return {
+      raga: this.raga,
+      durTot: this.durTot,
+      durArray: this.durArray,
+      title: this.title,
+      dateCreated: this.dateCreated,
+      dateModified: this.dateModified,
+      location: this.location,
+      _id: this._id,
+      audioID: this.audioID,
+      userID: this.userID,
+      permissions: this.permissions,
+      name: this.name,
+      family_name: this.family_name,
+      given_name: this.given_name,
+      sectionStarts: this.sectionStarts,
+      instrumentation: this.instrumentation,
+      meters: this.meters,
+      sectionCategorization: this.sectionCategorization,
+      explicitPermissions: this.explicitPermissions,
+      soloist: this.soloist,
+      soloInstrument: this.soloInstrument,
+      phraseGrid: this.phraseGrid,
+      durArrayGrid: this.durArrayGrid,
+      sectionStartsGrid: this.sectionStartsGrid,
+      sectionCatGrid: this.sectionCatGrid,
+      excerptRange: this.excerptRange,
+      adHocSectionCatGrid: this.adHocSectionCatGrid,
+      assemblageDescriptors: this.assemblageDescriptors
+    };
+  }
+  static fromJSON(obj2) {
+    const raga = obj2.raga ? Raga.fromJSON(obj2.raga) : new Raga();
+    obj2.raga = raga;
+    if (obj2.phraseGrid === void 0 && obj2.phrases !== void 0) {
+      obj2.phraseGrid = [obj2.phrases];
+      while (obj2.phraseGrid.length < obj2.instrumentation.length) {
+        obj2.phraseGrid.push([]);
+      }
+    }
+    obj2.phraseGrid = (obj2.phraseGrid || []).map((phrases, instIdx) => {
+      return phrases.map((p) => Phrase.fromJSON(p));
+    });
+    if (obj2.meters) {
+      obj2.meters = obj2.meters.map((m) => new Meter(m));
+    }
+    const piece = new _Piece(obj2);
+    piece.phraseGrid.forEach((phrases) => {
+      phrases.forEach((phrase) => {
+        if (phrase.groupsGrid) {
+          phrase.groupsGrid = phrase.groupsGrid.map(
+            (groups) => groups.map((g) => {
+              g.trajectories = g.trajectories.map((t) => {
+                const tIdx = t.num;
+                return phrase.trajectoryGrid[0][tIdx];
+              });
+              return new Group(g);
+            })
+          );
+        }
+      });
+    });
+    piece.phraseGrid.forEach((phrases) => {
+      phrases.forEach((phrase) => {
+        phrase.trajectories.forEach((traj) => {
+          const arts = traj.articulations;
+          const a1 = arts[0] && arts[0].name === "slide";
+          const a2 = arts["0.00"] && arts["0.00"].name === "slide";
+          if (a1 || a2) {
+            arts["0.00"].name = "pluck";
+          }
+        });
+        phrase.consolidateSilentTrajs();
+      });
+    });
+    piece.durArrayFromPhrases();
+    piece.sectionStartsGrid = piece.sectionStartsGrid.map((arr) => [...new Set(arr)]);
+    return piece;
+  }
+};
+
+// src/ts/model/section.ts
+var Section = class {
+  phrases;
+  categorization;
+  adHocCategorization;
+  constructor({
+    phrases = [],
+    categorization = void 0,
+    adHocCategorization = void 0
+  } = {}) {
+    this.phrases = phrases;
+    if (categorization !== void 0) {
+      this.categorization = categorization;
+    } else {
+      this.categorization = initSecCategorization();
+    }
+    if (adHocCategorization !== void 0) {
+      this.adHocCategorization = adHocCategorization;
+    } else {
+      this.adHocCategorization = [];
+    }
+  }
+  allPitches(repetition = true) {
+    let pitches = [];
+    this.phrases.forEach((p) => pitches.push(...p.allPitches(true)));
+    if (!repetition) {
+      pitches = pitches.filter((pitch, i) => {
+        var _a, _b, _c;
+        const c1 = i === 0;
+        const c2 = pitch.swara === ((_a = pitches[i - 1]) == null ? void 0 : _a.swara);
+        const c3 = pitch.oct === ((_b = pitches[i - 1]) == null ? void 0 : _b.oct);
+        const c4 = pitch.raised === ((_c = pitches[i - 1]) == null ? void 0 : _c.raised);
+        return c1 || !(c2 && c3 && c4);
+      });
+    }
+    return pitches;
+  }
+  get trajectories() {
+    const trajectories = [];
+    this.phrases.forEach((p) => trajectories.push(...p.trajectories));
+    return trajectories;
+  }
+};
+var etTuning2 = {
+  sa: 2 ** (0 / 12),
+  re: {
+    lowered: 2 ** (1 / 12),
+    raised: 2 ** (2 / 12)
+  },
+  ga: {
+    lowered: 2 ** (3 / 12),
+    raised: 2 ** (4 / 12)
+  },
+  ma: {
+    lowered: 2 ** (5 / 12),
+    raised: 2 ** (6 / 12)
+  },
+  pa: 2 ** (7 / 12),
+  dha: {
+    lowered: 2 ** (8 / 12),
+    raised: 2 ** (9 / 12)
+  },
+  ni: {
+    lowered: 2 ** (10 / 12),
+    raised: 2 ** (11 / 12)
+  }
+};
+
 // src/js/serverCalls.ts
 var import_cross_fetch = __toESM(require_node_ponyfill(), 1);
 var url = "https://swara.studio/";
@@ -72936,130 +73047,7 @@ var instantiatePiece = async (queryId = testQueryId) => {
   let piece = await getPiece(queryId);
   const rsRes = await getRaagRule(piece.raga.name);
   piece.raga.ruleSet = rsRes.rules;
-  piece.raga = new Raga(piece.raga);
-  if (piece.phraseGrid === void 0) {
-    piece.phraseGrid = [piece.phrases];
-    while (piece.phraseGrid.length < piece.instrumentation.length) {
-      piece.phraseGrid.push([]);
-    }
-  }
-  piece.phraseGrid.forEach((phrases, instIdx) => {
-    phrases.forEach((phrase, pIdx) => {
-      let pt = phrase.trajectoryGrid ? phrase.trajectoryGrid[0] : phrase.trajectories;
-      pt.forEach((traj) => {
-        traj.pitches = traj.pitches.map((pitch) => {
-          pitch.fundamental = piece.raga.fundamental;
-          pitch.ratios = piece.raga.stratifiedRatios;
-          return new Pitch(pitch);
-        });
-        const artKeys = Object.keys(traj.articulations);
-        const artEntries = artKeys.map((key) => traj.articulations[key]);
-        const artObj = {};
-        artKeys.forEach((key, i) => {
-          if (artEntries[i] === null) {
-            return;
-          }
-          artObj[key] = new Articulation(artEntries[i]);
-        });
-        traj.articulations = artObj;
-        if (traj.id === 12 && traj.fundID12 !== piece.raga.fundamental) {
-          traj.fundID12 = piece.raga.fundamental;
-        }
-        if (traj.id === 12 && Object.keys(traj.articulations).length > 0) {
-          traj.articulations = {};
-        }
-        if (piece.instrumentation) {
-          traj.instrumentation = piece.instrumentation[instIdx];
-        }
-        const vox = ["Vocal (M)", "Vocal (F)"];
-        if (vox.includes(traj.instrumentation)) {
-          if (traj.vowel === void 0 && traj.id !== 12) {
-            traj.vowel = "a";
-          }
-        }
-      });
-      if (phrase.trajectoryGrid === void 0) {
-        phrase.trajectoryGrid = [];
-      }
-      phrase.trajectoryGrid[0] = pt.map((traj) => {
-        return new Trajectory(traj);
-      });
-      if (phrase.groupsGrid !== void 0) {
-        phrase.groupsGrid.forEach((groups, ggIdx) => {
-          groups.forEach((group, gIdx) => {
-            group.trajectories.forEach((traj, idx) => {
-              const tIdx = traj.num;
-              const realTraj = phrase.trajectoryGrid[0][tIdx];
-              group.trajectories[idx] = realTraj;
-            });
-            groups[gIdx] = new Group(group);
-          });
-        });
-      }
-      const initChikariKeys = Object.keys(phrase.chikaris);
-      initChikariKeys.forEach((key, i) => {
-        if (Number(key) >= phrase.durTot) {
-          const newKey = (Number(key) - phrase.durTot).toFixed(2);
-          phrases[pIdx + 1].chikaris[newKey] = phrase.chikaris[key];
-          delete phrase.chikaris[key];
-        }
-      });
-      const chikariKeys = Object.keys(phrase.chikaris);
-      const chikariEntries = chikariKeys.map((key) => phrase.chikaris[key]);
-      const chikariObj = {};
-      chikariKeys.forEach((key, i) => {
-        const entry = chikariEntries[i];
-        entry.fundamental = piece.raga.fundamental;
-        entry.pitches = entry.pitches.map((p) => {
-          p.fundamental = piece.raga.fundamental;
-          p.ratios = piece.raga.stratifiedRatios;
-          return new Pitch(p);
-        });
-        chikariObj[key] = new Chikari(entry);
-      });
-      phrase.chikaris = chikariObj;
-      if (piece.instrumentation) {
-        phrase.instrumentation = piece.instrumentation;
-      }
-    });
-  });
-  if (piece.phraseGrid !== void 0) {
-    piece.phraseGrid = piece.phraseGrid.map((phrases) => {
-      return phrases.map((phrase) => new Phrase(phrase));
-    });
-  } else {
-    piece.phrases = piece.phrases.map((phrase) => new Phrase(phrase));
-  }
-  if (piece.meters) {
-    piece.meters = piece.meters.map((meter) => new Meter(meter));
-  }
-  console.log(piece.assemblages);
-  piece = new Piece(piece);
-  fixTrajs(piece);
-  piece.phraseGrid.forEach((phrases, instIdx) => {
-    phrases.forEach((phrase) => {
-      phrase.consolidateSilentTrajs();
-    });
-  });
-  piece.durArrayFromPhrases();
-  piece.sectionStartsGrid = piece.sectionStartsGrid.map((arr, i) => {
-    return [...new Set(arr)];
-  });
-  return piece;
-};
-var fixTrajs = (piece) => {
-  piece.phraseGrid.forEach((phrases, instIdx) => {
-    phrases.forEach((phrase) => {
-      phrase.trajectories.forEach((traj) => {
-        const arts = traj.articulations;
-        const c1 = arts[0] && arts[0].name === "slide";
-        const c2 = arts["0.00"] && arts["0.00"].name === "slide";
-        if (c1 || c2) {
-          traj.articulations["0.00"].name = "pluck";
-        }
-      });
-    });
-  });
+  return Piece.fromJSON(piece);
 };
 var PitchTimes = (trajs, {
   outputType = "pitchNumber"
