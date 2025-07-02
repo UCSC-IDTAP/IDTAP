@@ -25,6 +25,8 @@ class SwaraClient:
     ) -> None:
         self.base_url = base_url.rstrip("/") + "/"
         self.token_path = Path(token_path or os.environ.get("SWARA_TOKEN_PATH", "~/.swara/token.json")).expanduser()
+        # Ensure the directory for the token file exists
+        self.token_path.parent.mkdir(parents=True, exist_ok=True)
         self.client_secrets = client_secrets or os.environ.get("SWARA_CLIENT_SECRETS")
         self.auto_login = auto_login
         self.token: Optional[str] = None

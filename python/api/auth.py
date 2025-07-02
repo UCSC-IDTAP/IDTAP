@@ -7,6 +7,7 @@ from urllib.parse import parse_qs, urlparse
 
 import requests
 from google_auth_oauthlib.flow import InstalledAppFlow
+from google.auth.transport.requests import AuthorizedSession
 
 DEFAULT_TOKEN_PATH = Path(os.environ.get("SWARA_TOKEN_PATH", "~/.swara/token.json")).expanduser()
 
@@ -42,7 +43,7 @@ def _run_flow_get_code(flow: InstalledAppFlow, host: str = "localhost", port: in
             pass
 
     wsgi_app = _RedirectWSGIApp()
-    wsgiref.simple_server.WSGIServer.allow_reuse_address = False
+    wsgiref.simple_server.WSGIServer.allow_reuse_address = True
     local_server = wsgiref.simple_server.make_server(host, port, wsgi_app, handler_class=_WSGIRequestHandler)
 
     try:
@@ -80,7 +81,12 @@ def login_google(
     Returns:
         The profile information returned by the Swara API.
     """
-    scopes = scopes or ["openid", "email", "profile"]
+    # Request scopes as full URIs to match Google's returned scope format
+    scopes = scopes or [
+        "https://www.googleapis.com/auth/userinfo.email",
+        "openid",
+        "https://www.googleapis.com/auth/userinfo.profile",
+    ]
     config: Dict[str, Any]
     if client_secrets is None:
         config = DEFAULT_CLIENT_SECRETS
@@ -94,11 +100,12 @@ def login_google(
         flow = InstalledAppFlow.from_client_config(config, scopes=scopes)
 
     auth_code = _run_flow_get_code(flow)
+    # Exchange the authorization code for credentials
+    flow.fetch_token(code=auth_code)
 
-    payload = {"authCode": auth_code, "redirectURL": flow.redirect_uri}
-    resp = requests.post(base_url.rstrip("/") + "/handleGoogleAuthCode", json=payload)
-    resp.raise_for_status()
-    profile = resp.json()
+    # Fetch profile directly from Google
+    authed_session = AuthorizedSession(flow.credentials)
+    profile = authed_session.get("https://www.googleapis.com/oauth2/v3/userinfo").json()
 
     token_path = Path(token_path).expanduser()
     token_path.parent.mkdir(parents=True, exist_ok=True)
@@ -115,6 +122,7 @@ def login_google(
         "refresh_token": refresh_token,
         "profile": profile,
     }
+
     with token_path.open("w", encoding="utf-8") as f:
         json.dump(data, f)
 

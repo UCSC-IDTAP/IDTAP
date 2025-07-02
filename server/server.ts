@@ -1576,6 +1576,51 @@ const runServer = async () => {
 	  }
 	})
 
+	// New PKCE-aware endpoint for Python API clients
+app.post('/handleGoogleAuthCodePythonAPI', async (req, res) => {
+  try {
+    // Normalize the incoming redirect URL just like your other handler
+    let url = req.body.redirectURL;
+    if (url !== 'http://localhost:8080/') {
+      if (url.endsWith('/')) {
+        url = url.slice(0, -1);
+      }
+      if (url.endsWith('logIn')) {
+        url = url.slice(0, -6);
+      }
+    }
+
+    // Grab the PKCE verifier sent from the Python side
+    const codeVerifier = req.body.codeVerifier;
+
+    // Construct a fresh OAuth2 client
+    const OAuthClient = new OAuth2Client({
+      clientId: '324767655055-crhq76mdupavvrcedtde986glivug1nm.apps.googleusercontent.com',
+      clientSecret: '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',
+      redirectUri: url,
+    });
+
+    // Exchange the auth code plus PKCE verifier for tokens
+    const { tokens } = await (OAuthClient.getToken as any)({
+      code: req.body.authCode,
+      codeVerifier,
+      redirectUri: url,
+    });
+
+    // Set credentials & fetch the user profile
+    OAuthClient.setCredentials(tokens);
+    const userinfo = await OAuthClient.request({
+      url: 'https://www.googleapis.com/oauth2/v3/userinfo'
+    });
+
+    // Return both tokens and profile to the caller
+    res.json({ tokens, profile: userinfo.data });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send(err);
+  }
+});
+
 	app.post('/handleGoogleAuthCode', async (req, res) => {
 	  
 	  try {
