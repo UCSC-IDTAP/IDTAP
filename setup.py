@@ -4,7 +4,8 @@ from setuptools import setup, find_packages
 setup(
     name="idtap_api",
     version="0.1.0",
-    packages=find_packages(),  # will include the idtap_api/ package
+    packages=find_packages(where="python", include=["idtap_api*"]),
+    package_dir={"": "python"},
     install_requires=[
         "requests",
         "pymongo",

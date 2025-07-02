@@ -12,5 +12,8 @@ dependencies = ["requests", "pymongo", "google-auth-oauthlib"]
 test = ["pytest", "responses"]
 
 [tool.setuptools.packages.find]
-where = ["."]
+where = ["python"]
 include = ["idtap_api*"]
+
+[tool.setuptools.package-dir]
+"" = "python"
