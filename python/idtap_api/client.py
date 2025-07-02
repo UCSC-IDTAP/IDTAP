@@ -102,7 +102,7 @@ class SwaraClient:
     def get_audio_db_entry(self, _id: str) -> Any:
         return self._post_json("getAudioDBEntry", {"_id": _id})
 
-    def save_piece(self, piece: Dict[str, Any])> Any:
+    def save_piece(self, piece: Dict[str, Any]) -> Any:
         return self._post_json("updateTranscription", piece)
 
     def get_all_pieces(
