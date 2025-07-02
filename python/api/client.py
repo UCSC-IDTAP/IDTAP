@@ -105,17 +105,16 @@ class SwaraClient:
         user_id: str,
         sort_key: str = "title",
         sort_dir: str | int = 1,
-        new_permissions: Optional[bool] = None,
     ) -> Any:
+        """Return all transcriptions visible to ``user_id`` sorted by ``sort_key``."""
+
         params = {
-            "userID": user_id,
+            "userId": user_id,
             "sortKey": sort_key,
             "sortDir": sort_dir,
-            "newPermissions": new_permissions,
         }
-        # remove None values
-        params = {k: str(v) for k, v in params.items() if v is not None}
-        return self._get("getAllTranscriptions", params=params)
+        params = {k: str(v) for k, v in params.items()}
+        return self._get("api/transcriptions", params=params)
 
     def update_visibility(
         self,
