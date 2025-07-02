@@ -5,8 +5,8 @@ import pytest
 
 sys.path.insert(0, os.path.abspath('.'))
 
-from python.api.classes.raga import Raga, yaman_rule_set, et_tuning
-from python.api.classes.pitch import Pitch
+from python.idtap_api.classes.raga import Raga, yaman_rule_set, et_tuning
+from python.idtap_api.classes.pitch import Pitch
 
 base_tuning = et_tuning
 

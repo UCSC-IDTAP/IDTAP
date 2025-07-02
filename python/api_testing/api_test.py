@@ -1,4 +1,5 @@
-from api.client import SwaraClient
+from idtap_api.client import SwaraClient
 
-client = SwaraClient()
-print(client.user)
+s = SwaraClient()
+s.get_all_pieces()
+

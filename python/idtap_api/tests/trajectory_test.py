@@ -5,14 +5,14 @@ import pytest
 
 sys.path.insert(0, os.path.abspath('.'))
 
-from python.api.classes.trajectory import Trajectory
-from python.api.classes.pitch import Pitch
-from python.api.classes.articulation import Articulation
-from python.api.classes.automation import Automation
-from python.api.classes.raga import Raga
-from python.api.classes.phrase import Phrase
-from python.api.classes.piece import Piece, durations_of_fixed_pitches
-from python.api.enums import Instrument
+from python.idtap_api.classes.trajectory import Trajectory
+from python.idtap_api.classes.pitch import Pitch
+from python.idtap_api.classes.articulation import Articulation
+from python.idtap_api.classes.automation import Automation
+from python.idtap_api.classes.raga import Raga
+from python.idtap_api.classes.phrase import Phrase
+from python.idtap_api.classes.piece import Piece, durations_of_fixed_pitches
+from python.idtap_api.enums import Instrument
 
 
 def lin_space(start_val: float, stop_val: float, cardinality: int):

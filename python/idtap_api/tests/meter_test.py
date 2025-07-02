@@ -5,7 +5,7 @@ import pytest
 
 sys.path.insert(0, os.path.abspath('.'))
 
-from python.api.classes.meter import Meter, Pulse, PulseStructure, find_closest_idxs
+from python.idtap_api.classes.meter import Meter, Pulse, PulseStructure, find_closest_idxs
 
 # Tests mirror src/ts/tests/meter.test.js (simplified implementation)
 

@@ -5,7 +5,7 @@ sys.path.insert(0, os.path.abspath('.'))
 import responses
 import pytest
 
-from python.api.client import SwaraClient
+from python.idtap_api.client import SwaraClient
 
 BASE = 'https://swara.studio/'
 

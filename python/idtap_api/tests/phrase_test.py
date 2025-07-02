@@ -5,13 +5,13 @@ from unittest.mock import patch
 
 sys.path.insert(0, os.path.abspath('.'))
 
-from python.api.classes.phrase import Phrase, init_phrase_categorization
-from python.api.classes.trajectory import Trajectory
-from python.api.classes.pitch import Pitch
-from python.api.classes.articulation import Articulation
-from python.api.classes.group import Group
-from python.api.classes.raga import Raga
-from python.api.classes.chikari import Chikari
+from python.idtap_api.classes.phrase import Phrase, init_phrase_categorization
+from python.idtap_api.classes.trajectory import Trajectory
+from python.idtap_api.classes.pitch import Pitch
+from python.idtap_api.classes.articulation import Articulation
+from python.idtap_api.classes.group import Group
+from python.idtap_api.classes.raga import Raga
+from python.idtap_api.classes.chikari import Chikari
 
 
 def make_phrase(trajectories, start_time=None):

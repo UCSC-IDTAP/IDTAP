@@ -4,10 +4,10 @@ import pytest
 
 sys.path.insert(0, os.path.abspath('.'))
 
-from python.api.classes.assemblage import Assemblage
-from python.api.classes.phrase import Phrase
-from python.api.classes.trajectory import Trajectory
-from python.api.enums import Instrument
+from python.idtap_api.classes.assemblage import Assemblage
+from python.idtap_api.classes.phrase import Phrase
+from python.idtap_api.classes.trajectory import Trajectory
+from python.idtap_api.enums import Instrument
 
 
 def test_assemblage_descriptor_serialization():

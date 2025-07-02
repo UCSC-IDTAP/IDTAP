@@ -40,7 +40,12 @@ class SwaraClient:
                 print(f"Failed to log in to Swara Studio: {e}")
                 raise
                 
-                
+    @property
+    def user_id(self) -> Optional[str]:
+        """Return the user ID if available, otherwise None."""
+        if self.user:
+            return self.user.get("sub")
+        return None
 
     # ---- auth utilities ----
     def load_token(self, token_path: Optional[str | Path] = None) -> None:
@@ -97,18 +102,17 @@ class SwaraClient:
     def get_audio_db_entry(self, _id: str) -> Any:
         return self._post_json("getAudioDBEntry", {"_id": _id})
 
-    def save_piece(self, piece: Dict[str, Any]) -> Any:
+    def save_piece(self, piece: Dict[str, Any])> Any:
         return self._post_json("updateTranscription", piece)
 
     def get_all_pieces(
         self,
-        user_id: str,
         sort_key: str = "title",
         sort_dir: str | int = 1,
         new_permissions: Optional[bool] = None,
     ) -> Any:
         params = {
-            "userID": user_id,
+            "userID": self.user_id,
             "sortKey": sort_key,
             "sortDir": sort_dir,
             "newPermissions": new_permissions,

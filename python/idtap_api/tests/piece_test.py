@@ -8,21 +8,21 @@ from pathlib import Path
 import pytest
 import math
 
-from python.api.classes.piece import (
+from python.idtap_api.classes.piece import (
     Piece,
     init_sec_categorization,
     durations_of_fixed_pitches,
 )
-from python.api.classes.phrase import Phrase
-from python.api.classes.trajectory import Trajectory
-from python.api.classes.pitch import Pitch
-from python.api.classes.raga import Raga
-from python.api.classes.articulation import Articulation
-from python.api.classes.group import Group
-from python.api.classes.chikari import Chikari
-from python.api.classes.meter import Meter
-from python.api.classes.assemblage import Assemblage
-from python.api.enums import Instrument
+from python.idtap_api.classes.phrase import Phrase
+from python.idtap_api.classes.trajectory import Trajectory
+from python.idtap_api.classes.pitch import Pitch
+from python.idtap_api.classes.raga import Raga
+from python.idtap_api.classes.articulation import Articulation
+from python.idtap_api.classes.group import Group
+from python.idtap_api.classes.chikari import Chikari
+from python.idtap_api.classes.meter import Meter
+from python.idtap_api.classes.assemblage import Assemblage
+from python.idtap_api.enums import Instrument
 from datetime import datetime
 
 
