@@ -15,6 +15,7 @@ import { DN_Extractor } from './extract';
 import { DN_ExtractorOptions } from '@shared/types';
 import 'dotenv/config';
 import { $push } from 'mongo-dot-notation';
+import apiRoutes from './apiRoutes';
 const app = express();
 async function exists (path: string) {  
   try {
@@ -167,7 +168,9 @@ const runServer = async () => {
 	const users = db.collection('users');
 	const phonemes = db.collection('phonemes');
 	const collections = db.collection('collections');
-	const gharanas = db.collection('gharanas');
+        const gharanas = db.collection('gharanas');
+
+        app.use('/api', apiRoutes({ transcriptions }));
 	  
 	app.post('/insertNewTranscription', async (req, res) => {
 	  // creates new transcription entry in transcriptions collection
