@@ -20,7 +20,7 @@
     "deployProcessAudio": "rsync -a ./python/process_audio.py root@137.184.90.119:process_audio.py",
     "deployServer": "rsync -a ./server.js root@137.184.90.119:server.js",
     "buildExtract": "esbuild ./server/extract.ts --bundle --platform=node --target=node16 --outfile=./server/extract.js",
-    "deployTSServer": "npm run buildExtract && rsync -a ./server/package.json root@137.184.90.119:package.json && rsync -a ./server/server.ts ./server/aggregations.js ./server/aggregations.js.d.ts ./server/tsconfig.json ./server/extract.js root@137.184.90.119:server/",
+    "deployTSServer": "npm run buildExtract && rsync -a ./server/apiRoutes.ts root@137.184.90.119:server/apiRoutes.ts && rsync -a ./server/package.json root@137.184.90.119:package.json && rsync -a ./server/server.ts ./server/aggregations.js ./server/aggregations.js.d.ts ./server/tsconfig.json ./server/extract.js root@137.184.90.119:server/",
     "deployShared": "rsync -a ./shared/ root@137.184.90.119:shared/",
     "deployMakeExcel": "rsync -a ./python/cleanJson/make_excel.py root@137.184.90.119:make_excel.py",
     "deployFixDurations": "rsync -a ./python/dataManagement/aggregations/fix_durations.py root@137.184.90.119:fix_durations.py",
