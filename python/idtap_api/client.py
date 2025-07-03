@@ -42,9 +42,9 @@ class SwaraClient:
                 
     @property
     def user_id(self) -> Optional[str]:
-        """Return the user ID if available, otherwise None."""
+        """Return the user ID if available, otherwise ``None``."""
         if self.user:
-            return self.user.get("sub")
+            return self.user.get("_id") or self.user.get("sub")
         return None
 
     # ---- auth utilities ----

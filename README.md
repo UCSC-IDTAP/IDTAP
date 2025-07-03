@@ -71,6 +71,12 @@ client = SwaraClient()
 piece_json = client.get_piece("abc123")
 ```
 
+When ``SwaraClient`` is first instantiated, it performs a Google login and
+posts the returned profile to the ``/userLoginGoogle`` endpoint. The response
+contains the user's ``_id`` which is stored locally alongside the OAuth token.
+This identifier is required for filtering operations such as
+``get_viewable_transcriptions()``.
+
 Unit tests can be run with `pytest`:
 
 ```bash
