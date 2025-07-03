@@ -79,7 +79,8 @@ def login_google(
         scopes: OAuth scopes to request.
 
     Returns:
-        The profile information returned by the Swara API.
+        The user document returned by the Swara API, including the ``_id``
+        field assigned by the server.
     """
     # Request scopes as full URIs to match Google's returned scope format
     scopes = scopes or [
@@ -107,6 +108,16 @@ def login_google(
     authed_session = AuthorizedSession(flow.credentials)
     profile = authed_session.get("https://www.googleapis.com/oauth2/v3/userinfo").json()
 
+    # Register or login with the Swara server to obtain the user document
+    try:
+        resp = requests.post(base_url.rstrip("/") + "/userLoginGoogle", json=profile)
+        resp.raise_for_status()
+        result = resp.json()
+        server_profile = result.get("value") or result
+    except Exception:
+        # Fallback to the Google profile if the server call fails
+        server_profile = profile
+
     token_path = Path(token_path).expanduser()
     token_path.parent.mkdir(parents=True, exist_ok=True)
     # Safely attempt to retrieve token credentials
@@ -120,10 +131,10 @@ def login_google(
     data = {
         "token": token,
         "refresh_token": refresh_token,
-        "profile": profile,
+        "profile": server_profile,
     }
 
     with token_path.open("w", encoding="utf-8") as f:
         json.dump(data, f)
 
-    return profile
+    return server_profile
