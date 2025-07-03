@@ -14,6 +14,26 @@ export default function apiRoutes(collections: Collections) {
     const sortDirParam = String(req.query.sortDir);
     const sortDir = sortDirParam === '1' ? 1 : -1;
 
+    const projection = {
+      title: 1,
+      dateCreated: 1,
+      dateModified: 1,
+      location: 1,
+      _id: 1,
+      durTot: 1,
+      raga: 1,
+      userID: 1,
+      permissions: 1,
+      name: 1,
+      family_name: 1,
+      given_name: 1,
+      audioID: 1,
+      instrumentation: 1,
+      explicitPermissions: 1,
+      soloist: 1,
+      soloInstrument: 1,
+    };
+
     const query = {
       $or: [
         { "explicitPermissions.publicView": true },
@@ -29,6 +49,7 @@ export default function apiRoutes(collections: Collections) {
     try {
       const results = await collections.transcriptions
         .find(query)
+        .project(projection)
         .collation({ locale: 'en' })
         .sort(sort)
         .toArray();
