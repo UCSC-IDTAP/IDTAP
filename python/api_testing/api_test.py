@@ -1,5 +1,5 @@
 from idtap_api.client import SwaraClient
 
 s = SwaraClient()
-s.get_all_pieces()
+s.get_viewable_transcriptions()
 
