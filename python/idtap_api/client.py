@@ -105,21 +105,29 @@ class SwaraClient:
     def save_piece(self, piece: Dict[str, Any]) -> Any:
         return self._post_json("updateTranscription", piece)
 
+    def get_viewable_transcriptions(
+        self,
+        sort_key: str = "title",
+        sort_dir: str | int = 1,
+    ) -> Any:
+        params = {
+            "userId": self.user_id,
+            "sortKey": sort_key,
+            "sortDir": sort_dir,
+        }
+        # remove None values
+        params = {k: str(v) for k, v in params.items() if v is not None}
+        return self._get("api/transcriptions", params=params)
+
+    # backwards compatibility
     def get_all_pieces(
         self,
         sort_key: str = "title",
         sort_dir: str | int = 1,
         new_permissions: Optional[bool] = None,
     ) -> Any:
-        params = {
-            "userID": self.user_id,
-            "sortKey": sort_key,
-            "sortDir": sort_dir,
-            "newPermissions": new_permissions,
-        }
-        # remove None values
-        params = {k: str(v) for k, v in params.items() if v is not None}
-        return self._get("getAllTranscriptions", params=params)
+        """Deprecated alias for :meth:`get_viewable_transcriptions`."""
+        return self.get_viewable_transcriptions(sort_key=sort_key, sort_dir=sort_dir)
 
     def update_visibility(
         self,

@@ -32,3 +32,11 @@ def test_save_piece():
     responses.post(endpoint, json={'ok': 1}, status=200)
     result = client.save_piece({'_id': '1'})
     assert result == {'ok': 1}
+
+@responses.activate
+def test_get_viewable_transcriptions():
+    client = SwaraClient()
+    endpoint = BASE + 'api/transcriptions'
+    responses.get(endpoint, json=[{'_id': '1'}], status=200)
+    result = client.get_viewable_transcriptions()
+    assert result == [{'_id': '1'}]
