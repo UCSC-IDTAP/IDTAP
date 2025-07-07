@@ -6,16 +6,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 IDTAP (Interactive Digital Transcription and Analysis Platform) is a web application for transcribing, archiving, and analyzing musical recordings, with a focus on Hindustani music. It features a Vue.js frontend, Node.js/Express backend, Python audio processing components, and MongoDB database.
 
+**Core Philosophy**: Provides an alternative to Western staff notation and MIDI representation, designed to accurately capture the finely calibrated glissandi, microtonal configurations, and expressive nuances found in oral melodic traditions. Uses trajectory-based transcription to avoid the limitations and cultural bias of traditional notation systems.
+
 ## Development Commands
 
 ### Frontend Development
-- `npm run dev` - Start Vite development server (port 3000)
-- `npm run build` - Build production bundle
-- `npm run serve` - Preview production build
-- `npm run lint` - Run ESLint with auto-fix
+- `pnpm dev` - Start Vite development server (port 3000)
+- `pnpm build` - Build production bundle
+- `pnpm serve` - Preview production build
+- `pnpm lint` - Run ESLint with auto-fix
 
 ### Testing
-- `npm test` - Run Vitest tests for TypeScript/JavaScript code
+- `pnpm test` - Run Vitest tests for TypeScript/JavaScript code
 - `python -m pytest python/api/tests` - Run Python API tests (requires virtual environment)
 
 ### Python Environment Setup
@@ -26,8 +28,8 @@ pip install -r porting_requirements.txt
 ```
 
 ### Server Development
-- `npm run buildExtract` - Bundle TypeScript extract module for server
-- `npm run deployTSServer` - Build and deploy server files
+- `pnpm buildExtract` - Bundle TypeScript extract module for server
+- `pnpm deployTSServer` - Build and deploy server files
 
 ## Architecture
 
@@ -44,9 +46,10 @@ pip install -r porting_requirements.txt
 
 ### Backend (Node.js/Express)
 - **Server**: `server/server.ts` - Main Express server with MongoDB integration
-- **Audio processing**: Spawns Python scripts for audio analysis and visualization
-- **Database**: MongoDB with collections for audio recordings, transcriptions, users
+- **Audio processing**: Spawns Python scripts for pitch extraction, spectrogram generation, and melograph creation
+- **Database**: MongoDB with collections for audio recordings, transcriptions, users, musicians, ragas
 - **File handling**: Audio upload, processing, and storage management
+- **Analysis tools**: Query system for filtering transcriptions, pitch prevalence visualization, pitch pattern analysis
 
 ### Python Components
 - **API classes**: `python/api/classes/` - Python ports of core TypeScript models
@@ -54,10 +57,13 @@ pip install -r porting_requirements.txt
 - **Testing**: Pytest-based tests in `python/api/tests/`
 
 ### Key Concepts
-- **Trajectories**: Core musical units representing melodic contours between pitches
-- **Ragas**: Musical scales with specific tuning ratios and rules
+- **Trajectories**: Core musical units representing archetypal paths between pitches, across pitches, or on fixed pitches. These provide a middle-level representation that captures finely calibrated glissandi while avoiding over-granular fundamental frequency data or over-simplified MIDI representation
+- **Ragas**: Musical scales with specific tuning ratios and rules, supporting microtonal configurations
 - **Assemblages**: Collections of musical phrases organized into strands
 - **Multi-instrument support**: Up to 4 overlaid instruments per transcription
+- **Articulations**: Instrument-specific performance techniques (plucking, bowing, vocal IPA phonemes)
+- **Shrutis**: Microtones or spaces between scale tones
+- **Andolans**: Movements between scale tones and microtones
 
 ## Path Aliases
 - `@/` → `./src/`
@@ -72,6 +78,12 @@ pip install -r porting_requirements.txt
 ## Development Notes
 - Project uses Vite for fast development builds
 - ESLint configured for Vue 3 + TypeScript
-- Python components are being ported from TypeScript originals
+- Python components are being ported from TypeScript originals (see `PORTING_README.md`)
 - Audio worklets in `src/audioWorklets/` for real-time audio synthesis
-- Custom synthesis engines for different instruments (sitar, sarangi, vocal)
+- Custom synthesis engines for different instruments:
+  - **Sitar**: Karplus-Strong algorithm for plucked strings
+  - **Sarangi**: Custom bowed string synthesis with feedback loops and resonant filtering
+  - **Vocal**: Klatt formant synthesizer for human speech and vocal timbres
+- Supports flexible tuning systems with microtonal adjustments
+- Logarithmic frequency scale representation for pitch
+- Trajectory-based transcription system designed to avoid Western notation bias
