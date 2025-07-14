@@ -1,5 +1,5 @@
 import express from 'express';
-import { Collection } from 'mongodb';
+import { Collection, ObjectId } from 'mongodb';
 
 interface Collections {
   transcriptions: Collection;
@@ -57,6 +57,58 @@ export default function apiRoutes(collections: Collections) {
     } catch (err) {
       console.error(err);
       res.status(500).send(err);
+    }
+  });
+
+  router.post('/transcription', async (req, res) => {
+    const userId = String(req.query.userId || req.body.userId);
+    
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
+
+    if (!req.body._id) {
+      return res.status(400).json({ error: 'Transcription ID is required' });
+    }
+
+    try {
+      // First, fetch the existing transcription to check permissions
+      const transcriptionId = new ObjectId(req.body._id);
+      const existingTranscription = await collections.transcriptions.findOne({ _id: transcriptionId });
+
+      if (!existingTranscription) {
+        return res.status(404).json({ error: 'Transcription not found' });
+      }
+
+      // Check permissions: user must be owner OR have explicit edit permission
+      const isOwner = existingTranscription.userID === userId;
+      const hasEditPermission = existingTranscription.explicitPermissions?.edit?.includes(userId);
+
+      if (!isOwner && !hasEditPermission) {
+        return res.status(403).json({ 
+          error: 'You do not have permission to edit this transcription' 
+        });
+      }
+
+      // Prepare update object (exclude _id from updates)
+      const updateObj: { [key: string]: any } = {};
+      Object.keys(req.body).forEach(key => {
+        if (key !== '_id') updateObj[key] = req.body[key];
+      });
+      updateObj['dateModified'] = new Date();
+      if (updateObj['dateCreated']) {
+        updateObj['dateCreated'] = new Date(updateObj['dateCreated']);
+      }
+
+      // Update the transcription
+      const query = { '_id': transcriptionId };
+      const update = { '$set': updateObj };
+      const result = await collections.transcriptions.updateOne(query, update);
+
+      res.json({ ...result, dateModified: updateObj['dateModified'] });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Internal server error' });
     }
   });
 

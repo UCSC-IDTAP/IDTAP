@@ -29,7 +29,7 @@ def test_piece_exists():
 @responses.activate
 def test_save_piece():
     client = SwaraClient()
-    endpoint = BASE + 'updateTranscription'
+    endpoint = BASE + 'api/transcription'
     responses.post(endpoint, json={'ok': 1}, status=200)
     result = client.save_piece({'_id': '1'})
     assert result == {'ok': 1}

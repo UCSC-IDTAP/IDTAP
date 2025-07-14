@@ -103,7 +103,10 @@ class SwaraClient:
         return self._post_json("getAudioDBEntry", {"_id": _id})
 
     def save_piece(self, piece: Dict[str, Any]) -> Any:
-        return self._post_json("updateTranscription", piece)
+        # Add userId to the piece data for the new API route
+        piece_with_user = piece.copy()
+        piece_with_user["userId"] = self.user_id
+        return self._post_json("api/transcription", piece_with_user)
 
     def get_viewable_transcriptions(
         self,
