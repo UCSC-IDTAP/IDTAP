@@ -38,7 +38,7 @@ while IFS='|' read -r hash date subject author; do
   fi
 
   # Only include conventional commits
-  if [[ ! "$subject" =~ ^(feat|fix|docs|style|refactor|perf|test|chore|revert)\: ]]; then
+  if [[ ! "$subject" =~ ^(feat|fix|docs|style|refactor|perf|chore|revert)\: ]]; then
     continue
   fi
 
