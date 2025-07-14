@@ -125,16 +125,6 @@ class SwaraClient:
         params = {k: str(v) for k, v in params.items() if v is not None}
         return self._get("api/transcriptions", params=params)
 
-    # Backwards compatibility alias
-    def get_all_pieces(
-        self,
-        sort_key: str = "title",
-        sort_dir: str | int = 1,
-        new_permissions: Optional[bool] = None,
-    ) -> Any:
-        return self.get_viewable_transcriptions(
-            sort_key=sort_key, sort_dir=sort_dir, new_permissions=new_permissions
-        )
 
     def update_visibility(
         self,
@@ -146,5 +136,6 @@ class SwaraClient:
             "artifactType": artifact_type,
             "_id": _id,
             "explicitPermissions": explicit_permissions,
+            "userId": self.user_id,
         }
-        return self._post_json("updateVisibility", payload)
+        return self._post_json("api/visibility", payload)

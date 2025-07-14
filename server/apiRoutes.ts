@@ -112,5 +112,63 @@ export default function apiRoutes(collections: Collections) {
     }
   });
 
+  router.post('/visibility', async (req, res) => {
+    const userId = String(req.query.userId || req.body.userId);
+    
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
+
+    if (!req.body._id) {
+      return res.status(400).json({ error: 'Artifact ID is required' });
+    }
+
+    if (!req.body.artifactType) {
+      return res.status(400).json({ error: 'Artifact type is required' });
+    }
+
+    if (!req.body.explicitPermissions) {
+      return res.status(400).json({ error: 'Explicit permissions are required' });
+    }
+
+    try {
+      // Only handle transcriptions for now (can be extended later)
+      if (req.body.artifactType === 'transcription') {
+        // First, fetch the existing transcription to check ownership
+        const transcriptionId = new ObjectId(req.body._id);
+        const existingTranscription = await collections.transcriptions.findOne({ _id: transcriptionId });
+
+        if (!existingTranscription) {
+          return res.status(404).json({ error: 'Transcription not found' });
+        }
+
+        // Check ownership: only the owner can update visibility/permissions
+        const isOwner = existingTranscription.userID === userId;
+
+        if (!isOwner) {
+          return res.status(403).json({ 
+            error: 'Only the owner can update visibility settings' 
+          });
+        }
+
+        // Update the visibility/permissions
+        const query = { _id: transcriptionId };
+        const update = { $set: { 
+          "explicitPermissions": req.body.explicitPermissions 
+        } };
+        const result = await collections.transcriptions.updateOne(query, update);
+
+        res.json(result);
+      } else {
+        return res.status(400).json({ 
+          error: 'Only transcription visibility updates are currently supported via API' 
+        });
+      }
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
   return router;
 }
