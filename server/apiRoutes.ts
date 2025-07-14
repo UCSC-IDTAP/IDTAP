@@ -60,6 +60,43 @@ export default function apiRoutes(collections: Collections) {
     }
   });
 
+  router.get('/transcription/:id', async (req, res) => {
+    const userId = String(req.query.userId);
+    const transcriptionId = req.params.id;
+
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
+
+    if (!transcriptionId) {
+      return res.status(400).json({ error: 'Transcription ID is required' });
+    }
+
+    try {
+      // Build the same permission query as in GET /transcriptions
+      const query = {
+        _id: new ObjectId(transcriptionId),
+        $or: [
+          { "explicitPermissions.publicView": true },
+          { "explicitPermissions.edit": userId },
+          { "explicitPermissions.view": userId },
+          { userID: userId },
+        ],
+      };
+
+      const transcription = await collections.transcriptions.findOne(query);
+
+      if (!transcription) {
+        return res.status(404).json({ error: 'Transcription not found or access denied' });
+      }
+
+      res.json(transcription);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
   router.post('/transcription', async (req, res) => {
     const userId = String(req.query.userId || req.body.userId);
     
