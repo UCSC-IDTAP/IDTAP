@@ -90,14 +90,11 @@ class SwaraClient:
         """Return transcription JSON for the given id."""
         return self._get(f"api/transcription/{piece_id}", params={"userId": self.user_id})
 
-    def piece_exists(self, piece_id: str) -> Any:
-        return self._get("pieceExists", params={"_id": piece_id})
-
     def excel_data(self, piece_id: str) -> bytes:
-        return self._get("excelData", params={"_id": piece_id})
+        return self._get(f"api/transcription/{piece_id}/excel", params={"userId": self.user_id})
 
     def json_data(self, piece_id: str) -> bytes:
-        return self._get("jsonData", params={"_id": piece_id})
+        return self._get(f"api/transcription/{piece_id}/json", params={"userId": self.user_id})
 
     def get_audio_db_entry(self, _id: str) -> Any:
         return self._post_json("getAudioDBEntry", {"_id": _id})

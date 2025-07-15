@@ -1,5 +1,6 @@
 import express from 'express';
 import { Collection, ObjectId } from 'mongodb';
+import { spawn } from 'child_process';
 
 interface Collections {
   transcriptions: Collection;
@@ -91,6 +92,122 @@ export default function apiRoutes(collections: Collections) {
       }
 
       res.json(transcription);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  router.get('/transcription/:id/json', async (req, res) => {
+    const userId = String(req.query.userId);
+    const transcriptionId = req.params.id;
+
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
+
+    if (!transcriptionId) {
+      return res.status(400).json({ error: 'Transcription ID is required' });
+    }
+
+    try {
+      // Check permissions using the same logic as GET /transcription/:id
+      const query = {
+        _id: new ObjectId(transcriptionId),
+        $or: [
+          { "explicitPermissions.publicView": true },
+          { "explicitPermissions.edit": userId },
+          { "explicitPermissions.view": userId },
+          { userID: userId },
+        ],
+      };
+
+      const transcription = await collections.transcriptions.findOne(query);
+
+      if (!transcription) {
+        return res.status(404).json({ error: 'Transcription not found or access denied' });
+      }
+
+      // Generate and serve JSON data (same logic as original jsonData route)
+      const argvs = [
+        'make_excel.py',
+        transcriptionId,
+        `data/json/${transcriptionId}.json`,
+        `data/excel/${transcriptionId}.xlsx`
+      ];
+
+      const pythonScript = spawn('python3', argvs);
+      
+      pythonScript.stdout.on('data', data => {
+        console.log(`stdout: ${data}`)
+      });
+      
+      pythonScript.stderr.on('data', data => {
+        console.error(`stderr: ${data}`)
+      });
+      
+      pythonScript.on('close', () => {
+        res.download(`data/json/${transcriptionId}.json`);
+      });
+
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  router.get('/transcription/:id/excel', async (req, res) => {
+    const userId = String(req.query.userId);
+    const transcriptionId = req.params.id;
+
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
+
+    if (!transcriptionId) {
+      return res.status(400).json({ error: 'Transcription ID is required' });
+    }
+
+    try {
+      // Check permissions using the same logic as GET /transcription/:id
+      const query = {
+        _id: new ObjectId(transcriptionId),
+        $or: [
+          { "explicitPermissions.publicView": true },
+          { "explicitPermissions.edit": userId },
+          { "explicitPermissions.view": userId },
+          { userID: userId },
+        ],
+      };
+
+      const transcription = await collections.transcriptions.findOne(query);
+
+      if (!transcription) {
+        return res.status(404).json({ error: 'Transcription not found or access denied' });
+      }
+
+      // Generate and serve Excel data (same logic as original excelData route)
+      const argvs = [
+        'make_excel.py',
+        transcriptionId,
+        `data/json/${transcriptionId}.json`,
+        `data/excel/${transcriptionId}.xlsx`
+      ];
+
+      const pythonScript = spawn('python3', argvs);
+      
+      pythonScript.stdout.on('data', data => {
+        console.log(`stdout: ${data}`)
+      });
+      
+      pythonScript.stderr.on('data', data => {
+        console.error(`stderr: ${data}`)
+      });
+      
+      pythonScript.on('close', () => {
+        res.download(`data/excel/${transcriptionId}.xlsx`);
+      });
+
     } catch (err) {
       console.error(err);
       res.status(500).json({ error: 'Internal server error' });
