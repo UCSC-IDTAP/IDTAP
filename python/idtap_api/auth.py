@@ -123,7 +123,7 @@ def login_google(
     # Safely attempt to retrieve token credentials
     try:
         creds = flow.credentials
-        token = getattr(creds, "token", None)
+        token = getattr(creds, "id_token", None)  # Use ID token for server verification
         refresh_token = getattr(creds, "refresh_token", None)
     except Exception:
         token = None

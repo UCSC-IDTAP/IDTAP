@@ -4,13 +4,18 @@ import { spawn } from 'child_process';
 
 interface Collections {
   transcriptions: Collection;
+  users?: Collection;
 }
 
 export default function apiRoutes(collections: Collections) {
   const router = express.Router();
 
   router.get('/transcriptions', async (req, res) => {
-    const userId = String(req.query.userId);
+    const googleUserId = req.user!.id; // Google OAuth sub
+    
+    // Look up MongoDB user ID from Google OAuth sub
+    const user = await collections.users?.findOne({ sub: googleUserId });
+    const mongoUserId = user?._id?.toString();
     const sortKey = String(req.query.sortKey);
     const sortDirParam = String(req.query.sortDir);
     const sortDir = sortDirParam === '1' ? 1 : -1;
@@ -38,9 +43,9 @@ export default function apiRoutes(collections: Collections) {
     const query = {
       $or: [
         { "explicitPermissions.publicView": true },
-        { "explicitPermissions.edit": userId },
-        { "explicitPermissions.view": userId },
-        { userID: userId },
+        { "explicitPermissions.edit": mongoUserId },
+        { "explicitPermissions.view": mongoUserId },
+        { userID: mongoUserId },
       ],
     };
 
@@ -62,12 +67,12 @@ export default function apiRoutes(collections: Collections) {
   });
 
   router.get('/transcription/:id', async (req, res) => {
-    const userId = String(req.query.userId);
+    const googleUserId = req.user!.id; // Google OAuth sub
     const transcriptionId = req.params.id;
-
-    if (!userId) {
-      return res.status(400).json({ error: 'User ID is required' });
-    }
+    
+    // Look up MongoDB user ID from Google OAuth sub
+    const user = await collections.users?.findOne({ sub: googleUserId });
+    const mongoUserId = user?._id?.toString();
 
     if (!transcriptionId) {
       return res.status(400).json({ error: 'Transcription ID is required' });
@@ -79,9 +84,9 @@ export default function apiRoutes(collections: Collections) {
         _id: new ObjectId(transcriptionId),
         $or: [
           { "explicitPermissions.publicView": true },
-          { "explicitPermissions.edit": userId },
-          { "explicitPermissions.view": userId },
-          { userID: userId },
+          { "explicitPermissions.edit": mongoUserId },
+          { "explicitPermissions.view": mongoUserId },
+          { userID: mongoUserId },
         ],
       };
 
@@ -99,12 +104,8 @@ export default function apiRoutes(collections: Collections) {
   });
 
   router.get('/transcription/:id/json', async (req, res) => {
-    const userId = String(req.query.userId);
+    const userId = req.user!.id; // Get from authenticated token
     const transcriptionId = req.params.id;
-
-    if (!userId) {
-      return res.status(400).json({ error: 'User ID is required' });
-    }
 
     if (!transcriptionId) {
       return res.status(400).json({ error: 'Transcription ID is required' });
@@ -157,12 +158,8 @@ export default function apiRoutes(collections: Collections) {
   });
 
   router.get('/transcription/:id/excel', async (req, res) => {
-    const userId = String(req.query.userId);
+    const userId = req.user!.id; // Get from authenticated token
     const transcriptionId = req.params.id;
-
-    if (!userId) {
-      return res.status(400).json({ error: 'User ID is required' });
-    }
 
     if (!transcriptionId) {
       return res.status(400).json({ error: 'Transcription ID is required' });
@@ -215,11 +212,11 @@ export default function apiRoutes(collections: Collections) {
   });
 
   router.post('/transcription', async (req, res) => {
-    const userId = String(req.query.userId || req.body.userId);
+    const googleUserId = req.user!.id; // Google OAuth sub
     
-    if (!userId) {
-      return res.status(400).json({ error: 'User ID is required' });
-    }
+    // Look up MongoDB user ID from Google OAuth sub
+    const user = await collections.users?.findOne({ sub: googleUserId });
+    const mongoUserId = user?._id?.toString();
 
     if (!req.body._id) {
       return res.status(400).json({ error: 'Transcription ID is required' });
@@ -235,8 +232,8 @@ export default function apiRoutes(collections: Collections) {
       }
 
       // Check permissions: user must be owner OR have explicit edit permission
-      const isOwner = existingTranscription.userID === userId;
-      const hasEditPermission = existingTranscription.explicitPermissions?.edit?.includes(userId);
+      const isOwner = existingTranscription.userID === mongoUserId;
+      const hasEditPermission = existingTranscription.explicitPermissions?.edit?.includes(mongoUserId);
 
       if (!isOwner && !hasEditPermission) {
         return res.status(403).json({ 
@@ -267,11 +264,11 @@ export default function apiRoutes(collections: Collections) {
   });
 
   router.post('/visibility', async (req, res) => {
-    const userId = String(req.query.userId || req.body.userId);
+    const googleUserId = req.user!.id; // Google OAuth sub
     
-    if (!userId) {
-      return res.status(400).json({ error: 'User ID is required' });
-    }
+    // Look up MongoDB user ID from Google OAuth sub
+    const user = await collections.users?.findOne({ sub: googleUserId });
+    const mongoUserId = user?._id?.toString();
 
     if (!req.body._id) {
       return res.status(400).json({ error: 'Artifact ID is required' });
@@ -297,7 +294,7 @@ export default function apiRoutes(collections: Collections) {
         }
 
         // Check ownership: only the owner can update visibility/permissions
-        const isOwner = existingTranscription.userID === userId;
+        const isOwner = existingTranscription.userID === mongoUserId;
 
         if (!isOwner) {
           return res.status(403).json({ 

@@ -16,7 +16,41 @@ import { DN_ExtractorOptions } from '@shared/types';
 import 'dotenv/config';
 import { $push } from 'mongo-dot-notation';
 import apiRoutes from './apiRoutes';
+
+// Extend Express Request interface to include user
+declare global {
+  namespace Express {
+    interface Request {
+      user?: {
+        id: string;
+        email: string;
+        sub: string;
+      };
+    }
+  }
+}
+
 const app = express();
+
+// Google OAuth client for token verification
+const oauthClient = new OAuth2Client('324767655055-crhq76mdupavvrcedtde986glivug1nm.apps.googleusercontent.com');
+
+// Function to verify Google OAuth token
+async function verifyGoogleToken(token: string) {
+  try {
+    const ticket = await oauthClient.verifyIdToken({
+      idToken: token,
+      audience: '324767655055-crhq76mdupavvrcedtde986glivug1nm.apps.googleusercontent.com',
+    });
+    const payload = ticket.getPayload();
+    if (!payload) {
+      throw new Error('Invalid token payload');
+    }
+    return payload;
+  } catch (error) {
+    throw new Error('Token verification failed');
+  }
+}
 async function exists (path: string) {  
   try {
 	await fs.access(path)
@@ -170,7 +204,29 @@ const runServer = async () => {
 	const collections = db.collection('collections');
         const gharanas = db.collection('gharanas');
 
-        app.use('/api', apiRoutes({ transcriptions }));
+        // Authentication middleware for API routes
+        app.use('/api', async (req, res, next) => {
+          const authHeader = req.headers.authorization;
+          if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({ error: 'Bearer token required' });
+          }
+
+          const token = authHeader.replace('Bearer ', '');
+          try {
+            const payload = await verifyGoogleToken(token);
+            req.user = {
+              id: payload.sub || '',
+              email: payload.email || '',
+              sub: payload.sub || ''
+            };
+            next();
+          } catch (err) {
+            return res.status(401).json({ error: 'Invalid or expired token' });
+          }
+        });
+
+        const apiRouter = apiRoutes({ transcriptions, users });
+        app.use('/api', apiRouter);
 	  
 	app.post('/insertNewTranscription', async (req, res) => {
 	  // creates new transcription entry in transcriptions collection

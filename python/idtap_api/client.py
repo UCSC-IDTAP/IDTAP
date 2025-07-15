@@ -88,19 +88,17 @@ class SwaraClient:
     # ---- API methods ----
     def get_piece(self, piece_id: str) -> Any:
         """Return transcription JSON for the given id."""
-        return self._get(f"api/transcription/{piece_id}", params={"userId": self.user_id})
+        return self._get(f"api/transcription/{piece_id}")
 
     def excel_data(self, piece_id: str) -> bytes:
-        return self._get(f"api/transcription/{piece_id}/excel", params={"userId": self.user_id})
+        return self._get(f"api/transcription/{piece_id}/excel")
 
     def json_data(self, piece_id: str) -> bytes:
-        return self._get(f"api/transcription/{piece_id}/json", params={"userId": self.user_id})
+        return self._get(f"api/transcription/{piece_id}/json")
 
     def save_piece(self, piece: Dict[str, Any]) -> Any:
-        # Add userId to the piece data for the new API route
-        piece_with_user = piece.copy()
-        piece_with_user["userId"] = self.user_id
-        return self._post_json("api/transcription", piece_with_user)
+        """Save transcription using authenticated API route."""
+        return self._post_json("api/transcription", piece)
 
     def get_viewable_transcriptions(
         self,
@@ -110,7 +108,6 @@ class SwaraClient:
     ) -> Any:
         """Return transcriptions viewable by the user."""
         params = {
-            "userId": self.user_id,
             "sortKey": sort_key,
             "sortDir": sort_dir,
             "newPermissions": new_permissions,
@@ -130,6 +127,5 @@ class SwaraClient:
             "artifactType": artifact_type,
             "_id": _id,
             "explicitPermissions": explicit_permissions,
-            "userId": self.user_id,
         }
         return self._post_json("api/visibility", payload)
