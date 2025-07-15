@@ -4482,6 +4482,7 @@ export default defineComponent({
       if (selectedTraj.value === undefined) {
         throw new Error('No traj selected');
       }
+      selectedDragDotIdx.value = undefined;
       const traj = selectedTraj.value;
       const track = props.piece.trackFromTraj(traj);
       const allTrajs = props.piece.allTrajectories(track)
@@ -4515,6 +4516,7 @@ export default defineComponent({
       if (selectedTraj.value === undefined) {
         throw new Error('No traj selected');
       }
+      selectedDragDotIdx.value = undefined;
       const traj = selectedTraj.value;
       const track = props.piece.trackFromTraj(traj);
       const allTrajs = props.piece.allTrajectories(track)
