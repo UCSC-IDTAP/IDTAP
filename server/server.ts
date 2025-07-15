@@ -2074,7 +2074,7 @@ const runServer = async () => {
 		if (!user) {
 		  return res.status(404).send('User not found');
 		}
-		res.json(user.transcriptionsViewed);
+		res.json(user.transcriptionsViewed || {});
 	  } catch (err) {
 		console.error(err);
 		res.status(500).send(err);
