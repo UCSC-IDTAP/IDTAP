@@ -1,6 +1,11 @@
 # Changelog
 
 
+* fix: reset selectedDragDotIdx when tabbing between trajectories (#642) [cb4da48] (Jon Myers)
+### 2025-07-15
+
+## July 2025
+
 * Feat: Implemented four strings for Chikari [d7158ba] (Jon Myers)
 ### 2025-06-17
 
