@@ -46,7 +46,7 @@ except Exception as e:
 # Test with a transcription the user should NOT have access to (if available)
 print("\n" + "="*50)
 print("Testing permission checking with potentially inaccessible transcription...")
-restricted_id = '685c11ad80dc6827daaf017d'  # This one was previously failing permission checks
+restricted_id = '68759f419f8f02721e2ee69c'  # This one was previously failing permission checks
 
 try:
     json_data = s.json_data(restricted_id)
