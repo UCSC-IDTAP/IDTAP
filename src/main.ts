@@ -92,12 +92,15 @@ Object.entries(Color).forEach(([key, value]) => {
   root.style.setProperty(`--${key}`, value as string);
 });
 
+// For frontend, client ID can be public but we'll use env var for consistency
+const GOOGLE_CLIENT_ID = process.env.VUE_APP_GOOGLE_CLIENT_ID || 
+  "324767655055-crhq76mdupavvrcedtde986glivug1nm.apps.googleusercontent.com";
+
 app
   .use(router)
   .use(store)
   .use(vue3GoogleLogin, {
-    clientId: "324767655055-crhq76mdupavvrcedtde986glivug1nm.apps.googleuserc" +
-      "ontent.com"
+    clientId: GOOGLE_CLIENT_ID
   })
   .use(VueCookies, { expires: '7d' })
   .use(head)

@@ -17,6 +17,13 @@ import 'dotenv/config';
 import { $push } from 'mongo-dot-notation';
 import apiRoutes from './apiRoutes';
 
+// Dual credential support - fallback to hardcoded if env vars not set
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '324767655055-crhq76mdupavvrcedtde986glivug1nm.apps.googleusercontent.com';
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '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';
+
+// Dual credential support is active
+console.log('Using credentials:', GOOGLE_CLIENT_ID.slice(0, 15) + '...');
+
 // Extend Express Request interface to include user
 declare global {
   namespace Express {
@@ -33,14 +40,14 @@ declare global {
 const app = express();
 
 // Google OAuth client for token verification
-const oauthClient = new OAuth2Client('324767655055-crhq76mdupavvrcedtde986glivug1nm.apps.googleusercontent.com');
+const oauthClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 
 // Function to verify Google OAuth token
 async function verifyGoogleToken(token: string) {
   try {
     const ticket = await oauthClient.verifyIdToken({
       idToken: token,
-      audience: '324767655055-crhq76mdupavvrcedtde986glivug1nm.apps.googleusercontent.com',
+      audience: GOOGLE_CLIENT_ID,
     });
     const payload = ticket.getPayload();
     if (!payload) {
@@ -1654,8 +1661,8 @@ app.post('/handleGoogleAuthCodePythonAPI', async (req, res) => {
 
     // Construct a fresh OAuth2 client
     const OAuthClient = new OAuth2Client({
-      clientId: '324767655055-crhq76mdupavvrcedtde986glivug1nm.apps.googleusercontent.com',
-      clientSecret: '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',
+      clientId: GOOGLE_CLIENT_ID,
+      clientSecret: GOOGLE_CLIENT_SECRET,
       redirectUri: url,
     });
 
@@ -1681,7 +1688,6 @@ app.post('/handleGoogleAuthCodePythonAPI', async (req, res) => {
 });
 
 	app.post('/handleGoogleAuthCode', async (req, res) => {
-	  
 	  try {
 		let url = req.body.redirectURL;
 		if (url !== 'http://localhost:8080/') {
@@ -1695,9 +1701,8 @@ app.post('/handleGoogleAuthCodePythonAPI', async (req, res) => {
 		
 		console.log(url)
 		const OAuthClient = new OAuth2Client({
-		  clientId: "324767655055-crhq76mdupavvrcedtde986glivug1nm.apps.googl" +
-			"eusercontent.com",
-		  clientSecret: "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",
+		  clientId: GOOGLE_CLIENT_ID,
+		  clientSecret: GOOGLE_CLIENT_SECRET,
 		  redirectUri: url
 		});
 		let { tokens } = await OAuthClient.getToken(req.body.authCode);

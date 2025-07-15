@@ -14,14 +14,21 @@ DEFAULT_TOKEN_PATH = Path(os.environ.get("SWARA_TOKEN_PATH", "~/.swara/token.jso
 # Default OAuth client configured on the Swara server. Using these credentials
 # means users can simply call :func:`login_google` without supplying their own
 # client secrets.
-DEFAULT_CLIENT_SECRETS: Dict[str, Any] = {
-    "installed": {
-        "client_id": "324767655055-crhq76mdupavvrcedtde986glivug1nm.apps.googleusercontent.com",
-        "client_secret": "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",
-        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-        "token_uri": "https://oauth2.googleapis.com/token",
+def get_default_client_secrets() -> Dict[str, Any]:
+    """Get OAuth client secrets from environment variables or fallback to defaults."""
+    client_id = os.environ.get("GOOGLE_CLIENT_ID", "324767655055-crhq76mdupavvrcedtde986glivug1nm.apps.googleusercontent.com")
+    client_secret = os.environ.get("GOOGLE_CLIENT_SECRET", "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")
+    
+    return {
+        "installed": {
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token",
+        }
     }
-}
+
+DEFAULT_CLIENT_SECRETS: Dict[str, Any] = get_default_client_secrets()
 
 
 def _run_flow_get_code(flow: InstalledAppFlow, host: str = "localhost", port: int = 8080) -> str:
