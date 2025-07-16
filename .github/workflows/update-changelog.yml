@@ -57,7 +57,7 @@ jobs:
         run: pnpm install
       - name: Build
         env:
-          VUE_APP_GOOGLE_CLIENT_ID: ${{ secrets.VUE_APP_GOOGLE_CLIENT_ID }}
+          VITE_GOOGLE_CLIENT_ID: ${{ secrets.VUE_APP_GOOGLE_CLIENT_ID }}
         run: pnpm run build
 
       - name: Set up SSH agent

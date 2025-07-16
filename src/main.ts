@@ -93,11 +93,11 @@ Object.entries(Color).forEach(([key, value]) => {
 });
 
 // Load Google Client ID from environment variable
-const GOOGLE_CLIENT_ID = process.env.VUE_APP_GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 if (!GOOGLE_CLIENT_ID) {
-  console.error('ERROR: VUE_APP_GOOGLE_CLIENT_ID environment variable must be set');
-  throw new Error('Missing required environment variable: VUE_APP_GOOGLE_CLIENT_ID');
+  console.error('ERROR: VITE_GOOGLE_CLIENT_ID environment variable must be set');
+  throw new Error('Missing required environment variable: VITE_GOOGLE_CLIENT_ID');
 }
 
 app
