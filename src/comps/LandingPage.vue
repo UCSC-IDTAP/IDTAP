@@ -41,6 +41,9 @@
               </a>
             </div>
             <div class='supportRow'>FAQ</div>
+            <div class='supportRow'>
+              <a href='/privacy-policy.html'>Privacy Policy</a>
+            </div>
           </div>
           <div class='projectTeam'>
             <div class='projectTeamTitle'>Principal Investigators</div>
