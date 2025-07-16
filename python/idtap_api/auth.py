@@ -10,6 +10,9 @@ import wsgiref.util
 
 import requests
 
+from .secure_storage import SecureTokenStorage, AuthenticationError
+
+# Legacy token path for backwards compatibility
 DEFAULT_TOKEN_PATH = Path(os.environ.get("SWARA_TOKEN_PATH", "~/.swara/token.json")).expanduser()
 
 
@@ -43,7 +46,7 @@ def _run_local_server(host: str = "localhost", port: int = 8080) -> str:
 
 def login_google(
     base_url: str = "https://swara.studio/",
-    token_path: Path = DEFAULT_TOKEN_PATH,
+    storage: Optional[SecureTokenStorage] = None,
     host: str = "localhost",
     port: int = 8080,
 ) -> Dict[str, Any]:
@@ -55,7 +58,7 @@ def login_google(
 
     Args:
         base_url: Swara Studio API base URL.
-        token_path: Location to store the resulting token information.
+        storage: SecureTokenStorage instance for storing tokens. If None, creates a new one.
         host: Local host for OAuth redirect.
         port: Local port for OAuth redirect.
 
@@ -124,9 +127,12 @@ def login_google(
     except Exception as e:
         raise RuntimeError(f"Failed to exchange code for tokens: {e}")
     
-    # Step 6: Store tokens and profile locally
-    token_path = Path(token_path).expanduser()
-    token_path.parent.mkdir(parents=True, exist_ok=True)
+    # Step 6: Store tokens and profile securely
+    if storage is None:
+        storage = SecureTokenStorage()
+    
+    # Attempt migration from legacy storage first
+    storage.migrate_legacy_tokens()
     
     storage_data = {
         "access_token": result.get("access_token"),
@@ -135,39 +141,66 @@ def login_google(
         "profile": result.get("profile")
     }
     
-    with token_path.open("w", encoding="utf-8") as f:
-        json.dump(storage_data, f, indent=2)
+    if storage.store_tokens(storage_data):
+        storage_info = storage.get_storage_info()
+        print(f"✅ Authentication successful! Tokens stored securely using {storage_info['storage_method']} "
+              f"(security level: {storage_info['security_level']})")
+    else:
+        raise AuthenticationError("Failed to store authentication tokens securely")
     
-    print(f"Authentication successful! Token saved to {token_path}")
     return result.get("profile", {})
 
 
-def load_token(token_path: Path = DEFAULT_TOKEN_PATH) -> Optional[Dict[str, Any]]:
-    """Load stored authentication token and profile.
+def load_token(storage: Optional[SecureTokenStorage] = None, token_path: Optional[Path] = None) -> Optional[Dict[str, Any]]:
+    """Load stored authentication token and profile from secure storage.
     
     Args:
-        token_path: Path to the stored token file.
+        storage: SecureTokenStorage instance. If None, creates a new one.
+        token_path: Legacy parameter for backwards compatibility. If provided, 
+                   will attempt to load from this path first.
         
     Returns:
         Dictionary containing token and profile information, or None if not found.
     """
-    token_path = Path(token_path).expanduser()
-    if not token_path.exists():
-        return None
+    if storage is None:
+        storage = SecureTokenStorage()
     
-    try:
-        with token_path.open("r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception:
-        return None
+    # Check for legacy token path first (backwards compatibility)
+    if token_path is not None:
+        token_path = Path(token_path).expanduser()
+        if token_path.exists():
+            try:
+                with token_path.open("r", encoding="utf-8") as f:
+                    legacy_tokens = json.load(f)
+                
+                # Migrate to secure storage
+                if storage.store_tokens(legacy_tokens):
+                    token_path.unlink()  # Remove legacy file
+                    print("✅ Migrated legacy tokens to secure storage")
+                
+                return legacy_tokens
+            except Exception:
+                pass
+    
+    # Load from secure storage
+    return storage.load_tokens()
 
 
-def clear_token(token_path: Path = DEFAULT_TOKEN_PATH) -> None:
-    """Clear stored authentication token.
+def clear_token(storage: Optional[SecureTokenStorage] = None, token_path: Optional[Path] = None) -> None:
+    """Clear stored authentication tokens from all storage locations.
     
     Args:
-        token_path: Path to the stored token file.
+        storage: SecureTokenStorage instance. If None, creates a new one.
+        token_path: Legacy parameter for backwards compatibility.
     """
-    token_path = Path(token_path).expanduser()
-    if token_path.exists():
-        token_path.unlink()
+    if storage is None:
+        storage = SecureTokenStorage()
+    
+    # Clear from secure storage
+    storage.clear_tokens()
+    
+    # Also clear legacy token path if specified
+    if token_path is not None:
+        token_path = Path(token_path).expanduser()
+        if token_path.exists():
+            token_path.unlink()

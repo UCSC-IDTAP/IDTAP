@@ -1,0 +1,10 @@
+# Core dependencies
+requests>=2.31.0
+
+# Security dependencies for secure token storage
+keyring>=24.0.0          # OS keyring integration
+cryptography>=41.0.0     # Encryption for fallback storage
+PyJWT>=2.8.0            # JWT token validation
+
+# Optional: for better keyring support on Linux
+secretstorage>=3.3.0     # Linux Secret Service keyring backend

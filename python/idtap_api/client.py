@@ -10,7 +10,8 @@ from pathlib import Path
 import requests
 import os
 
-from .auth import login_google
+from .auth import login_google, load_token
+from .secure_storage import SecureTokenStorage
 
 
 class SwaraClient:
@@ -23,16 +24,21 @@ class SwaraClient:
         auto_login: bool = True,
     ) -> None:
         self.base_url = base_url.rstrip("/") + "/"
-        self.token_path = Path(token_path or os.environ.get("SWARA_TOKEN_PATH", "~/.swara/token.json")).expanduser()
-        # Ensure the directory for the token file exists
-        self.token_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Initialize secure storage
+        self.secure_storage = SecureTokenStorage()
+        
+        # Keep token_path for backwards compatibility
+        self.token_path = Path(token_path or os.environ.get("SWARA_TOKEN_PATH", "~/.swara/token.json")).expanduser() if token_path else None
+        
         self.auto_login = auto_login
         self.token: Optional[str] = None
         self.user: Optional[Dict[str, Any]] = None
         self.load_token()
+        
         if self.token is None and self.auto_login:
             try:
-                login_google(base_url=self.base_url, token_path=self.token_path)
+                login_google(base_url=self.base_url, storage=self.secure_storage)
                 self.load_token()
             except Exception as e:
                 print(f"Failed to log in to Swara Studio: {e}")
@@ -47,17 +53,48 @@ class SwaraClient:
 
     # ---- auth utilities ----
     def load_token(self, token_path: Optional[str | Path] = None) -> None:
-        """Load saved token and profile information if available."""
-        path = Path(token_path or self.token_path)
-        if not path.exists():
-            return
+        """Load saved token and profile information from secure storage."""
         try:
-            with path.open("r", encoding="utf-8") as f:
-                data = json.load(f)
-        except Exception:
-            return
-        self.token = data.get("id_token") or data.get("token")
-        self.user = data.get("profile") or data.get("user")
+            # Use the new secure storage with backwards compatibility
+            legacy_path = Path(token_path or self.token_path) if (token_path or self.token_path) else None
+            data = load_token(storage=self.secure_storage, token_path=legacy_path)
+            
+            if data:
+                # Check if tokens are expired and need refresh
+                if self.secure_storage.is_token_expired(data):
+                    print("⚠️  Stored tokens are expired. Please re-authenticate.")
+                    # Clear expired tokens
+                    self.secure_storage.clear_tokens()
+                    self.token = None
+                    self.user = None
+                    return
+                
+                self.token = data.get("id_token") or data.get("token")
+                self.user = data.get("profile") or data.get("user")
+            else:
+                self.token = None
+                self.user = None
+        except Exception as e:
+            print(f"Failed to load tokens: {e}")
+            self.token = None
+            self.user = None
+
+    def get_auth_info(self) -> Dict[str, Any]:
+        """Get information about the current authentication and storage setup.
+        
+        Returns:
+            Dict containing authentication status and storage information
+        """
+        storage_info = self.secure_storage.get_storage_info()
+        return {
+            "authenticated": self.token is not None,
+            "user_id": self.user_id,
+            "user_email": self.user.get("email") if self.user else None,
+            "storage_info": storage_info,
+            "token_expired": self.secure_storage.is_token_expired(
+                self.secure_storage.load_tokens() or {}
+            ) if self.token else None
+        }
 
     def _auth_headers(self) -> Dict[str, str]:
         if self.token:
