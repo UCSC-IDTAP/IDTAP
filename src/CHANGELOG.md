@@ -1,6 +1,7 @@
 # Changelog
 
 
+* fix: use VITE_GOOGLE_CLIENT_ID environment variable for proper Vite build integration [07f7c0e] (Jon Myers)
 * fix: add VUE_APP_GOOGLE_CLIENT_ID environment variable to GitHub Actions build [75aaf34] (Jon Myers)
 * feat: added privacy policy [967ea41] (Jon Myers)
 ### 2025-07-16
