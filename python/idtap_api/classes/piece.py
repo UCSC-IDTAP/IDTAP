@@ -849,7 +849,7 @@ class Piece:
 
     # ------------------------------------------------------------------
     def to_json(self) -> Dict[str, Any]:
-        return {
+        data: Dict[str, Any] = {
             "raga": self.raga.to_json(),
             "phraseGrid": [[p.to_json() for p in row] for row in self.phraseGrid],
             "instrumentation": [i.value if isinstance(i, Instrument) else i for i in self.instrumentation],
@@ -876,6 +876,8 @@ class Piece:
             "adHocSectionCatGrid": self.adHocSectionCatGrid,
             "assemblageDescriptors": self.assemblageDescriptors,
         }
+        # drop None values so they serialize as undefined (omitted) rather than null
+        return {k: v for k, v in data.items() if v is not None}
 
     @staticmethod
     def from_json(obj: Dict[str, Any]) -> "Piece":

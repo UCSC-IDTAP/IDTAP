@@ -135,6 +135,14 @@ class SwaraClient:
         """Save transcription using authenticated API route."""
         return self._post_json("api/transcription", piece)
 
+    def insert_new_transcription(self, piece: Dict[str, Any]) -> Any:
+        """Insert a new transcription document as the current authenticated user."""
+        if not self.user_id:
+            raise RuntimeError("Not authenticated: cannot insert new transcription")
+        payload = dict(piece)
+        payload["userID"] = self.user_id
+        return self._post_json("insertNewTranscription", payload)
+
     def get_viewable_transcriptions(
         self,
         sort_key: str = "title",

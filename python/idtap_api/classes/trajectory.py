@@ -632,13 +632,13 @@ class Trajectory:
             self.vowel_eng_trans = None
 
     def to_json(self) -> Dict:
-        return {
+        data = {
             'id': self.id,
             'pitches': [p.to_JSON() for p in self.pitches],
             'durTot': self.dur_tot,
             'durArray': self.dur_array,
             'slope': self.slope,
-            'articulations': {k: a.to_json() for k,a in self.articulations.items()},
+            'articulations': {k: a.to_json() for k, a in self.articulations.items()},
             'startTime': self.start_time,
             'num': self.num,
             'name': self.name,
@@ -659,6 +659,8 @@ class Trajectory:
             'uniqueId': self.unique_id,
             'tags': self.tags,
         }
+        # drop None values so they serialize as undefined (omitted) rather than null
+        return {k: v for k, v in data.items() if v is not None}
 
     @staticmethod
     def from_json(obj: Dict) -> 'Trajectory':
