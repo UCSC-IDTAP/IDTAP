@@ -1,6 +1,9 @@
 # Changelog
 
 
+* feat: added privacy policy [967ea41] (Jon Myers)
+### 2025-07-16
+
 * fix: reset selectedDragDotIdx when tabbing between trajectories (#642) [cb4da48] (Jon Myers)
 ### 2025-07-15
 
