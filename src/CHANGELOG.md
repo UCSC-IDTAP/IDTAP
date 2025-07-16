@@ -9,6 +9,12 @@
 
 ## July 2025
 
+* feat: port Assemblage class and tests to Python [59498be] (Jon Myers)
+* refactor: consolidate trajectory test imports [548cc2c] (Jon Myers)
+* fix: update paths and order after test move [7a60135] (Jon Myers)
+* feat: port chikari to python [637efbf] (Jon Myers)
+### 2025-06-27
+
 * Feat: Implemented four strings for Chikari [d7158ba] (Jon Myers)
 ### 2025-06-17
 
