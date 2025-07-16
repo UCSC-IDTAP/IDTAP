@@ -92,9 +92,13 @@ Object.entries(Color).forEach(([key, value]) => {
   root.style.setProperty(`--${key}`, value as string);
 });
 
-// For frontend, client ID can be public but we'll use env var for consistency
-const GOOGLE_CLIENT_ID = process.env.VUE_APP_GOOGLE_CLIENT_ID || 
-  "324767655055-crhq76mdupavvrcedtde986glivug1nm.apps.googleusercontent.com";
+// Load Google Client ID from environment variable
+const GOOGLE_CLIENT_ID = process.env.VUE_APP_GOOGLE_CLIENT_ID;
+
+if (!GOOGLE_CLIENT_ID) {
+  console.error('ERROR: VUE_APP_GOOGLE_CLIENT_ID environment variable must be set');
+  throw new Error('Missing required environment variable: VUE_APP_GOOGLE_CLIENT_ID');
+}
 
 app
   .use(router)

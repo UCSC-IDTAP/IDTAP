@@ -20,21 +20,19 @@ class SwaraClient:
         self,
         base_url: str = "https://swara.studio/",
         token_path: str | Path | None = None,
-        client_secrets: Optional[Union[str, Dict[str, Any]]] = None,
         auto_login: bool = True,
     ) -> None:
         self.base_url = base_url.rstrip("/") + "/"
         self.token_path = Path(token_path or os.environ.get("SWARA_TOKEN_PATH", "~/.swara/token.json")).expanduser()
         # Ensure the directory for the token file exists
         self.token_path.parent.mkdir(parents=True, exist_ok=True)
-        self.client_secrets = client_secrets or os.environ.get("SWARA_CLIENT_SECRETS")
         self.auto_login = auto_login
         self.token: Optional[str] = None
         self.user: Optional[Dict[str, Any]] = None
         self.load_token()
         if self.token is None and self.auto_login:
             try:
-                login_google(self.client_secrets, base_url=self.base_url, token_path=self.token_path)
+                login_google(base_url=self.base_url, token_path=self.token_path)
                 self.load_token()
             except Exception as e:
                 print(f"Failed to log in to Swara Studio: {e}")
@@ -58,7 +56,7 @@ class SwaraClient:
                 data = json.load(f)
         except Exception:
             return
-        self.token = data.get("token")
+        self.token = data.get("id_token") or data.get("token")
         self.user = data.get("profile") or data.get("user")
 
     def _auth_headers(self) -> Dict[str, str]:

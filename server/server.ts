@@ -16,13 +16,18 @@ import { DN_ExtractorOptions } from '@shared/types';
 import 'dotenv/config';
 import { $push } from 'mongo-dot-notation';
 import apiRoutes from './apiRoutes';
+import oauthRoutes from './oauthRoutes';
 
-// Dual credential support - fallback to hardcoded if env vars not set
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '324767655055-crhq76mdupavvrcedtde986glivug1nm.apps.googleusercontent.com';
-const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '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';
+// Load Google OAuth credentials from environment variables
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 
-// Dual credential support is active
-console.log('Using credentials:', GOOGLE_CLIENT_ID.slice(0, 15) + '...');
+if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
+  console.error('ERROR: GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET environment variables must be set');
+  process.exit(1);
+}
+
+console.log('Using Google OAuth credentials from environment variables');
 
 // Extend Express Request interface to include user
 declare global {
@@ -234,6 +239,10 @@ const runServer = async () => {
 
         const apiRouter = apiRoutes({ transcriptions, users });
         app.use('/api', apiRouter);
+        
+        // OAuth routes for Python client (no auth middleware)
+        const oauthRouter = oauthRoutes({ users }, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET);
+        app.use('/oauth', oauthRouter);
 	  
 	app.post('/insertNewTranscription', async (req, res) => {
 	  // creates new transcription entry in transcriptions collection

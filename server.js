@@ -1569,9 +1569,8 @@ const runServer = async () => {
         ]
         console.log(url)
         const OAuthClient = new OAuth2Client({
-          clientId: "324767655055-crhq76mdupavvrcedtde986glivug1nm.apps.googl" +
-            "eusercontent.com",
-          clientSecret: "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",
+          clientId: process.env.GOOGLE_CLIENT_ID,
+          clientSecret: process.env.GOOGLE_CLIENT_SECRET,
           redirectUri: url
         });
         let { tokens } = await OAuthClient.getToken(req.body.authCode);
