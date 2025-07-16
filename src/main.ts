@@ -92,12 +92,19 @@ Object.entries(Color).forEach(([key, value]) => {
   root.style.setProperty(`--${key}`, value as string);
 });
 
+// Load Google Client ID from environment variable
+const GOOGLE_CLIENT_ID = process.env.VUE_APP_GOOGLE_CLIENT_ID;
+
+if (!GOOGLE_CLIENT_ID) {
+  console.error('ERROR: VUE_APP_GOOGLE_CLIENT_ID environment variable must be set');
+  throw new Error('Missing required environment variable: VUE_APP_GOOGLE_CLIENT_ID');
+}
+
 app
   .use(router)
   .use(store)
   .use(vue3GoogleLogin, {
-    clientId: "324767655055-crhq76mdupavvrcedtde986glivug1nm.apps.googleuserc" +
-      "ontent.com"
+    clientId: GOOGLE_CLIENT_ID
   })
   .use(VueCookies, { expires: '7d' })
   .use(head)

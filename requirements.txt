@@ -1,0 +1,16 @@
+certifi==2025.6.15
+charset-normalizer==3.4.2
+dnspython==2.7.0
+humps==0.2.2
+idna==3.10
+iniconfig==2.1.0
+packaging==25.0
+pluggy==1.6.0
+Pygments==2.19.2
+pymongo==4.13.2
+pytest==8.4.1
+PyYAML==6.0.2
+requests==2.32.4
+responses==0.25.7
+google-auth-oauthlib==1.2.0
+urllib3==2.5.0

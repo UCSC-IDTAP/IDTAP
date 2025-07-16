@@ -47,3 +47,5 @@ python/auto_transcribe/extraction/clips/
 python/auto_transcribe/clips/
 python/auto_transcribe/beeps/
 python/auto_transcribe/melodic_contours/*.png
+
+*egg-info

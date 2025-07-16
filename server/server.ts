@@ -15,7 +15,54 @@ import { DN_Extractor } from './extract';
 import { DN_ExtractorOptions } from '@shared/types';
 import 'dotenv/config';
 import { $push } from 'mongo-dot-notation';
+import apiRoutes from './apiRoutes';
+import oauthRoutes from './oauthRoutes';
+
+// Load Google OAuth credentials from environment variables
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+
+if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
+  console.error('ERROR: GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET environment variables must be set');
+  process.exit(1);
+}
+
+console.log('Using Google OAuth credentials from environment variables');
+
+// Extend Express Request interface to include user
+declare global {
+  namespace Express {
+    interface Request {
+      user?: {
+        id: string;
+        email: string;
+        sub: string;
+      };
+    }
+  }
+}
+
 const app = express();
+
+// Google OAuth client for token verification
+const oauthClient = new OAuth2Client(GOOGLE_CLIENT_ID);
+
+// Function to verify Google OAuth token
+async function verifyGoogleToken(token: string) {
+  try {
+    const ticket = await oauthClient.verifyIdToken({
+      idToken: token,
+      audience: GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    if (!payload) {
+      throw new Error('Invalid token payload');
+    }
+    return payload;
+  } catch (error) {
+    throw new Error('Token verification failed');
+  }
+}
 async function exists (path: string) {  
   try {
 	await fs.access(path)
@@ -167,7 +214,35 @@ const runServer = async () => {
 	const users = db.collection('users');
 	const phonemes = db.collection('phonemes');
 	const collections = db.collection('collections');
-	const gharanas = db.collection('gharanas');
+        const gharanas = db.collection('gharanas');
+
+        // Authentication middleware for API routes
+        app.use('/api', async (req, res, next) => {
+          const authHeader = req.headers.authorization;
+          if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({ error: 'Bearer token required' });
+          }
+
+          const token = authHeader.replace('Bearer ', '');
+          try {
+            const payload = await verifyGoogleToken(token);
+            req.user = {
+              id: payload.sub || '',
+              email: payload.email || '',
+              sub: payload.sub || ''
+            };
+            next();
+          } catch (err) {
+            return res.status(401).json({ error: 'Invalid or expired token' });
+          }
+        });
+
+        const apiRouter = apiRoutes({ transcriptions, users });
+        app.use('/api', apiRouter);
+        
+        // OAuth routes for Python client (no auth middleware)
+        const oauthRouter = oauthRoutes({ users }, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET);
+        app.use('/oauth', oauthRouter);
 	  
 	app.post('/insertNewTranscription', async (req, res) => {
 	  // creates new transcription entry in transcriptions collection
@@ -1576,21 +1651,67 @@ const runServer = async () => {
 	  }
 	})
 
+	// New PKCE-aware endpoint for Python API clients
+app.post('/handleGoogleAuthCodePythonAPI', async (req, res) => {
+  try {
+    // Normalize the incoming redirect URL just like your other handler
+    let url = req.body.redirectURL;
+    if (url !== 'http://localhost:8080/') {
+      if (url.endsWith('/')) {
+        url = url.slice(0, -1);
+      }
+      if (url.endsWith('logIn')) {
+        url = url.slice(0, -6);
+      }
+    }
+
+    // Grab the PKCE verifier sent from the Python side
+    const codeVerifier = req.body.codeVerifier;
+
+    // Construct a fresh OAuth2 client
+    const OAuthClient = new OAuth2Client({
+      clientId: GOOGLE_CLIENT_ID,
+      clientSecret: GOOGLE_CLIENT_SECRET,
+      redirectUri: url,
+    });
+
+    // Exchange the auth code plus PKCE verifier for tokens
+    const { tokens } = await (OAuthClient.getToken as any)({
+      code: req.body.authCode,
+      codeVerifier,
+      redirectUri: url,
+    });
+
+    // Set credentials & fetch the user profile
+    OAuthClient.setCredentials(tokens);
+    const userinfo = await OAuthClient.request({
+      url: 'https://www.googleapis.com/oauth2/v3/userinfo'
+    });
+
+    // Return both tokens and profile to the caller
+    res.json({ tokens, profile: userinfo.data });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send(err);
+  }
+});
+
 	app.post('/handleGoogleAuthCode', async (req, res) => {
-	  
 	  try {
 		let url = req.body.redirectURL;
-		if (url[url.length-1] === '/') {
-		  url = url.slice(0, url.length-1);
+		if (url !== 'http://localhost:8080/') {
+			if (url[url.length-1] === '/') {
+		  		url = url.slice(0, url.length-1);
+			}
+			if (url.slice(url.length-5, url.length) === 'logIn')[
+				url = url.slice(0, url.length-6)
+			]
 		}
-		if (url.slice(url.length-5, url.length) === 'logIn')[
-		  url = url.slice(0, url.length-6)
-		]
+		
 		console.log(url)
 		const OAuthClient = new OAuth2Client({
-		  clientId: "324767655055-crhq76mdupavvrcedtde986glivug1nm.apps.googl" +
-			"eusercontent.com",
-		  clientSecret: "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",
+		  clientId: GOOGLE_CLIENT_ID,
+		  clientSecret: GOOGLE_CLIENT_SECRET,
 		  redirectUri: url
 		});
 		let { tokens } = await OAuthClient.getToken(req.body.authCode);
