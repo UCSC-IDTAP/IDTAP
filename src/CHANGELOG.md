@@ -1,6 +1,10 @@
 # Changelog
 
 
+* refactor: clean up DottedLine type and remove unused pausedAt field [5b4fbc4] (Jon Myers)
+* feat: add dotted line playback animation mode [689485f] (Jon Myers)
+### 2025-07-17
+
 * feat: implement secure token storage for Python client [e0b616d] (Jon Myers)
 * fix: use VITE_GOOGLE_CLIENT_ID environment variable for proper Vite build integration [07f7c0e] (Jon Myers)
 * fix: add VUE_APP_GOOGLE_CLIENT_ID environment variable to GitHub Actions build [75aaf34] (Jon Myers)
