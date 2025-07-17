@@ -876,7 +876,7 @@ export default defineComponent({
     this.throttledRenderMeter = throttle(this.renderMeter, 100);
     this.throttledRefreshSargamLines = throttle(this.refreshSargamLines, 100);
     if (this.$store.state.userID === '634d9506a6a3647e543b7641') {
-      this.playheadAnimation = PlayheadAnimations.Block;
+      this.playheadAnimation = PlayheadAnimations.DottedLine;
     }
 
     try {
