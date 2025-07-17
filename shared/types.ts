@@ -940,6 +940,15 @@ type DisplaySettings = {
   }
 }
 
+interface DottedLine {
+  id: string;
+  creationTime: number;
+  position: number;
+  opacity: number;
+  createdAt: number;
+  pausedAt?: number;
+}
+
 interface LoopSourceNode extends AudioBufferSourceNode {
   playing?: boolean;
 }
@@ -1256,6 +1265,7 @@ export type {
   LabelEditorOptions,
   TooltipData,
   DisplaySettings,
+  DottedLine,
   BolDisplayType,
   LoopSourceNode,
   ChikariNodeType,

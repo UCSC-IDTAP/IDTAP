@@ -49,6 +49,7 @@ enum PlayheadAnimations {
   Animated = 'Animated',
   Block = 'Block',
   None = 'None',
+  DottedLine = 'DottedLine',
 }
 
 enum ScaleSystem {
