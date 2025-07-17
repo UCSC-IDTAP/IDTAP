@@ -1139,6 +1139,10 @@ export default defineComponent({
       if (s.playheadAnimationStyle !== undefined) {
         playheadAnimationProxy.value = s.playheadAnimationStyle;
       }
+      // Override for specific user
+      if (store.state.userID === '634d9506a6a3647e543b7641') {
+        playheadAnimationProxy.value = PlayheadAnimations.DottedLine;
+      }
       if (s.highlightTrajs !== undefined) {
         highlightTrajsProxy.value = s.highlightTrajs;
       }

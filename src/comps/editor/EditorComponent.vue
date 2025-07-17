@@ -875,9 +875,6 @@ export default defineComponent({
     this.throttledAlterVibObj = throttle(this.alterVibObj, 16);
     this.throttledRenderMeter = throttle(this.renderMeter, 100);
     this.throttledRefreshSargamLines = throttle(this.refreshSargamLines, 100);
-    if (this.$store.state.userID === '634d9506a6a3647e543b7641') {
-      this.playheadAnimation = PlayheadAnimations.DottedLine;
-    }
 
     try {
       // if there's a query id, 1. check if exists, 2. if so, load it, else:
