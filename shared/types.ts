@@ -940,13 +940,12 @@ type DisplaySettings = {
   }
 }
 
-interface DottedLine {
+type DottedLine = {
   id: string;
   creationTime: number;
   position: number;
   opacity: number;
   createdAt: number;
-  pausedAt?: number;
 }
 
 interface LoopSourceNode extends AudioBufferSourceNode {

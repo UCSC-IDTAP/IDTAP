@@ -1296,14 +1296,6 @@ export default defineComponent({
     const startPlayingTransition = () => {
       // Handle dotted line animation
       if (isDottedLine.value) {
-        // Resume fade timers by adjusting createdAt timestamps
-        const now = performance.now();
-        dottedLines.value.forEach(line => {
-          if (line.pausedAt) {
-            line.createdAt = now - (line.pausedAt - line.createdAt);
-            delete line.pausedAt;
-          }
-        });
         // Start the animation loop immediately, it will check playing state inside
         dottedLineAnimationLoop();
         return;
@@ -1412,11 +1404,6 @@ export default defineComponent({
     const updateDottedLines = () => {
       const now = performance.now();
       dottedLines.value = dottedLines.value.map(line => {
-        if (line.pausedAt) {
-          // Line is paused, don't update opacity
-          return line;
-        }
-        
         const elapsed = now - line.createdAt;
         const opacity = Math.max(0, 1 - (elapsed / DOTTED_LINE_DURATION));
         return { ...line, opacity };
