@@ -42,26 +42,8 @@ def main():
     new_phrase = Phrase({ 'trajectories': [traj_1] })
     piece.phraseGrid[0].append(new_phrase)
     
-    silent_traj = Trajectory({
-        'id': 12,
-        'dur_tot': piece.durTot - traj_1.dur_tot,
-        'fundID12': Pitch().fundamental
-    })
-    silent_phrase = Phrase({ 'trajectories': [silent_traj]})
-    piece.phraseGrid[0].append(silent_phrase)
-    # Recompute piece-level durations and start times
-    piece.dur_array_from_phrases()
-
-    # Prepare JSON payload and remove any null _id to allow insertion
-    payload = piece.to_json()
-    payload.pop("_id", None)
-
-    print(f"Inserting new transcription with title: {payload['title']}")
-    try:
-        response = client.insert_new_transcription(payload)
-        print("✅ Inserted transcription:", response)
-    except Exception as e:
-        print("❌ Failed to insert transcription:", e)
+    # Save the transcription using client method
+    client.save_transcription(piece)
 
 
 if __name__ == '__main__':

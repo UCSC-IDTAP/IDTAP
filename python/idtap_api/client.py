@@ -10,6 +10,8 @@ from pathlib import Path
 import requests
 import os
 
+from idtap_api.classes.piece import Piece
+
 from .auth import login_google, load_token
 from .secure_storage import SecureTokenStorage
 
@@ -172,3 +174,75 @@ class SwaraClient:
             "explicitPermissions": explicit_permissions,
         }
         return self._post_json("api/visibility", payload)
+
+    def save_transcription(self, piece: Piece, fill_duration: bool = True) -> Any:
+        """Save a transcription piece to the server.
+        
+        Handles both new transcriptions (without _id) and existing transcriptions (with _id).
+        
+        Args:
+            piece: The Piece object or dict to save
+            fill_duration: Whether to automatically fill remaining duration with silence
+            
+        Returns:
+            Server response from the save operation
+        """
+        # Convert Piece object to dict if needed
+        if hasattr(piece, 'to_json'):
+            payload = piece.to_json()
+        elif isinstance(piece, dict):
+            payload = dict(piece)
+        else:
+            raise TypeError(f"Expected Piece object with to_json() method or dict, got {type(piece)}")
+        
+        # Fill remaining duration with silence if requested
+        if fill_duration and hasattr(piece, 'fill_remaining_duration') and hasattr(piece, 'durTot'):
+            piece.fill_remaining_duration(piece.durTot)
+            payload = piece.to_json()
+        
+        # Set transcriber information from authenticated user if not already set
+        if hasattr(piece, 'given_name') and self.user:
+            if not getattr(piece, 'given_name', None):
+                piece.given_name = self.user.get("given_name", "")
+            if not getattr(piece, 'family_name', None):
+                piece.family_name = self.user.get("family_name", "")
+            if not getattr(piece, 'name', None):
+                piece.name = self.user.get("name", "")
+        
+        # Set default soloist and instrument information if not already set
+        if hasattr(piece, 'soloist') and not getattr(piece, 'soloist', None):
+            piece.soloist = None
+        if hasattr(piece, 'soloInstrument') and not getattr(piece, 'soloInstrument', None):
+            instrumentation = getattr(piece, 'instrumentation', [])
+            piece.soloInstrument = instrumentation[0] if instrumentation else "Unknown Instrument"
+        
+        # Regenerate payload after setting user info
+        if hasattr(piece, 'to_json'):
+            payload = piece.to_json()
+        else:
+            payload = dict(piece)
+        
+        # Determine if this is a new or existing transcription
+        has_id = payload.get("_id") is not None
+        
+        if has_id:
+            # Existing transcription - use save_piece
+            print(f"Updating existing transcription: {payload.get('title', 'untitled')}")
+            try:
+                response = self.save_piece(payload)
+                print("✅ Updated transcription:", response)
+                return response
+            except Exception as e:
+                print("❌ Failed to update transcription:", e)
+                raise
+        else:
+            # New transcription - remove any null _id and use insert_new_transcription
+            payload.pop("_id", None)
+            print(f"Inserting new transcription: {payload.get('title', 'untitled')}")
+            try:
+                response = self.insert_new_transcription(payload)
+                print("✅ Inserted transcription:", response)
+                return response
+            except Exception as e:
+                print("❌ Failed to insert transcription:", e)
+                raise

@@ -313,6 +313,48 @@ class Piece:
         self.durTot = dur_tot
         self.dur_array_from_phrases()
 
+    def fill_remaining_duration(self, target_duration: float, track: int = 0) -> None:
+        """Add a silent trajectory to fill the remaining duration to reach target_duration.
+        
+        Args:
+            target_duration: The desired total duration for the piece
+            track: Which instrument track to add the silence to (default: 0)
+        """
+        if self.durTot is None:
+            self.dur_tot_from_phrases()
+        
+        current_duration = sum(p.dur_tot for p in self.phraseGrid[track])
+        
+        if target_duration <= current_duration:
+            return  # Already at or exceeding target duration
+            
+        remaining = target_duration - current_duration
+        
+        # Create silent trajectory to fill the remaining duration
+        silent_traj = Trajectory({
+            'id': 12,
+            'dur_tot': remaining,
+            'fundID12': self.raga.fundamental
+        })
+        
+        # Add as a new phrase or append to existing phrase
+        if self.phraseGrid[track]:
+            # Add to last phrase
+            last_phrase = self.phraseGrid[track][-1]
+            last_phrase.trajectory_grid[0].append(silent_traj)
+            last_phrase.reset()
+        else:
+            # Create new phrase with silent trajectory
+            silent_phrase = Phrase({
+                'trajectories': [silent_traj],
+                'dur_tot': remaining,
+                'raga': self.raga
+            })
+            self.phraseGrid[track].append(silent_phrase)
+        
+        # Update piece-level durations
+        self.dur_array_from_phrases()
+
     def realign_pitches(self) -> None:
         for phrases in self.phraseGrid:
             for p in phrases:
