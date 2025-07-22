@@ -8,6 +8,7 @@ overrides:
   brace-expansion: 3.0.3
   pbkdf2: ^3.1.3
   minimatch: 10.0.3
+  form-data: 4.0.4
 
 importers:
 
@@ -2135,8 +2136,8 @@ packages:
     resolution: {integrity: sha512-gIXjKqtFuWEgzFRJA9WCQeSJLZDjgJUOMCMzxtvFq/37KojM1BFGufqsCy0r4qSQmYLsZYMeyRqzIWOMup03sw==}
     engines: {node: '>=14'}
 
-  form-data@4.0.3:
-    resolution: {integrity: sha512-qsITQPfmvMOSAdeyZ+12I1c+CKSstAFAwu+97zrnWAbIr5u8wfsExUzCesVLC8NgHuRUqNN4Zy6UPWUTRGslcA==}
+  form-data@4.0.4:
+    resolution: {integrity: sha512-KrGhL9Q4zjj0kiUt5OO4Mr/A/jlI2jDYs5eHBpYHPcBEVSiipAvn2Ko2HnPe20rmcuuvMHNdZFp+4IlGTMF0Ow==}
     engines: {node: '>= 6'}
 
   formdata-polyfill@4.0.10:
@@ -4566,7 +4567,7 @@ snapshots:
   '@types/node-fetch@2.6.12':
     dependencies:
       '@types/node': 22.15.33
-      form-data: 4.0.3
+      form-data: 4.0.4
 
   '@types/node@14.18.63': {}
 
@@ -5070,7 +5071,7 @@ snapshots:
   axios@1.10.0:
     dependencies:
       follow-redirects: 1.15.9
-      form-data: 4.0.3
+      form-data: 4.0.4
       proxy-from-env: 1.1.0
     transitivePeerDependencies:
       - debug
@@ -6020,7 +6021,7 @@ snapshots:
       cross-spawn: 7.0.6
       signal-exit: 4.1.0
 
-  form-data@4.0.3:
+  form-data@4.0.4:
     dependencies:
       asynckit: 0.4.0
       combined-stream: 1.0.8
@@ -7223,7 +7224,7 @@ snapshots:
       cookiejar: 2.1.4
       debug: 4.4.1
       fast-safe-stringify: 2.1.1
-      form-data: 4.0.3
+      form-data: 4.0.4
       formidable: 3.5.4
       methods: 1.1.2
       mime: 2.6.0
