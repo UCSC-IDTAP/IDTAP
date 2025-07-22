@@ -1,6 +1,9 @@
 # Changelog
 
 
+* docs: add comprehensive web development guide [5667a3e] (Jon Myers)
+### 2025-07-22
+
 * feat: add user-specific override for dotted line animation [dca5657] (Jon Myers)
 * refactor: clean up DottedLine type and remove unused pausedAt field [5b4fbc4] (Jon Myers)
 * feat: add dotted line playback animation mode [689485f] (Jon Myers)
