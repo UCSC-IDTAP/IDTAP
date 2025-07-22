@@ -98,15 +98,15 @@ class Piece:
                     inst_list.append(i)
         self.instrumentation = inst_list
 
-        self.possibleTrajs: Dict[Instrument, List[int]] = {
+        self.possible_trajs: Dict[Instrument, List[int]] = {
             Instrument.Sitar: list(range(14)),
             Instrument.Vocal_M: [0, 1, 2, 3, 4, 5, 6, 12, 13],
             Instrument.Vocal_F: [0, 1, 2, 3, 4, 5, 6, 12, 13],
         }
 
         first_inst = self.instrumentation[0]
-        self.trajIdxs = self.possibleTrajs.get(first_inst, [])
-        self.trajIdxsGrid = [self.possibleTrajs.get(i, []) for i in self.instrumentation]
+        self.traj_idxs = self.possible_trajs.get(first_inst, [])
+        self.traj_idxs_grid = [self.possible_trajs.get(i, []) for i in self.instrumentation]
 
         phrase_grid = opts.get("phraseGrid")
         if phrase_grid is None:
@@ -121,23 +121,23 @@ class Piece:
                 else:
                     new_row.append(p)
             grid.append(new_row)
-        self.phraseGrid = grid
+        self.phrase_grid = grid
 
         self.title: str = opts.get("title", "untitled")
-        self.dateCreated: datetime = opts.get("dateCreated", datetime.now())
-        self.dateModified: datetime = opts.get("dateModified", datetime.now())
+        self.date_created: datetime = opts.get("dateCreated", datetime.now())
+        self.date_modified: datetime = opts.get("dateModified", datetime.now())
         self.location: str = opts.get("location", "Santa Cruz")
         self._id: Optional[str] = opts.get("_id")
-        self.audioID: Optional[str] = opts.get("audioID")
-        self.audio_DB_ID: Optional[str] = opts.get("audio_DB_ID")
-        self.userID: Optional[str] = opts.get("userID")
+        self.audio_id: Optional[str] = opts.get("audioID")
+        self.audio_db_id: Optional[str] = opts.get("audio_DB_ID")
+        self.user_id: Optional[str] = opts.get("userID")
         self.name: Optional[str] = opts.get("name")
         self.family_name: Optional[str] = opts.get("family_name")
         self.given_name: Optional[str] = opts.get("given_name")
         self.permissions: Optional[str] = opts.get("permissions")
         self.soloist: Optional[str] = opts.get("soloist")
-        self.soloInstrument: Optional[str] = opts.get("soloInstrument")
-        self.explicitPermissions: Dict[str, Any] = opts.get(
+        self.solo_instrument: Optional[str] = opts.get("soloInstrument")
+        self.explicit_permissions: Dict[str, Any] = opts.get(
             "explicitPermissions",
             {"edit": [], "view": [], "publicView": True},
         )
@@ -155,13 +155,13 @@ class Piece:
             ss_grid = [ss]
         for _ in range(len(ss_grid), len(self.instrumentation)):
             ss_grid.append([0])
-        self.sectionStartsGrid: List[List[float]] = [sorted(list(s)) for s in ss_grid]
+        self.section_starts_grid: List[List[float]] = [sorted(list(s)) for s in ss_grid]
 
         sc_grid = opts.get("sectionCatGrid")
         if sc_grid is None:
             section_cat = opts.get("sectionCategorization")
             sc_grid = []
-            for i, ss in enumerate(self.sectionStartsGrid):
+            for i, ss in enumerate(self.section_starts_grid):
                 if i == 0:
                     if section_cat is not None:
                         for c in section_cat:
@@ -172,32 +172,32 @@ class Piece:
                 else:
                     row = [init_sec_categorization() for _ in ss]
                 sc_grid.append(row)
-        self.sectionCatGrid: List[List[SecCatType]] = sc_grid
-        for i, ss in enumerate(self.sectionStartsGrid):
-            while len(self.sectionCatGrid) <= i:
-                self.sectionCatGrid.append([init_sec_categorization() for _ in ss])
-            if len(self.sectionCatGrid[i]) < len(ss):
-                diff = len(ss) - len(self.sectionCatGrid[i])
+        self.section_cat_grid: List[List[SecCatType]] = sc_grid
+        for i, ss in enumerate(self.section_starts_grid):
+            while len(self.section_cat_grid) <= i:
+                self.section_cat_grid.append([init_sec_categorization() for _ in ss])
+            if len(self.section_cat_grid[i]) < len(ss):
+                diff = len(ss) - len(self.section_cat_grid[i])
                 for _ in range(diff):
-                    self.sectionCatGrid[i].append(init_sec_categorization())
+                    self.section_cat_grid[i].append(init_sec_categorization())
 
         ad_hoc = opts.get("adHocSectionCatGrid")
         if ad_hoc is None:
-            self.adHocSectionCatGrid = [[[] for _ in row] for row in self.sectionCatGrid]
+            self.ad_hoc_section_cat_grid = [[[] for _ in row] for row in self.section_cat_grid]
         else:
-            self.adHocSectionCatGrid = [
+            self.ad_hoc_section_cat_grid = [
                 [ [f for f in fields if f != ""] for fields in track ]
                 for track in ad_hoc
             ]
-        while len(self.adHocSectionCatGrid) < len(self.sectionStartsGrid):
-            self.adHocSectionCatGrid.append([[] for _ in self.adHocSectionCatGrid[0]])
+        while len(self.ad_hoc_section_cat_grid) < len(self.section_starts_grid):
+            self.ad_hoc_section_cat_grid.append([[] for _ in self.ad_hoc_section_cat_grid[0]])
 
-        self.excerptRange = opts.get("excerptRange")
-        self.assemblageDescriptors = opts.get("assemblageDescriptors", [])
+        self.excerpt_range = opts.get("excerptRange")
+        self.assemblage_descriptors = opts.get("assemblageDescriptors", [])
 
-        self.durTot: Optional[float] = opts.get("durTot")
-        self.durArrayGrid: Optional[List[List[float]]] = opts.get("durArrayGrid")
-        if self.durTot is None or self.durArrayGrid is None:
+        self.dur_tot: Optional[float] = opts.get("durTot")
+        self.dur_array_grid: Optional[List[List[float]]] = opts.get("durArrayGrid")
+        if self.dur_tot is None or self.dur_array_grid is None:
             self.dur_array_from_phrases()
         else:
             self.update_start_times()
@@ -205,51 +205,51 @@ class Piece:
     # ------------------------------------------------------------------
     @property
     def phrases(self) -> List[Phrase]:
-        return self.phraseGrid[0]
+        return self.phrase_grid[0]
 
     @phrases.setter
     def phrases(self, arr: List[Phrase]) -> None:
-        self.phraseGrid[0] = arr
+        self.phrase_grid[0] = arr
 
     @property
-    def durArray(self) -> List[float]:
-        return self.durArrayGrid[0] if self.durArrayGrid else []
+    def dur_array(self) -> List[float]:
+        return self.dur_array_grid[0] if self.dur_array_grid else []
 
-    @durArray.setter
-    def durArray(self, arr: List[float]) -> None:
-        if self.durArrayGrid is None:
-            self.durArrayGrid = [arr]
+    @dur_array.setter
+    def dur_array(self, arr: List[float]) -> None:
+        if self.dur_array_grid is None:
+            self.dur_array_grid = [arr]
         else:
-            self.durArrayGrid[0] = arr
+            self.dur_array_grid[0] = arr
 
     @property
-    def sectionStarts(self) -> List[float]:
-        return self.sectionStartsGrid[0]
+    def section_starts(self) -> List[float]:
+        return self.section_starts_grid[0]
 
-    @sectionStarts.setter
-    def sectionStarts(self, arr: List[float]) -> None:
-        self.sectionStartsGrid[0] = arr
+    @section_starts.setter
+    def section_starts(self, arr: List[float]) -> None:
+        self.section_starts_grid[0] = arr
 
     @property
-    def sectionCategorization(self) -> List[SecCatType]:
-        return self.sectionCatGrid[0]
+    def section_categorization(self) -> List[SecCatType]:
+        return self.section_cat_grid[0]
 
-    @sectionCategorization.setter
-    def sectionCategorization(self, arr: List[SecCatType]) -> None:
-        self.sectionCatGrid[0] = arr
+    @section_categorization.setter
+    def section_categorization(self, arr: List[SecCatType]) -> None:
+        self.section_cat_grid[0] = arr
 
     @property
     def assemblages(self) -> List["Assemblage"]:
         from .assemblage import Assemblage
-        flat_phrases = [p for row in self.phraseGrid for p in row]
-        return [Assemblage.from_descriptor(d, flat_phrases) for d in self.assemblageDescriptors]
+        flat_phrases = [p for row in self.phrase_grid for p in row]
+        return [Assemblage.from_descriptor(d, flat_phrases) for d in self.assemblage_descriptors]
 
     # ------------------------------------------------------------------
     def update_start_times(self) -> None:
-        if not self.durArrayGrid or self.durTot is None:
+        if not self.dur_array_grid or self.dur_tot is None:
             return
-        for track, phrases in enumerate(self.phraseGrid):
-            starts = [s * self.durTot for s in get_starts(self.durArrayGrid[track])]
+        for track, phrases in enumerate(self.phrase_grid):
+            starts = [s * self.dur_tot for s in get_starts(self.dur_array_grid[track])]
             for p, st in zip(phrases, starts):
                 p.start_time = st
                 p.piece_idx = phrases.index(p)
@@ -257,13 +257,13 @@ class Piece:
     # ------------------------------------------------------------------
     def dur_tot_from_phrases(self) -> None:
         """Set ``durTot`` from contained phrases and pad shorter tracks."""
-        totals = [sum(p.dur_tot for p in row) for row in self.phraseGrid]
+        totals = [sum(p.dur_tot for p in row) for row in self.phrase_grid]
         max_dur = max(totals) if totals else 0.0
-        self.durTot = max_dur
+        self.dur_tot = max_dur
         for i, total in enumerate(totals):
             if total != max_dur:
                 extra = max_dur - total
-                phrases = self.phraseGrid[i]
+                phrases = self.phrase_grid[i]
                 silent = Trajectory({"id": 12, "dur_tot": extra})
                 if phrases:
                     phrases[-1].trajectory_grid[0].append(silent)
@@ -276,11 +276,11 @@ class Piece:
     def dur_array_from_phrases(self) -> None:
         """Recompute ``durArrayGrid`` removing NaN trajectories."""
         self.dur_tot_from_phrases()
-        self.durArrayGrid = []
-        if self.durTot == 0:
-            self.durArrayGrid.append([])
+        self.dur_array_grid = []
+        if self.dur_tot == 0:
+            self.dur_array_grid.append([])
             return
-        for row in self.phraseGrid:
+        for row in self.phrase_grid:
             arr = []
             for p in row:
                 if p.dur_tot is None:
@@ -288,20 +288,20 @@ class Piece:
                 if math.isnan(p.dur_tot):
                     p.trajectory_grid[0] = [t for t in p.trajectories if not math.isnan(t.dur_tot)]
                     p.dur_tot_from_trajectories()
-                arr.append(p.dur_tot / self.durTot)
-            self.durArrayGrid.append(arr)
+                arr.append(p.dur_tot / self.dur_tot)
+            self.dur_array_grid.append(arr)
         self.update_start_times()
 
     # ------------------------------------------------------------------
     def set_dur_tot(self, dur_tot: float) -> None:
-        if self.durTot is None:
+        if self.dur_tot is None:
             self.dur_tot_from_phrases()
-        if self.durTot is None:
-            self.durTot = dur_tot
+        if self.dur_tot is None:
+            self.dur_tot = dur_tot
             return
-        if dur_tot < self.durTot:
+        if dur_tot < self.dur_tot:
             raise ValueError("cannot shorten duration")
-        extra = dur_tot - self.durTot
+        extra = dur_tot - self.dur_tot
         if extra > 0 and self.phrases:
             last_phrase = self.phrases[-1]
             if last_phrase.trajectories and last_phrase.trajectories[-1].id == 12:
@@ -310,7 +310,7 @@ class Piece:
                 silent = Trajectory({"id": 12, "dur_tot": extra})
                 last_phrase.trajectory_grid[0].append(silent)
             last_phrase.reset()
-        self.durTot = dur_tot
+        self.dur_tot = dur_tot
         self.dur_array_from_phrases()
 
     def fill_remaining_duration(self, target_duration: float, track: int = 0) -> None:
@@ -320,10 +320,10 @@ class Piece:
             target_duration: The desired total duration for the piece
             track: Which instrument track to add the silence to (default: 0)
         """
-        if self.durTot is None:
+        if self.dur_tot is None:
             self.dur_tot_from_phrases()
         
-        current_duration = sum(p.dur_tot for p in self.phraseGrid[track])
+        current_duration = sum(p.dur_tot for p in self.phrase_grid[track])
         
         if target_duration <= current_duration:
             return  # Already at or exceeding target duration
@@ -338,9 +338,9 @@ class Piece:
         })
         
         # Add as a new phrase or append to existing phrase
-        if self.phraseGrid[track]:
+        if self.phrase_grid[track]:
             # Add to last phrase
-            last_phrase = self.phraseGrid[track][-1]
+            last_phrase = self.phrase_grid[track][-1]
             last_phrase.trajectory_grid[0].append(silent_traj)
             last_phrase.reset()
         else:
@@ -350,24 +350,24 @@ class Piece:
                 'dur_tot': remaining,
                 'raga': self.raga
             })
-            self.phraseGrid[track].append(silent_phrase)
+            self.phrase_grid[track].append(silent_phrase)
         
         # Update piece-level durations
         self.dur_array_from_phrases()
 
     def realign_pitches(self) -> None:
-        for phrases in self.phraseGrid:
+        for phrases in self.phrase_grid:
             for p in phrases:
                 p.realign_pitches()
 
     def update_fundamental(self, fundamental: float) -> None:
         self.raga.fundamental = fundamental
-        for phrases in self.phraseGrid:
+        for phrases in self.phrase_grid:
             for p in phrases:
                 p.update_fundamental(fundamental)
 
     def put_raga_in_phrase(self) -> None:
-        for phrases in self.phraseGrid:
+        for phrases in self.phrase_grid:
             for p in phrases:
                 p.raga = self.raga
 
@@ -376,19 +376,19 @@ class Piece:
     def sections_grid(self) -> List[List["Section"]]:
         from .section import Section
         grid: List[List["Section"]] = []
-        for i, starts in enumerate(self.sectionStartsGrid):
+        for i, starts in enumerate(self.section_starts_grid):
             sections: List["Section"] = []
             for j, s in enumerate(starts):
                 if j == len(starts) - 1:
-                    slice_phrases = self.phraseGrid[i][s:]
+                    slice_phrases = self.phrase_grid[i][s:]
                 else:
-                    slice_phrases = self.phraseGrid[i][s:starts[j + 1]]
+                    slice_phrases = self.phrase_grid[i][s:starts[j + 1]]
                 sections.append(
                     Section(
                         {
                             "phrases": slice_phrases,
-                            "categorization": self.sectionCatGrid[i][j],
-                            "ad_hoc_categorization": self.adHocSectionCatGrid[i][j],
+                            "categorization": self.section_cat_grid[i][j],
+                            "ad_hoc_categorization": self.ad_hoc_section_cat_grid[i][j],
                         }
                     )
                 )
@@ -417,7 +417,7 @@ class Piece:
     # ------------------------------------------------------------------
     def all_trajectories(self, inst: int = 0) -> List[Trajectory]:
         trajs: List[Trajectory] = []
-        for p in self.phraseGrid[inst]:
+        for p in self.phrase_grid[inst]:
             trajs.extend(p.trajectories)
         return trajs
 
@@ -436,14 +436,14 @@ class Piece:
         raise ValueError("Trajectory not found")
 
     def phrase_from_uid(self, uid: str) -> Phrase:
-        for track in self.phraseGrid:
+        for track in self.phrase_grid:
             for p in track:
                 if p.unique_id == uid:
                     return p
         raise ValueError("Phrase not found")
 
     def track_from_phrase_uid(self, uid: str) -> int:
-        for i, track in enumerate(self.phraseGrid):
+        for i, track in enumerate(self.phrase_grid):
             if any(p.unique_id == uid for p in track):
                 return i
         raise ValueError("Phrase not found")
@@ -478,7 +478,7 @@ class Piece:
         for i, s in enumerate(starts):
             if time >= s:
                 idx = i
-        return self.phraseGrid[track][idx]
+        return self.phrase_grid[track][idx]
 
     def phrase_idx_from_time(self, time: float, track: int = 0) -> int:
         starts = self.dur_starts(track)
@@ -490,13 +490,13 @@ class Piece:
 
     def all_groups(self, instrument_idx: int = 0) -> List["Group"]:
         groups: List["Group"] = []
-        for p in self.phraseGrid[instrument_idx]:
+        for p in self.phrase_grid[instrument_idx]:
             for g_list in p.groups_grid:
                 groups.extend(g_list)
         return groups
 
     def p_idx_from_group(self, g: "Group") -> int:
-        for i, p in enumerate(self.phraseGrid[0]):
+        for i, p in enumerate(self.phrase_grid[0]):
             for group_list in p.groups_grid:
                 if g in group_list:
                     return i
@@ -510,7 +510,7 @@ class Piece:
         return []
 
     def s_idx_from_p_idx(self, p_idx: int, inst: int = 0) -> int:
-        ss = self.sectionStartsGrid[inst]
+        ss = self.section_starts_grid[inst]
         s_idx = len(ss) - 1
         for i, s in enumerate(ss):
             if p_idx < s:
@@ -533,7 +533,7 @@ class Piece:
 
     # ------------------------------------------------------------------
     def chikari_freqs(self, inst_idx: int) -> List[float]:
-        phrases = self.phraseGrid[inst_idx]
+        phrases = self.phrase_grid[inst_idx]
         for p in phrases:
             if p.chikaris:
                 chikari = list(p.chikaris.values())[0]
@@ -543,11 +543,11 @@ class Piece:
 
     # ------------------------------------------------------------------
     def dur_starts(self, track: int = 0) -> List[float]:
-        if self.durArrayGrid is None:
+        if self.dur_array_grid is None:
             raise Exception("durArray is undefined")
-        if self.durTot is None:
+        if self.dur_tot is None:
             raise Exception("durTot is undefined")
-        return get_starts([d * self.durTot for d in self.durArrayGrid[track]])
+        return get_starts([d * self.dur_tot for d in self.dur_array_grid[track]])
 
     def traj_start_times(self, inst: int = 0) -> List[float]:
         trajs = self.all_trajectories(inst)
@@ -558,7 +558,7 @@ class Piece:
 
     def all_pitches(self, repetition: bool = True, pitch_number: bool = False, track: int = 0) -> List[Any]:
         pitches: List[Any] = []
-        for p in self.phraseGrid[track]:
+        for p in self.phrase_grid[track]:
             pitches.extend(p.all_pitches(True))
         if not repetition:
             out: List[Any] = []
@@ -585,18 +585,18 @@ class Piece:
         return pitches
 
     @property
-    def highestPitchNumber(self) -> float:
+    def highest_pitch_number(self) -> float:
         return max(self.all_pitches(pitch_number=True))
 
     @property
-    def lowestPitchNumber(self) -> float:
+    def lowest_pitch_number(self) -> float:
         return min(self.all_pitches(pitch_number=True))
 
     def most_recent_traj(self, time: float, inst: int = 0) -> Trajectory:
         trajs = self.all_trajectories(inst)
         end_times: List[float] = []
         for t in trajs:
-            phrase = next((p for p in self.phraseGrid[inst] if t in p.trajectories), None)
+            phrase = next((p for p in self.phrase_grid[inst] if t in p.trajectories), None)
             if phrase is None:
                 continue
             end_times.append((phrase.start_time or 0) + (t.start_time or 0) + t.dur_tot)
@@ -611,9 +611,9 @@ class Piece:
         starts = get_starts(durs)
         ends = get_ends(durs)
         chunks: List[List[Trajectory]] = []
-        if self.durTot is None:
+        if self.dur_tot is None:
             self.dur_tot_from_phrases()
-        dur_tot = self.durTot or 0.0
+        dur_tot = self.dur_tot or 0.0
         i = 0.0
         while i < dur_tot:
             def f1(st: float) -> bool:
@@ -680,7 +680,7 @@ class Piece:
                             "westernPitch": pitch.western_pitch,
                         })
                     last_pitch = {"logFreq": log_freq, "time": tp}
-        phrase_divs = [p.start_time + p.dur_tot for p in self.phraseGrid[inst]]
+        phrase_divs = [p.start_time + p.dur_tot for p in self.phrase_grid[inst]]
         pwr = 10 ** 5
         rounded_pds = [round(pd * pwr) / pwr for pd in phrase_divs]
         for s_idx, s in enumerate(sargams):
@@ -707,11 +707,11 @@ class Piece:
 
     def all_phrase_divs(self, inst: int = 0) -> List[Dict[str, Any]]:
         objs: List[Dict[str, Any]] = []
-        for p_idx, p in enumerate(self.phraseGrid[inst]):
+        for p_idx, p in enumerate(self.phrase_grid[inst]):
             if p_idx != 0:
                 objs.append({
                     "time": p.start_time,
-                    "type": "section" if p_idx in self.sectionStartsGrid[inst] else "phrase",
+                    "type": "section" if p_idx in self.section_starts_grid[inst] else "phrase",
                     "idx": p_idx,
                     "track": inst,
                     "uId": p.unique_id,
@@ -723,7 +723,7 @@ class Piece:
         if self.instrumentation[inst] not in vocal:
             raise Exception("instrumentation is not vocal")
         display_vowels: List[Dict[str, Any]] = []
-        for phrase in self.phraseGrid[inst]:
+        for phrase in self.phrase_grid[inst]:
             first_idxs = phrase.first_traj_idxs()
             phrase_start = phrase.start_time or 0
             for t_idx in first_idxs:
@@ -750,7 +750,7 @@ class Piece:
         trajs = self.all_trajectories(inst)
         for t in trajs:
             if t.end_consonant is not None:
-                phrase = next((p for p in self.phraseGrid[inst] if t in p.trajectories), None)
+                phrase = next((p for p in self.phrase_grid[inst] if t in p.trajectories), None)
                 phrase_start = phrase.start_time if phrase else 0
                 time = phrase_start + (t.start_time or 0) + t.dur_tot
                 log_freq = t.log_freqs[-1]
@@ -767,7 +767,7 @@ class Piece:
 
     def all_display_chikaris(self, inst: int = 0) -> List[Dict[str, Any]]:
         display: List[Dict[str, Any]] = []
-        for p in self.phraseGrid[inst]:
+        for p in self.phrase_grid[inst]:
             for k, chikari in p.chikaris.items():
                 time = p.start_time + float(k)
                 display.append({
@@ -783,7 +783,7 @@ class Piece:
     def chunked_display_chikaris(self, inst: int = 0, duration: float = 30) -> List[List[Dict[str, Any]]]:
         display = self.all_display_chikaris(inst)
         chunks: List[List[Dict[str, Any]]] = []
-        dur_tot = self.durTot or 0.0
+        dur_tot = self.dur_tot or 0.0
         i = 0.0
         while i < dur_tot:
             chunk = [c for c in display if c["time"] >= i and c["time"] < i + duration]
@@ -794,7 +794,7 @@ class Piece:
     def chunked_display_consonants(self, inst: int = 0, duration: float = 30) -> List[List[Dict[str, Any]]]:
         display = self.all_display_ending_consonants(inst)
         chunks: List[List[Dict[str, Any]]] = []
-        dur_tot = self.durTot or 0.0
+        dur_tot = self.dur_tot or 0.0
         i = 0.0
         while i < dur_tot:
             chunk = [c for c in display if c["time"] >= i and c["time"] < i + duration]
@@ -805,7 +805,7 @@ class Piece:
     def chunked_display_vowels(self, inst: int = 0, duration: float = 30) -> List[List[Dict[str, Any]]]:
         display = self.all_display_vowels(inst)
         chunks: List[List[Dict[str, Any]]] = []
-        dur_tot = self.durTot or 0.0
+        dur_tot = self.dur_tot or 0.0
         i = 0.0
         while i < dur_tot:
             chunk = [v for v in display if v["time"] >= i and v["time"] < i + duration]
@@ -816,7 +816,7 @@ class Piece:
     def chunked_display_sargam(self, inst: int = 0, duration: float = 30) -> List[List[Dict[str, Any]]]:
         display = self.all_display_sargam(inst)
         chunks: List[List[Dict[str, Any]]] = []
-        dur_tot = self.durTot or 0.0
+        dur_tot = self.dur_tot or 0.0
         i = 0.0
         while i < dur_tot:
             chunk = [s for s in display if s["time"] >= i and s["time"] < i + duration]
@@ -827,7 +827,7 @@ class Piece:
     def chunked_display_bols(self, inst: int = 0, duration: float = 30) -> List[List[Dict[str, Any]]]:
         display = self.all_display_bols(inst)
         chunks: List[List[Dict[str, Any]]] = []
-        dur_tot = self.durTot or 0.0
+        dur_tot = self.dur_tot or 0.0
         i = 0.0
         while i < dur_tot:
             chunk = [b for b in display if b["time"] >= i and b["time"] < i + duration]
@@ -838,7 +838,7 @@ class Piece:
     def chunked_phrase_divs(self, inst: int = 0, duration: float = 30) -> List[List[Dict[str, Any]]]:
         phrase_divs = self.all_phrase_divs(inst)
         chunks: List[List[Dict[str, Any]]] = []
-        dur_tot = self.durTot or 0.0
+        dur_tot = self.dur_tot or 0.0
         i = 0.0
         while i < dur_tot:
             chunk = [pd for pd in phrase_divs if pd["time"] >= i and pd["time"] < i + duration]
@@ -848,7 +848,7 @@ class Piece:
 
     def chunked_meters(self, duration: float = 30) -> List[List[Meter]]:
         chunks: List[List[Meter]] = []
-        dur_tot = self.durTot or 0.0
+        dur_tot = self.dur_tot or 0.0
         i = 0.0
         while i < dur_tot:
             chunk = [m for m in self.meters if m.start_time >= i and m.start_time < i + duration]
@@ -893,30 +893,30 @@ class Piece:
     def to_json(self) -> Dict[str, Any]:
         data: Dict[str, Any] = {
             "raga": self.raga.to_json(),
-            "phraseGrid": [[p.to_json() for p in row] for row in self.phraseGrid],
+            "phraseGrid": [[p.to_json() for p in row] for row in self.phrase_grid],
             "instrumentation": [i.value if isinstance(i, Instrument) else i for i in self.instrumentation],
-            "durTot": self.durTot,
-            "durArrayGrid": self.durArrayGrid,
+            "durTot": self.dur_tot,
+            "durArrayGrid": self.dur_array_grid,
             "meters": [m.to_json() for m in self.meters],
             "title": self.title,
-            "dateCreated": self.dateCreated.isoformat(),
-            "dateModified": self.dateModified.isoformat(),
+            "dateCreated": self.date_created.isoformat(),
+            "dateModified": self.date_modified.isoformat(),
             "location": self.location,
             "_id": self._id,
-            "audioID": self.audioID,
-            "userID": self.userID,
+            "audioID": self.audio_id,
+            "userID": self.user_id,
             "permissions": self.permissions,
             "name": self.name,
             "family_name": self.family_name,
             "given_name": self.given_name,
-            "sectionStartsGrid": self.sectionStartsGrid,
-            "sectionCatGrid": self.sectionCatGrid,
-            "explicitPermissions": self.explicitPermissions,
+            "sectionStartsGrid": self.section_starts_grid,
+            "sectionCatGrid": self.section_cat_grid,
+            "explicitPermissions": self.explicit_permissions,
             "soloist": self.soloist,
-            "soloInstrument": self.soloInstrument,
-            "excerptRange": self.excerptRange,
-            "adHocSectionCatGrid": self.adHocSectionCatGrid,
-            "assemblageDescriptors": self.assemblageDescriptors,
+            "soloInstrument": self.solo_instrument,
+            "excerptRange": self.excerpt_range,
+            "adHocSectionCatGrid": self.ad_hoc_section_cat_grid,
+            "assemblageDescriptors": self.assemblage_descriptors,
         }
         # drop None values so they serialize as undefined (omitted) rather than null
         return {k: v for k, v in data.items() if v is not None}
@@ -970,7 +970,7 @@ class Piece:
         piece = Piece(new_obj)
 
         # reconnect groups to actual trajectories
-        for phrases in piece.phraseGrid:
+        for phrases in piece.phrase_grid:
             for phrase in phrases:
                 new_group_grid: List[List[Group]] = []
                 for group_list in phrase.groups_grid:
@@ -994,6 +994,6 @@ class Piece:
                 phrase.consolidate_silent_trajs()
 
         piece.dur_array_from_phrases()
-        piece.sectionStartsGrid = [sorted(set(arr)) for arr in piece.sectionStartsGrid]
+        piece.section_starts_grid = [sorted(set(arr)) for arr in piece.section_starts_grid]
 
         return piece

@@ -29,11 +29,11 @@ def main():
     piece = Piece.from_json(transcription_data)
     
     # Check if transcription has associated audio
-    if not piece.audioID:
+    if not piece.audio_id:
         print("❌ No audio recording associated with this transcription")
         return
     
-    print(f"Audio ID found: {piece.audioID}")
+    print(f"Audio ID found: {piece.audio_id}")
 
     # Test downloading in different formats
     formats = ["wav", "mp3", "opus"]
@@ -62,8 +62,8 @@ def main():
     # Alternative: Download by audio ID directly
     print(f"\nAlternative: Direct download by audio ID...")
     try:
-        audio_data = client.download_audio(piece.audioID, format="wav")
-        filename = f"direct_download_{piece.audioID}.wav"
+        audio_data = client.download_audio(piece.audio_id, format="wav")
+        filename = f"direct_download_{piece.audio_id}.wav"
         client.save_audio_file(audio_data, filename)
         print(f"✅ Direct download saved as {filename}")
     except Exception as e:

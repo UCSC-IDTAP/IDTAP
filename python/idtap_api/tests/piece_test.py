@@ -63,8 +63,8 @@ def test_realign_and_set_dur_tot():
     assert piece.phrases[0].trajectories[0].pitches[0].ratios[0] == piece.raga.stratified_ratios[0]
 
     piece.set_dur_tot(3)
-    assert piece.durTot == 3
-    assert pytest.approx(piece.durArrayGrid[0][0], rel=1e-6) == 1 / 3
+    assert piece.dur_tot == 3
+    assert pytest.approx(piece.dur_array_grid[0][0], rel=1e-6) == 1 / 3
     assert piece.phrases[1].trajectories[0].dur_tot == 2
     assert pytest.approx(piece.phrases[1].start_time, rel=1e-6) == 1
 
@@ -74,9 +74,9 @@ def test_dur_calculations_and_cleanup():
     piece.phrases[0].trajectories[0].dur_tot = 2
     piece.phrases[0].dur_tot_from_trajectories()
     piece.dur_tot_from_phrases()
-    assert piece.durTot == 3
+    assert piece.dur_tot == 3
     piece.dur_array_from_phrases()
-    assert piece.durArrayGrid[0] == pytest.approx([2/3, 1/3])
+    assert piece.dur_array_grid[0] == pytest.approx([2/3, 1/3])
     piece.phrases[0].dur_tot = None  # type: ignore
     with pytest.raises(Exception):
         piece.dur_array_from_phrases()
@@ -93,7 +93,7 @@ def test_dur_calculations_and_cleanup():
 
 
 def test_piece_serialization_round_trip(tmp_path: Path):
-    fixture = Path('python/api/tests/fixtures/serialization_test.json')
+    fixture = Path('python/idtap_api/tests/fixtures/serialization_test.json')
     data = json.loads(fixture.read_text())
     piece = Piece.from_json(data)
     json_obj = piece.to_json()
@@ -198,19 +198,19 @@ def test_optional_fields_round_trip():
     piece = Piece(opts)
     copy = Piece.from_json(piece.to_json())
     assert copy.title == opts['title']
-    assert copy.dateCreated.isoformat() == opts['dateCreated'].isoformat()
-    assert copy.dateModified.isoformat() == opts['dateModified'].isoformat()
+    assert copy.date_created.isoformat() == opts['dateCreated'].isoformat()
+    assert copy.date_modified.isoformat() == opts['dateModified'].isoformat()
     assert copy.location == opts['location']
     assert copy._id == opts['_id']
-    assert copy.audioID == opts['audioID']
-    assert copy.userID == opts['userID']
+    assert copy.audio_id == opts['audioID']
+    assert copy.user_id == opts['userID']
     assert copy.name == opts['name']
     assert copy.family_name == opts['family_name']
     assert copy.given_name == opts['given_name']
     assert copy.permissions == opts['permissions']
-    assert copy.explicitPermissions == opts['explicitPermissions']
+    assert copy.explicit_permissions == opts['explicitPermissions']
     assert copy.soloist == opts['soloist']
-    assert copy.soloInstrument == opts['soloInstrument']
+    assert copy.solo_instrument == opts['soloInstrument']
 
 
 def test_getters_and_setters_modify_grids():
@@ -222,17 +222,17 @@ def test_getters_and_setters_modify_grids():
     t2 = Trajectory({'num': 0, 'pitches': [Pitch()], 'dur_tot': 1})
     p2 = Phrase({'trajectories': [t2], 'raga': raga})
     piece.phrases = [p2]
-    assert piece.phraseGrid[0][0] is p2
+    assert piece.phrase_grid[0][0] is p2
 
     piece.durArray = [1]
-    assert piece.durArrayGrid[0] == [1]
+    assert piece.dur_array_grid[0] == [1]
 
-    piece.sectionStarts = [0]
-    assert piece.sectionStartsGrid[0] == [0]
+    piece.section_starts = [0]
+    assert piece.section_starts_grid[0] == [0]
 
     sc = [init_sec_categorization()]
-    piece.sectionCategorization = sc
-    assert piece.sectionCatGrid[0] is sc
+    piece.section_categorization = sc
+    assert piece.section_cat_grid[0] is sc
 
 
 def test_assemblages_getter():
@@ -242,7 +242,7 @@ def test_assemblages_getter():
     asm = Assemblage(Instrument.Sitar, 'a')
     asm.add_phrase(phrase)
     piece = Piece({'phrases': [phrase], 'raga': raga, 'instrumentation': [Instrument.Sitar]})
-    piece.assemblageDescriptors = [asm.descriptor]
+    piece.assemblage_descriptors = [asm.descriptor]
     aggs = piece.assemblages
     assert len(aggs) == 1
     assert isinstance(aggs[0], Assemblage)
@@ -254,8 +254,8 @@ def test_update_start_times_recalc():
     p1 = Phrase({'trajectories': [Trajectory({'dur_tot': 1})], 'raga': raga})
     p2 = Phrase({'trajectories': [Trajectory({'dur_tot': 1})], 'raga': raga})
     piece = Piece({'phrases': [p1, p2], 'raga': raga, 'instrumentation': [Instrument.Sitar]})
-    piece.durArrayGrid[0] = [0.25, 0.75]
-    piece.durTot = 2
+    piece.dur_array_grid[0] = [0.25, 0.75]
+    piece.dur_tot = 2
     piece.update_start_times()
     assert pytest.approx(p2.start_time, rel=1e-6) == piece.dur_starts()[1]
     assert p2.piece_idx == 1
@@ -266,7 +266,7 @@ def test_track_specific_helpers():
     assert piece.dur_starts(1) == [0]
     assert piece.traj_start_times(1) == [0]
     assert len(piece.all_pitches(track=1)) == 1
-    traj = piece.phraseGrid[1][0].trajectories[0]
+    traj = piece.phrase_grid[1][0].trajectories[0]
     assert piece.most_recent_traj(1.2, 1) is traj
 
 
@@ -280,7 +280,7 @@ def test_ad_hoc_grid_expansion():
         'raga': raga,
         'adHocSectionCatGrid': [[]],
     })
-    assert len(piece.adHocSectionCatGrid) == 2
+    assert len(piece.ad_hoc_section_cat_grid) == 2
 
 
 def test_section_cat_grid_expansion():
@@ -293,7 +293,7 @@ def test_section_cat_grid_expansion():
         'sectionStarts': [0, 1],
         'sectionCatGrid': [[init_sec_categorization()]],
     })
-    assert len(piece.sectionCatGrid[0]) == 2
+    assert len(piece.section_cat_grid[0]) == 2
 
 
 def test_all_pitches_no_repetition():
@@ -328,18 +328,18 @@ def test_update_fundamental_and_chikari_freqs():
     p1.chikaris['0.00'] = chikari
     assert piece.chikari_freqs(0) == [c.frequency for c in chikari.pitches[:2]]
     nums = [p.numbered_pitch for p in piece.all_pitches()]
-    assert piece.highestPitchNumber == max(nums)
-    assert piece.lowestPitchNumber == min(nums)
+    assert piece.highest_pitch_number == max(nums)
+    assert piece.lowest_pitch_number == min(nums)
 
 
 def test_dur_starts_errors():
     piece = build_simple_piece()
-    saved = piece.durArrayGrid
-    piece.durArrayGrid = None
+    saved = piece.dur_array_grid
+    piece.dur_array_grid = None
     with pytest.raises(Exception):
         piece.dur_starts()
-    piece.durArrayGrid = saved
-    piece.durTot = None
+    piece.dur_array_grid = saved
+    piece.dur_tot = None
     with pytest.raises(Exception):
         piece.dur_starts()
 
@@ -347,23 +347,23 @@ def test_dur_starts_errors():
 def test_excerpt_range_and_assemblage_serialization():
     p = Phrase({'trajectories': [Trajectory()]})
     piece = Piece({'phrases': [p], 'raga': Raga()})
-    piece.excerptRange = {'start': 1, 'end': 2}
+    piece.excerpt_range = {'start': 1, 'end': 2}
     asm = Assemblage(Instrument.Sitar, 'a')
     asm.add_phrase(p)
-    piece.assemblageDescriptors = [asm.descriptor]
+    piece.assemblage_descriptors = [asm.descriptor]
     copy = Piece.from_json(piece.to_json())
-    assert copy.excerptRange == piece.excerptRange
-    assert copy.assemblageDescriptors == piece.assemblageDescriptors
+    assert copy.excerpt_range == piece.excerpt_range
+    assert copy.assemblage_descriptors == piece.assemblage_descriptors
 
 
 def test_dur_tot_and_permissions_persist():
     perms = {'edit': ['a'], 'view': ['b'], 'publicView': False}
     piece = Piece({'phrases': [], 'durTot': 5, 'instrumentation': [Instrument.Sitar], 'raga': Raga(), 'explicitPermissions': perms})
     # durTot is recalculated from phrases and becomes 0
-    assert piece.durTot == 0
-    assert piece.durArray == []
-    assert piece.explicitPermissions == perms
-    assert piece.assemblageDescriptors == []
+    assert piece.dur_tot == 0
+    assert piece.dur_array == []
+    assert piece.explicit_permissions == perms
+    assert piece.assemblage_descriptors == []
 
 
 def test_clean_up_section_cat_defaults_multi_inst():
@@ -375,8 +375,8 @@ def test_clean_up_section_cat_defaults_multi_inst():
     assert 'Improvisation' in sc[0]
     assert 'Other' in sc[0]
     assert 'Top Level' in sc[0]
-    assert len(piece.adHocSectionCatGrid) == 2
-    assert piece.durTot == 0
+    assert len(piece.ad_hoc_section_cat_grid) == 2
+    assert piece.dur_tot == 0
 
 
 # ----------------------------------------------------------------------
@@ -426,8 +426,8 @@ def test_p_idx_from_group_across_phrases():
 
 def test_most_recent_traj_and_chikari_freqs():
     piece, _ = build_vocal_piece()
-    first_traj = piece.phraseGrid[0][0].trajectories[0]
-    chikari = piece.phraseGrid[0][0].chikaris['0.25']
+    first_traj = piece.phrase_grid[0][0].trajectories[0]
+    chikari = piece.phrase_grid[0][0].chikaris['0.25']
     assert piece.most_recent_traj(0.6, 0) is first_traj
     assert piece.chikari_freqs(0) == [c.frequency for c in chikari.pitches[:2]]
 
@@ -498,7 +498,7 @@ def test_all_pitches_number_error():
 
 def test_traj_from_time_after_last():
     piece = build_simple_piece()
-    after = (piece.durTot or 0) + 1
+    after = (piece.dur_tot or 0) + 1
     assert piece.traj_from_time(after, 0) is None
 
 
@@ -542,9 +542,9 @@ def test_dur_array_branch_empty_section_cat_grid():
     traj = Trajectory({'num': 0, 'pitches': [Pitch()], 'dur_tot': 1})
     phrase = Phrase({'trajectories': [traj], 'raga': raga})
     piece = Piece({'phrases': [phrase], 'durTot': 1, 'durArray': [1], 'instrumentation': [Instrument.Sitar], 'raga': raga, 'sectionStarts': [0], 'sectionCatGrid': []})
-    assert piece.durArrayGrid == [[1]]
-    assert len(piece.sectionCatGrid) == 1
-    assert len(piece.sectionCatGrid[0]) == len(piece.sectionStartsGrid[0])
+    assert piece.dur_array_grid == [[1]]
+    assert len(piece.section_cat_grid) == 1
+    assert len(piece.section_cat_grid[0]) == len(piece.section_starts_grid[0])
 
 
 def test_dur_tot_from_phrases_adds_silent_phrase():
@@ -553,8 +553,8 @@ def test_dur_tot_from_phrases_adds_silent_phrase():
     p1 = Phrase({'trajectories': [t1], 'raga': raga})
     piece = Piece({'phraseGrid': [[p1], []], 'instrumentation': [Instrument.Sitar, Instrument.Sitar], 'raga': raga})
     piece.dur_tot_from_phrases()
-    assert len(piece.phraseGrid[1]) == 1
-    silent = piece.phraseGrid[1][0].trajectories[0]
+    assert len(piece.phrase_grid[1]) == 1
+    silent = piece.phrase_grid[1][0].trajectories[0]
     assert silent.id == 12
     assert pytest.approx(silent.dur_tot) == 1
 
@@ -566,7 +566,7 @@ def test_dur_array_from_phrases_removes_nan():
     bad = Trajectory({'dur_tot': float('nan')})
     phrase = Phrase({'trajectories': [good, bad], 'raga': raga})
     phrase.dur_tot_from_trajectories()
-    piece.phraseGrid[0].append(phrase)
+    piece.phrase_grid[0].append(phrase)
     assert math.isnan(phrase.dur_tot)
     piece.dur_array_from_phrases()
     assert len(phrase.trajectories) == 1
@@ -646,34 +646,34 @@ def test_vocal_display_helpers():
 
 def test_meters_and_instrumentation_update_duration_arrays():
     piece = build_simple_piece()
-    original = json.dumps(piece.durArrayGrid)
+    original = json.dumps(piece.dur_array_grid)
 
     m = Meter([1], start_time=2.1, tempo=60)
     piece.add_meter(m)
     piece.remove_meter(m)
-    assert json.dumps(piece.durArrayGrid) == original
+    assert json.dumps(piece.dur_array_grid) == original
 
     piece.instrumentation.append(Instrument.Vocal_M)
     new_phrase = Phrase({
         'trajectories': [Trajectory({'num': 0, 'pitches': [Pitch()], 'dur_tot': 2})],
         'raga': piece.raga,
     })
-    piece.phraseGrid.append([new_phrase])
-    piece.durArrayGrid.append([])
-    piece.sectionStartsGrid.append([0])
-    piece.sectionCatGrid.append([init_sec_categorization() for _ in piece.sectionCatGrid[0]])
-    piece.adHocSectionCatGrid.append([[] for _ in piece.adHocSectionCatGrid[0]])
+    piece.phrase_grid.append([new_phrase])
+    piece.dur_array_grid.append([])
+    piece.section_starts_grid.append([0])
+    piece.section_cat_grid.append([init_sec_categorization() for _ in piece.section_cat_grid[0]])
+    piece.ad_hoc_section_cat_grid.append([[] for _ in piece.ad_hoc_section_cat_grid[0]])
     piece.dur_array_from_phrases()
-    assert len(piece.durArrayGrid) == 2
+    assert len(piece.dur_array_grid) == 2
 
     piece.instrumentation.pop()
-    piece.phraseGrid.pop()
-    piece.durArrayGrid.pop()
-    piece.sectionStartsGrid.pop()
-    piece.sectionCatGrid.pop()
-    piece.adHocSectionCatGrid.pop()
+    piece.phrase_grid.pop()
+    piece.dur_array_grid.pop()
+    piece.section_starts_grid.pop()
+    piece.section_cat_grid.pop()
+    piece.ad_hoc_section_cat_grid.pop()
     piece.dur_array_from_phrases()
-    assert json.dumps(piece.durArrayGrid) == original
+    assert json.dumps(piece.dur_array_grid) == original
 
 
 def test_piece_serialization_reconnects_groups_and_fixes_slide():

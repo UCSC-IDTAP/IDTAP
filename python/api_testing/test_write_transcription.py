@@ -24,10 +24,10 @@ def main():
     piece = Piece()
     piece.title = f"Test Piece {uuid.uuid4().hex[:8]}"
     piece.location = "Automated Test"
-    piece.dateCreated = datetime.now()
-    piece.dateModified = datetime.now()
+    piece.date_created = datetime.now()
+    piece.date_modified = datetime.now()
     piece.instrumentation = ['Sitar']
-    piece.durTot = 60.0
+    piece.dur_tot = 60.0
 
     # Generate a few random trajectories
     traj_1 = Trajectory({
@@ -40,7 +40,7 @@ def main():
         'dur_array': [0.3, 0.7]
     })
     new_phrase = Phrase({ 'trajectories': [traj_1] })
-    piece.phraseGrid[0].append(new_phrase)
+    piece.phrase_grid[0].append(new_phrase)
     
     # Save the transcription using client method
     client.save_transcription(piece)
