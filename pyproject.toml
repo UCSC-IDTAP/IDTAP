@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta:__legacy__"
 name = "idtap_api"
 version = "0.1.0"
 description = "Python API client and data classes for the IDTAP project"
-dependencies = ["requests", "pymongo", "google-auth-oauthlib"]
+dependencies = ["requests", "pymongo", "google-auth-oauthlib", "pyhumps"]
 
 [project.optional-dependencies]
 test = ["pytest", "responses"]

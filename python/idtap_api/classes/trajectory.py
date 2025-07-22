@@ -3,19 +3,7 @@ import math
 import uuid
 from typing import List, Dict, Optional, Callable, TypedDict
 
-try:
-    import humps
-    decamelize = humps.decamelize  # type: ignore
-except Exception:  # pragma: no cover
-    import re
-    def decamelize(obj):
-        if isinstance(obj, dict):
-            out = {}
-            for k, v in obj.items():
-                s = re.sub(r'(?<!^)(?=[A-Z])', '_', str(k)).lower()
-                out[s] = decamelize(v) if isinstance(v, dict) else v
-            return out
-        return obj
+import humps
 
 from .pitch import Pitch
 from .articulation import Articulation
@@ -32,7 +20,7 @@ class VibObjType(TypedDict, total=False):
 
 class Trajectory:
     def __init__(self, options: Optional[dict] = None) -> None:
-        opts = decamelize(options or {})
+        opts = humps.decamelize(options or {})
         self.names = [
             'Fixed',
             'Bend: Simple',
@@ -664,7 +652,7 @@ class Trajectory:
 
     @staticmethod
     def from_json(obj: Dict) -> 'Trajectory':
-        opts = decamelize(obj)
+        opts = humps.decamelize(obj)
         pitches = [Pitch.from_json(p) for p in opts.get('pitches', [])]
         arts = {}
         for k,v in opts.get('articulations', {}).items():

@@ -2,19 +2,7 @@ from __future__ import annotations
 from typing import List, Optional, Dict, TypedDict
 import uuid
 
-try:
-    import humps
-    decamelize = humps.decamelize  # type: ignore
-except Exception:  # pragma: no cover - fallback for missing humps
-    import re
-    def decamelize(obj):
-        if isinstance(obj, dict):
-            out = {}
-            for k, v in obj.items():
-                s = re.sub(r'(?<!^)(?=[A-Z])', '_', k).lower()
-                out[s] = decamelize(v) if isinstance(v, dict) else v
-            return out
-        return obj
+import humps
 
 from .pitch import Pitch
 
@@ -27,7 +15,7 @@ class ChikariOptionsType(TypedDict, total=False):
 
 class Chikari:
     def __init__(self, options: Optional[ChikariOptionsType] = None) -> None:
-        opts = decamelize(options or {})
+        opts = humps.decamelize(options or {})
 
         default_pitches = [
             Pitch({'swara': 's', 'oct': 2}),
@@ -59,7 +47,7 @@ class Chikari:
 
     @staticmethod
     def from_json(obj: Dict) -> 'Chikari':
-        opts = decamelize(obj)
+        opts = humps.decamelize(obj)
         pitches = [Pitch.from_json(p) for p in opts.get('pitches', [])]
         opts['pitches'] = pitches
         return Chikari(opts)  # type: ignore[arg-type]

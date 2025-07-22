@@ -2,20 +2,7 @@ from __future__ import annotations
 from typing import Optional, TypedDict, Dict, List, Tuple, Union
 import math
 import copy
-try:
-    import humps
-    decamelize = humps.decamelize  # type: ignore
-except Exception:
-    import re
-
-    def decamelize(obj):
-        if isinstance(obj, dict):
-            out = {}
-            for k, v in obj.items():
-                s = re.sub(r'(?<!^)(?=[A-Z])', '_', k).lower()
-                out[s] = decamelize(v) if isinstance(v, dict) else v
-            return out
-        return obj
+import humps
 
 from .pitch import Pitch
 
@@ -55,7 +42,7 @@ class RagaOptionsType(TypedDict, total=False):
 
 class Raga:
     def __init__(self, options: Optional[RagaOptionsType] = None) -> None:
-        opts = decamelize(options or {})
+        opts = humps.decamelize(options or {})
         self.name: str = opts.get('name', 'Yaman')
         self.fundamental: float = opts.get('fundamental', 261.63)
         self.rule_set: RuleSetType = opts.get('rule_set', yaman_rule_set)
