@@ -1,6 +1,7 @@
 # Changelog
 
 
+* fix: update lockfiles for security patches [40ed5d7] (Jon Myers)
 * fix: security fixes [10385f9] (Jon Myers)
 * docs: add comprehensive web development guide [5667a3e] (Jon Myers)
 ### 2025-07-22
