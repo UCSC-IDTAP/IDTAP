@@ -34,7 +34,7 @@ def test_default_pitch():
     assert p.octaved_sargam_letter == 'S'
     assert p.numbered_pitch == 0
     assert p.chroma == 0
-    assert p.to_JSON() == {
+    assert p.to_json() == {
         'swara': 0,
         'raised': True,
         'oct': 0,
@@ -448,9 +448,9 @@ def test_non_offset_frequency_and_formatted_getters():
 
 def test_serialization_round_trip():
     p = Pitch({'swara': 'ga', 'raised': False, 'oct': 1, 'log_offset': 0.2})
-    json_obj = p.to_JSON()
+    json_obj = p.to_json()
     copy = Pitch.from_json(json_obj)
-    assert copy.to_JSON() == json_obj
+    assert copy.to_json() == json_obj
 
 
 def test_a440_cents_deviation_edge_octaves():
@@ -495,8 +495,8 @@ def test_numbered_pitch_invalid_swara_values():
 
 def test_to_json_from_json_preserves_log_offset():
     orig = Pitch({'swara': 'ni', 'raised': False, 'oct': 2, 'log_offset': -0.3})
-    round_trip = Pitch.from_json(orig.to_JSON())
-    assert round_trip.to_JSON() == orig.to_JSON()
+    round_trip = Pitch.from_json(orig.to_json())
+    assert round_trip.to_json() == orig.to_json()
     assert math.isclose(round_trip.frequency, orig.frequency, abs_tol=0.0001)
 
 

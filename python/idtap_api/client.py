@@ -10,6 +10,8 @@ from pathlib import Path
 import requests
 import os
 
+from idtap_api.classes.piece import Piece
+
 from .auth import login_google, load_token
 from .secure_storage import SecureTokenStorage
 
@@ -135,6 +137,14 @@ class SwaraClient:
         """Save transcription using authenticated API route."""
         return self._post_json("api/transcription", piece)
 
+    def insert_new_transcription(self, piece: Dict[str, Any]) -> Any:
+        """Insert a new transcription document as the current authenticated user."""
+        if not self.user_id:
+            raise RuntimeError("Not authenticated: cannot insert new transcription")
+        payload = dict(piece)
+        payload["userID"] = self.user_id
+        return self._post_json("insertNewTranscription", payload)
+
     def get_viewable_transcriptions(
         self,
         sort_key: str = "title",
@@ -164,3 +174,186 @@ class SwaraClient:
             "explicitPermissions": explicit_permissions,
         }
         return self._post_json("api/visibility", payload)
+
+    def download_audio(self, audio_id: str, format: str = "wav") -> bytes:
+        """Download audio recording by audio ID.
+        
+        Args:
+            audio_id: The audio recording ID
+            format: Audio format (wav, mp3, opus)
+            
+        Returns:
+            Raw audio data as bytes
+        """
+        if format not in ["wav", "mp3", "opus"]:
+            raise ValueError(f"Unsupported audio format: {format}. Use 'wav', 'mp3', or 'opus'")
+        
+        endpoint = f"audio/{format}/{audio_id}.{format}"
+        return self._get(endpoint)
+
+    def download_transcription_audio(self, piece: Union[Dict[str, Any], Piece], format: str = "wav") -> Optional[bytes]:
+        """Download audio recording associated with a transcription.
+        
+        Args:
+            piece: Transcription piece data (dict or Piece object)
+            format: Audio format (wav, mp3, opus)
+            
+        Returns:
+            Raw audio data as bytes, or None if no audio is associated
+        """
+        # Extract audio ID from piece
+        if hasattr(piece, 'audio_id'):
+            audio_id = piece.audio_id
+        elif isinstance(piece, dict):
+            audio_id = piece.get('audioID')
+        else:
+            raise TypeError(f"Expected Piece object or dict, got {type(piece)}")
+        
+        if not audio_id:
+            return None
+            
+        return self.download_audio(audio_id, format)
+
+    def save_audio_file(self, audio_data: bytes, filename: str, filepath: Optional[str] = None) -> str:
+        """Save audio data to a file.
+        
+        Args:
+            audio_data: Raw audio data from download_audio()
+            filename: Output filename (should include extension)
+            filepath: Directory to save file (defaults to user's Downloads folder)
+            
+        Returns:
+            Full path to the saved file
+        """
+        import os
+        from pathlib import Path
+        
+        if filepath is None:
+            # Cross-platform default to Downloads folder
+            if os.name == 'nt':  # Windows
+                downloads_dir = Path.home() / 'Downloads'
+            else:  # macOS, Linux, Unix
+                downloads_dir = Path.home() / 'Downloads'
+            filepath = str(downloads_dir)
+        
+        # Ensure directory exists
+        Path(filepath).mkdir(parents=True, exist_ok=True)
+        
+        # Combine path and filename
+        full_path = Path(filepath) / filename
+        
+        with open(full_path, 'wb') as f:
+            f.write(audio_data)
+            
+        return str(full_path)
+
+    def download_and_save_transcription_audio(self, piece: Union[Dict[str, Any], Piece], 
+                                              format: str = "wav", 
+                                              filepath: Optional[str] = None,
+                                              filename: Optional[str] = None) -> Optional[str]:
+        """Download and save audio recording associated with a transcription.
+        
+        Args:
+            piece: Transcription piece data (dict or Piece object)
+            format: Audio format (wav, mp3, opus)
+            filepath: Directory to save file (defaults to Downloads folder)
+            filename: Custom filename (defaults to transcription title + ID)
+            
+        Returns:
+            Full path to saved file, or None if no audio is associated
+        """
+        # Download audio data
+        audio_data = self.download_transcription_audio(piece, format)
+        if not audio_data:
+            return None
+        
+        # Generate filename if not provided
+        if filename is None:
+            if hasattr(piece, 'title') and hasattr(piece, '_id'):
+                title = piece.title
+                piece_id = piece._id
+            elif isinstance(piece, dict):
+                title = piece.get('title', 'untitled')
+                piece_id = piece.get('_id', 'unknown')
+            else:
+                title = 'untitled'
+                piece_id = 'unknown'
+            
+            # Clean title for filename
+            clean_title = "".join(c for c in title if c.isalnum() or c in (' ', '-', '_')).strip()
+            filename = f"{clean_title}_{piece_id}.{format}"
+        
+        # Save file and return path
+        return self.save_audio_file(audio_data, filename, filepath)
+
+    def save_transcription(self, piece: Piece, fill_duration: bool = True) -> Any:
+        """Save a transcription piece to the server.
+        
+        Handles both new transcriptions (without _id) and existing transcriptions (with _id).
+        
+        Args:
+            piece: The Piece object or dict to save
+            fill_duration: Whether to automatically fill remaining duration with silence
+            
+        Returns:
+            Server response from the save operation
+        """
+        # Convert Piece object to dict if needed
+        if hasattr(piece, 'to_json'):
+            payload = piece.to_json()
+        elif isinstance(piece, dict):
+            payload = dict(piece)
+        else:
+            raise TypeError(f"Expected Piece object with to_json() method or dict, got {type(piece)}")
+        
+        # Fill remaining duration with silence if requested
+        if fill_duration and hasattr(piece, 'fill_remaining_duration') and hasattr(piece, 'dur_tot'):
+            piece.fill_remaining_duration(piece.dur_tot)
+            payload = piece.to_json()
+        
+        # Set transcriber information from authenticated user if not already set
+        if hasattr(piece, 'given_name') and self.user:
+            if not getattr(piece, 'given_name', None):
+                piece.given_name = self.user.get("given_name", "")
+            if not getattr(piece, 'family_name', None):
+                piece.family_name = self.user.get("family_name", "")
+            if not getattr(piece, 'name', None):
+                piece.name = self.user.get("name", "")
+        
+        # Set default soloist and instrument information if not already set
+        if hasattr(piece, 'soloist') and not getattr(piece, 'soloist', None):
+            piece.soloist = None
+        if hasattr(piece, 'solo_instrument') and not getattr(piece, 'solo_instrument', None):
+            instrumentation = getattr(piece, 'instrumentation', [])
+            piece.solo_instrument = instrumentation[0] if instrumentation else "Unknown Instrument"
+        
+        # Regenerate payload after setting user info
+        if hasattr(piece, 'to_json'):
+            payload = piece.to_json()
+        else:
+            payload = dict(piece)
+        
+        # Determine if this is a new or existing transcription
+        has_id = payload.get("_id") is not None
+        
+        if has_id:
+            # Existing transcription - use save_piece
+            print(f"Updating existing transcription: {payload.get('title', 'untitled')}")
+            try:
+                response = self.save_piece(payload)
+                print("✅ Updated transcription:", response)
+                return response
+            except Exception as e:
+                print("❌ Failed to update transcription:", e)
+                raise
+        else:
+            # New transcription - remove any null _id and use insert_new_transcription
+            payload.pop("_id", None)
+            print(f"Inserting new transcription: {payload.get('title', 'untitled')}")
+            try:
+                response = self.insert_new_transcription(payload)
+                print("✅ Inserted transcription:", response)
+                return response
+            except Exception as e:
+                print("❌ Failed to insert transcription:", e)
+                raise

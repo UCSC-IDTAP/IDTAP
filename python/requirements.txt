@@ -1,5 +1,6 @@
 # Core dependencies
 requests>=2.31.0
+pyhumps>=3.8.0
 
 # Security dependencies for secure token storage
 keyring>=24.0.0          # OS keyring integration

@@ -1,18 +1,5 @@
 from typing import List, Dict, TypedDict, Optional, Union
-try:
-    import humps
-    decamelize = humps.decamelize  # type: ignore
-except Exception:  # fallback if humps is missing or has no decamelize
-    import re
-
-    def decamelize(obj):
-        if isinstance(obj, dict):
-            out = {}
-            for k, v in obj.items():
-                s = re.sub(r'(?<!^)(?=[A-Z])', '_', k).lower()
-                out[s] = decamelize(v) if isinstance(v, dict) else v
-            return out
-        return obj
+import humps
 import math
 
 # this should all be implemented in snake_case, even though the TypeScript 
@@ -33,7 +20,7 @@ class Pitch:
             options = {}
         else:
             # convert camelCase incoming keys to snake_case
-            options = decamelize(options)
+            options = humps.decamelize(options)
 
         self.log_offset = options.get('log_offset', 0.0)
 
@@ -211,7 +198,7 @@ class Pitch:
         return np % 12
     
     #method
-    def to_JSON(self):
+    def to_json(self):
         return { # this should still be camelCase
             'swara': self.swara,
             'raised': self.raised,
@@ -222,8 +209,8 @@ class Pitch:
         } 
 
     #method
-    def set_oct(self, newOct):
-        self.oct = newOct
+    def set_oct(self, new_oct):
+        self.oct = new_oct
         ratio = None
         
         if self.swara == 0 or self.swara == 4:
@@ -234,11 +221,11 @@ class Pitch:
             if not isinstance(self.swara, int):
                 raise SyntaxError(f"Invalid swara type: {self.swara}")
 
-            nestedRatios = self.ratios[self.swara]
-            if not isinstance(nestedRatios, list):
-                raise SyntaxError(f"Invalid nestedRatios type, must be array: {nestedRatios}")
+            nested_ratios = self.ratios[self.swara]
+            if not isinstance(nested_ratios, list):
+                raise SyntaxError(f"Invalid nested_ratios type, must be array: {nested_ratios}")
 
-            ratio = nestedRatios[int(self.raised)]
+            ratio = nested_ratios[int(self.raised)]
 
     # ------------------------------------------------------------------
     # additional helpers and display properties mirroring pitch.ts

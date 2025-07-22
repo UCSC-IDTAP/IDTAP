@@ -1,19 +1,7 @@
 from __future__ import annotations
 from typing import Optional, TypedDict, Dict
 
-try:
-    import humps
-    decamelize = humps.decamelize  # type: ignore
-except Exception:
-    import re
-    def decamelize(obj: Dict) -> Dict:
-        if isinstance(obj, dict):
-            out: Dict = {}
-            for k, v in obj.items():
-                s = re.sub(r'(?<!^)(?=[A-Z])', '_', str(k)).lower()
-                out[s] = decamelize(v) if isinstance(v, dict) else v
-            return out
-        return obj
+import humps
 
 class ArticulationOptions(TypedDict, total=False):
     name: str
@@ -25,7 +13,7 @@ class ArticulationOptions(TypedDict, total=False):
 
 class Articulation:
     def __init__(self, options: Optional[ArticulationOptions] = None) -> None:
-        opts = decamelize(options or {})
+        opts = humps.decamelize(options or {})
         self.name: str = opts.get('name', 'pluck')
         stroke = opts.get('stroke')
         hindi = opts.get('hindi')

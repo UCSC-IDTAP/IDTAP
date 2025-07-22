@@ -1,19 +1,7 @@
 from __future__ import annotations
 from typing import List, TypedDict, Optional, Dict
 
-try:
-    import humps
-    decamelize = humps.decamelize  # type: ignore
-except Exception:
-    import re
-    def decamelize(obj):
-        if isinstance(obj, dict):
-            out = {}
-            for k, v in obj.items():
-                s = re.sub(r'(?<!^)(?=[A-Z])', '_', k).lower()
-                out[s] = decamelize(v) if isinstance(v, dict) else v
-            return out
-        return obj
+import humps
 
 
 def get_starts(dur_array: List[float]) -> List[float]:
@@ -49,7 +37,7 @@ class AutomationOptionsType(TypedDict, total=False):
 
 class Automation:
     def __init__(self, options: Optional[AutomationOptionsType] = None) -> None:
-        opts = decamelize(options or {})
+        opts = humps.decamelize(options or {})
         self.values: List[AutomationValueType] = []
         for v in opts.get('values', []):
             if 'norm_time' in v:

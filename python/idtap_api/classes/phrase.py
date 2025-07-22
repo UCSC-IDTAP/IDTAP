@@ -2,19 +2,8 @@ from __future__ import annotations
 from typing import List, Dict, Optional, Any
 import uuid
 
-try:
-    import humps
-    decamelize = humps.decamelize  # type: ignore
-except Exception:  # pragma: no cover - fallback
-    import re
-    def decamelize(obj):
-        if isinstance(obj, dict):
-            out = {}
-            for k, v in obj.items():
-                s = re.sub(r'(?<!^)(?=[A-Z])', '_', str(k)).lower()
-                out[s] = decamelize(v) if isinstance(v, dict) else v
-            return out
-        return obj
+import humps
+from ..utils import selective_decamelize
 
 from .raga import Raga
 from .trajectory import Trajectory
@@ -77,7 +66,7 @@ def init_phrase_categorization() -> PhraseCatType:
 
 class Phrase:
     def __init__(self, options: Optional[Dict[str, Any]] = None) -> None:
-        opts = decamelize(options or {})
+        opts = selective_decamelize(options or {})
         trajectories_in = opts.get('trajectories', [])
         self.start_time: Optional[float] = opts.get('start_time')
         self.raga: Optional[Raga] = opts.get('raga')
@@ -218,7 +207,7 @@ class Phrase:
         for traj in self.trajectories:
             new_pitches = []
             for p in traj.pitches:
-                opts = p.to_JSON()
+                opts = p.to_json()
                 opts['ratios'] = ratios
                 new_pitches.append(Pitch(opts))
             traj.pitches = new_pitches
@@ -413,7 +402,7 @@ class Phrase:
 
     @staticmethod
     def from_json(obj: Dict[str, Any]) -> 'Phrase':
-        opts = decamelize(obj)
+        opts = selective_decamelize(obj)
         trajectory_grid = opts.get('trajectory_grid')
         if trajectory_grid is not None:
             tg = []
