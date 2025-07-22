@@ -202,8 +202,8 @@ class SwaraClient:
             Raw audio data as bytes, or None if no audio is associated
         """
         # Extract audio ID from piece
-        if hasattr(piece, 'audioID'):
-            audio_id = piece.audioID
+        if hasattr(piece, 'audio_id'):
+            audio_id = piece.audio_id
         elif isinstance(piece, dict):
             audio_id = piece.get('audioID')
         else:
@@ -307,8 +307,8 @@ class SwaraClient:
             raise TypeError(f"Expected Piece object with to_json() method or dict, got {type(piece)}")
         
         # Fill remaining duration with silence if requested
-        if fill_duration and hasattr(piece, 'fill_remaining_duration') and hasattr(piece, 'durTot'):
-            piece.fill_remaining_duration(piece.durTot)
+        if fill_duration and hasattr(piece, 'fill_remaining_duration') and hasattr(piece, 'dur_tot'):
+            piece.fill_remaining_duration(piece.dur_tot)
             payload = piece.to_json()
         
         # Set transcriber information from authenticated user if not already set
@@ -323,9 +323,9 @@ class SwaraClient:
         # Set default soloist and instrument information if not already set
         if hasattr(piece, 'soloist') and not getattr(piece, 'soloist', None):
             piece.soloist = None
-        if hasattr(piece, 'soloInstrument') and not getattr(piece, 'soloInstrument', None):
+        if hasattr(piece, 'solo_instrument') and not getattr(piece, 'solo_instrument', None):
             instrumentation = getattr(piece, 'instrumentation', [])
-            piece.soloInstrument = instrumentation[0] if instrumentation else "Unknown Instrument"
+            piece.solo_instrument = instrumentation[0] if instrumentation else "Unknown Instrument"
         
         # Regenerate payload after setting user info
         if hasattr(piece, 'to_json'):
