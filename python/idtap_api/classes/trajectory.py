@@ -622,7 +622,7 @@ class Trajectory:
     def to_json(self) -> Dict:
         data = {
             'id': self.id,
-            'pitches': [p.to_JSON() for p in self.pitches],
+            'pitches': [p.to_json() for p in self.pitches],
             'durTot': self.dur_tot,
             'durArray': self.dur_array,
             'slope': self.slope,

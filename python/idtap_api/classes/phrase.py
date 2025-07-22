@@ -207,7 +207,7 @@ class Phrase:
         for traj in self.trajectories:
             new_pitches = []
             for p in traj.pitches:
-                opts = p.to_JSON()
+                opts = p.to_json()
                 opts['ratios'] = ratios
                 new_pitches.append(Pitch(opts))
             traj.pitches = new_pitches

@@ -41,7 +41,7 @@ class Chikari:
     def to_json(self) -> Dict:
         return {
             'fundamental': self.fundamental,
-            'pitches': [p.to_JSON() for p in self.pitches],
+            'pitches': [p.to_json() for p in self.pitches],
             'uniqueId': self.unique_id,
         }
 
