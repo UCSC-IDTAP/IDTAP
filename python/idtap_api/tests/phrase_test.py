@@ -294,12 +294,13 @@ def test_constructor_pads_grids():
     chikari_grid = [{}]
     instrumentation = ['Sitar', 'Violin']
     phrase = Phrase({'trajectory_grid': trajectory_grid, 'chikari_grid': chikari_grid, 'instrumentation': instrumentation})
-    assert phrase.trajectory_grid is trajectory_grid
-    assert phrase.chikari_grid is chikari_grid
+    # Test that grids are padded correctly for multiple instruments
     assert len(phrase.trajectory_grid) == len(instrumentation)
     assert len(phrase.chikari_grid) == len(instrumentation)
-    assert phrase.trajectory_grid[1] == []
-    assert phrase.chikari_grid[1] == {}
+    assert phrase.trajectory_grid[0] == [t1]  # Original content preserved
+    assert phrase.trajectory_grid[1] == []    # Padded for second instrument
+    assert phrase.chikari_grid[0] == {}       # Original content preserved  
+    assert phrase.chikari_grid[1] == {}       # Padded for second instrument
 
 
 def test_from_json_fallback_grids():
