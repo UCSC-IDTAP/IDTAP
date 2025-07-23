@@ -125,12 +125,30 @@ class SwaraClient:
     # ---- API methods ----
     def get_piece(self, piece_id: str) -> Any:
         """Return transcription JSON for the given id."""
+        # Check waiver status first
+        if not self.has_agreed_to_waiver():
+            raise RuntimeError(
+                "You must agree to the research waiver before accessing transcriptions. "
+                "Call client.agree_to_waiver() to accept the terms."
+            )
         return self._get(f"api/transcription/{piece_id}")
 
     def excel_data(self, piece_id: str) -> bytes:
+        """Export transcription data as Excel file."""
+        if not self.has_agreed_to_waiver():
+            raise RuntimeError(
+                "You must agree to the research waiver before accessing transcription data. "
+                "Call client.agree_to_waiver() to accept the terms."
+            )
         return self._get(f"api/transcription/{piece_id}/excel")
 
     def json_data(self, piece_id: str) -> bytes:
+        """Export transcription data as JSON file."""
+        if not self.has_agreed_to_waiver():
+            raise RuntimeError(
+                "You must agree to the research waiver before accessing transcription data. "
+                "Call client.agree_to_waiver() to accept the terms."
+            )
         return self._get(f"api/transcription/{piece_id}/json")
 
     def save_piece(self, piece: Dict[str, Any]) -> Any:
@@ -152,6 +170,13 @@ class SwaraClient:
         new_permissions: Optional[bool] = None,
     ) -> Any:
         """Return transcriptions viewable by the user."""
+        # Check waiver status first
+        if not self.has_agreed_to_waiver():
+            raise RuntimeError(
+                "You must agree to the research waiver before accessing transcriptions. "
+                "Call client.agree_to_waiver() to accept the terms."
+            )
+            
         params = {
             "sortKey": sort_key,
             "sortDir": sort_dir,
@@ -174,6 +199,39 @@ class SwaraClient:
             "explicitPermissions": explicit_permissions,
         }
         return self._post_json("api/visibility", payload)
+
+    def has_agreed_to_waiver(self) -> bool:
+        """Check if the current user has agreed to the research waiver.
+        
+        Returns:
+            True if user has agreed to waiver, False otherwise
+        """
+        if not self.user:
+            return False
+        return self.user.get("waiverAgreed", False)
+
+    def agree_to_waiver(self) -> Any:
+        """Agree to the research waiver.
+        
+        This must be called before accessing transcription data for first-time users.
+        
+        Returns:
+            Server response confirming waiver agreement
+            
+        Raises:
+            RuntimeError: If not authenticated
+        """
+        if not self.user_id:
+            raise RuntimeError("Not authenticated: cannot agree to waiver")
+            
+        payload = {"userID": self.user_id}
+        result = self._post_json("agreeToWaiver", payload)
+        
+        # Update local user object to reflect waiver agreement
+        if self.user:
+            self.user["waiverAgreed"] = True
+        
+        return result
 
     def download_audio(self, audio_id: str, format: str = "wav") -> bytes:
         """Download audio recording by audio ID.
