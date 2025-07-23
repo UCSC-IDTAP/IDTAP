@@ -17,12 +17,23 @@ def test_waiver_flow():
     # Test waiver check
     print(f"Waiver agreed: {client.has_agreed_to_waiver()}")  # Should be False
     
+    # Test waiver text display
+    waiver_text = client.get_waiver_text()
+    print(f"✅ Waiver text retrieved: {len(waiver_text)} characters")
+    
     # Test error on protected endpoint
     try:
         client.get_viewable_transcriptions()
         print("❌ Expected RuntimeError for missing waiver")
     except RuntimeError as e:
-        print(f"✅ Correctly blocked access: {str(e)[:50]}...")
+        print(f"✅ Correctly blocked access: {str(e)[:80]}...")
+    
+    # Test that agree_to_waiver requires i_agree=True
+    try:
+        client.agree_to_waiver()  # Should fail without i_agree=True
+        print("❌ Expected RuntimeError for missing i_agree")
+    except RuntimeError as e:
+        print(f"✅ Correctly requires explicit agreement: {str(e)[:80]}...")
     
     # Simulate waiver agreement
     client.user["waiverAgreed"] = True

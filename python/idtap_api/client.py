@@ -129,7 +129,7 @@ class SwaraClient:
         if not self.has_agreed_to_waiver():
             raise RuntimeError(
                 "You must agree to the research waiver before accessing transcriptions. "
-                "Call client.agree_to_waiver() to accept the terms."
+                "First read the waiver with: client.get_waiver_text(), then agree with: client.agree_to_waiver(i_agree=True)"
             )
         return self._get(f"api/transcription/{piece_id}")
 
@@ -138,7 +138,7 @@ class SwaraClient:
         if not self.has_agreed_to_waiver():
             raise RuntimeError(
                 "You must agree to the research waiver before accessing transcription data. "
-                "Call client.agree_to_waiver() to accept the terms."
+                "First read the waiver with: client.get_waiver_text(), then agree with: client.agree_to_waiver(i_agree=True)"
             )
         return self._get(f"api/transcription/{piece_id}/excel")
 
@@ -147,7 +147,7 @@ class SwaraClient:
         if not self.has_agreed_to_waiver():
             raise RuntimeError(
                 "You must agree to the research waiver before accessing transcription data. "
-                "Call client.agree_to_waiver() to accept the terms."
+                "First read the waiver with: client.get_waiver_text(), then agree with: client.agree_to_waiver(i_agree=True)"
             )
         return self._get(f"api/transcription/{piece_id}/json")
 
@@ -174,7 +174,7 @@ class SwaraClient:
         if not self.has_agreed_to_waiver():
             raise RuntimeError(
                 "You must agree to the research waiver before accessing transcriptions. "
-                "Call client.agree_to_waiver() to accept the terms."
+                "First read the waiver with: client.get_waiver_text(), then agree with: client.agree_to_waiver(i_agree=True)"
             )
             
         params = {
@@ -210,19 +210,41 @@ class SwaraClient:
             return False
         return self.user.get("waiverAgreed", False)
 
-    def agree_to_waiver(self) -> Any:
-        """Agree to the research waiver.
+    def get_waiver_text(self) -> str:
+        """Get the research waiver text that users must agree to.
         
-        This must be called before accessing transcription data for first-time users.
+        Returns:
+            The full waiver text
+        """
+        return ("I agree to only use the IDTAP for scholarly and/or pedagogical purposes. "
+                "I understand that any copyrighted materials that I upload to the IDTAP "
+                "are liable to be taken down in response to a DMCA takedown notice.")
+
+    def agree_to_waiver(self, i_agree: bool = False) -> Any:
+        """Agree to the research waiver after reading it.
+        
+        You must first read the waiver text using get_waiver_text() and then
+        explicitly set i_agree=True to confirm agreement.
+        
+        Args:
+            i_agree: Must be True to confirm you have read and agree to the waiver
         
         Returns:
             Server response confirming waiver agreement
             
         Raises:
-            RuntimeError: If not authenticated
+            RuntimeError: If not authenticated or if i_agree is not True
         """
         if not self.user_id:
             raise RuntimeError("Not authenticated: cannot agree to waiver")
+        
+        if not i_agree:
+            waiver_text = self.get_waiver_text()
+            raise RuntimeError(
+                f"You must read and agree to the research waiver before accessing transcriptions.\n\n"
+                f"WAIVER TEXT:\n{waiver_text}\n\n"
+                f"If you agree to these terms, call: client.agree_to_waiver(i_agree=True)"
+            )
             
         payload = {"userID": self.user_id}
         result = self._post_json("agreeToWaiver", payload)

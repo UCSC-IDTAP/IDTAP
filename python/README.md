@@ -163,7 +163,8 @@ The main HTTP client for interacting with the IDTAP server.
 - `save_piece(data)` - Save transcription
 - `excel_data(id)` / `json_data(id)` - Export data
 - `download_audio(id, format)` - Download audio files
-- `agree_to_waiver()` - Accept research waiver (required for first-time users)
+- `get_waiver_text()` - Display the research waiver text that must be read
+- `agree_to_waiver(i_agree=True)` - Accept research waiver (required for first-time users)
 - `has_agreed_to_waiver()` - Check if waiver has been accepted
 
 ### Musical Data Models
@@ -202,8 +203,13 @@ The client uses OAuth 2.0 flow with Google authentication. On first use, it will
 client = SwaraClient()
 transcriptions = client.get_viewable_transcriptions()  # Will raise RuntimeError
 
-# Agree to waiver first
-client.agree_to_waiver()
+# First, read the waiver text
+waiver_text = client.get_waiver_text()
+print("Research Waiver:")
+print(waiver_text)
+
+# After reading, agree to the waiver
+client.agree_to_waiver(i_agree=True)
 transcriptions = client.get_viewable_transcriptions()  # Now works
 
 # Check waiver status
