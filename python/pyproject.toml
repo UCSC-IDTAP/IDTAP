@@ -1,0 +1,93 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "idtap-api"
+version = "0.1.0"
+description = "Python client library for IDTAP - Interactive Digital Transcription and Analysis Platform for Hindustani music"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Jon Myers", email = "jon@swara.studio"}
+]
+maintainers = [
+    {name = "Jon Myers", email = "jon@swara.studio"}
+]
+keywords = [
+    "music", 
+    "transcription", 
+    "hindustani", 
+    "indian-classical", 
+    "musicology", 
+    "ethnomusicology",
+    "raga", 
+    "pitch-analysis", 
+    "audio-analysis"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "Topic :: Multimedia :: Sound/Audio :: Analysis",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+]
+requires-python = ">=3.10"
+dependencies = [
+    "requests>=2.31.0",
+    "pyhumps>=3.8.0",
+    "keyring>=24.0.0",
+    "cryptography>=41.0.0",
+    "PyJWT>=2.8.0",
+    "google-auth-oauthlib>=1.0.0",
+    "pymongo>=4.0.0"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "responses>=0.23.0",
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "mypy>=1.0.0",
+    "flake8>=6.0.0"
+]
+linux = [
+    "secretstorage>=3.3.0"
+]
+
+[project.urls]
+Homepage = "https://swara.studio"
+Documentation = "https://github.com/jon-myers/idtap"
+Repository = "https://github.com/jon-myers/idtap"
+"Bug Tracker" = "https://github.com/jon-myers/idtap/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["idtap_api*"]
+
+[tool.setuptools.package-data]
+idtap_api = ["py.typed"]
+
+[tool.black]
+line-length = 88
+target-version = ['py310']
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
