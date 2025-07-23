@@ -48,7 +48,7 @@
     "@vueuse/core": "^10.11.1",
     "@vueuse/head": "^2.0.0",
     "audio-waveform-svg-path": "^1.0.2",
-    "axios": "^1.10.0",
+    "axios": "^1.11.0",
     "binary-loader": "^0.0.1",
     "connect-history-api-fallback": "^2.0.0",
     "core-js": "^3.43.0",
