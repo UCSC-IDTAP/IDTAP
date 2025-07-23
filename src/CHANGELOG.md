@@ -1,6 +1,9 @@
 # Changelog
 
 
+* fix: upgrade axios to 1.11.0 to resolve CVE-2025-7783 [8b64544] (Jon Myers)
+### 2025-07-23
+
 * fix: update lockfiles for security patches [40ed5d7] (Jon Myers)
 * fix: security fixes [10385f9] (Jon Myers)
 * docs: add comprehensive web development guide [5667a3e] (Jon Myers)
