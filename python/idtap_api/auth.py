@@ -80,7 +80,7 @@ def login_google(
         auth_response = requests.get(
             f"{base_url.rstrip('/')}/oauth/authorize",
             params=auth_params,
-            timeout=30
+            timeout=1800  # 30 minutes
         )
         auth_response.raise_for_status()
         auth_data = auth_response.json()
@@ -120,7 +120,7 @@ def login_google(
         token_response = requests.post(
             f"{base_url.rstrip('/')}/oauth/token",
             json=token_data,
-            timeout=30
+            timeout=1800  # 30 minutes
         )
         token_response.raise_for_status()
         result = token_response.json()

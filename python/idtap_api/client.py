@@ -106,7 +106,7 @@ class SwaraClient:
     def _post_json(self, endpoint: str, payload: Dict[str, Any]) -> Any:
         url = self.base_url + endpoint
         headers = self._auth_headers()
-        response = requests.post(url, json=payload, headers=headers)
+        response = requests.post(url, json=payload, headers=headers, timeout=1800)  # 30 minutes
         response.raise_for_status()
         if response.content:
             return response.json()
@@ -115,7 +115,7 @@ class SwaraClient:
     def _get(self, endpoint: str, params: Optional[Dict[str, Any]] = None) -> Any:
         url = self.base_url + endpoint
         headers = self._auth_headers()
-        response = requests.get(url, params=params, headers=headers)
+        response = requests.get(url, params=params, headers=headers, timeout=1800)  # 30 minutes
         response.raise_for_status()
         ctype = response.headers.get("Content-Type", "")
         if ctype.startswith("application/json"):
@@ -281,6 +281,46 @@ class SwaraClient:
             self.user["waiverAgreed"] = True
         
         return result
+
+    def logout(self, confirm: bool = False) -> bool:
+        """Log out the current user and clear all stored authentication tokens.
+        
+        This will:
+        - Clear tokens from OS keyring, encrypted storage, and plaintext files
+        - Reset the client's authentication state
+        - Require re-authentication for future API calls
+        
+        Args:
+            confirm: Set to True to confirm logout without interactive prompt
+            
+        Returns:
+            True if logout was successful, False otherwise
+        """
+        if not confirm:
+            print("🚪 Logging out will clear all stored authentication tokens.")
+            print("You will need to re-authenticate to use the API again.")
+            user_input = input("Are you sure you want to log out? (yes/no): ").strip().lower()
+            if user_input != 'yes':
+                print("Logout cancelled.")
+                return False
+        
+        try:
+            # Clear tokens from all storage backends
+            success = self.secure_storage.clear_tokens()
+            
+            if success:
+                # Reset client authentication state
+                self.token = None
+                self.user = None
+                print("✅ Successfully logged out. All authentication tokens have been cleared.")
+                return True
+            else:
+                print("⚠️  Logout partially successful - some tokens may not have been cleared.")
+                return False
+                
+        except Exception as e:
+            print(f"❌ Error during logout: {e}")
+            return False
 
     def download_audio(self, audio_id: str, format: str = "wav") -> bytes:
         """Download audio recording by audio ID.
