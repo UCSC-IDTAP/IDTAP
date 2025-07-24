@@ -1,5 +1,6 @@
 # Core dependencies
 requests>=2.31.0
+requests-toolbelt>=1.0.1
 pyhumps>=3.8.0
 
 # Security dependencies for secure token storage
