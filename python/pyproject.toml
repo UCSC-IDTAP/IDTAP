@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "idtap-api"
-version = "0.1.1"
+version = "0.1.2"
 description = "Python client library for IDTAP - Interactive Digital Transcription and Analysis Platform for Hindustani music"
 readme = "README.md"
 license = {text = "MIT"}
