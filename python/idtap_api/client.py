@@ -125,30 +125,20 @@ class SwaraClient:
     # ---- API methods ----
     def get_piece(self, piece_id: str) -> Any:
         """Return transcription JSON for the given id."""
-        # Check waiver status first
-        if not self.has_agreed_to_waiver():
-            raise RuntimeError(
-                "You must agree to the research waiver before accessing transcriptions. "
-                "First read the waiver with: client.get_waiver_text(), then agree with: client.agree_to_waiver(i_agree=True)"
-            )
+        # Check waiver and prompt if needed
+        self._prompt_for_waiver_if_needed()
         return self._get(f"api/transcription/{piece_id}")
 
     def excel_data(self, piece_id: str) -> bytes:
         """Export transcription data as Excel file."""
-        if not self.has_agreed_to_waiver():
-            raise RuntimeError(
-                "You must agree to the research waiver before accessing transcription data. "
-                "First read the waiver with: client.get_waiver_text(), then agree with: client.agree_to_waiver(i_agree=True)"
-            )
+        # Check waiver and prompt if needed
+        self._prompt_for_waiver_if_needed()
         return self._get(f"api/transcription/{piece_id}/excel")
 
     def json_data(self, piece_id: str) -> bytes:
         """Export transcription data as JSON file."""
-        if not self.has_agreed_to_waiver():
-            raise RuntimeError(
-                "You must agree to the research waiver before accessing transcription data. "
-                "First read the waiver with: client.get_waiver_text(), then agree with: client.agree_to_waiver(i_agree=True)"
-            )
+        # Check waiver and prompt if needed
+        self._prompt_for_waiver_if_needed()
         return self._get(f"api/transcription/{piece_id}/json")
 
     def save_piece(self, piece: Dict[str, Any]) -> Any:
@@ -163,6 +153,39 @@ class SwaraClient:
         payload["userID"] = self.user_id
         return self._post_json("insertNewTranscription", payload)
 
+    def _prompt_for_waiver_if_needed(self) -> None:
+        """Interactively prompt user to agree to waiver if not already agreed."""
+        if self.has_agreed_to_waiver():
+            return
+            
+        print("\n" + "=" * 60)
+        print("📋 IDTAP RESEARCH WAIVER REQUIRED")
+        print("=" * 60)
+        print("\nBefore accessing transcription data, you must agree to the following terms:\n")
+        
+        waiver_text = self.get_waiver_text()
+        print(waiver_text)
+        
+        print("\n" + "=" * 60)
+        
+        while True:
+            response = input("Do you agree to these terms? (yes/no): ").strip().lower()
+            
+            if response == "yes":
+                print("\nSubmitting waiver agreement...")
+                try:
+                    self.agree_to_waiver(i_agree=True)
+                    print("✅ Waiver agreement successful! You now have access to transcription data.\n")
+                    break
+                except Exception as e:
+                    print(f"❌ Error submitting waiver agreement: {e}")
+                    raise
+            elif response == "no":
+                print("\n👋 You must agree to the waiver to access transcription data.")
+                raise RuntimeError("Waiver agreement required but declined by user.")
+            else:
+                print("Please respond with 'yes' or 'no'.")
+
     def get_viewable_transcriptions(
         self,
         sort_key: str = "title",
@@ -170,12 +193,8 @@ class SwaraClient:
         new_permissions: Optional[bool] = None,
     ) -> Any:
         """Return transcriptions viewable by the user."""
-        # Check waiver status first
-        if not self.has_agreed_to_waiver():
-            raise RuntimeError(
-                "You must agree to the research waiver before accessing transcriptions. "
-                "First read the waiver with: client.get_waiver_text(), then agree with: client.agree_to_waiver(i_agree=True)"
-            )
+        # Check waiver and prompt if needed
+        self._prompt_for_waiver_if_needed()
             
         params = {
             "sortKey": sort_key,
