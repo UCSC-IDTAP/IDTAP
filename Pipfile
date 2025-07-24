@@ -4,30 +4,19 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-# Core dependencies
 requests = ">=2.31.0"
 pyhumps = ">=3.8.0"
-
-# Security dependencies for secure token storage
 keyring = ">=24.0.0"
 cryptography = ">=41.0.0"
 PyJWT = ">=2.8.0"
-
-# MongoDB support (if needed for your API)
 pymongo = "*"
-
-# OAuth support
 google-auth-oauthlib = "*"
-
-# Optional: for better keyring support on Linux (install manually on Linux with: pipenv install secretstorage)
-# secretstorage = ">=3.3.0"  # Uncomment on Linux systems
+build = "*"
+twine = "*"
 
 [dev-packages]
-# Testing dependencies
 pytest = "*"
 responses = "*"
-
-# Development tools (optional)
 black = "*"          # Code formatting
 flake8 = "*"         # Linting
 mypy = "*"           # Type checking
