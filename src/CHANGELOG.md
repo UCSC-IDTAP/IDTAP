@@ -1,6 +1,7 @@
 # Changelog
 
 
+* refactor: remove duplicate Python API client code [9460c8d] (Jon Myers)
 * chore: bump version to 0.1.2 [1e9b2c5] (Jon Myers)
 * feat: add audio upload API and metadata endpoints [59447cd] (Jon Myers)
 * feat: add agreeToWaiver endpoint to API routes and fix waiver caching [e3165a9] (Jon Myers)
