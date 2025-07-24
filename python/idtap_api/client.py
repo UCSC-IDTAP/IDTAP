@@ -222,12 +222,20 @@ class SwaraClient:
     def has_agreed_to_waiver(self) -> bool:
         """Check if the current user has agreed to the research waiver.
         
+        This makes a fresh API call to get the latest waiver status from the database.
+        
         Returns:
             True if user has agreed to waiver, False otherwise
         """
-        if not self.user:
-            return False
-        return self.user.get("waiverAgreed", False)
+        try:
+            # Make a fresh API call to get current user data from database
+            fresh_user_data = self._get("api/user")
+            return fresh_user_data.get("waiverAgreed", False)
+        except Exception:
+            # Fall back to cached data if API call fails
+            if not self.user:
+                return False
+            return self.user.get("waiverAgreed", False)
 
     def get_waiver_text(self) -> str:
         """Get the research waiver text that users must agree to.
@@ -266,7 +274,7 @@ class SwaraClient:
             )
             
         payload = {"userID": self.user_id}
-        result = self._post_json("agreeToWaiver", payload)
+        result = self._post_json("api/agreeToWaiver", payload)
         
         # Update local user object to reflect waiver agreement
         if self.user:

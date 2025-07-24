@@ -321,5 +321,46 @@ export default function apiRoutes(collections: Collections) {
     }
   });
 
+  router.get('/user', async (req, res) => {
+    const googleUserId = req.user!.id; // Google OAuth sub
+    
+    try {
+      // Look up fresh user data from MongoDB using Google OAuth sub
+      const user = await collections.users?.findOne({ sub: googleUserId });
+      
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      res.json(user);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  router.post('/agreeToWaiver', async (req, res) => {
+    const googleUserId = req.user!.id; // Google OAuth sub
+    
+    // Look up MongoDB user ID from Google OAuth sub
+    const user = await collections.users?.findOne({ sub: googleUserId });
+    const mongoUserId = user?._id?.toString();
+
+    if (!mongoUserId) {
+      return res.status(400).json({ error: 'User not found' });
+    }
+
+    try {
+      const query = { _id: new ObjectId(mongoUserId) };
+      const update = { $set: { waiverAgreed: true } };
+      const options = { upsert: true };
+      const result = await collections.users?.updateOne(query, update, options);
+      res.json(result);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
   return router;
 }
