@@ -1,6 +1,11 @@
 # Changelog
 
 
+* chore: bump version to 0.1.2 [1e9b2c5] (Jon Myers)
+* feat: add audio upload API and metadata endpoints [59447cd] (Jon Myers)
+* feat: add agreeToWaiver endpoint to API routes and fix waiver caching [e3165a9] (Jon Myers)
+### 2025-07-24
+
 * fix: migrate ISMIR paper to Git LFS tracking [16f5c15] (Jon Myers)
 * docs: add NEH white paper with Git LFS [b25bd44] (Jon Myers)
 * docs: add ISMIR 2025 research paper [10b286f] (Jon Myers)
