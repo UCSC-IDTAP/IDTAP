@@ -13,6 +13,7 @@ pymongo = "*"
 google-auth-oauthlib = "*"
 build = "*"
 twine = "*"
+requests-toolbelt = "*"
 
 [dev-packages]
 pytest = "*"

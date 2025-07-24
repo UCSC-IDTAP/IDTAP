@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional, Union, List, Callable
 
 import json
 from pathlib import Path
@@ -281,6 +281,197 @@ class SwaraClient:
             self.user["waiverAgreed"] = True
         
         return result
+
+    def upload_audio(
+        self,
+        file_path: str,
+        metadata: "AudioMetadata",
+        audio_event: Optional["AudioEventConfig"] = None,
+        progress_callback: Optional[Callable[[float], None]] = None
+    ) -> "AudioUploadResult":
+        """Upload audio recording with comprehensive metadata.
+
+        Requires the `requests-toolbelt` library for multipart encoding.
+        
+        Args:
+            file_path: Path to the audio file to upload
+            metadata: AudioMetadata object with recording information
+            audio_event: Optional AudioEventConfig for associating with audio events
+            progress_callback: Optional callback for upload progress (0-100)
+            
+        Returns:
+            AudioUploadResult with upload status and file information
+            
+        Raises:
+            FileNotFoundError: If the audio file doesn't exist
+            ValueError: If the file is not a supported audio format
+            RuntimeError: If upload fails
+        """
+        import os
+        from pathlib import Path
+        
+        # Validate file exists
+        if not os.path.exists(file_path):
+            raise FileNotFoundError(f"Audio file not found: {file_path}")
+        
+        file_path_obj = Path(file_path)
+        
+        # Check file extension
+        supported_extensions = {'.mp3', '.wav', '.m4a', '.flac', '.opus', '.ogg'}
+        if file_path_obj.suffix.lower() not in supported_extensions:
+            raise ValueError(f"Unsupported audio format: {file_path_obj.suffix}. "
+                           f"Supported formats: {', '.join(supported_extensions)}")
+        
+        # Prepare form data
+        try:
+            # Prepare data fields
+            data = {
+                'metadata': json.dumps(metadata.to_json()),
+            }
+            
+            if audio_event:
+                data['audioEventConfig'] = json.dumps(audio_event.to_json())
+            
+            # Open file and make request
+            with open(file_path, 'rb') as f:
+                files = {'audioFile': (file_path_obj.name, f, self._get_mimetype(file_path_obj.suffix))}
+                
+                from requests_toolbelt.multipart.encoder import MultipartEncoder, MultipartEncoderMonitor
+
+                def progress_monitor(monitor):
+                    progress_callback((monitor.bytes_read / monitor.len) * 100)
+
+                fields = {
+                    'metadata': json.dumps(metadata.to_json()),
+                }
+                if audio_event:
+                    fields['audioEventConfig'] = json.dumps(audio_event.to_json())
+                fields['audioFile'] = (
+                    file_path_obj.name,
+                    f,
+                    self._get_mimetype(file_path_obj.suffix)
+                )
+
+                encoder = MultipartEncoder(fields=fields)
+                payload = MultipartEncoderMonitor(encoder, progress_monitor) if progress_callback else encoder
+                headers = {
+                    **self._auth_headers(),
+                    'Content-Type': payload.content_type,
+                    'Content-Length': str(payload.len),
+                }
+
+                response = requests.post(
+                    f"{self.base_url}api/uploadAudio",
+                    data=payload,
+                    headers=headers,
+                    timeout=1800
+                )
+                response.raise_for_status()
+                result_data = response.json()
+                from .audio_models import AudioUploadResult
+                return AudioUploadResult.from_api_response(result_data)
+                
+        except requests.exceptions.RequestException as e:
+            raise RuntimeError(f"Upload failed: {e}")
+        except Exception as e:
+            raise RuntimeError(f"Upload error: {e}")
+
+    def _get_mimetype(self, extension: str) -> str:
+        """Get MIME type for file extension."""
+        mime_types = {
+            '.mp3': 'audio/mpeg',
+            '.wav': 'audio/wav',
+            '.m4a': 'audio/m4a',
+            '.flac': 'audio/flac',
+            '.opus': 'audio/opus',
+            '.ogg': 'audio/ogg'
+        }
+        return mime_types.get(extension.lower(), 'audio/mpeg')
+
+    def get_available_musicians(self) -> List[Dict[str, Any]]:
+        """Get list of musicians in database."""
+        return self._get("api/musicians")
+
+    def get_available_ragas(self) -> List[str]:
+        """Get list of ragas in database."""
+        return self._get("api/ragas")
+        
+    def get_available_instruments(self, melody_only: bool = False) -> List[str]:
+        """Get list of instruments in database."""
+        params = {'melody': 'true'} if melody_only else {}
+        return self._get("api/instruments", params)
+        
+    def get_location_hierarchy(self) -> "LocationHierarchy":
+        """Get continent/country/city structure."""
+        data = self._get("api/locations")
+        from .audio_models import LocationHierarchy
+        return LocationHierarchy.from_api_response(data)
+        
+    def get_available_gharanas(self) -> List[Dict[str, Any]]:
+        """Get list of gharanas in database."""
+        return self._get("api/gharanas")
+        
+    def get_performance_sections(self) -> List[str]:
+        """Get list of performance sections."""
+        return self._get("api/performanceSections")
+        
+    def get_event_types(self) -> List[str]:
+        """Get list of audio event types."""
+        return self._get("api/eventTypes")
+        
+    def get_editable_audio_events(self) -> List[Dict[str, Any]]:
+        """Get audio events the user can edit."""
+        return self._get("api/audioEvents")
+
+    def validate_metadata(self, metadata: "AudioMetadata") -> "ValidationResult":
+        """Validate metadata against platform requirements."""
+        from .audio_models import ValidationResult
+        
+        errors = []
+        warnings = []
+        
+        # Get available data for validation
+        try:
+            available_musicians = [m.get('Full Name', '') for m in self.get_available_musicians()]
+            available_ragas = self.get_available_ragas()
+            available_instruments = self.get_available_instruments()
+            location_hierarchy = self.get_location_hierarchy()
+        except Exception as e:
+            warnings.append(f"Could not fetch validation data: {e}")
+            return ValidationResult(is_valid=True, warnings=warnings)
+        
+        # Validate musicians
+        for musician in metadata.musicians:
+            if not musician.name:
+                errors.append("Musician name cannot be empty")
+            elif musician.name not in available_musicians and musician.name != "Other":
+                warnings.append(f"Musician '{musician.name}' not found in database")
+            
+            if musician.instrument not in available_instruments:
+                warnings.append(f"Instrument '{musician.instrument}' not found in database")
+        
+        # Validate ragas
+        for raga in metadata.ragas:
+            if not raga.name:
+                errors.append("Raga name cannot be empty")
+            elif raga.name not in available_ragas:
+                warnings.append(f"Raga '{raga.name}' not found in database")
+        
+        # Validate location
+        if metadata.location:
+            continents = location_hierarchy.get_continents()
+            if metadata.location.continent not in continents:
+                warnings.append(f"Continent '{metadata.location.continent}' not found in database")
+            else:
+                countries = location_hierarchy.get_countries(metadata.location.continent)
+                if metadata.location.country not in countries:
+                    warnings.append(f"Country '{metadata.location.country}' not found in database")
+                elif metadata.location.city:
+                    cities = location_hierarchy.get_cities(metadata.location.continent, metadata.location.country)
+                    if cities and metadata.location.city not in cities:
+                        warnings.append(f"City '{metadata.location.city}' not found in database")
+        
+        return ValidationResult(is_valid=len(errors) == 0, errors=errors, warnings=warnings)
 
     def logout(self, confirm: bool = False) -> bool:
         """Log out the current user and clear all stored authentication tokens.

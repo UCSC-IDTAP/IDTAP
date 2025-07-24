@@ -18,6 +18,21 @@ from .classes.section import Section
 from .classes.trajectory import Trajectory
 
 from .enums import Instrument
+from .audio_models import (
+    AudioMetadata,
+    AudioUploadResult,
+    AudioEventConfig,
+    Musician,
+    Location,
+    RecordingDate,
+    Raga as AudioRaga,
+    PerformanceSection,
+    Permissions,
+    ValidationResult,
+    LocationHierarchy,
+    FileInfo,
+    ProcessingStatus
+)
 
 __all__ = [
     "SwaraClient",
@@ -36,4 +51,18 @@ __all__ = [
     "Trajectory",
     "Instrument",
     "login_google",
+    # Audio upload classes
+    "AudioMetadata",
+    "AudioUploadResult", 
+    "AudioEventConfig",
+    "Musician",
+    "Location",
+    "RecordingDate",
+    "AudioRaga",
+    "PerformanceSection",
+    "Permissions",
+    "ValidationResult",
+    "LocationHierarchy",
+    "FileInfo",
+    "ProcessingStatus",
 ]

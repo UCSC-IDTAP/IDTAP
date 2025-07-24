@@ -237,7 +237,15 @@ const runServer = async () => {
           }
         });
 
-        const apiRouter = apiRoutes({ transcriptions, users });
+        const apiRouter = apiRoutes({ 
+          transcriptions, 
+          users, 
+          audioEvents, 
+          audioRecordings, 
+          musicians, 
+          ragas, 
+          locations: location 
+        });
         app.use('/api', apiRouter);
         
         // OAuth routes for Python client (no auth middleware)
