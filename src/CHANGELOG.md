@@ -1,6 +1,14 @@
 # Changelog
 
 
+* fix: migrate ISMIR paper to Git LFS tracking [16f5c15] (Jon Myers)
+* docs: add NEH white paper with Git LFS [b25bd44] (Jon Myers)
+* docs: add ISMIR 2025 research paper [10b286f] (Jon Myers)
+* chore: update Pipfile with build and twine dependencies [b863b83] (Jon Myers)
+* feat: release v0.1.1 with interactive waiver prompting [99eafde] (Jon Myers)
+* feat: require users to read waiver text before agreeing [4fbb856] (Jon Myers)
+* feat: add research waiver requirement handling to Python API [0d79151] (Jon Myers)
+* feat: publish Python API package to PyPI [d169a92] (Jon Myers)
 * fix: upgrade axios to 1.11.0 to resolve CVE-2025-7783 [8b64544] (Jon Myers)
 ### 2025-07-23
 
