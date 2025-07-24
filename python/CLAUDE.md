@@ -1,110 +1,79 @@
-# IDTAP Python API Development Guide
+# IDTAP Python Server Scripts
 
 ## Overview
-The Python API (`idtap_api`) is a sophisticated client library for interacting with the IDTAP (Interactive Digital Transcription and Analysis Platform) server, specifically designed for transcribing, analyzing, and managing Hindustani music recordings.
+This directory contains server-side Python scripts for the IDTAP (Interactive Digital Transcription and Analysis Platform), including audio processing, visualization generation, and database management utilities.
 
-## Key Development Points
+**Note:** The Python client API (`idtap_api`) has been moved to a separate repository: https://github.com/UCSC-IDTAP/Python-API
 
-### Dependencies Management
-- **Keep `Pipfile` and `pyproject.toml` in sync** - this is critical!
-- Add new packages: `pipenv install package-name`
-- Then manually add to `pyproject.toml` dependencies array
-- Core deps: requests, pyhumps, keyring, cryptography, PyJWT, pymongo, google-auth-oauthlib
+## Server Components
 
-### Testing
-- **Unit tests**: `pytest python/idtap_api/tests/` (uses `responses` for HTTP mocking)
-- **Integration tests**: `python python/api_testing/api_test.py` (requires live server auth)
-- Test structure: Complete coverage of data models, client functionality, and authentication
+### Audio Processing (`essentia/`)
+- **make_spectrogram.py** - Generate spectrogram visualizations
+- **make_melograph.py** - Generate melodic contour analysis
+- **make_images.py** - General audio visualization processing
+- **update_all_tonics.py** - Update tonic frequency annotations
 
-### Build/Package/Publish
-```bash
-python -m build
-python -m twine upload dist/*  # or --repository testpypi for testing
+### Visualization Tools (`visualization_tools/`)
+- **generate_log_spectrograms.py** - High-quality spectrogram generation
+- **make_spec_data.py** - Spectral data processing for frontend
+- **make_all_*.py** - Batch processing scripts
+- **webps/** - Colormap visualization assets
+
+### Database Management (`dataManagement/`)
+- **build_musicians_db.py** - Musician database initialization
+- **build_raga_db.py** - Raga taxonomy setup
+- **aggregations/** - Database migration and update scripts
+
+### Auto-Transcription (`auto_transcribe/`)
+- **extract.py** - Audio feature extraction pipeline
+- **segment.py** - Audio segmentation algorithms
+- **melodic_contour.py** - Pitch trajectory analysis
+- **onsets.py** - Note onset detection
+
+### Backup & Mass Upload (`backup_scripts/`, `mass_upload/`)
+- **backup_mongo.py** - Database backup utilities
+- **mass_upload.py** - Batch audio file processing
+- **directory_watcher.py** - Automated file monitoring
+
+## Usage Patterns
+
+### Called from Node.js Server
+These scripts are typically invoked by the main Node.js server in `/server/` via child processes:
+```javascript
+// Example server call to Python script
+const result = spawn('python', ['python/essentia/make_spectrogram.py', audioId]);
 ```
 
-## Architecture
-
-### Main Components
-- **`SwaraClient`** (`client.py`) - Main HTTP client with OAuth authentication
-- **Data Models** (`/classes/`) - Rich musical transcription classes (Piece, Phrase, Trajectory, etc.)
-- **Authentication** (`auth.py` + `secure_storage.py`) - OAuth flow with secure token storage
-- **Utils** (`utils.py`) - camelCase ↔ snake_case conversion
-
-### Key Classes
-- **`Piece`**: Central transcription container with multi-track support, sections, audio association
-- **`SwaraClient`**: API interface with methods for transcription CRUD, audio download, permissions
-- **Musical Elements**: Phrase, Trajectory, Pitch, Raga, Section, Meter, Articulation
-
-### Security/Authentication
-- **OAuth Flow**: Server-based OAuth (not direct Google) → local HTTP server → secure storage
-- **Storage Layers**: OS Keyring (primary) → AES-256 encrypted file (fallback) → plaintext (legacy)
-- **CSRF Protection**: State parameter validation
-- **Permissions**: User-based access control with public/private visibility
-
-## Development Patterns
+## Development Guidelines
 
 ### Code Conventions
 - **snake_case** for Python code
-- **camelCase ↔ snake_case** conversion via `pyhumps` for API communication
-- **Type hints** throughout
-- **Backwards compatibility** maintained (especially token storage migration)
+- **Type hints** encouraged for new scripts
+- **Minimal dependencies** - prefer stdlib where possible
+- **Error handling** for production server integration
 
-### Serialization Pattern
-```python
-class DataModel:
-    def to_json(self) -> Dict[str, Any]:
-        # Convert to dict with camelCase keys for API
-        
-    @staticmethod 
-    def from_json(obj: Dict[str, Any]) -> 'DataModel':
-        # Parse from API response with snake_case conversion
+### File Organization
+```
+python/
+├── essentia/          # Audio analysis scripts
+├── visualization_tools/ # Spectrogram/melograph generation  
+├── dataManagement/    # Database utilities
+├── auto_transcribe/   # ML transcription pipeline
+├── backup_scripts/    # Maintenance utilities
+├── mass_upload/       # Batch processing
+└── CLAUDE.md         # This documentation
 ```
 
-### Package Structure
-```
-python/idtap_api/
-├── __init__.py           # Public API exports
-├── client.py             # HTTP client (SwaraClient)
-├── auth.py               # OAuth authentication
-├── secure_storage.py     # Token security layers
-├── enums.py              # Instrument types, etc.
-├── utils.py              # camelCase conversion utilities
-├── classes/              # Musical data models
-└── tests/                # Unit tests
-```
+### Integration with Main Server
+- Scripts are called via Node.js `child_process.spawn()`
+- Input/output typically via command line arguments and JSON files
+- Shared data directory for audio files and generated visualizations
+- Database access via direct MongoDB connection
 
-## API Endpoints (via SwaraClient)
-- **Transcriptions**: GET/POST `/api/transcription/{id}`, GET `/api/transcriptions`
-- **Data Export**: GET `/api/transcription/{id}/json`, `/api/transcription/{id}/excel`
-- **Audio**: GET `/audio/{format}/{id}.{format}`
-- **Permissions**: POST `/api/visibility`
-- **OAuth**: GET `/oauth/authorize`, POST `/oauth/token`
+### Common Patterns
+- **Audio file paths**: Usually passed as ObjectId strings
+- **Output formats**: JSON for data, PNG/WebP for images
+- **Error handling**: Exit codes and stderr for server integration
+- **Configuration**: Environment variables for database connections
 
-## Musical Domain Knowledge
-- **Hindustani Music Focus**: Transcription system for Indian classical music
-- **Complex Data Models**: Supports microtonal pitches, ragas, articulations, meter cycles
-- **Multi-instrument**: Sitar, Vocal (Male/Female) with instrument-specific features
-- **Analytical Tools**: Trajectory categorization, phrase grouping, temporal analysis
-
-## Development Workflow
-1. **Data Model Development**: Create/modify classes in `/classes/` with proper serialization
-2. **Client Method Development**: Add HTTP methods in `client.py` with authentication
-3. **Testing**: Write unit tests (mocked) + integration tests (live API)  
-4. **Sync Dependencies**: Update both `Pipfile` and `pyproject.toml`
-5. **Build/Test/Publish**: Use standard Python packaging tools
-
-## Installation Commands
-```bash
-# Development
-pip install -e python/
-pipenv install --dev
-
-# Testing  
-pytest python/idtap_api/tests/
-python python/api_testing/api_test.py
-
-# Package management
-pipenv install package-name  # then manually add to pyproject.toml
-```
-
-This API provides a production-ready foundation for complex musical transcription analysis with modern security practices and comprehensive testing coverage.
+This collection of scripts provides the computational backend for IDTAP's audio analysis and visualization capabilities.
