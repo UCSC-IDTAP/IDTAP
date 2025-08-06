@@ -390,6 +390,30 @@ export default function apiRoutes(collections: Collections) {
     }
   });
 
+  router.get('/ragaRules', async (req, res) => {
+    try {
+      const ragaName = req.query.name;
+      
+      if (!ragaName || typeof ragaName !== 'string') {
+        return res.status(400).json({ error: 'Raga name is required' });
+      }
+
+      const query = { name: ragaName };
+      const projection = { _id: 0, rules: 1, updatedDate: 1 };
+      const options = { projection: projection };
+      const result = await collections.ragas?.findOne(query, options);
+      
+      if (!result) {
+        return res.status(404).json({ error: 'Raga not found' });
+      }
+      
+      res.json(result);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
   router.get('/instruments', async (req, res) => {
     try {
       // Get instruments from musicians collection
