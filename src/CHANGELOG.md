@@ -1,6 +1,13 @@
 # Changelog
 
 
+* fix: add GitHub Actions permissions for changelog updates [ea8dafa] (Jon Myers)
+* fix: upgrade tmp package to 0.2.4 in server package [11c510d] (Jon Myers)
+* fix: upgrade tmp package to 0.2.4 via pnpm override [013b176] (Jon Myers)
+### 2025-08-08
+
+## August 2025
+
 * refactor: remove duplicate Python API client code [9460c8d] (Jon Myers)
 * chore: bump version to 0.1.2 [1e9b2c5] (Jon Myers)
 * feat: add audio upload API and metadata endpoints [59447cd] (Jon Myers)
