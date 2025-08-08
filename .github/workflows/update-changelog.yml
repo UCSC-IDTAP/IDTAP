@@ -8,6 +8,8 @@ on:
 jobs:
   update-changelog:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Check out
@@ -15,6 +17,7 @@ jobs:
         with:
           # Need the full commit history so we can compare commits
           fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v3
