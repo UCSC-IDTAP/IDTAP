@@ -7,6 +7,7 @@ settings:
 overrides:
   brace-expansion: '>=2.0.2'
   on-headers: 1.1.0
+  tmp: '>=0.2.4'
 
 importers:
 
@@ -1322,8 +1323,8 @@ packages:
     resolution: {integrity: sha512-ujeqbceABgwMZxEJnk2HDY2DlnUZ+9oEcb1KzTVfYHio0UE6dG71n60d8D2I4qNvleWrrXpmjpt7vZeF1LnMZQ==}
     engines: {node: '>=6'}
 
-  tmp@0.2.3:
-    resolution: {integrity: sha512-nZD7m9iCPC5g0pYmcaxogYKggSfLsdxl8of3Q/oIbqCqLLIO9IAF0GWjX1z9NZRHPiXv8Wex4yDCaZsgEw0Y8w==}
+  tmp@0.2.4:
+    resolution: {integrity: sha512-UdiSoX6ypifLmrfQ/XfiawN6hkjSBpCjhKxxZcWlUUmoXLaCKQU0bx4HF/tdDK2uzRuchf1txGvrWBzYREssoQ==}
     engines: {node: '>=14.14'}
 
   to-regex-range@5.0.1:
@@ -2564,7 +2565,7 @@ snapshots:
       jszip: 3.10.1
       readable-stream: 3.6.2
       saxes: 5.0.1
-      tmp: 0.2.3
+      tmp: 0.2.4
       unzipper: 0.10.14
       uuid: 8.3.2
 
@@ -3195,7 +3196,7 @@ snapshots:
       inherits: 2.0.4
       readable-stream: 3.6.2
 
-  tmp@0.2.3: {}
+  tmp@0.2.4: {}
 
   to-regex-range@5.0.1:
     dependencies:
