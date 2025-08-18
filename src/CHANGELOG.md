@@ -1,6 +1,12 @@
 # Changelog
 
 
+* fix: correct recording duration type checking in NewPieceRegistrar [9714714] (Jon Myers)
+### 2025-08-18
+
+* fix: complete Python API audio upload processing pipeline [6d52cf3] (Jon Myers)
+### 2025-08-14
+
 * fix: add GitHub Actions permissions for changelog updates [ea8dafa] (Jon Myers)
 * fix: upgrade tmp package to 0.2.4 in server package [11c510d] (Jon Myers)
 * fix: upgrade tmp package to 0.2.4 via pnpm override [013b176] (Jon Myers)
