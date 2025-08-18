@@ -583,7 +583,7 @@ export default defineComponent({
     recordingDuration() {
       if (this.recording && typeof this.recording === 'object') {
         return this.recording.duration
-      } else if (this.recording && typeof this.recording === 'string') {
+      } else if (this.recording !== undefined && (['string', 'number'].includes(typeof this.recording))) {
         const rec = this.allEvents[this.aeIdx!].recordings[this.recording as number];
         return rec.duration
       } else {

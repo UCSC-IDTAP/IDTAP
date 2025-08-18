@@ -3,6 +3,29 @@ import { Collection, ObjectId } from 'mongodb';
 import { spawn } from 'child_process';
 import fileUpload from 'express-fileupload';
 
+// Function to run a Python script and return a Promise
+function runPythonScript(scriptPath: string, args: string[] = []): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    const pythonProcess = spawn('python3', [scriptPath, ...args]);
+
+    pythonProcess.stdout.on('data', (data) => {
+      console.log(`stdout from ${scriptPath}: ${data}`);
+    });
+
+    pythonProcess.stderr.on('data', (data) => {
+      console.error(`stderr from ${scriptPath}: ${data}`);
+    });
+
+    pythonProcess.on('close', (code) => {
+      if (code === 0) {
+        resolve();
+      } else {
+        reject(new Error(`Script ${scriptPath} exited with code ${code}`));
+      }
+    });
+  });
+}
+
 interface Collections {
   transcriptions: Collection;
   users?: Collection;
@@ -661,7 +684,7 @@ export default function apiRoutes(collections: Collections) {
         filename = newFilename;
       }
 
-      // Process audio with Python script
+      // Process audio with Python script and wait for completion
       const processArgs = ['process_audio.py', filename, audioEventID, recIdx.toString(), newId.toString()];
       const processAudio = spawn('python3', processArgs);
       
@@ -671,6 +694,18 @@ export default function apiRoutes(collections: Collections) {
 
       processAudio.on('close', (code) => {
         console.log(`process_audio finished with code ${code}`);
+        
+        // After audio processing completes, run visualization scripts
+        const script1 = './visualization_scripts/generate_melograph.py';
+        const script2 = './visualization_scripts/make_spec_data.py';
+        
+        runPythonScript(script1, [newId.toString()])
+          .then(() => console.log('Melograph generation finished'))
+          .catch(err => console.error('Error in melograph generation:', err));
+          
+        runPythonScript(script2, [newId.toString()])
+          .then(() => console.log('Spectrogram data generation finished'))
+          .catch(err => console.error('Error in spectrogram data generation:', err));
       });
 
       // Return response in expected format
