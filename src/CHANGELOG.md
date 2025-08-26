@@ -1,6 +1,10 @@
 # Changelog
 
 
+* Fix: standardize UI for editing transcriptions permissions [a199f18] (Jon Myers)
+* fix: update sha.js to 2.4.12 to resolve security vulnerability [f942083] (Jon Myers)
+### 2025-08-26
+
 * fix: correct recording duration type checking in NewPieceRegistrar [9714714] (Jon Myers)
 ### 2025-08-18
 
