@@ -145,7 +145,8 @@ export default defineComponent({
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  background-color: #202621;
+  background-color: #f5f5f5;
+  color: #333;
 }
 
 .result-text {
@@ -153,7 +154,7 @@ export default defineComponent({
 }
 
 .result-item:hover {
-  background-color: #f0f0f0;
+  background-color: #e0e0e0;
 }
 
 .no-results {
