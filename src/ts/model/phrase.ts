@@ -195,11 +195,27 @@ class Phrase {
   }
 
   assignPhraseIdx() {
-    this.trajectories.forEach(traj => traj.phraseIdx = this.pieceIdx)
+    // Update main trajectories array
+    this.trajectories.forEach(traj => traj.phraseIdx = this.pieceIdx);
+    
+    // Update trajectoryGrid for both strings
+    [0, 1].forEach(stringIdx => {
+      if (this.trajectoryGrid[stringIdx]) {
+        this.trajectoryGrid[stringIdx].forEach(traj => traj.phraseIdx = this.pieceIdx);
+      }
+    });
   }
 
   assignTrajNums() {
-    this.trajectories.forEach((traj, i) => traj.num = i)
+    // Update main trajectories array  
+    this.trajectories.forEach((traj, i) => traj.num = i);
+    
+    // Update trajectoryGrid for both strings
+    [0, 1].forEach(stringIdx => {
+      if (this.trajectoryGrid[stringIdx]) {
+        this.trajectoryGrid[stringIdx].forEach((traj, i) => traj.num = i);
+      }
+    });
   }
 
   durTotFromTrajectories() {
@@ -246,9 +262,29 @@ class Phrase {
       throw new Error('durTot is undefined')
     }
     const starts = getStarts(this.durArray).map(s => s * this.durTot!)
+    
+    // Update main trajectories array
     this.trajectories.forEach((traj, i) => {
       traj.startTime = starts[i]
-    })
+    });
+    
+    // Update trajectoryGrid for both strings
+    [0, 1].forEach(stringIdx => {
+      if (this.trajectoryGrid[stringIdx]) {
+        // For polyphonic instruments, calculate timing for each string separately
+        const stringTrajs = this.trajectoryGrid[stringIdx];
+        const stringDurs = stringTrajs.map(t => t.durTot);
+        const stringTotalDur = stringDurs.reduce((a, b) => a + b, 0);
+        
+        if (stringTotalDur > 0) {
+          const stringDurArray = stringDurs.map(d => d / stringTotalDur);
+          const stringStarts = getStarts(stringDurArray).map(s => s * stringTotalDur);
+          stringTrajs.forEach((traj, i) => {
+            traj.startTime = stringStarts[i];
+          });
+        }
+      }
+    });
   }
 
   getRange() {
@@ -340,7 +376,6 @@ class Phrase {
     const end = start + dur;
     const chikaris = this.chikariGrid[0];
     const chikarisDuring = Object.keys(chikaris).filter(k => {
-      const chikari = chikaris[k];
       const time = Number(k);
       return time >= start && time <= end
     }).map(k => {
@@ -360,6 +395,10 @@ class Phrase {
 
   get trajectories() {
     return this.trajectoryGrid[0]
+  }
+
+  set trajectories(arr: Trajectory[]) {
+    this.trajectoryGrid[0] = arr
   }
 
   get chikaris() {
@@ -427,7 +466,7 @@ class Phrase {
     return allPitches
   }
 
-  firstTrajIdxs() {
+  firstTrajIdxs(stringIdx = 0) {
     // returns the indexes of each traj that non-silent and 1) is the first of 
     // the phrase, or 2) is preceded by a silent traj, or 3) has a starting 
     // consonant, or 4) follows a traj that has an ending consonant, or 5) is a
@@ -438,7 +477,8 @@ class Phrase {
     let silentTrigger = false;
     let lastVowel: string | undefined = undefined;
     let endConsonantTrigger: boolean | undefined = undefined;
-    this.trajectories.forEach((traj, tIdx) => {
+    const trajectoryArray = this.trajectoryGrid[stringIdx] || this.trajectories;
+    trajectoryArray.forEach((traj, tIdx) => {
       if (traj.id !== 12) {
         const c1 = ct === 0;
         const c2 = silentTrigger;
@@ -457,9 +497,10 @@ class Phrase {
     return idxs
   }
 
-  trajIdxFromTime(time: number) {
+  trajIdxFromTime(time: number, stringIdx = 0) {
     const phraseTime = time - this.startTime!;
-    const trajs = this.trajectories.filter(traj => {
+    const trajectoryArray = this.trajectoryGrid[stringIdx] || this.trajectories;
+    const trajs = trajectoryArray.filter(traj => {
       const smallOffset = 1e-10;
       const a = phraseTime >= traj.startTime! - smallOffset;
       const b = phraseTime < traj.startTime! + traj.durTot;

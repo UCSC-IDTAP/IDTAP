@@ -1789,14 +1789,21 @@ export default defineComponent({
       const pIdx = this.trajTimePts[0].pIdx;
       const tIdx = this.trajTimePts[0].tIdx;
       const track = this.trajTimePts[0].track;
+      const stringIdx = this.trajTimePts[0].stringIdx ?? 0;
       const phrase = this.piece.phraseGrid[track][pIdx];
       // console.log(track, tIdx, pIdx, phrase)
       if (this.piece.instrumentation) {
         trajObj.instrumentation = this.piece.instrumentation[track];
       }
       const newTraj = new Trajectory(trajObj);
-      const trajs = phrase.trajectories;
-      const silentTraj = phrase.trajectories[tIdx];
+      
+      // Ensure trajectoryGrid exists for this string
+      if (!phrase.trajectoryGrid[stringIdx]) {
+        phrase.trajectoryGrid[stringIdx] = [];
+      }
+      
+      const trajs = phrase.trajectoryGrid[stringIdx];
+      const silentTraj = phrase.trajectoryGrid[stringIdx][tIdx];
       const st = phrase.startTime! + silentTraj.startTime!
       const startsEqual = times[0] === st;
       const endsEqual = times[times.length - 1] === st + silentTraj.durTot;
@@ -1809,7 +1816,7 @@ export default defineComponent({
         phrase.reset();
       } else if (endsEqual) { // if replaces right side of silent traj
         silentTraj.durTot = silentTraj.durTot - durTot;
-        phrase.trajectories.splice(tIdx + 1, 0, newTraj);
+        phrase.trajectoryGrid[stringIdx].splice(tIdx + 1, 0, newTraj);
         phrase.reset();
       } else { // if replaces internal portion of silent traj
         const firstDur = times[0] - st;
@@ -1829,8 +1836,8 @@ export default defineComponent({
         };
         lstObj.instrumentation = this.piece.instrumentation[track];
         const lastSilentTraj = new Trajectory(lstObj);
-        phrase.trajectories.splice(tIdx + 1, 0, newTraj);
-        phrase.trajectories.splice(tIdx + 2, 0, lastSilentTraj);
+        phrase.trajectoryGrid[stringIdx].splice(tIdx + 1, 0, newTraj);
+        phrase.trajectoryGrid[stringIdx].splice(tIdx + 2, 0, lastSilentTraj);
         phrase.reset();
       }
       
@@ -1961,15 +1968,29 @@ export default defineComponent({
     extendDurTot(dur=10) {
       // if no audio (!this.audioDBDoc), call this after each new traj is added,
       // if necessary, extend audio such that it is dur beyond end of last traj.
-      const allTrajs = this.piece.phrases
-                        .map(p => p.trajectories)
-                        .flat()
-                        .filter(t => t.id !== 12);
+      
+      // Collect trajectories from all strings for all instruments
+      const allTrajs: Trajectory[] = [];
+      const allSilences: Trajectory[] = [];
+      
+      for (let instIdx = 0; instIdx < this.piece.instrumentation.length; instIdx++) {
+        const currentInst = this.piece.instrumentation[instIdx];
+        const isPolyphonic = currentInst === Instrument.Sitar || currentInst === Instrument.Sarangi;
+        
+        if (isPolyphonic) {
+          // For polyphonic instruments, collect from both strings
+          allTrajs.push(...this.piece.allTrajectories(instIdx, 0).filter(t => t.id !== 12));
+          allTrajs.push(...this.piece.allTrajectories(instIdx, 1).filter(t => t.id !== 12));
+          allSilences.push(...this.piece.allTrajectories(instIdx, 0).filter(t => t.id === 12));
+          allSilences.push(...this.piece.allTrajectories(instIdx, 1).filter(t => t.id === 12));
+        } else {
+          // For monophonic instruments, only from string 0
+          allTrajs.push(...this.piece.allTrajectories(instIdx, 0).filter(t => t.id !== 12));
+          allSilences.push(...this.piece.allTrajectories(instIdx, 0).filter(t => t.id === 12));
+        }
+      }
+      
       const lastTraj = allTrajs[allTrajs.length - 1];
-      const allSilences = this.piece.phrases
-                        .map(p => p.trajectories)
-                        .flat()
-                        .filter(t => t.id === 12);
       const lastSilence = allSilences[allSilences.length - 1];
       const lastPhrase = this.piece.phrases[this.piece.phrases.length - 1];
       const phraseStart = this.piece.phrases[lastTraj.phraseIdx!].startTime!;

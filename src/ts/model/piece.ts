@@ -367,6 +367,38 @@ class Piece {
 	} else {
 		this.assemblageDescriptors = assemblageDescriptors;
 	}
+    
+    // Ensure string synchronization for polyphonic instruments
+    this.ensureStringSynchronization();
+  }
+
+  ensureStringSynchronization() {
+    this.phraseGrid.forEach((trackPhrases, trackIdx) => {
+      const instrument = this.instrumentation[trackIdx];
+      
+      // Only for Sitar and Sarangi
+      if (instrument === Instrument.Sitar || instrument === Instrument.Sarangi) {
+        trackPhrases.forEach(phrase => {
+          // Ensure trajectoryGrid[1] exists with silent trajectories
+          if (!phrase.trajectoryGrid[1]) {
+            phrase.trajectoryGrid[1] = [];
+          }
+          
+          if (phrase.trajectoryGrid[1].length === 0) {
+            // Create single silent trajectory matching phrase duration
+            const silentTraj = new Trajectory({
+              id: 12,
+              durTot: phrase.durTot,
+              fundID12: this.raga.fundamental
+            });
+            phrase.trajectoryGrid[1].push(silentTraj);
+            
+            // CRITICAL: Reset phrase to update indices
+            phrase.reset();
+          }
+        });
+      }
+    });
   }
 
   get phrases() {
@@ -626,12 +658,16 @@ class Piece {
   trackFromTraj(traj: Trajectory) {
     let track: number | undefined = undefined;
     for (let i = 0; i < this.instrumentation.length; i++) {
-      const trajs = this.allTrajectories(i);
-      const trajUIds = trajs.map(t => t.uniqueId);
-      if (trajUIds.includes(traj.uniqueId)) {
-        track = i;
-        break
+      // Check both strings for the trajectory
+      for (let stringIdx = 0; stringIdx < 2; stringIdx++) {
+        const trajs = this.allTrajectories(i, stringIdx);
+        const trajUIds = trajs.map(t => t.uniqueId);
+        if (trajUIds.includes(traj.uniqueId)) {
+          track = i;
+          break;
+        }
       }
+      if (track !== undefined) break;
     }
     if (track === undefined) {
       throw new Error('Trajectory not found')
@@ -642,12 +678,16 @@ class Piece {
   trackFromTrajUId(trajUId: string) {
     let track: number | undefined = undefined;
     for (let i = 0; i < this.instrumentation.length; i++) {
-      const trajs = this.allTrajectories(i);
-      const trajUIds = trajs.map(t => t.uniqueId);
-      if (trajUIds.includes(trajUId)) {
-        track = i;
-        break
+      // Check both strings for the trajectory
+      for (let stringIdx = 0; stringIdx < 2; stringIdx++) {
+        const trajs = this.allTrajectories(i, stringIdx);
+        const trajUIds = trajs.map(t => t.uniqueId);
+        if (trajUIds.includes(trajUId)) {
+          track = i;
+          break;
+        }
       }
+      if (track !== undefined) break;
     }
     if (track === undefined) {
       throw new Error('Trajectory not found')
@@ -728,15 +768,19 @@ class Piece {
     return Math.min(...this.allPitches({ pitchNumber: true }) as number[])
   }
 
-  allTrajectories(inst = 0) {
+  allTrajectories(inst = 0, stringIdx = 0) {
     const allTrajectories: Trajectory[] = [];
-    this.phraseGrid[inst].forEach(p => allTrajectories.push(...p.trajectories));
+    this.phraseGrid[inst].forEach(phrase => {
+      if (phrase.trajectoryGrid[stringIdx]) {
+        allTrajectories.push(...phrase.trajectoryGrid[stringIdx]);
+      }
+    });
     return allTrajectories
   }
 
-  trajFromTime(time: number, track: number) {
-    const trajs = this.allTrajectories(track);
-    const starts = this.trajStartTimes(track);
+  trajFromTime(time: number, track: number, stringIdx = 0) {
+    const trajs = this.allTrajectories(track, stringIdx);
+    const starts = this.trajStartTimes(track, stringIdx);
     const endTimes = starts.map((s, i) => s + trajs[i].durTot);
     const idx = findLastIndex(starts, s => time >= s);
     if (idx === -1) {
@@ -752,7 +796,11 @@ class Piece {
   }
 
   trajFromUId(uId: string, track: number) {
-    const traj = this.allTrajectories(track).find(t => t.uniqueId === uId);
+    // Check both strings for the trajectory
+    let traj = this.allTrajectories(track, 0).find(t => t.uniqueId === uId);
+    if (!traj) {
+      traj = this.allTrajectories(track, 1).find(t => t.uniqueId === uId);
+    }
     if (traj === undefined) {
       throw new Error('Trajectory not found')
     }
@@ -771,8 +819,8 @@ class Piece {
     return idx
   }
 
-  trajStartTimes(inst = 0) {
-    const trajs = this.allTrajectories(inst);
+  trajStartTimes(inst = 0, stringIdx = 0) {
+    const trajs = this.allTrajectories(inst, stringIdx);
     const durs = trajs.map(t => t.durTot);
     return durs.reduce((acc, dur, idx) => {
       if (idx < durs.length - 1) {
@@ -783,10 +831,10 @@ class Piece {
   }
 
 
-  chunkedTrajs(inst = 0, duration = 30) {
+  chunkedTrajs(inst = 0, duration = 30, stringIdx = 0) {
     // for all trajs in the piece, return an array of arrays of trajs, each
     // containing trajs that overlap with a chunk of the given duration
-    const trajs = this.allTrajectories(inst);
+    const trajs = this.allTrajectories(inst, stringIdx);
     const durs = trajs.map(t => t.durTot);
     const starts = getStarts(durs);
     const endTimes = getEnds(durs);
@@ -812,8 +860,8 @@ class Piece {
     return chunks
   }
 
-  allDisplayBols(inst = 0) {
-    const trajs = this.allTrajectories(inst);
+  allDisplayBols(inst = 0, stringIdx = 0) {
+    const trajs = this.allTrajectories(inst, stringIdx);
     const starts = this.trajStartTimes(inst);
     const idxs: number[] = [];
     const bols: BolDisplayType[] = trajs
@@ -834,8 +882,8 @@ class Piece {
     return bols
   }
 
-  allDisplaySargam(inst = 0){
-    const trajs = this.allTrajectories(inst);
+  allDisplaySargam(inst = 0, stringIdx = 0){
+    const trajs = this.allTrajectories(inst, stringIdx);
     const starts = this.trajStartTimes(inst);
     const sargams: SargamDisplayType[] = [];
     let lastPitch: { logFreq?: number, time?: number } = {
@@ -927,15 +975,16 @@ class Piece {
     return phraseDivObjs
   }
 
-  allDisplayVowels(inst = 0) {
+  allDisplayVowels(inst = 0, stringIdx = 0) {
     const vocalInsts = [Instrument.Vocal_M, Instrument.Vocal_F];
     const displayVowels: VowelDisplayType[] = []
     if (vocalInsts.includes(this.instrumentation[inst])) {
       this.phraseGrid[inst].forEach(phrase => {
-        const firstTrajIdxs = phrase.firstTrajIdxs();
+        const firstTrajIdxs = phrase.firstTrajIdxs(stringIdx);
         const phraseStart = phrase.startTime!;
         firstTrajIdxs.forEach(tIdx => {
-          const traj = phrase.trajectories[tIdx];
+          if (phrase.trajectoryGrid[stringIdx] && phrase.trajectoryGrid[stringIdx][tIdx]) {
+            const traj = phrase.trajectoryGrid[stringIdx][tIdx];
           const time = phraseStart + traj.startTime!;
           const logFreq = traj.logFreqs[0];
           const withC = traj.startConsonant !== undefined;
@@ -957,6 +1006,7 @@ class Piece {
             englishText,
             uId
           })
+          }
         })
       })
     } else {
@@ -965,10 +1015,10 @@ class Piece {
     return displayVowels
   }
 
-  allDisplayEndingConsonants(inst = 0) {
+  allDisplayEndingConsonants(inst = 0, stringIdx = 0) {
     const vocalInsts = ['Vocal (M)', 'Vocal (F)'];
     const displayEndingConsonants: ConsonantDisplayType[] = [];
-    const trajs = this.allTrajectories(inst);
+    const trajs = this.allTrajectories(inst, stringIdx);
     trajs.forEach((t, i) => {
       if (t.endConsonant !== undefined) {
         const phrase = this.phraseGrid[inst].find(p => p.trajectories.includes(t));
@@ -1025,8 +1075,8 @@ class Piece {
     return chunks
   }
 
-  chunkedDisplayConsonants(inst = 0, duration = 30) {
-    const displayEndingConsonants = this.allDisplayEndingConsonants(inst);
+  chunkedDisplayConsonants(inst = 0, duration = 30, stringIdx = 0) {
+    const displayEndingConsonants = this.allDisplayEndingConsonants(inst, stringIdx);
     const chunks: ConsonantDisplayType[][] = [];
     for (let i = 0; i < this.durTot!; i += duration) {
       const chunk = displayEndingConsonants.filter(c => {
@@ -1049,8 +1099,8 @@ class Piece {
     return chunks
   }
 
-  chunkedDisplaySargam(inst = 0, duration = 30) {
-    const displaySargam = this.allDisplaySargam(inst);
+  chunkedDisplaySargam(inst = 0, duration = 30, stringIdx = 0) {
+    const displaySargam = this.allDisplaySargam(inst, stringIdx);
     const chunks: SargamDisplayType[][] = [];
     for (let i = 0; i < this.durTot!; i += duration) {
       const chunk = displaySargam.filter(s => {
@@ -1061,8 +1111,8 @@ class Piece {
     return chunks
   }
 
-  chunkedDisplayBols(inst = 0, duration = 30) {
-    const displayBols = this.allDisplayBols(inst);
+  chunkedDisplayBols(inst = 0, duration = 30, stringIdx = 0) {
+    const displayBols = this.allDisplayBols(inst, stringIdx);
     const chunks: BolDisplayType[][] = [];
     for (let i = 0; i < this.durTot!; i += duration) {
       const chunk = displayBols.filter(b => {
@@ -1097,10 +1147,12 @@ class Piece {
     return chunks
   }
 
-  mostRecentTraj(time: number, inst: number = 0) {
-    const trajs = this.allTrajectories(inst);
+  mostRecentTraj(time: number, inst: number = 0, stringIdx = 0) {
+    const trajs = this.allTrajectories(inst, stringIdx);
     const endTimes = trajs.map(t => {
-      const phrase = this.phraseGrid[inst].find(p => p.trajectories.includes(t));
+      const phrase = this.phraseGrid[inst].find(p => 
+        p.trajectoryGrid[stringIdx] && p.trajectoryGrid[stringIdx].includes(t)
+      );
       const phraseStart = phrase?.startTime;
       return phraseStart! + t.startTime! + t.durTot!
     })
@@ -1115,11 +1167,13 @@ class Piece {
 
   durationsOfFixedPitches({ 
     inst = 0, 
-    outputType = 'pitchNumber' }: {
+    outputType = 'pitchNumber',
+    stringIdx = 0 }: {
       inst?: number,
-      outputType?: OutputType
+      outputType?: OutputType,
+      stringIdx?: number
     } = {}) {
-    const trajs = this.allTrajectories(inst);
+    const trajs = this.allTrajectories(inst, stringIdx);
     return durationsOfFixedPitches(trajs, { 
       inst: inst, 
       outputType: outputType 
@@ -1273,12 +1327,17 @@ class Piece {
     // fix articulations named slide at start
     piece.phraseGrid.forEach((phrases) => {
       phrases.forEach((phrase) => {
-        phrase.trajectories.forEach((traj) => {
+        // Handle both strings
+        [0, 1].forEach(stringIdx => {
+          if (phrase.trajectoryGrid[stringIdx]) {
+            phrase.trajectoryGrid[stringIdx].forEach((traj) => {
           const arts = traj.articulations;
           const a1 = arts[0] && arts[0].name === 'slide';
           const a2 = arts['0.00'] && arts['0.00'].name === 'slide';
           if (a1 || a2) {
             arts['0.00'].name = 'pluck';
+          }
+            });
           }
         });
         phrase.consolidateSilentTrajs();
@@ -1287,6 +1346,8 @@ class Piece {
 
     piece.durArrayFromPhrases();
     piece.sectionStartsGrid = piece.sectionStartsGrid.map((arr) => [...new Set(arr)]);
+    // Ensure string synchronization for polyphonic instruments
+    piece.ensureStringSynchronization();
     return piece;
   }
 }

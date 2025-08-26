@@ -24,6 +24,18 @@
         @hideTooltip='$emit("hideTooltip")'
         @contextmenu='handleContextMenuClick'
       />
+      <ModeSelector
+        v-if='showPolyToggle'
+        class='modeSelector poly-toggle'
+        :height='modeSelectorHeight'
+        :selectedMode='currentStringIdx'
+        :enum='polyModeOptions'
+        :noneEnumItem='-999'
+        :tooltipTexts='polyModeTexts'
+        @update:selectedMode='currentStringIdx = $event'
+        @showTooltip='$emit("showTooltip", $event)'
+        @hideTooltip='$emit("hideTooltip")'
+      />
     </div>
     <div class='wrapper'>
       <div class='xAxisContainer' ref='xAxisContainer'>
@@ -100,6 +112,7 @@
               :width='scaledWidth'
               :height='scaledHeight'
               :showTranscription='showTranscription'
+              :currentStringIdx='currentStringIdx'
               :xScale='xScale'
               :yScale='yScale'
               :lowOctOffset='lowOctOffset'
@@ -548,6 +561,38 @@ export default defineComponent({
       return props.instTracks.map(it => `Track ${ it.idx + 1 }: ${ it.inst }`);
     })
 
+    // NEW: Polyphonic mode state and computed properties
+    const currentStringIdx = ref(0 as 0 | 1);
+    const showPolyToggle = computed(() => {
+      if (props.editingInstIdx === -1 || !props.instTracks[props.editingInstIdx]) {
+        return false;
+      }
+      const currentInst = props.instTracks[props.editingInstIdx]?.inst;
+      return currentInst === Instrument.Sitar || currentInst === Instrument.Sarangi;
+    });
+    const polyModeOptions = computed((): Record<string, number> => {
+      if (props.editingInstIdx === -1 || !props.instTracks[props.editingInstIdx]) {
+        return { 'Main': 0, 'Second': 1 };
+      }
+      const currentInst = props.instTracks[props.editingInstIdx]?.inst;
+      if (currentInst === Instrument.Sitar) {
+        return { 'Main': 0, 'Jor': 1 };
+      } else {
+        return { 'Main': 0, 'Second': 1 };
+      }
+    });
+    const polyModeTexts = computed(() => {
+      if (props.editingInstIdx === -1 || !props.instTracks[props.editingInstIdx]) {
+        return ['Main String Only', 'Second String Only'];
+      }
+      const currentInst = props.instTracks[props.editingInstIdx]?.inst;
+      if (currentInst === Instrument.Sitar) {
+        return ['Main String Only', 'Jor String Only'];
+      } else {
+        return ['Main String Only', 'Second String Only'];
+      }
+    });
+
     const clientWidth = ref(0);
     const modeSelectorHeight = 30;
     const editorModeTexts = computed(() => {
@@ -724,6 +769,17 @@ export default defineComponent({
         contextMenuClosed.value = true;
         showEditInstrumentation.value = false;
       }
+      // NEW: 'J' key to toggle between strings for Sitar/Sarangi
+      if (e.key === 'j' || e.key === 'J') {
+        if (props.editingInstIdx !== -1 && props.instTracks[props.editingInstIdx]) {
+          const currentInst = props.instTracks[props.editingInstIdx]?.inst;
+          if (!e.metaKey && !e.ctrlKey && !e.altKey && 
+              (currentInst === Instrument.Sitar || currentInst === Instrument.Sarangi)) {
+            currentStringIdx.value = currentStringIdx.value === 0 ? 1 : 0;
+            e.preventDefault();
+          }
+        }
+      }
     };
     const handleShowTooltip = (e: MouseEvent) => {
       if (contextMenuClosed.value) emit('showTooltip', e);
@@ -875,6 +931,11 @@ export default defineComponent({
       updateXAxisPhraseLabels,
       onWheel,
       onTouchMove,
+      // NEW: Polyphonic mode properties
+      currentStringIdx,
+      showPolyToggle,
+      polyModeOptions,
+      polyModeTexts,
 
     }
   }
@@ -1032,9 +1093,11 @@ export default defineComponent({
 }
 
 .modeSelector {
-  width: 100%;
+  width: fit-content;  /* Changed from 100% to fit content */
   height: var(--modeSelectorHeight);
 }
+
+
 
 .trackOption {
   width: 30px;
@@ -1046,8 +1109,11 @@ export default defineComponent({
 .topRow {
   display: flex;
   flex-direction: row;
+  align-items: center;          /* Center align vertically */
+  gap: 60px;                    /* 60px spacing between mode selectors */
   width: 100%;
-  background-color: #202621
+  background-color: #202621;
+  padding-left: 0;              /* Keep leftmost aligned to left edge */
 }
 
 </style>

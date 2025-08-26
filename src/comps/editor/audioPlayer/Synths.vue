@@ -202,9 +202,12 @@ export default defineComponent({
         // initialize nodes
         const sitarNode = new AudioWorkletNode(props.ac, 'karplusStrong') as 
           PluckNodeType;
+        const jorNode = new AudioWorkletNode(props.ac, 'karplusStrong') as 
+          PluckNodeType;                                                // NEW: jor string node
         const sDCOffsetNode = props.ac.createBiquadFilter();
         const lpNode = props.ac.createBiquadFilter();
         const intSitarGainNode = props.ac.createGain();
+        const intJorGainNode = props.ac.createGain();                  // NEW: internal jor gain
         const extSitarGainNode = props.ac.createGain();
         const mixChikariNode = props.ac.createGain();
         const intChikariGainNode = props.ac.createGain();
@@ -218,14 +221,18 @@ export default defineComponent({
         const capture = new AudioWorkletNode(props.ac, 'captureAudio', capOpts) as 
           CaptureNodeType;
         const sitarLoopSourceNode = props.ac.createBufferSource();
+        const jorLoopSourceNode = props.ac.createBufferSource();        // NEW: jor loop source
         const chikariLoopSourceNode = props.ac.createBufferSource();
         const sitarLoopGainNode = props.ac.createGain();
+        const jorLoopGainNode = props.ac.createGain();                   // NEW: jor loop gain
         const chikariLoopGainNode = props.ac.createGain();
         const sonifyNode = props.ac.createGain();
 
         // map parameters
         sitarNode.frequency = sitarNode.parameters.get('Frequency');
         sitarNode.cutoff = sitarNode.parameters.get('Cutoff');
+        jorNode.freq = jorNode.parameters.get('Frequency');              // NEW: jor parameters
+        jorNode.cutoff = jorNode.parameters.get('Cutoff');
         chikariNode.freq0 = chikariNode.parameters.get('freq0');
         chikariNode.freq1 = chikariNode.parameters.get('freq1');
         chikariNode.freq2 = chikariNode.parameters.get('freq2');
@@ -248,16 +255,19 @@ export default defineComponent({
         const fund = props.piece.raga.fundamental;
         lpNode.frequency.value = fund * 2 ** 3
         sitarNode.cutoff!.value = control.params.dampen!
-        outGainNode.gain.value = control.params.outGain!;
+        outGainNode.gain.value = control.params.outGain! * 0.707;            // -3dB compensation
         intSitarGainNode.gain.value = 0;
+        intJorGainNode.gain.value = 0;                                        // NEW: jor starts at 0
         extSitarGainNode.gain.value = control.params.extSitarGain!;
         mixChikariNode.gain.value = 1;
         intChikariGainNode.gain.value = 0;
         extChikariGainNode.gain.value = control.params.extChikariGain!;
         chikariNode.cutoff!.value = 0.7;
         sitarLoopGainNode.gain.value = 0;
+        jorLoopGainNode.gain.value = 0;                                      // NEW: jor loop gain
         chikariLoopGainNode.gain.value = 0;
         sitarLoopSourceNode.loop = true;
+        jorLoopSourceNode.loop = true;                                       // NEW: jor loop source
         chikariLoopSourceNode.loop = true;
         chikariNode.freq0!.value = control.params.chikariFreq0!;
         chikariNode.freq1!.value = control.params.chikariFreq1!;
@@ -272,7 +282,7 @@ export default defineComponent({
         chikariNode.stringGain3!.value = 1.0;
         sonifyNode.gain.value = props.instTracks[control.idx].sounding ? 1 : 0;
 
-        // connect nodes
+        // connect nodes - main sitar string
         sitarNode
           .connect(sDCOffsetNode)
           .connect(lpNode)
@@ -281,6 +291,10 @@ export default defineComponent({
           .connect(outGainNode)
           .connect(sonifyNode)
           .connect(mixNode);
+        // NEW: jor string routing (bypasses filters, shares external gain)
+        jorNode
+          .connect(intJorGainNode)
+          .connect(extSitarGainNode);                                     // converges at shared external gain
         chikariNode.connect(mixChikariNode, 0);
         chikariNode.connect(mixChikariNode, 1);
         mixChikariNode
@@ -291,25 +305,32 @@ export default defineComponent({
         sitarLoopSourceNode
           .connect(sitarLoopGainNode)
           .connect(extSitarGainNode);
+        jorLoopSourceNode                                                 // NEW: jor loop connections
+          .connect(jorLoopGainNode)
+          .connect(extSitarGainNode);                                     // shares sitar external gain
         chikariLoopSourceNode
           .connect(chikariLoopGainNode)
           .connect(extChikariGainNode);
 
         return {
           sitarNode,
+          jorNode,                                                        // NEW
           chikariNode,
           sDCOffsetNode,
           lpNode,
           intSitarGainNode,
+          intJorGainNode,                                                 // NEW
           intChikariGainNode,
           extChikariGainNode,
           outGainNode,
           extSitarGainNode,
           idx: control.idx,
           sitarLoopSourceNode,
+          jorLoopSourceNode,                                              // NEW
           chikariLoopSourceNode,
           capture,
           sitarLoopGainNode,
+          jorLoopGainNode,                                                // NEW
           chikariLoopGainNode,
           sonifyNode
         }
@@ -330,19 +351,27 @@ export default defineComponent({
         // initialize nodes
         const sarangiNode = new AudioWorkletNode(props.ac, 'sarangi') as 
           SarangiNodeType;
+        const secondNode = new AudioWorkletNode(props.ac, 'sarangi') as 
+          SarangiNodeType;                                                // NEW: second string node
         const intGain = props.ac.createGain();
+        const intSecondGain = props.ac.createGain();                      // NEW: second string internal gain
         const extGain = props.ac.createGain();
         const capOpts = { numberOfInputs: 2, numberOfOutputs: 0 };
         const capture = new AudioWorkletNode(props.ac, 'captureAudio', capOpts) as 
         CaptureNodeType;
         const sarangiLoopSourceNode = props.ac.createBufferSource();
+        const secondLoopSourceNode = props.ac.createBufferSource();       // NEW: second loop source
         const sarangiLoopGainNode = props.ac.createGain();
+        const secondLoopGainNode = props.ac.createGain();                 // NEW: second loop gain
         const sonifyNode = props.ac.createGain();
         
         // map parameters
         sarangiNode.freq = sarangiNode.parameters.get('Frequency');
         sarangiNode.bowGain = sarangiNode.parameters.get('BowGain');
         sarangiNode.gain = sarangiNode.parameters.get('Gain');
+        secondNode.freq = secondNode.parameters.get('Frequency');         // NEW: second string parameters
+        secondNode.bowGain = secondNode.parameters.get('BowGain');
+        secondNode.gain = secondNode.parameters.get('Gain');
         capture.bufferSize = capture.parameters.get('BufferSize');
         capture.active = capture.parameters.get('Active');
         capture.cancel = capture.parameters.get('Cancel');
@@ -350,30 +379,46 @@ export default defineComponent({
         // set parameters
         sarangiNode.bowGain!.value = 0;
         sarangiNode.gain!.value = 1;
+        secondNode.bowGain!.value = 0;                                    // NEW: second string parameters
+        secondNode.gain!.value = 1;
         intGain.gain.value = 0;
+        intSecondGain.gain.value = 0;                                     // NEW: second string internal gain
         extGain.gain.value = control.params.extSarangiGain!;
         sarangiLoopGainNode.gain.value = 0;
+        secondLoopGainNode.gain.value = 0;                                // NEW: second loop gain
         sarangiLoopSourceNode.loop = true;
+        secondLoopSourceNode.loop = true;                                 // NEW: second loop source
         sonifyNode.gain.value = props.instTracks[control.idx].sounding ? 1 : 0;
 
-        // connect nodes
+        // connect nodes - main string
         sarangiNode
           .connect(intGain)
           .connect(extGain)
           .connect(sonifyNode)
           .connect(mixNode);
+        // NEW: second string routing
+        secondNode
+          .connect(intSecondGain)
+          .connect(extGain);                                              // converges with main at extGain
         sarangiLoopSourceNode
           .connect(sarangiLoopGainNode)
+          .connect(extGain);
+        secondLoopSourceNode                                              // NEW: second loop connections
+          .connect(secondLoopGainNode)
           .connect(extGain);
 
         return {
           sarangiNode,
+          secondNode,                                                     // NEW
           intGain,
+          intSecondGain,                                                  // NEW
           extGain,
           idx: control.idx,
           capture, 
           sarangiLoopSourceNode,
+          secondLoopSourceNode,                                           // NEW
           sarangiLoopGainNode,
+          secondLoopGainNode,                                             // NEW
           sonifyNode
         }
       } catch (e) {
@@ -640,27 +685,88 @@ export default defineComponent({
         lpFreq.setValueCurveAtTime(lpEnv, startTime, duration);
       }
     }
+    // NEW: Jor string frequency contour (bypasses filters)
+    const playSitarJorFreqContour = (
+        traj: Trajectory, 
+        startTime: number,
+        synth: SitarSynthType,
+        first: boolean,
+      ) => {
+      const node = synth.jorNode;  // Uses jor node instead of main sitar node
+      const track = synth.idx;
+      const valueDur = 0.02;
+      const endTime = startTime + traj.durTot;
+      const valueCt = Math.round((endTime - startTime) / valueDur);
+      const freq = node.frequency!;  // Same as main sitar frequency parameter
+      const verySmall = 0.000000000001;
+      if (first) {
+        const offset = startTime < now() ? now() - startTime : 0;
+        const start = startTime + offset;
+        const duration = endTime - start - verySmall;
+        if (duration < 0) {
+          throw new Error('Negative duration');
+        }
+        // Use same envelope but for jor string
+        freq.setValueCurveAtTime(firstEnvelopes[track], start, duration);
+      } else {
+        const env = new Float32Array(valueCt);
+        const transp = 2 ** (props.transposition / 1200);
+        for (let i = 0; i < valueCt; i++) {
+          env[i] = transp * traj.compute(i / (valueCt - 1));
+        }
+        const duration = endTime - startTime - verySmall;
+        if (duration < 0) {
+          throw new Error('Negative duration');
+        }
+        freq.setValueCurveAtTime(env, startTime, duration);
+      }
+    }
     const playSitarTrajs = (synth: SitarSynthType) => {
       const realNow = now();
-      // gains
+      const fundamental = props.piece.raga.fundamental;
+      
+      // Main string gains
       synth.intSitarGainNode.gain.setValueAtTime(0, realNow);
       synth.intSitarGainNode.gain.linearRampToValueAtTime(1, realNow + lagTime);
       synth.intChikariGainNode.gain.setValueAtTime(0, realNow);
       synth.intChikariGainNode.gain.linearRampToValueAtTime(1, realNow + lagTime);
-      // trajs
-      const trajs = props.piece.allTrajectories(synth.idx);
-      const starts = getStarts(trajs.map(t => t.durTot));
-      const ends = getEnds(trajs.map(t => t.durTot));
-      const startIdx = starts.findIndex(s => s >= props.curPlayTime);
-      const remainingTrajs = trajs.slice(startIdx);
-      remainingTrajs.forEach((traj, tIdx) => {
-        const i = tIdx + startIdx;
+      
+      // Main string trajectories
+      const mainTrajs = props.piece.allTrajectories(synth.idx, 0);
+      const mainStarts = getStarts(mainTrajs.map(t => t.durTot));
+      const mainStartIdx = mainStarts.findIndex(s => s >= props.curPlayTime);
+      const remainingMainTrajs = mainTrajs.slice(mainStartIdx);
+      remainingMainTrajs.forEach((traj, tIdx) => {
+        const i = tIdx + mainStartIdx;
         if (traj.id !== 12) {
-          const startTime = realNow + starts[i] - props.curPlayTime;
+          const startTime = realNow + mainStarts[i] - props.curPlayTime;
           playSitarArticulations(traj, startTime, synth.sitarNode);
           playSitarFreqContour(traj, startTime, synth, i === 0);
         }
       });
+
+      // NEW: Jor string - check for non-silent content
+      const jorTrajs = props.piece.allTrajectories(synth.idx, 1);
+      const hasJorContent = jorTrajs.some(traj => traj.id !== 12);
+      
+      if (hasJorContent) {
+        // Set up jor gain ramping (same pattern as main)
+        synth.intJorGainNode.gain.setValueAtTime(0, realNow);
+        synth.intJorGainNode.gain.linearRampToValueAtTime(1, realNow + lagTime);
+        
+        // Play jor trajectories
+        const jorStarts = getStarts(jorTrajs.map(t => t.durTot));
+        const jorStartIdx = jorStarts.findIndex(s => s >= props.curPlayTime);
+        const remainingJorTrajs = jorTrajs.slice(jorStartIdx);
+        remainingJorTrajs.forEach((traj, tIdx) => {
+          const i = tIdx + jorStartIdx;
+          if (traj.id !== 12) {
+            const startTime = realNow + jorStarts[i] - props.curPlayTime;
+            playSitarArticulations(traj, startTime, synth.jorNode);
+            playSitarJorFreqContour(traj, startTime, synth, i === 0);
+          }
+        });
+      }
       // chikaris
       
       props.piece.phraseGrid[synth.idx].forEach((phrase: Phrase, pIdx: number) => {
@@ -705,26 +811,86 @@ export default defineComponent({
         bowGain.linearRampToValueAtTime(0, startTime + durTot);
       }
     };
+    // NEW: Second string playback for Sarangi  
+    const playSarangiSecondTraj = (
+      traj: Trajectory,
+      startTime: number,
+      synth: SarangiSynthType,
+      fromSil = false,
+      toSil = false
+    ) => {
+      const valueDur = 0.02;
+      const durTot = traj.durTot;
+      const valueCt = Math.round(durTot / valueDur);
+      const freq = synth.secondNode.freq!;  // Use second string node
+      const bowGain = synth.secondNode.bowGain!;
+      const verySmall = 0.000000000001;
+      const env = new Float32Array(valueCt);
+      const gainEnv = traj.automation!.generateValueCurve(valueDur, durTot);
+      const transp = 2 ** (props.transposition / 1200);
+      for (let i = 0; i < valueCt; i++) {
+        env[i] = transp * traj.compute(i / (valueCt - 1));
+      }
+      freq.setValueCurveAtTime(env, startTime, durTot - verySmall);
+      bowGain.setValueCurveAtTime(gainEnv, startTime, durTot - verySmall);
+      if (fromSil) {
+        bowGain.setValueAtTime(0, startTime);
+        bowGain.linearRampToValueAtTime(0.5, startTime + 0.01);
+      }
+      if (toSil) {
+        bowGain.setValueAtTime(0.5, startTime + durTot - 0.01);
+        bowGain.linearRampToValueAtTime(0, startTime + durTot);
+      }
+    };
     const playSarangiTrajs = (synth: SarangiSynthType) => {
       const realNow = now();
+      
+      // Main string gains
       synth.intGain.gain.setValueAtTime(0, realNow);
       synth.intGain.gain.linearRampToValueAtTime(1, realNow + lagTime);
-      const trajs = props.piece.allTrajectories(synth.idx);
-      const starts = getStarts(trajs.map(t => t.durTot));
-      const ends = getEnds(trajs.map(t => t.durTot));
-      const startIdx = starts.findIndex(s => s >= props.curPlayTime);
-      const remainingTrajs = trajs.slice(startIdx);
-      remainingTrajs.forEach((traj, tIdx) => {
-        const i = tIdx + startIdx;
+      
+      // Main string trajectories
+      const mainTrajs = props.piece.allTrajectories(synth.idx, 0);
+      const mainStarts = getStarts(mainTrajs.map(t => t.durTot));
+      const mainStartIdx = mainStarts.findIndex(s => s >= props.curPlayTime);
+      const remainingMainTrajs = mainTrajs.slice(mainStartIdx);
+      remainingMainTrajs.forEach((traj, tIdx) => {
+        const i = tIdx + mainStartIdx;
         if (traj.id !== 12) {
-          const st = realNow + starts[i] - props.curPlayTime;
-          const lastTraj = remainingTrajs[tIdx - 1];
+          const st = realNow + mainStarts[i] - props.curPlayTime;
+          const lastTraj = remainingMainTrajs[tIdx - 1];
           const fromSil = tIdx === 0 || !lastTraj || lastTraj.id === 12;
-          const last = tIdx === remainingTrajs.length - 1;
-          const toSil = last || remainingTrajs[tIdx + 1].id === 12;
+          const last = tIdx === remainingMainTrajs.length - 1;
+          const toSil = last || remainingMainTrajs[tIdx + 1].id === 12;
           playSarangiTraj(traj, st, synth, fromSil, toSil);
         }
-      })
+      });
+
+      // NEW: Second string - check for non-silent content
+      const secondTrajs = props.piece.allTrajectories(synth.idx, 1);
+      const hasSecondContent = secondTrajs.some(traj => traj.id !== 12);
+      
+      if (hasSecondContent) {
+        // Set up second string gain ramping
+        synth.intSecondGain.gain.setValueAtTime(0, realNow);
+        synth.intSecondGain.gain.linearRampToValueAtTime(1, realNow + lagTime);
+        
+        // Play second string trajectories
+        const secondStarts = getStarts(secondTrajs.map(t => t.durTot));
+        const secondStartIdx = secondStarts.findIndex(s => s >= props.curPlayTime);
+        const remainingSecondTrajs = secondTrajs.slice(secondStartIdx);
+        remainingSecondTrajs.forEach((traj, tIdx) => {
+          const i = tIdx + secondStartIdx;
+          if (traj.id !== 12) {
+            const st = realNow + secondStarts[i] - props.curPlayTime;
+            const lastTraj = remainingSecondTrajs[tIdx - 1];
+            const fromSil = tIdx === 0 || !lastTraj || lastTraj.id === 12;
+            const last = tIdx === remainingSecondTrajs.length - 1;
+            const toSil = last || remainingSecondTrajs[tIdx + 1].id === 12;
+            playSarangiSecondTraj(traj, st, synth, fromSil, toSil);
+          }
+        });
+      }
     };
     const playKlattTraj = (
       traj: Trajectory, 

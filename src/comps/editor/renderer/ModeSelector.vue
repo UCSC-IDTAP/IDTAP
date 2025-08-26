@@ -122,7 +122,7 @@ export default defineComponent({
 .modeSelectorMain {
   display: flex;
   flex-direction: row;
-  width: 100%;
+  width: fit-content;  /* Changed from 100% to fit content */
   height: 100%;
   background-color: #202621
 }
