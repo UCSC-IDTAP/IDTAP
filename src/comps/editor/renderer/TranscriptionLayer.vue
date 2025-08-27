@@ -825,10 +825,13 @@ export default defineComponent({
           if (renderObj === undefined) return;
           const track = renderObj!.track;
           const selector = `.traj.uId${traj.uniqueId!}`;
+          const isSecondString = checkIfSecondString(traj, track);
+          const baseColor = props.instTracks[track].color;
+          const color = isSecondString ? adjustColorForSecondString(baseColor) : baseColor;
           d3.selectAll(selector)
-            .attr('stroke', props.instTracks[track].color)
+            .attr('stroke', color)
           d3.selectAll(selector + '.pluck')
-            .attr('fill', props.instTracks[track].color);
+            .attr('fill', color);
           const vowelSelector = `.vowelLabel.uId${traj.uniqueId}`;
           d3.selectAll(vowelSelector)
             .attr('stroke', 'black')
@@ -3140,8 +3143,8 @@ export default defineComponent({
         const group = phrase.getGroupFromId(traj.groupId!)!;
         const firstTraj = group.trajectories[0];
         const lastTraj = group.trajectories[group.trajectories.length - 1];
-        if (phrase.trajectories.length > lastTraj.num! + 1) {
-          const nextTraj = phrase.trajectories[lastTraj.num! + 1];
+        const nextTraj = findNextTrajectoryOnSameString(lastTraj, track);
+        if (nextTraj) {
           if (nextTraj.id === 12) {
             groupInsertSilenceRight = true;
           } 
@@ -3160,8 +3163,8 @@ export default defineComponent({
             }
           }
         }
-        if (firstTraj.num! > 0) {
-          const prevTraj = phrase.trajectories[firstTraj.num! - 1];
+        const prevTraj = findPreviousTrajectoryOnSameString(firstTraj, track);
+        if (prevTraj) {
           if (prevTraj.id === 12) {
             groupInsertSilenceLeft = true;
           }
@@ -4155,19 +4158,21 @@ export default defineComponent({
         logFreq = getClosest(logSargamVals.value, logFreq);
       } else {
 
-        if (idx === 0 && traj.num! > 1) {
-          const silTraj = phrase.trajectories[traj.num! - 1];
-          const prevTraj = phrase.trajectories[traj.num! - 2];
-          if (prevTraj.id !== 12 && silTraj.id === 12) {
-            const prevPitch = prevTraj.pitches[prevTraj.pitches.length - 1];
+        if (idx === 0) {
+          // Find previous trajectory on same string for pitch snapping
+          const prevTraj = findPreviousTrajectoryOnSameString(traj, track);
+          const prevPrevTraj = prevTraj ? findPreviousTrajectoryOnSameString(prevTraj, track) : undefined;
+          const silTraj = prevTraj;
+          if (prevPrevTraj && prevPrevTraj.id !== 12 && silTraj && silTraj.id === 12) {
+            const prevPitch = prevPrevTraj.pitches[prevPrevTraj.pitches.length - 1];
             const diff = Math.abs(logFreq - prevPitch.logFreq);
-            const prevTime = phrase.startTime! + prevTraj.startTime! + prevTraj.durTot;
+            const prevTime = phrase.startTime! + prevPrevTraj.startTime! + prevPrevTraj.durTot;
             const timeDiff = Math.abs(newTime - prevTime);
             if (diff < 0.05 && timeDiff < minTrajDur) {
               logFreq = prevPitch.logFreq;
               newTime = prevTime;
             }
-          } else if (silTraj.id !== 12) {
+          } else if (silTraj && silTraj.id !== 12) {
             const silPitch = silTraj.pitches[0];
             const diff = Math.abs(logFreq - silPitch.logFreq);
             if (diff < 0.05) {
@@ -4175,19 +4180,21 @@ export default defineComponent({
             }
           }
         }
-        if (idx === traj.pitches.length - 1 && traj.num! < phrase.trajectories.length - 2) {
-          const nextTraj = phrase.trajectories[traj.num! + 2];
-          const silTraj = phrase.trajectories[traj.num! + 1];
-          if (nextTraj.id !== 12 && silTraj.id === 12) {
-            const nextPitch = nextTraj.pitches[0];
+        if (idx === traj.pitches.length - 1) {
+          // Find next trajectory on same string for pitch snapping
+          const nextTraj = findNextTrajectoryOnSameString(traj, track);
+          const nextNextTraj = nextTraj ? findNextTrajectoryOnSameString(nextTraj, track) : undefined;
+          const silTraj = nextTraj;
+          if (nextNextTraj && nextNextTraj.id !== 12 && silTraj && silTraj.id === 12) {
+            const nextPitch = nextNextTraj.pitches[0];
             const diff = Math.abs(logFreq - nextPitch.logFreq);
-            const nextTime = phrase.startTime! + nextTraj.startTime!;
+            const nextTime = phrase.startTime! + nextNextTraj.startTime!;
             const timeDiff = Math.abs(nextTime - newTime);
             if (diff < 0.05 && timeDiff < minTrajDur) {
               logFreq = nextPitch.logFreq;
               newTime = nextTime;
             }
-          } else if (silTraj.id !== 12) {
+          } else if (silTraj && silTraj.id !== 12) {
             const silPitch = silTraj.pitches[0];
             const diff = Math.abs(logFreq - silPitch.logFreq);
             if (diff < 0.05) {
@@ -4715,10 +4722,13 @@ export default defineComponent({
         });
         const track = renderObj!.track;
         const selector = `.traj.uId${traj.uniqueId!}`;
+        const isSecondString = checkIfSecondString(traj, track);
+        const baseColor = props.instTracks[track].color;
+        const color = isSecondString ? adjustColorForSecondString(baseColor) : baseColor;
         d3.selectAll(selector)
-          .attr('stroke', props.instTracks[track].color)
+          .attr('stroke', color)
         d3.selectAll(selector + '.pluck')
-          .attr('fill', props.instTracks[track].color)
+          .attr('fill', color)
         d3.selectAll(selector + '.consonantSymbol')
           .attr('fill', props.instTracks[track].color)
         renderObj!.selectedStatus = false;
@@ -5224,13 +5234,14 @@ export default defineComponent({
         // traj's end time, and set newLogFreq to the previous traj's last pitch.logFreq
         // idx is about the dot, traj index is traj.num
         if (idx === 0) {
-          if (traj.num! > 1) {
-            const silTraj = phrase.trajectories[traj.num! - 1];
-            const prevTraj = phrase.trajectories[traj.num! - 2];
-            if (silTraj.id === 12 && prevTraj.id !== 12) {
-              const prevPitch = prevTraj.pitches[prevTraj.pitches.length - 1];
+          const prevTraj = findPreviousTrajectoryOnSameString(traj, track);
+          const prevPrevTraj = prevTraj ? findPreviousTrajectoryOnSameString(prevTraj, track) : undefined;
+          const silTraj = prevTraj;
+          if (prevPrevTraj) {
+            if (silTraj && silTraj.id === 12 && prevPrevTraj.id !== 12) {
+              const prevPitch = prevPrevTraj.pitches[prevPrevTraj.pitches.length - 1];
               const diff = Math.abs(newLogFreq - prevPitch.logFreq);
-              const prevTime = phrase.startTime! + prevTraj.startTime! + prevTraj.durTot;
+              const prevTime = phrase.startTime! + prevPrevTraj.startTime! + prevPrevTraj.durTot;
               const timeDiff = Math.abs(newTime - prevTime);
               if (diff < 0.05 && timeDiff < minTrajDur) {
                 newTime = prevTime;
@@ -5250,13 +5261,14 @@ export default defineComponent({
         d3.select(`#dragDot${traj.uniqueId}_${idx}`)
           .attr('cx', x);
         if (idx === traj.pitches.length - 1) {
-          if (traj.num! < phrase.trajectories.length - 2) {
-            const silTraj = phrase.trajectories[traj.num! + 1];
-            const nextTraj = phrase.trajectories[traj.num! + 2];
-            if (silTraj.id === 12 && nextTraj.id !== 12) {
-              const nextPitch = nextTraj.pitches[0];
+          const nextTraj = findNextTrajectoryOnSameString(traj, track);
+          const nextNextTraj = nextTraj ? findNextTrajectoryOnSameString(nextTraj, track) : undefined;
+          const silTraj = nextTraj;
+          if (nextNextTraj) {
+            if (silTraj && silTraj.id === 12 && nextNextTraj.id !== 12) {
+              const nextPitch = nextNextTraj.pitches[0];
               const diff = Math.abs(newLogFreq - nextPitch.logFreq);
-              const nextTime = phrase.startTime! + nextTraj.startTime!;
+              const nextTime = phrase.startTime! + nextNextTraj.startTime!;
               const timeDiff = Math.abs(nextTime - newTime);
               if (diff < 0.05 && timeDiff < minTrajDur) {
                 newTime = nextTime;
@@ -5298,19 +5310,20 @@ export default defineComponent({
           // and the difference between newLogFreq and the previous traj's last 
           // pitch.logFreq is less than 0.05, then set newLogFreq to the previous
           // traj's last pitch.logFreq
-          if (idx === 0 && traj.num! > 1) {
-            const silTraj = phrase.trajectories[traj.num! - 1];
-            const prevTraj = phrase.trajectories[traj.num! - 2];
-            if (prevTraj.id !== 12 && silTraj.id === 12) {
-              const prevPitch = prevTraj.pitches[prevTraj.pitches.length - 1];
+          if (idx === 0) {
+            const prevTraj = findPreviousTrajectoryOnSameString(traj, track);
+            const prevPrevTraj = prevTraj ? findPreviousTrajectoryOnSameString(prevTraj, track) : undefined;
+            const silTraj = prevTraj;
+            if (prevPrevTraj && prevPrevTraj.id !== 12 && silTraj && silTraj.id === 12) {
+              const prevPitch = prevPrevTraj.pitches[prevPrevTraj.pitches.length - 1];
               const diff = Math.abs(newLogFreq - prevPitch.logFreq);
-              const prevTime = phrase.startTime! + prevTraj.startTime! + prevTraj.durTot;
+              const prevTime = phrase.startTime! + prevPrevTraj.startTime! + prevPrevTraj.durTot;
               const timeDiff = Math.abs(newTime - prevTime);
               if (diff < 0.05 && timeDiff < minTrajDur) {
                 newLogFreq = prevPitch.logFreq;
                 newTime = prevTime;
               }
-            } else if (silTraj.id !== 12) {
+            } else if (silTraj && silTraj.id !== 12) {
               const silPitch = silTraj.pitches[0];
               const diff = Math.abs(newLogFreq - silPitch.logFreq);
               if (diff < 0.05) {
@@ -5318,19 +5331,20 @@ export default defineComponent({
               }
             }
           }
-          if (idx === traj.pitches.length - 1 && traj.num! < phrase.trajectories.length - 2) {
-            const nextTraj = phrase.trajectories[traj.num! + 2];
-            const silTraj = phrase.trajectories[traj.num! + 1];
-            if (nextTraj.id !== 12 && silTraj.id === 12) {
-              const nextPitch = nextTraj.pitches[0];
+          if (idx === traj.pitches.length - 1) {
+            const nextTraj = findNextTrajectoryOnSameString(traj, track);
+            const nextNextTraj = nextTraj ? findNextTrajectoryOnSameString(nextTraj, track) : undefined;
+            const silTraj = nextTraj;
+            if (nextNextTraj && nextNextTraj.id !== 12 && silTraj && silTraj.id === 12) {
+              const nextPitch = nextNextTraj.pitches[0];
               const diff = Math.abs(newLogFreq - nextPitch.logFreq);
-              const nextTime = phrase.startTime! + nextTraj.startTime!;
+              const nextTime = phrase.startTime! + nextNextTraj.startTime!;
               const timeDiff = Math.abs(nextTime - newTime);
               if (diff < 0.05 && timeDiff < minTrajDur) {
                 newLogFreq = nextPitch.logFreq;
                 newTime = nextTime;
               }
-            } else if (silTraj.id !== 12) {
+            } else if (silTraj && silTraj.id !== 12) {
               const silPitch = silTraj.pitches[0];
               const diff = Math.abs(newLogFreq - silPitch.logFreq);
               if (diff < 0.05) {
@@ -5369,19 +5383,20 @@ export default defineComponent({
           newLogFreq = newPitch.logFreq;
         } else {
           newLogFreq = newLogFreq - logAmt;
-          if (idx === 0 && traj.num! > 1) {
-            const prevTraj = phrase.trajectories[traj.num! - 2];
-            const silTraj = phrase.trajectories[traj.num! - 1];
-            if (prevTraj.id !== 12 && silTraj.id === 12) {
-              const prevPitch = prevTraj.pitches[prevTraj.pitches.length - 1];
+          if (idx === 0) {
+            const prevTraj = findPreviousTrajectoryOnSameString(traj, track);
+            const prevPrevTraj = prevTraj ? findPreviousTrajectoryOnSameString(prevTraj, track) : undefined;
+            const silTraj = prevTraj;
+            if (prevPrevTraj && prevPrevTraj.id !== 12 && silTraj && silTraj.id === 12) {
+              const prevPitch = prevPrevTraj.pitches[prevPrevTraj.pitches.length - 1];
               const diff = Math.abs(newLogFreq - prevPitch.logFreq);
-              const prevTime = phrase.startTime! + prevTraj.startTime! + prevTraj.durTot;
+              const prevTime = phrase.startTime! + prevPrevTraj.startTime! + prevPrevTraj.durTot;
               const timeDiff = Math.abs(newTime - prevTime);
               if (diff < 0.05 && timeDiff < minTrajDur) {
                 newLogFreq = prevPitch.logFreq;
                 newTime = prevTime;
               }
-            } else if (silTraj.id !== 12) {
+            } else if (silTraj && silTraj.id !== 12) {
               const silPitch = silTraj.pitches[0];
               const diff = Math.abs(newLogFreq - silPitch.logFreq);
               if (diff < 0.05) {
@@ -5389,19 +5404,20 @@ export default defineComponent({
               }
             }
           }
-          if (idx === traj.pitches.length - 1 && traj.num! < phrase.trajectories.length - 2) {
-            const nextTraj = phrase.trajectories[traj.num! + 2];
-            const silTraj = phrase.trajectories[traj.num! + 1];
-            if (nextTraj.id !== 12 && silTraj.id === 12) {
-              const nextPitch = nextTraj.pitches[0];
+          if (idx === traj.pitches.length - 1) {
+            const nextTraj = findNextTrajectoryOnSameString(traj, track);
+            const nextNextTraj = nextTraj ? findNextTrajectoryOnSameString(nextTraj, track) : undefined;
+            const silTraj = nextTraj;
+            if (nextNextTraj && nextNextTraj.id !== 12 && silTraj && silTraj.id === 12) {
+              const nextPitch = nextNextTraj.pitches[0];
               const diff = Math.abs(newLogFreq - nextPitch.logFreq);
-              const nextTime = phrase.startTime! + nextTraj.startTime!;
+              const nextTime = phrase.startTime! + nextNextTraj.startTime!;
               const timeDiff = Math.abs(nextTime - newTime);
               if (diff < 0.05 && timeDiff < minTrajDur) {
                 newLogFreq = nextPitch.logFreq;
                 newTime = nextTime;
               }
-            } else if (silTraj.id !== 12) {
+            } else if (silTraj && silTraj.id !== 12) {
               const silPitch = silTraj.pitches[0];
               const diff = Math.abs(newLogFreq - silPitch.logFreq);
               if (diff < 0.05) {
