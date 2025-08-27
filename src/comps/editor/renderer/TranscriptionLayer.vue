@@ -1989,7 +1989,7 @@ export default defineComponent({
       hammerOffData.forEach(obj => {
         const trackG = tracks[track];
         const g = trackG.select('.trajG');
-        const color = isSecondString ? '#555555' : 'black';  // Lighter for second string
+        const color = 'black';
         g.append('path')
           .classed('articulation', true)
           .classed('hammer-off', true)
@@ -4379,7 +4379,7 @@ export default defineComponent({
       d3.selectAll(selector)
         .attr('stroke', selColor)
       d3.selectAll(selector + '.pluck')
-        .attr('fill', props.instTracks[track].selColor)
+        .attr('fill', selColor)  // Use adjusted selColor for second string
       d3.selectAll(selector + '.consonantSymbol')
         .attr('fill', props.instTracks[track].selColor)
       
@@ -4404,7 +4404,7 @@ export default defineComponent({
           d3.selectAll(selector)
             .attr('stroke', selColor)
           d3.selectAll(selector + '.pluck')
-            .attr('fill', props.instTracks[track].selColor)
+            .attr('fill', selColor)  // Use adjusted selColor for second string
         })
       }
     }
@@ -4424,7 +4424,7 @@ export default defineComponent({
         d3.selectAll(selector)
           .attr('stroke', color)
         d3.selectAll(selector + '.pluck')
-          .attr('fill', props.instTracks[track].color)
+          .attr('fill', color)  // Use adjusted color for second string
         d3.selectAll(selector + '.consonantSymbol')
           .attr('fill', props.instTracks[track].color)
       } else {
@@ -4433,7 +4433,7 @@ export default defineComponent({
         d3.selectAll(selector)
           .attr('stroke', selColor)
         d3.selectAll(selector + '.pluck')
-          .attr('fill', props.instTracks[track].selColor)
+          .attr('fill', selColor)  // Use adjusted selColor for second string
         d3.selectAll(selector + '.consonantSymbol')
           .attr('fill', props.instTracks[track].selColor)
       }

@@ -231,7 +231,7 @@ export default defineComponent({
         // map parameters
         sitarNode.frequency = sitarNode.parameters.get('Frequency');
         sitarNode.cutoff = sitarNode.parameters.get('Cutoff');
-        jorNode.freq = jorNode.parameters.get('Frequency');              // NEW: jor parameters
+        jorNode.frequency = jorNode.parameters.get('Frequency');              // NEW: jor parameters
         jorNode.cutoff = jorNode.parameters.get('Cutoff');
         chikariNode.freq0 = chikariNode.parameters.get('freq0');
         chikariNode.freq1 = chikariNode.parameters.get('freq1');
@@ -698,6 +698,7 @@ export default defineComponent({
       const endTime = startTime + traj.durTot;
       const valueCt = Math.round((endTime - startTime) / valueDur);
       const freq = node.frequency!;  // Same as main sitar frequency parameter
+      console.log(freq)
       const verySmall = 0.000000000001;
       if (first) {
         const offset = startTime < now() ? now() - startTime : 0;
