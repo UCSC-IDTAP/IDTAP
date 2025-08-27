@@ -173,6 +173,55 @@ class Processor extends AudioWorkletProcessor {
     super();
     this.prevBandPassFreq = 800;
     this.prevBandPassQ = 1.0;
+    
+    // Instance-specific state variables (moved from global scope)
+    this.sampleRate = 48000;
+    this.delay1 = [...Array(2048)].map(() => 0);
+    this.readPtr1 = 0;
+    this.writePtr1 = 0;
+    this.delay2 = [...Array(2048)].map(() => 0);
+    this.readPtr2 = 0;
+    this.writePtr2 = 0;
+    this.smoothing_y1 = 0;
+    
+    // Instance-specific filters
+    this.noiseFilter = BiquadFilter.bandPass(this.sampleRate, 1000, 1);
+    const resFreqs = [185, 275, 405, 460, 530];
+    this.resFilters = resFreqs.map((freq) => {
+      return BiquadFilter.bandPass(this.sampleRate, freq, 1);
+    });
+    this.notchFilter = BiquadFilter.notch(this.sampleRate, 10000, 1.4);
+  }
+
+  setDelayTime(time) {
+    this.writePtr1 = (this.readPtr1 + time * this.sampleRate) & 2047;
+    this.writePtr2 = (this.readPtr2 + time * this.sampleRate) & 2047;
+  }
+
+  writeToDelay1(x) {
+    this.delay1[this.writePtr1] = x;
+    this.writePtr1 = (this.writePtr1 + 1) & 2047;
+    this.readPtr1 = (this.readPtr1 + 1) & 2047;
+  }
+
+  writeToDelay2(x) {
+    this.delay2[this.writePtr2] = x;
+    this.writePtr2 = (this.writePtr2 + 1) & 2047;
+    this.readPtr2 = (this.readPtr2 + 1) & 2047;
+  }
+
+  readFromDelay1() {
+    return this.delay1[this.readPtr1];
+  }
+
+  readFromDelay2() {
+    return this.delay2[this.readPtr2];
+  }
+
+  filter(x, cutoff) {
+    const y = cutoff * x + (1 - cutoff) * this.smoothing_y1;
+    this.smoothing_y1 = y;
+    return y;
   }
 
   process(
@@ -188,39 +237,39 @@ class Processor extends AudioWorkletProcessor {
     const c1 = closeTo(bandPassFreq, this.prevBandPassFreq)
     const c2 = closeTo(bandPassQ, this.prevBandPassQ)
     if (!c1 || !c2) {
-      noiseFilter.calculateBandpass(sampleRate, bandPassFreq, bandPassQ);
+      this.noiseFilter.calculateBandpass(this.sampleRate, bandPassFreq, bandPassQ);
       this.prevBandPassFreq = bandPassFreq;
       this.prevBandPassQ = bandPassQ;
     }
     const feedbackGain = 0.98;
     if (freq.length === 1) {
       const period = 1/freq[0];
-      setDelayTime(period / 2);
+      this.setDelayTime(period / 2);
     }
     const out = outputs[0][0];
     if (out) {
       for (let i = 0; i < out.length; i++) {
-        let del2Sig = readFromDelay2();
+        let del2Sig = this.readFromDelay2();
         if (isNaN(del2Sig)) {
           return false
         }
         if (freq.length > 1) {
           const period = 1/freq[i];
-          setDelayTime(period / 2);
+          this.setDelayTime(period / 2);
         }
         let noiseSig = Math.random() * 2 - 1;
-        noiseSig = noiseFilter.process(noiseSig);
+        noiseSig = this.noiseFilter.process(noiseSig);
         const bowGainVal = bowGain.length === 1 ? bowGain[0] : bowGain[i];
         let feedbackSig = noiseSig * bowGainVal + del2Sig * feedbackGain;
-        writeToDelay1(feedbackSig);
-        let del1Sig = readFromDelay1();
-        del1Sig = filter(del1Sig, 0.4);
-        writeToDelay2(del1Sig);
+        this.writeToDelay1(feedbackSig);
+        let del1Sig = this.readFromDelay1();
+        del1Sig = this.filter(del1Sig, 0.4);
+        this.writeToDelay2(del1Sig);
         let resSig = del2Sig;
-        const parallelSigs = resFilters.map((filter) => filter.process(resSig));
+        const parallelSigs = this.resFilters.map((filter) => filter.process(resSig));
         resSig = parallelSigs.reduce((acc, val) => acc + val, 0);
         resSig = resSig * 0.2;
-        resSig = notchFilter.process(resSig);
+        resSig = this.notchFilter.process(resSig);
         const gainVal = gain.length === 1 ? gain[0] : gain[i]; 
         out[i] = resSig * gainVal;
       }
@@ -230,45 +279,3 @@ class Processor extends AudioWorkletProcessor {
 }
 
 registerProcessor('sarangi', Processor);
-const sampleRate = 48000;
-const delay1 = [...Array(2048)].map(() => 0);
-let readPtr1 = 0;
-let writePtr1 = 0;
-const delay2 = [...Array(2048)].map(() => 0);
-let readPtr2 = 0;
-let writePtr2 = 0;
-
-const setDelayTime = (time) => {
-  writePtr1 = readPtr1 + time * sampleRate & 2047;
-  writePtr2 = readPtr2 + time * sampleRate & 2047;
-}
-
-const writeToDelay1 = (x) => {
-  delay1[writePtr1] = x;
-  writePtr1 = (writePtr1 + 1) & 2047;
-  readPtr1 = (readPtr1 + 1) & 2047;
-}
-
-const writeToDelay2 = (x) => {
-  delay2[writePtr2] = x;
-  writePtr2 = (writePtr2 + 1) & 2047;
-  readPtr2 = (readPtr2 + 1) & 2047;
-}
-
-const readFromDelay1 = () => delay1[readPtr1];
-const readFromDelay2 = () => delay2[readPtr2];
-const noiseFilter = BiquadFilter.bandPass(sampleRate, 1000, 1);
-const resFreqs = [185, 275, 405, 460, 530];
-const resFilters = resFreqs.map((freq) => {
-  return BiquadFilter.bandPass(sampleRate, freq, 1)
-});
-
-const notchFilter = BiquadFilter.notch(sampleRate, 10000, 1.4);
-
-let smoothing_y1 = 0;
-
-const filter = (x, cutoff) => {
-    const y = cutoff * x + (1 - cutoff) * smoothing_y1;
-    smoothing_y1 = y;
-    return y;
-}
