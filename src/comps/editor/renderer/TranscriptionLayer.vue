@@ -332,6 +332,7 @@ export default defineComponent({
     'moveToX',
     'update:selectedMode',
     'update:editingInstIdx',
+    'update:currentStringIdx',
     'update:prevMeter',
     'open:labelEditor',
     'update:currentTime',
@@ -3583,6 +3584,17 @@ export default defineComponent({
           return
         }
         emit('update:editingInstIdx', track);
+        
+        // NEW: Also update string mode to match clicked trajectory
+        const currentInst = props.piece.instrumentation[track];
+        if (currentInst === Instrument.Sitar || currentInst === Instrument.Sarangi) {
+          // For polyphonic instruments, switch to the trajectory's string
+          const clickedStringIdx = checkIfSecondString(traj, track) ? 1 : 0;
+          emit('update:currentStringIdx', clickedStringIdx as 0 | 1);
+        } else {
+          // For non-polyphonic instruments, always reset to string 0
+          emit('update:currentStringIdx', 0);
+        }
         if (!shifted.value) {
           clearDragDots();
           selectedTrajs.value.forEach(traj => {
