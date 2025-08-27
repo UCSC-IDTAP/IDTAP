@@ -1989,7 +1989,7 @@ export default defineComponent({
       hammerOffData.forEach(obj => {
         const trackG = tracks[track];
         const g = trackG.select('.trajG');
-        const color = 'black';
+        const color = isSecondString ? '#555555' : 'black';  // Lighter for second string
         g.append('path')
           .classed('articulation', true)
           .classed('hammer-off', true)

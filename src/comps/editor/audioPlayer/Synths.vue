@@ -800,16 +800,20 @@ export default defineComponent({
         env[i] = transp * traj.compute(i / (valueCt - 1));
       }
       const duration = durTot - verySmall;
-      freq.setValueCurveAtTime(env, startTime, duration);
-      synth.sarangiNode.gain!.setValueCurveAtTime(gainEnv, startTime, duration);
+      
+      // Schedule bowGain ramps first, before the main curves
       if (fromSil) {
-        bowGain.setValueAtTime(0, startTime);
+        bowGain.setValueAtTime(0, startTime - 0.001);  // Start slightly before to avoid overlap
         bowGain.linearRampToValueAtTime(0.5, startTime + 0.01);
       }
       if (toSil) {
         bowGain.setValueAtTime(0.5, startTime + durTot - 0.01);
         bowGain.linearRampToValueAtTime(0, startTime + durTot);
       }
+      
+      // Then schedule the main curves
+      freq.setValueCurveAtTime(env, startTime, duration);
+      synth.sarangiNode.gain!.setValueCurveAtTime(gainEnv, startTime, duration);
     };
     // NEW: Second string playback for Sarangi  
     const playSarangiSecondTraj = (
@@ -832,16 +836,20 @@ export default defineComponent({
         env[i] = transp * traj.compute(i / (valueCt - 1));
       }
       const duration = durTot - verySmall;
-      freq.setValueCurveAtTime(env, startTime, duration);
-      synth.secondNode.gain!.setValueCurveAtTime(gainEnv, startTime, duration);  // Use gain, not bowGain for automation
+      
+      // Schedule bowGain ramps first, before the main curves
       if (fromSil) {
-        bowGain.setValueAtTime(0, startTime);
+        bowGain.setValueAtTime(0, startTime - 0.001);  // Start slightly before to avoid overlap
         bowGain.linearRampToValueAtTime(0.5, startTime + 0.01);
       }
       if (toSil) {
         bowGain.setValueAtTime(0.5, startTime + durTot - 0.01);
         bowGain.linearRampToValueAtTime(0, startTime + durTot);
       }
+      
+      // Then schedule the main curves
+      freq.setValueCurveAtTime(env, startTime, duration);
+      synth.secondNode.gain!.setValueCurveAtTime(gainEnv, startTime, duration);  // Use gain, not bowGain for automation
     };
     const playSarangiTrajs = (synth: SarangiSynthType) => {
       const realNow = now();
