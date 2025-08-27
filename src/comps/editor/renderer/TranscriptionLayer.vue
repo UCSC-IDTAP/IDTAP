@@ -1371,7 +1371,27 @@ export default defineComponent({
         articulations: {},
       });
       removeTraj(silentTraj)
-      phrase.trajectories[silentTraj.num!] = newTraj;
+      
+      // For polyphonic instruments, add to correct trajectoryGrid, otherwise use phrase.trajectories
+      const currentInst = props.piece.instrumentation[track];
+      if (currentInst === Instrument.Sitar || currentInst === Instrument.Sarangi) {
+        // Find the trajectory's position within its string's trajectory grid
+        if (!phrase.trajectoryGrid[stringIdx]) {
+          phrase.trajectoryGrid[stringIdx] = [];
+        }
+        const stringTrajs = phrase.trajectoryGrid[stringIdx];
+        const silentTrajIndex = stringTrajs.findIndex(t => t.uniqueId === silentTraj.uniqueId);
+        if (silentTrajIndex >= 0) {
+          stringTrajs[silentTrajIndex] = newTraj;
+        } else {
+          // Fallback: add to end if not found
+          stringTrajs.push(newTraj);
+        }
+      } else {
+        // Non-polyphonic instruments use traditional approach
+        phrase.trajectories[silentTraj.num!] = newTraj;
+      }
+      
       phrase.reset();
       resetTrajRenderStatus()
       renderTraj(newTraj);
@@ -1804,6 +1824,28 @@ export default defineComponent({
       }
       
       return undefined;
+    };
+
+    // Helper to get the correct trajectory array for a given string
+    const getTrajectoryArrayForString = (phrase: Phrase, track: number, stringIdx: number): Trajectory[] => {
+      const currentInst = props.piece.instrumentation[track];
+      if (currentInst === Instrument.Sitar || currentInst === Instrument.Sarangi) {
+        // For polyphonic instruments, use trajectoryGrid
+        if (!phrase.trajectoryGrid[stringIdx]) {
+          phrase.trajectoryGrid[stringIdx] = [];
+        }
+        return phrase.trajectoryGrid[stringIdx];
+      } else {
+        // For non-polyphonic instruments, use traditional trajectories array
+        return phrase.trajectories;
+      }
+    };
+
+    // Helper to get trajectory array for the same string as a reference trajectory
+    const getTrajectoryArrayForSameString = (phrase: Phrase, refTraj: Trajectory, track: number): Trajectory[] => {
+      const isSecondString = checkIfSecondString(refTraj, track);
+      const stringIdx = isSecondString ? 1 : 0;
+      return getTrajectoryArrayForString(phrase, track, stringIdx);
     };
 
     const renderTraj = (traj: Trajectory) => {
@@ -3381,20 +3423,10 @@ export default defineComponent({
       if (traj.id === 12) {
         throw new Error('Cannot insert silence to a silent trajectory');
       }
-      if (tIdx === 0) {
-        if (pIdx > 0) {
-          const prevPhrase = props.piece.phraseGrid[track][pIdx - 1];
-          const prevTrajs = prevPhrase.trajectories;
-          const prevTraj = prevTrajs[prevTrajs.length - 1];
-          if (prevTraj.id === 12) {
-            throw new Error('Prev traj is already silent');
-          }
-        }
-      } else {
-        const prevTraj = phrase.trajectories[tIdx - 1];
-        if (prevTraj.id === 12) {
-          throw new Error('Prev traj is already silent');
-        }
+      // Check if previous trajectory on same string is already silent
+      const prevTraj = findPreviousTrajectoryOnSameString(traj, track);
+      if (prevTraj && prevTraj.id === 12) {
+        throw new Error('Prev traj is already silent');
       }
       const newTraj = new Trajectory({
         id: 12,
@@ -3458,20 +3490,10 @@ export default defineComponent({
       if (traj.id === 12) {
         throw new Error('Cannot insert silence to a silent trajectory');
       }
-      if (tIdx === phrase.trajectories.length - 1) {
-        if (pIdx < props.piece.phraseGrid[track].length - 1) {
-          const nextPhrase = props.piece.phraseGrid[track][pIdx + 1];
-          const nextTrajs = nextPhrase.trajectories;
-          const nextTraj = nextTrajs[0];
-          if (nextTraj.id === 12) {
-            throw new Error('Next traj is already silent');
-          }
-        }
-      } else {
-        const nextTraj = phrase.trajectories[tIdx + 1];
-        if (nextTraj.id === 12) {
-          throw new Error('Next traj is already silent');
-        }
+      // Check if next trajectory on same string is already silent
+      const nextTraj = findNextTrajectoryOnSameString(traj, track);
+      if (nextTraj && nextTraj.id === 12) {
+        throw new Error('Next traj is already silent');
       }
       const newTraj = new Trajectory({
         id: 12,
@@ -3738,9 +3760,9 @@ export default defineComponent({
       times = times.map(t => t * traj.durTot + startTime);
       if (idx === 0) {
         let start: number = 0;
-        let prevTraj: Trajectory;
-        if (tIdx > 0){
-          prevTraj = phrase.trajectories[tIdx - 1];
+        let prevTraj: Trajectory | undefined;
+        prevTraj = findPreviousTrajectoryOnSameString(traj, track);
+        if (prevTraj) {
           if (prevTraj.durArray && prevTraj.durArray.length > 1) {
             let prevTrajTimes = [0, ...prevTraj.durArray!.map(cumsum())];
             prevTrajTimes = prevTrajTimes.map(t => {
@@ -3785,12 +3807,12 @@ export default defineComponent({
         }
       } else {
         let nextEnd: number = 0;
-        let nextTraj: Trajectory;
+        let nextTraj: Trajectory | undefined;
         if (time < times[idx - 1] + minTrajDur) {
           time = times[idx - 1] + minTrajDur;
         }
-        if (phrase.trajectories[tIdx + 1]) {
-          nextTraj = phrase.trajectories[tIdx + 1];
+        nextTraj = findNextTrajectoryOnSameString(traj, track);
+        if (nextTraj) {
           if (nextTraj.durArray && nextTraj.durArray.length > 1) {
             let nextTrajTimes = [0, ...nextTraj.durArray!.map(cumsum())];
             nextTrajTimes = nextTrajTimes.map(t => {
