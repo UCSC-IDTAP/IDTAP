@@ -831,8 +831,9 @@ export default defineComponent({
       for (let i = 0; i < valueCt; i++) {
         env[i] = transp * traj.compute(i / (valueCt - 1));
       }
-      freq.setValueCurveAtTime(env, startTime, durTot - verySmall);
-      bowGain.setValueCurveAtTime(gainEnv, startTime, durTot - verySmall);
+      const duration = durTot - verySmall;
+      freq.setValueCurveAtTime(env, startTime, duration);
+      synth.secondNode.gain!.setValueCurveAtTime(gainEnv, startTime, duration);  // Use gain, not bowGain for automation
       if (fromSil) {
         bowGain.setValueAtTime(0, startTime);
         bowGain.linearRampToValueAtTime(0.5, startTime + 0.01);
@@ -993,9 +994,23 @@ export default defineComponent({
       const lpFreq = synth.lpNode.frequency!;
       freq.cancelScheduledValues(realNow);
       lpFreq.cancelScheduledValues(realNow);
+      
+      // Cancel jor string if it exists
+      if (synth.jorNode && synth.intJorGainNode) {
+        synth.intJorGainNode.gain.cancelScheduledValues(realNow);
+        synth.intJorGainNode.gain.setValueAtTime(1, realNow);
+        synth.intJorGainNode.gain.linearRampToValueAtTime(0, realNow + lagTime);
+        if (synth.jorNode.frequency) {
+          synth.jorNode.frequency.cancelScheduledValues(realNow);
+        }
+        if (synth.jorNode.cutoff) {
+          synth.jorNode.cutoff.cancelScheduledValues(realNow);
+        }
+      }
     };
     const cancelSarangiTrajs = (synth:SarangiSynthType) => {
       const when = now();
+      // Cancel main string
       synth.sarangiNode.freq!.cancelScheduledValues(when);
       synth.sarangiNode.bowGain!.cancelScheduledValues(when);
       synth.sarangiNode.gain!.cancelScheduledValues(when);
@@ -1005,6 +1020,19 @@ export default defineComponent({
       const curGain = synth.sarangiNode.gain!.value;
       synth.sarangiNode.gain!.setValueAtTime(curGain, when);
       synth.sarangiNode.gain!.linearRampToValueAtTime(0, when + lagTime);
+      
+      // Cancel second string if it exists
+      if (synth.secondNode) {
+        synth.secondNode.freq!.cancelScheduledValues(when);
+        synth.secondNode.bowGain!.cancelScheduledValues(when);
+        synth.secondNode.gain!.cancelScheduledValues(when);
+        const curSecondBowGain = synth.secondNode.bowGain!.value;
+        synth.secondNode.bowGain!.setValueAtTime(curSecondBowGain, when);
+        synth.secondNode.bowGain!.linearRampToValueAtTime(0, when + lagTime);
+        const curSecondGain = synth.secondNode.gain!.value;
+        synth.secondNode.gain!.setValueAtTime(curSecondGain, when);
+        synth.secondNode.gain!.linearRampToValueAtTime(0, when + lagTime);
+      }
     }
     const cancelKlattTrajs = (synth: KlattSynthType) => {
       const n = now()
