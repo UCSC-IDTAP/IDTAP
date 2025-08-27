@@ -2834,8 +2834,8 @@ export default defineComponent({
         let insertFixedRight = false;
         let transcribeTrajRight = false;
         let transcribeTrajLeft = false;
-        if (phrase.trajectories.length > tIdx + 1) {
-          const nextTraj = phrase.trajectories[tIdx + 1];
+        const nextTraj = findNextTrajectoryOnSameString(traj, track);
+        if (nextTraj) {
           if (nextTraj.id !== 12) {
             insertSilenceRight = true;
           } 
@@ -2860,8 +2860,8 @@ export default defineComponent({
             }
           }
         }
-        if (tIdx > 0) {
-          const prevTraj = phrase.trajectories[tIdx - 1];
+        const prevTraj = findPreviousTrajectoryOnSameString(traj, track);
+        if (prevTraj) {
           if (prevTraj.id !== 12) {
             insertSilenceLeft = true;
           }
@@ -2964,9 +2964,10 @@ export default defineComponent({
             text: 'Connect to next Traj',
             action: () => {
               contextMenuClosed.value = true;
-              const phrase = props.piece.phraseGrid[track][pIdx];
-              const silTraj = phrase.trajectories[tIdx + 1];
-              replaceSilenceWithConnection(silTraj, track, traj);
+              const silTraj = findNextTrajectoryOnSameString(traj, track);
+              if (silTraj) {
+                replaceSilenceWithConnection(silTraj, track, traj);
+              }
             },
             enabled: props.editable
           })
@@ -2976,31 +2977,30 @@ export default defineComponent({
             text: 'Connect to last Traj',
             action: () => {
               contextMenuClosed.value = true;
-              const phrase = props.piece.phraseGrid[track][pIdx];
-              const silTraj = phrase.trajectories[tIdx - 1];
-              replaceSilenceWithConnection(silTraj, track, traj);
+              const silTraj = findPreviousTrajectoryOnSameString(traj, track);
+              if (silTraj) {
+                replaceSilenceWithConnection(silTraj, track, traj);
+              }
             },
             enabled: props.editable
           })
         };
         const sts = selectedTrajs.value;
         const stsGrouped = sts.length === sts.filter(t => t.groupId === sts[0].groupId).length;
-        if (tIdx > 0) {
-          const pt = phrase.trajectories[tIdx - 1];
-          if (pt.groupId !== undefined && sts.includes(pt) && stsGrouped) {
-            contextMenuChoices.value.push({
-              text: 'Add to Selected Group',
-              action: () => {
-                addTrajToSelectedGroup(traj, track);
-                contextMenuClosed.value = true;
-              },
-              enabled: props.editable
-            })
-          }
+        const prevTrajForGroup = findPreviousTrajectoryOnSameString(traj, track);
+        if (prevTrajForGroup && prevTrajForGroup.groupId !== undefined && sts.includes(prevTrajForGroup) && stsGrouped) {
+          contextMenuChoices.value.push({
+            text: 'Add to Selected Group',
+            action: () => {
+              addTrajToSelectedGroup(traj, track);
+              contextMenuClosed.value = true;
+            },
+            enabled: props.editable
+          })
         }
-        if (phrase.trajectories.length > tIdx + 1) {
-          const nt = phrase.trajectories[tIdx + 1];
-          if (nt.groupId !== undefined && sts.includes(nt) && stsGrouped) {
+        const nextTrajForGroup = findNextTrajectoryOnSameString(traj, track);
+        if (nextTrajForGroup) {
+          if (nextTrajForGroup.groupId !== undefined && sts.includes(nextTrajForGroup) && stsGrouped) {
             contextMenuChoices.value.push({
               text: 'Add to Selected Group',
               action: () => {
