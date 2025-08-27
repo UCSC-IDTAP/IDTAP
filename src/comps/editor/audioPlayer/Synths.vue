@@ -389,7 +389,7 @@ export default defineComponent({
         secondNode.gain!.value = 1;
         intGain.gain.value = 0;
         intSecondGain.gain.value = 0;                                     // NEW: second string internal gain
-        extGain.gain.value = control.params.extSarangiGain!;
+        extGain.gain.value = control.params.extSarangiGain! * 0.7;       // Apply gain compensation for multiple signals
         sarangiLoopGainNode.gain.value = 0;
         secondLoopGainNode.gain.value = 0;                                // NEW: second loop gain
         sarangiLoopSourceNode.loop = true;
