@@ -3822,7 +3822,8 @@ export default defineComponent({
           }
           laggingDragDotX.value = smooth(laggingDragDotX.value, targetDragDotX.value, 0.2);
           laggingDragDotY.value = smooth(laggingDragDotY.value, targetDragDotY.value, 0.2);
-          d3.select(`#dragDot${dragDotIdx}`)
+          const traj = selectedTrajs.value[0];
+          d3.select(`#dragDot${traj.uniqueId}_${dragDotIdx}`)
             .attr('cx', laggingDragDotX.value)
             .attr('cy', laggingDragDotY.value);
           }
@@ -3851,7 +3852,7 @@ export default defineComponent({
       const startTime = phrase.startTime! + traj.startTime!;
       let times = [0, ...traj.durArray!.map(cumsum())];
       times = times.map(t => t * traj.durTot + startTime);
-      dragDotIdx = Number(e.sourceEvent.target.id.split('dragDot')[1]);
+      dragDotIdx = Number(e.sourceEvent.target.id.split('_')[1]);
       const time = times[dragDotIdx];
       const logFreq = traj.logFreqs[dragDotIdx] || traj.logFreqs[dragDotIdx - 1]
       const trajData = makeTrajData(traj, startTime);
@@ -4106,7 +4107,7 @@ export default defineComponent({
 
       }
       const y = props.yScale(logFreq);
-      const selectedDragDot = d3.select(`#dragDot${idx}`);
+      const selectedDragDot = d3.select(`#dragDot${traj.uniqueId}_${idx}`);
       selectedDragDot.attr('cy', y);
       const newPitch = () => {
         return props.piece.raga.pitchFromLogFreq(logFreq)
@@ -4115,11 +4116,11 @@ export default defineComponent({
         traj.pitches[idx] = newPitch();
         if (idx === 0 && (traj.id === 0 || traj.id === 13)) { // if first dot of fixed traj
           traj.pitches[1] = newPitch();
-          d3.select(`#dragDot1`)
+          d3.select(`#dragDot${traj.uniqueId}_1`)
             .attr('cy', y);
         } else if (idx === 1 && (traj.id === 0 || traj.id === 13)) { // if second dot of fixed traj
           traj.pitches[0] = newPitch();
-          d3.select(`#dragDot0`)
+          d3.select(`#dragDot${traj.uniqueId}_0`)
             .attr('cy', y);
         }
       }
@@ -4266,7 +4267,7 @@ export default defineComponent({
             selectedDragDotColor : dragDotColor;
           const cy = props.yScale(logFreqs[i]);
           dragDotsG.append('circle')
-            .attr('id', `dragDot${i}`)
+            .attr('id', `dragDot${traj.uniqueId}_${i}`)
             .attr('class', `refreshed dragDot track${track}`)
             .attr('cx', props.xScale(t))
             .attr('cy', cy)
@@ -4290,11 +4291,11 @@ export default defineComponent({
     const handleClickDragDot = (e: MouseEvent) => {
         e.preventDefault();
         const target = e.target as SVGCircleElement;
-        const idx = Number(target.id.split('dragDot')[1]);
+        const idx = Number(target.id.split('_')[1]);
         const traj = selectedTrajs.value[0];
         d3.selectAll('.dragDot')
           .style('fill', dragDotColor);
-        d3.select(`#dragDot${idx}`)
+        d3.select(`#dragDot${traj.uniqueId}_${idx}`)
           .style('fill', selectedDragDotColor);
         selectedDragDotIdx.value = idx;
     }
@@ -4323,7 +4324,8 @@ export default defineComponent({
       const idx = selectedDragDotIdx.value;
       d3.selectAll('.dragDot')
         .style('fill', dragDotColor);
-      d3.select(`#dragDot${idx}`)
+      const traj = selectedTrajs.value[0];
+      d3.select(`#dragDot${traj.uniqueId}_${idx}`)
         .style('fill', selectedDragDotColor);
     }
 
@@ -4340,7 +4342,7 @@ export default defineComponent({
       contextMenuY.value = e.offsetY;
       contextMenuClosed.value = false;
       const target = e.target as SVGCircleElement;
-      const idx = Number(target.id.split('dragDot')[1]);
+      const idx = Number(target.id.split('_')[1]);
       const traj = selectedTraj.value!;
       contextMenuChoices.value = [];
       contextMenuChoices.value.push({
@@ -4351,17 +4353,17 @@ export default defineComponent({
           const newPitch = props.piece.raga.pitchFromLogFreq(newLogFreq);
           traj.pitches[idx] = newPitch;
           const y = props.yScale(newLogFreq);
-          d3.select(`#dragDot${idx}`)
+          d3.select(`#dragDot${traj.uniqueId}_${idx}`)
             .attr('cy', y);
           if (traj.id === 0) {
             const otherNewPitch = props.piece.raga.pitchFromLogFreq(newLogFreq);
             if (idx === 0) {
               traj.pitches[1] = otherNewPitch;
-              d3.select(`#dragDot1`)
+              d3.select(`#dragDot${traj.uniqueId}_1`)
                 .attr('cy', y);
             } else if (idx === 1) {
               traj.pitches[0] = otherNewPitch;
-              d3.select(`#dragDot0`)
+              d3.select(`#dragDot${traj.uniqueId}_0`)
                 .attr('cy', y);
             }
           }
@@ -5123,7 +5125,8 @@ export default defineComponent({
       if (dir === 'left') {
         newTime = constrainTime(curTime - amt, idx);
         const x = props.xScale(newTime);
-        d3.select(`#dragDot${idx}`)
+        const traj = selectedTrajs.value[0];
+        d3.select(`#dragDot${traj.uniqueId}_${idx}`)
           .attr('cx', x);
         // if idx is 0, and the diff between newTime and the previous traj's end (assuming
         // that traj.id !== 12) is less than some min, and the logFreq of the new time is close to the 
@@ -5144,7 +5147,7 @@ export default defineComponent({
                 newLogFreq = prevPitch.logFreq;
                 const x = props.xScale(newTime);
                 const y = props.yScale(newLogFreq);
-                d3.select(`#dragDot${idx}`)
+                d3.select(`#dragDot${traj.uniqueId}_${idx}`)
                   .attr('cx', x)
                   .attr('cy', y);
               }
@@ -5154,7 +5157,7 @@ export default defineComponent({
       } else if (dir === 'right') {
         newTime = constrainTime(curTime + amt, idx);
         const x = props.xScale(newTime);
-        d3.select(`#dragDot${idx}`)
+        d3.select(`#dragDot${traj.uniqueId}_${idx}`)
           .attr('cx', x);
         if (idx === traj.pitches.length - 1) {
           if (traj.num! < phrase.trajectories.length - 2) {
@@ -5170,7 +5173,7 @@ export default defineComponent({
                 newLogFreq = nextPitch.logFreq;
                 const x = props.xScale(newTime);
                 const y = props.yScale(newLogFreq);
-                d3.select(`#dragDot${idx}`)
+                d3.select(`#dragDot${traj.uniqueId}_${idx}`)
                   .attr('cx', x)
                   .attr('cy', y);
               }
@@ -5326,11 +5329,11 @@ export default defineComponent({
         traj.pitches[idx] = newPitch();
         if (idx === 0 && (traj.id === 0 || traj.id === 13)) {
           traj.pitches[1] = newPitch();
-          d3.select(`#dragDot1`)
+          d3.select(`#dragDot${traj.uniqueId}_1`)
             .attr('cy', y);
         } else if (idx === 1 && (traj.id === 0 || traj.id === 13)) {
           traj.pitches[0] = newPitch();
-          d3.select(`#dragDot0`)
+          d3.select(`#dragDot${traj.uniqueId}_0`)
             .attr('cy', y);
         }
       }
