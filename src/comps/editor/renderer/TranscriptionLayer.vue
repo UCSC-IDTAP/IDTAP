@@ -3840,7 +3840,7 @@ export default defineComponent({
         selectedDragDotIdx.value === undefined ||
         (
           selectedDragDotIdx.value !== undefined && 
-          selectedDragDotIdx.value !== Number(e.sourceEvent.target.id.slice(7))
+          selectedDragDotIdx.value !== Number(e.sourceEvent.target.id.split('_')[1])
         )
       ) {
         handleClickDragDot(e.sourceEvent);
