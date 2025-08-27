@@ -1103,6 +1103,7 @@ type SitarSynthType = {
   extSitarGainNode: GainNode,
   intChikariGainNode: GainNode,
   extChikariGainNode: GainNode,
+  mainStringsSubmix: GainNode,               // NEW: submix for main + jor for capture
   idx: number,
   sitarLoopSourceNode: LoopSourceNode,
   jorLoopSourceNode: LoopSourceNode,         // NEW: jor loop source

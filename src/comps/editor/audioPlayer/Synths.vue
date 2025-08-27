@@ -213,6 +213,7 @@ export default defineComponent({
         const intChikariGainNode = props.ac.createGain();
         const extChikariGainNode = props.ac.createGain();
         const outGainNode = props.ac.createGain();
+        const mainStringsSubmix = props.ac.createGain();                 // NEW: submix for main + jor for capture
         const cOpt = { numberOfInputs: 1, numberOfOutputs: 2 };
         const chikariNode = new AudioWorkletNode(props.ac, 'chikaris4', cOpt) as 
           ChikariNodeType;
@@ -295,6 +296,10 @@ export default defineComponent({
         jorNode
           .connect(intJorGainNode)
           .connect(extSitarGainNode);                                     // converges at shared external gain
+        
+        // NEW: Connect both strings to submix for capture
+        intSitarGainNode.connect(mainStringsSubmix);
+        intJorGainNode.connect(mainStringsSubmix);
         chikariNode.connect(mixChikariNode, 0);
         chikariNode.connect(mixChikariNode, 1);
         mixChikariNode
@@ -324,6 +329,7 @@ export default defineComponent({
           extChikariGainNode,
           outGainNode,
           extSitarGainNode,
+          mainStringsSubmix,                                              // NEW
           idx: control.idx,
           sitarLoopSourceNode,
           jorLoopSourceNode,                                              // NEW
@@ -534,7 +540,7 @@ export default defineComponent({
 
     // initialize Capture
     const initializeSitarCapture = (synth: SitarSynthType) => {
-      synth.intSitarGainNode.connect(synth.capture, 0, 0);
+      synth.mainStringsSubmix.connect(synth.capture, 0, 0);  // Connect submix (main + jor) to input 0
       synth.intChikariGainNode.connect(synth.capture, 0, 1);
       synth.capture.port.onmessage = e => {
         const realNow = now();
