@@ -379,17 +379,25 @@ class Piece {
       // Only for Sitar and Sarangi
       if (instrument === Instrument.Sitar || instrument === Instrument.Sarangi) {
         trackPhrases.forEach(phrase => {
-          // Ensure trajectoryGrid[1] exists with silent trajectories
+          // Ensure trajectoryGrid[1] exists
           if (!phrase.trajectoryGrid[1]) {
             phrase.trajectoryGrid[1] = [];
           }
           
-          if (phrase.trajectoryGrid[1].length === 0) {
+          // Only add silent trajectory if there's no content at all
+          // OR if all existing trajectories are already silent
+          const hasNonSilentContent = phrase.trajectoryGrid[1].some(traj => traj.id !== 12);
+          
+          if (phrase.trajectoryGrid[1].length === 0 || !hasNonSilentContent) {
+            // Clear any existing silent trajectories first
+            phrase.trajectoryGrid[1] = [];
+            
             // Create single silent trajectory matching phrase duration
             const silentTraj = new Trajectory({
               id: 12,
               durTot: phrase.durTot,
-              fundID12: this.raga.fundamental
+              fundID12: this.raga.fundamental,
+              startTime: 0
             });
             phrase.trajectoryGrid[1].push(silentTraj);
             

@@ -108,15 +108,15 @@ class Phrase {
     this.raga = raga;
     if (trajectoryGrid !== undefined) {
       this.trajectoryGrid = trajectoryGrid;
-      for (let i = trajectoryGrid.length; i < instrumentation.length; i++) {
-        this.trajectoryGrid.push([])
+      // Ensure we have at least 2 slots for strings (0: main, 1: second)
+      while (this.trajectoryGrid.length < 2) {
+        this.trajectoryGrid.push([]);
       }
-      this.trajectoryGrid.length = instrumentation.length;
     } else {
-      this.trajectoryGrid = [trajectories];
-      for (let i = 1; i < instrumentation.length; i++) {
-        this.trajectoryGrid.push([])
-      }
+      // Initialize with main string trajectories at index 0
+      this.trajectoryGrid = [trajectories || []];
+      // Add empty array for second string at index 1
+      this.trajectoryGrid.push([]);
     }
     if (chikariGrid !== undefined) {
       this.chikariGrid = chikariGrid;
