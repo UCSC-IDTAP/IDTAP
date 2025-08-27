@@ -1330,23 +1330,32 @@ export default defineComponent({
       let prevTraj: Trajectory | undefined = undefined;
       let nextTraj: Trajectory | undefined = undefined;
 
-      if (silentTraj.num === 0) {
-        if (silentTraj.phraseIdx === 0) {
-          throw new Error('Silent trajectory is at the beginning of the piece');
-        }
+      // Use string-aware adjacency for all cases, including cross-phrase connections
+      prevTraj = findPreviousTrajectoryOnSameString(silentTraj, track);
+      nextTraj = findNextTrajectoryOnSameString(silentTraj, track);
+      
+      // Handle cross-phrase connections if no adjacent trajectories found in current phrase
+      const isSecondString = checkIfSecondString(silentTraj, track);
+      const stringIdx = isSecondString ? 1 : 0;
+      
+      if (!prevTraj && silentTraj.phraseIdx! > 0) {
+        // Look for previous trajectory in previous phrase on same string
         const prevPhrase = props.piece.phraseGrid[track][silentTraj.phraseIdx! - 1];
-        prevTraj = prevPhrase.trajectories[prevPhrase.trajectories.length - 1];
-        nextTraj = phrase.trajectories[1];
-      } else if (silentTraj.num === phrase.trajectories.length - 1) {
-        if (silentTraj.phraseIdx === props.piece.phraseGrid[track].length - 1) {
-          throw new Error('Silent trajectory is at the end of the piece');
+        const prevStringTrajs = props.piece.allTrajectories(track, stringIdx)
+          .filter(t => t.phraseIdx === silentTraj.phraseIdx! - 1);
+        if (prevStringTrajs.length > 0) {
+          prevTraj = prevStringTrajs[prevStringTrajs.length - 1];
         }
-        prevTraj = phrase.trajectories[silentTraj.num! - 1];
+      }
+      
+      if (!nextTraj && silentTraj.phraseIdx! < props.piece.phraseGrid[track].length - 1) {
+        // Look for next trajectory in next phrase on same string
         const nextPhrase = props.piece.phraseGrid[track][silentTraj.phraseIdx! + 1];
-        nextTraj = nextPhrase.trajectories[0];
-      } else {
-        prevTraj = findPreviousTrajectoryOnSameString(silentTraj, track);
-        nextTraj = findNextTrajectoryOnSameString(silentTraj, track);
+        const nextStringTrajs = props.piece.allTrajectories(track, stringIdx)
+          .filter(t => t.phraseIdx === silentTraj.phraseIdx! + 1);
+        if (nextStringTrajs.length > 0) {
+          nextTraj = nextStringTrajs[0];
+        }
       }
       if (!prevTraj || !nextTraj || prevTraj.id === 12 || nextTraj.id === 12) {
         throw new Error('Adjacent trajectory is silent or not found');
