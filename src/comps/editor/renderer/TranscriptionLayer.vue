@@ -3935,6 +3935,9 @@ export default defineComponent({
         traj.durArray = newDurArray;
       } else if (idx === 0) {
         const delta = time - (phrase.startTime! + traj.startTime!);
+        const isSecondString = checkIfSecondString(traj, track);
+        const stringIdx = isSecondString ? 1 : 0;
+        
         if (tIdx === 0) {
           const prevPhrase = props.piece.phraseGrid[track][pIdx - 1];
           const prevTraj = prevPhrase.trajectories[prevPhrase.trajectories.length - 1];
@@ -3944,12 +3947,24 @@ export default defineComponent({
           phrase.startTime! += delta;
           updatePhraseChikaris(phrase, delta);
         } else {
-          const prevTraj = phrase.trajectories[tIdx - 1];
-          updatePrevTraj(prevTraj, delta);
-          updateDurArray(traj, delta);
-          traj.durTot -= delta;
-          phrase.durArrayFromTrajectories();
-          phrase.assignStartTimes();
+          // For polyphonic instruments, find the previous trajectory on the same string
+          const allTrajsOnString = props.piece.allTrajectories(track, stringIdx);
+          const trajIndexOnString = allTrajsOnString.findIndex(t => t.uniqueId === traj.uniqueId);
+          
+          if (trajIndexOnString > 0) {
+            const prevTraj = allTrajsOnString[trajIndexOnString - 1];
+            updatePrevTraj(prevTraj, delta);
+            updateDurArray(traj, delta);
+            traj.durTot -= delta;
+            phrase.durArrayFromTrajectories();
+            phrase.assignStartTimes();
+          } else {
+            // This is the first trajectory on this string in this phrase
+            // Just update the trajectory itself
+            updateDurArray(traj, delta);
+            traj.durTot -= delta;
+            traj.startTime! += delta;
+          }
         }
       } else if (idx === traj.durArray!.length) {
         const delta = time - (phrase.startTime! + traj.startTime! + traj.durTot);
@@ -5125,7 +5140,6 @@ export default defineComponent({
       if (dir === 'left') {
         newTime = constrainTime(curTime - amt, idx);
         const x = props.xScale(newTime);
-        const traj = selectedTrajs.value[0];
         d3.select(`#dragDot${traj.uniqueId}_${idx}`)
           .attr('cx', x);
         // if idx is 0, and the diff between newTime and the previous traj's end (assuming
@@ -5343,6 +5357,9 @@ export default defineComponent({
         traj.durArray = newDurArray;
       } else if (idx === 0) {
         const delta = newTime - (phrase.startTime! + traj.startTime!);
+        const isSecondString = checkIfSecondString(traj, track);
+        const stringIdx = isSecondString ? 1 : 0;
+        
         if (traj.num === 0) {
           const prevPhrase = props.piece.phraseGrid[track][traj.phraseIdx! - 1];
           const prevTraj = prevPhrase.trajectories[prevPhrase.trajectories.length - 1];
@@ -5352,12 +5369,24 @@ export default defineComponent({
           phrase.startTime! += delta;
           updatePhraseChikaris(phrase, delta);
         } else {
-          const prevTraj = phrase.trajectories[traj.num! - 1];
-          updatePrevTraj(prevTraj, delta);
-          updateDurArray(traj, delta);
-          traj.durTot -= delta;
-          phrase.durArrayFromTrajectories();
-          phrase.assignStartTimes();
+          // For polyphonic instruments, find the previous trajectory on the same string
+          const allTrajsOnString = props.piece.allTrajectories(track, stringIdx);
+          const trajIndexOnString = allTrajsOnString.findIndex(t => t.uniqueId === traj.uniqueId);
+          
+          if (trajIndexOnString > 0) {
+            const prevTraj = allTrajsOnString[trajIndexOnString - 1];
+            updatePrevTraj(prevTraj, delta);
+            updateDurArray(traj, delta);
+            traj.durTot -= delta;
+            phrase.durArrayFromTrajectories();
+            phrase.assignStartTimes();
+          } else {
+            // This is the first trajectory on this string in this phrase
+            // Just update the trajectory itself
+            updateDurArray(traj, delta);
+            traj.durTot -= delta;
+            traj.startTime! += delta;
+          }
         }
       } else if (idx === traj.durArray!.length) {
         const delta = newTime - (phrase.startTime! + traj.startTime! + traj.durTot);
