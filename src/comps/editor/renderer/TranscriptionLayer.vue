@@ -1345,11 +1345,11 @@ export default defineComponent({
         const nextPhrase = props.piece.phraseGrid[track][silentTraj.phraseIdx! + 1];
         nextTraj = nextPhrase.trajectories[0];
       } else {
-        prevTraj = phrase.trajectories[silentTraj.num! - 1];
-        nextTraj = phrase.trajectories[silentTraj.num! + 1];
+        prevTraj = findPreviousTrajectoryOnSameString(silentTraj, track);
+        nextTraj = findNextTrajectoryOnSameString(silentTraj, track);
       }
-      if (prevTraj.id === 12 || nextTraj.id === 12) {
-        throw new Error('Adjacent trajectory is silent');
+      if (!prevTraj || !nextTraj || prevTraj.id === 12 || nextTraj.id === 12) {
+        throw new Error('Adjacent trajectory is silent or not found');
       }
       const p1 = new Pitch(prevTraj.pitches[prevTraj.pitches.length - 1]);
       const p2 = new Pitch(nextTraj.pitches[0]);
@@ -1746,6 +1746,55 @@ export default defineComponent({
         phrase.trajectoryGrid[1]?.some(t => t.uniqueId === traj.uniqueId)
       );
       return isSecond;
+    };
+
+    // Helper functions for polyphonic-aware trajectory adjacency
+    const findPreviousTrajectoryOnSameString = (traj: Trajectory, track: number): Trajectory | undefined => {
+      const phrase = props.piece.phraseGrid[track][traj.phraseIdx!];
+      const isSecondString = checkIfSecondString(traj, track);
+      const stringIdx = isSecondString ? 1 : 0;
+      
+      // For polyphonic instruments, use string-specific trajectory list
+      const currentInst = props.piece.instrumentation[track];
+      if (currentInst === Instrument.Sitar || currentInst === Instrument.Sarangi) {
+        const allTrajsOnString = props.piece.allTrajectories(track, stringIdx);
+        const trajIndexOnString = allTrajsOnString.findIndex(t => t.uniqueId === traj.uniqueId);
+        
+        if (trajIndexOnString > 0) {
+          return allTrajsOnString[trajIndexOnString - 1];
+        }
+      } else {
+        // For non-polyphonic instruments, use traditional phrase.trajectories approach
+        if (traj.num! > 0) {
+          return phrase.trajectories[traj.num! - 1];
+        }
+      }
+      
+      return undefined;
+    };
+
+    const findNextTrajectoryOnSameString = (traj: Trajectory, track: number): Trajectory | undefined => {
+      const phrase = props.piece.phraseGrid[track][traj.phraseIdx!];
+      const isSecondString = checkIfSecondString(traj, track);
+      const stringIdx = isSecondString ? 1 : 0;
+      
+      // For polyphonic instruments, use string-specific trajectory list
+      const currentInst = props.piece.instrumentation[track];
+      if (currentInst === Instrument.Sitar || currentInst === Instrument.Sarangi) {
+        const allTrajsOnString = props.piece.allTrajectories(track, stringIdx);
+        const trajIndexOnString = allTrajsOnString.findIndex(t => t.uniqueId === traj.uniqueId);
+        
+        if (trajIndexOnString >= 0 && trajIndexOnString < allTrajsOnString.length - 1) {
+          return allTrajsOnString[trajIndexOnString + 1];
+        }
+      } else {
+        // For non-polyphonic instruments, use traditional phrase.trajectories approach
+        if (traj.num! < phrase.trajectories.length - 1) {
+          return phrase.trajectories[traj.num! + 1];
+        }
+      }
+      
+      return undefined;
     };
 
     const renderTraj = (traj: Trajectory) => {
@@ -3365,34 +3414,30 @@ export default defineComponent({
     };
 
     const canConnectToUpcomingTraj = (traj: Trajectory, track: number) => {
-      const phrase = props.piece.phraseGrid[track][traj.phraseIdx!];
-      if (traj.num! + 2 > phrase.trajectories.length) {
+      const nextTraj = findNextTrajectoryOnSameString(traj, track);
+      if (!nextTraj || nextTraj.id !== 12) {
         return false;
       }
-      const nextTraj = phrase.trajectories[traj.num! + 1];
-      if (nextTraj.id !== 12) {
+      
+      const followingTraj = findNextTrajectoryOnSameString(nextTraj, track);
+      if (!followingTraj || followingTraj.id === 12) {
         return false;
       }
-      const followingTraj = phrase.trajectories[traj.num! + 2];
-      if (followingTraj && followingTraj.id === 12) {
-        return false;
-      }
+      
       return true;
     }
 
     const canConnectToEarlierTraj = (traj: Trajectory, track: number) => {
-      const phrase = props.piece.phraseGrid[track][traj.phraseIdx!];
-      if (traj.num! < 2) {
+      const prevTraj = findPreviousTrajectoryOnSameString(traj, track);
+      if (!prevTraj || prevTraj.id !== 12) {
         return false;
       }
-      const prevTraj = phrase.trajectories[traj.num! - 1];
-      if (prevTraj.id !== 12) {
+      
+      const precedingTraj = findPreviousTrajectoryOnSameString(prevTraj, track);
+      if (!precedingTraj || precedingTraj.id === 12) {
         return false;
       }
-      const preceedingTraj = phrase.trajectories[traj.num! - 2];
-      if (preceedingTraj.id === 12) {
-        return false;
-      }
+      
       return true;
     }
 
