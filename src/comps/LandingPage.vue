@@ -11,6 +11,21 @@
           </a>
         </div>
         <div class='enterButton' @click='goToChangelog'>Changelog</div>
+        <div class='linkButton'>
+          <a href='https://pypi.org/project/idtap/' target='_blank'>
+            Python Package
+          </a>
+        </div>
+        <div class='linkButton'>
+          <a href='/papers/ismir-paper.pdf' target='_blank'>
+            ISMIR Paper
+          </a>
+        </div>
+        <div class='linkButton'>
+          <a href='/papers/neh-whitepaper.pdf' target='_blank'>
+            NEH Whitepaper
+          </a>
+        </div>
       </div>
     </div>
       <div class='infoRowInner'>
@@ -239,7 +254,6 @@ export default {
 
 
 .buttonRow > div {
-  width: 100px;
   height: 40px;
   display: flex;
   align-items: center;
@@ -251,6 +265,8 @@ export default {
   transition: background-color 0.3s ease;
   transition: color 0.3s ease;
   margin-right: 10px;
+  padding: 0 12px;
+  width: fit-content;
 }
 
 .buttonRow > div:hover {
