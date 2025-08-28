@@ -778,7 +778,7 @@ class Piece {
 
   allTrajectories(inst = 0, stringIdx = 0) {
     const allTrajectories: Trajectory[] = [];
-    this.phraseGrid[inst].forEach(phrase => {
+    this.phraseGrid[inst].forEach((phrase, pIdx) => {
       if (phrase.trajectoryGrid[stringIdx]) {
         allTrajectories.push(...phrase.trajectoryGrid[stringIdx]);
       }
@@ -824,11 +824,30 @@ class Piece {
   phraseIdxFromTime(time: number, track: number) {
     const starts = this.durStarts(track);
     const idx = findLastIndex(starts, s => time >= s);
+    
+    
     return idx
   }
 
   trajStartTimes(inst = 0, stringIdx = 0) {
     const trajs = this.allTrajectories(inst, stringIdx);
+    
+    // For second string, use phrase-boundary calculation since the trajectory 
+    // structures don't match between strings (different counts/durations)
+    if (stringIdx > 0) {
+      return trajs.map(traj => {
+        const phrase = this.phraseGrid[inst].find(p => 
+          p.trajectoryGrid[stringIdx] && p.trajectoryGrid[stringIdx].includes(traj)
+        );
+        if (!phrase) {
+          console.error(`Phrase not found for trajectory ${traj.uniqueId} on string ${stringIdx}`);
+          return 0;
+        }
+        return phrase.startTime! + traj.startTime!;
+      });
+    }
+    
+    // For primary string, use cumulative duration 
     const durs = trajs.map(t => t.durTot);
     return durs.reduce((acc, dur, idx) => {
       if (idx < durs.length - 1) {

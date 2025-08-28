@@ -605,15 +605,8 @@ export default defineComponent({
         // Create timing arrays for both strings
         const stringTimings = [];
         for (let stringIdx = 0; stringIdx < 2; stringIdx++) {
-          const trajs = props.piece.allTrajectories(i, stringIdx);
-          const durs = trajs.map(t => t.durTot);
-          const startTimes = durs.reduce((acc, dur) => {
-            if (typeof dur !== 'number') {
-              throw new Error('Duration is not a number');
-            }
-            acc.push(acc[acc.length - 1] + dur);
-            return acc;
-          }, [0]);
+          // Use the piece method which handles polyphonic timing correctly
+          const startTimes = props.piece.trajStartTimes(i, stringIdx);
           stringTimings.push(startTimes);
         }
         gridStartTimes.push(stringTimings);
@@ -1862,6 +1855,8 @@ export default defineComponent({
       if (renderObj.renderStatus === true) return;
       if (traj.id !== 12) {
         const isSecondString = checkIfSecondString(traj, track);
+        
+        
         renderMelodicCurve(traj, track, isSecondString);
         const inst = props.piece.instrumentation[track];
         if (inst === Instrument.Sitar) {
@@ -1895,6 +1890,8 @@ export default defineComponent({
       const trajUIds = props.piece.allTrajectories(track, stringIdx).map(t => t.uniqueId);
       const trajIdx = trajUIds.indexOf(traj.uniqueId);
       const trajStart = trajStartTimes.value[track][stringIdx][trajIdx];
+      
+      
       const trackG = tracks[track];
       const g = trackG.select('.trajG');
       const trajData = makeTrajData(traj, trajStart);
@@ -5699,6 +5696,8 @@ export default defineComponent({
     }
 
     const possibleTrajDivs = (track: number, pIdx?: number) => {
+      // Use selected string for getting trajectory dividers
+      const stringIdx = props.currentStringIdx ?? 0;
       if (pIdx !== undefined) {
         // returns times on left and right of phrase div (so, current phrase 
         // and next phrase)
@@ -5707,14 +5706,17 @@ export default defineComponent({
         // get all trajs except first one, and collect all start times
         const stA = phraseA.startTime!;
         const stB = phraseB.startTime!;
-        const divs = phraseA.trajectories.slice(1).map(t => stA + t.startTime!);
-        divs.push(...phraseB.trajectories.map(t => stB + t.startTime!));
+        const trajArrayA = phraseA.trajectoryGrid[stringIdx] || phraseA.trajectories;
+        const trajArrayB = phraseB.trajectoryGrid[stringIdx] || phraseB.trajectories;
+        const divs = trajArrayA.slice(1).map(t => stA + t.startTime!);
+        divs.push(...trajArrayB.map(t => stB + t.startTime!));
         return divs
       } else {
         const divs: number[] = [];
         props.piece.phraseGrid[track].forEach(phrase => {
           const st = phrase.startTime!;
-          divs.push(...phrase.trajectories.slice(1).map(t => st + t.startTime!))
+          const trajArray = phrase.trajectoryGrid[stringIdx] || phrase.trajectories;
+          divs.push(...trajArray.slice(1).map(t => st + t.startTime!))
         });
         return divs
       }
@@ -5875,6 +5877,7 @@ export default defineComponent({
       const logFreq = props.yScale.invert(e.offsetY);
       const track = props.editingInstIdx;
       const pIdx = props.piece.phraseIdxFromTime(time, track);
+      
       if (props.selectedMode === EditorMode.Chikari) {
         insertNewChikari(time, track, pIdx);
       } else if (props.selectedMode === EditorMode.PhraseDiv) {
@@ -6087,7 +6090,21 @@ export default defineComponent({
 
     const insertNewPhraseDiv = (time: number, track: number, pIdx: number) => {
       const phrase = props.piece.phraseGrid[track][pIdx];
-      const tIdx = phrase.trajIdxFromTime(time)!;
+      
+      // Check if we're splitting during a non-silent trajectory on second string
+      if (phrase.trajectoryGrid[1]) {
+        const secondStringTIdx = phrase.trajIdxFromTime(time, 1);
+        if (secondStringTIdx !== null) {
+          const secondStringTraj = phrase.trajectoryGrid[1][secondStringTIdx];
+          if (secondStringTraj.id !== 12) {
+            console.warn('Cannot create phrase division during non-silent second string trajectory');
+            return;
+          }
+        }
+      }
+      
+      // Phrase divisions should always use the first string
+      const tIdx = phrase.trajIdxFromTime(time, 0)!;
       const traj = phrase.trajectories[tIdx];
       if (traj.groupId !== undefined) {
         const group = phrase.getGroupFromId(traj.groupId)!;
@@ -6102,53 +6119,65 @@ export default defineComponent({
           time = startTime;
         }
       }
+      
+      // Check if we're splitting a silent trajectory first - if so, handle it at exact time
       if (traj.id === 12) {
-        // make current traj durTot such that it ends at current time, and 
-        // make new traj start at current time, update the phrase to reflect
-        // and reset zoom ? Or ... do I have to manually rename all the 
-        // following trajs if there are any?
-        const firstTrajDur = time - (phrase.startTime! + traj.startTime!);
-        const secondTrajDur = traj.durTot - firstTrajDur;
-        traj.durTot = firstTrajDur;
-        const ntObj: {
-          id: number,
-          durTot: number,
-          pitches: Pitch[],
-          fundID12: number,
-          instrumentation?: Instrument
-        } = {
-          id: 12,
-          durTot: secondTrajDur,
-          pitches: [],
-          fundID12: props.piece.raga.fundamental,
-        };
-        ntObj.instrumentation = props.piece.instrumentation[track];
-        const newTraj = new Trajectory(ntObj);
-        // Use selected string for trajectory operations
-        const stringIdx = props.currentStringIdx ?? 0;
-        if (!phrase.trajectoryGrid[stringIdx]) {
-          phrase.trajectoryGrid[stringIdx] = [];
-        }
-        phrase.trajectoryGrid[stringIdx].splice(tIdx + 1, 0, newTraj);
-        phrase.reset();
-        // right here, I need to reid all the following trajectories
+        // Handle silent trajectory splitting for both strings at the same time  
+        [0, 1].forEach(stringIdx => {
+          const trajArray = stringIdx === 0 ? phrase.trajectories : phrase.trajectoryGrid[stringIdx];
+          if (!trajArray || trajArray.length === 0) return;
+          
+          const tIdx = phrase.trajIdxFromTime(time, stringIdx);
+          if (tIdx === null) return;
+          
+          const currentTraj = trajArray[tIdx];
+          if (currentTraj.id === 12) {
+            // Split the silent trajectory at exact time
+            const firstTrajDur = time - (phrase.startTime! + currentTraj.startTime!);
+            const secondTrajDur = currentTraj.durTot - firstTrajDur;
+            
+            // Update original trajectory to be just the first part
+            currentTraj.durTot = firstTrajDur;
+            
+            // Create new trajectory for the second part
+            const ntObj = {
+              id: 12,
+              durTot: secondTrajDur,
+              pitches: [],
+              fundID12: props.piece.raga.fundamental,
+              instrumentation: props.piece.instrumentation[track]
+            };
+            const newTraj = new Trajectory(ntObj);
+            
+            // Insert new trajectory right after the split point
+            trajArray.splice(tIdx + 1, 0, newTraj);
+          }
+        });
         
+        phrase.reset();
       }
+      
+      // Calculate final split time for phrase division logic
       const possibleTimes = possibleTrajDivs(track);
       const finalTime = getClosest(possibleTimes, time);
       const ftIdx = possibleTimes.indexOf(finalTime);
+      
+      // Find which phrase contains the split point
       const ptPerP = props.piece.phraseGrid[track]
         .map(p => p.trajectories.length - 1);
-      // look into this cumsum issue ...
       const lims = [0, ...ptPerP.map(cumsum()).slice(0, ptPerP.length - 1)];
       const pIdx_ = lims.findLastIndex(lim => ftIdx >= lim);
       const start = lims[pIdx_];
       const trajIdx = ftIdx - start;
       const phrase_ = props.piece.phraseGrid[track][pIdx_];
+      
+      // Split trajectories - move everything after split point to new phrase
       const end = phrase_.trajectories.length - (trajIdx + 1);
       const newTrajs = phrase_.trajectories.splice(trajIdx+1, end);
       phrase_.durTotFromTrajectories();
       phrase_.durArrayFromTrajectories();
+      
+      // Set up new phrase object
       const newPhraseObj: {
         trajectories: Trajectory[],
         raga: Raga,
@@ -6174,6 +6203,32 @@ export default defineComponent({
       }
       const newPhrase = new Phrase(newPhraseObj)
       props.piece.phraseGrid[track].splice(phrase_.pieceIdx! + 1, 0, newPhrase);
+      
+      // Move second string trajectories after split point to new phrase
+      if (phrase_.trajectoryGrid[1] && phrase_.trajectoryGrid[1].length > 0) {
+        const secondStringTIdx = phrase_.trajIdxFromTime(finalTime, 1);
+        if (secondStringTIdx !== null) {
+          const secondStringArray = phrase_.trajectoryGrid[1];
+          const secondStringEnd = secondStringArray.length - (secondStringTIdx + 1);
+          if (secondStringEnd > 0) {
+            const newSecondStringTrajs = secondStringArray.splice(secondStringTIdx + 1, secondStringEnd);
+            
+            // Ensure new phrase has trajectoryGrid structure
+            if (!newPhrase.trajectoryGrid[1]) {
+              newPhrase.trajectoryGrid[1] = [];
+            }
+            newPhrase.trajectoryGrid[1].push(...newSecondStringTrajs);
+          }
+        }
+      }
+      
+      // Reset both phrases after all trajectory movements
+      phrase_.reset();
+      newPhrase.reset();
+      
+      // Ensure both phrases have proper polyphonic trajectory grids  
+      props.piece.ensureStringSynchronization();
+      
       props.piece.durTotFromPhrases();
       props.piece.durArrayFromPhrases();
       props.piece.updateStartTimes();

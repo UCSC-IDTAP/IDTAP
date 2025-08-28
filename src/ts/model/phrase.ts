@@ -510,7 +510,8 @@ class Phrase {
       // breakpoint
       throw new Error('No trajectory found')
     }
-    return trajs[0].num
+    // Return the index within the specific string's trajectory array, not the num property
+    return trajectoryArray.indexOf(trajs[0])
   }
 
   toJSON() {

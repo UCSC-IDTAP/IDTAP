@@ -1006,6 +1006,10 @@ export default defineComponent({
         }
         const silentPhrase = new Phrase(phraseObj);
         this.piece.phrases.push(silentPhrase);
+        
+        // Ensure polyphonic instruments have proper second string setup
+        this.piece.ensureStringSynchronization();
+        
         this.piece.durArrayFromPhrases();
         this.piece.updateStartTimes();
       }
@@ -1790,6 +1794,8 @@ export default defineComponent({
       const tIdx = this.trajTimePts[0].tIdx;
       const track = this.trajTimePts[0].track;
       const stringIdx = this.trajTimePts[0].stringIdx ?? 0;
+      
+      
       const phrase = this.piece.phraseGrid[track][pIdx];
       // console.log(track, tIdx, pIdx, phrase)
       if (this.piece.instrumentation) {
@@ -1807,20 +1813,48 @@ export default defineComponent({
       const st = phrase.startTime! + silentTraj.startTime!
       const startsEqual = times[0] === st;
       const endsEqual = times[times.length - 1] === st + silentTraj.durTot;
+      
+      // Prevent negative durations by validating bounds
+      if (durTot > silentTraj.durTot) {
+        console.error(`Cannot insert trajectory with duration ${durTot} into silent trajectory with duration ${silentTraj.durTot}`);
+        return;
+      }
+      
       if (startsEqual && endsEqual) { // if replaces entire silent traj
         trajs[tIdx] = newTraj;
         phrase.reset();
       } else if (startsEqual) { // if replaces left side of silent traj
-        silentTraj.durTot = silentTraj.durTot - durTot;
+        const remainingDur = silentTraj.durTot - durTot;
+        if (remainingDur < 0) {
+          console.error(`Would create negative duration: ${remainingDur}`);
+          return;
+        }
+        silentTraj.durTot = remainingDur;
         trajs.splice(tIdx, 0, newTraj);
         phrase.reset();
       } else if (endsEqual) { // if replaces right side of silent traj
-        silentTraj.durTot = silentTraj.durTot - durTot;
+        const remainingDur = silentTraj.durTot - durTot;
+        if (remainingDur < 0) {
+          console.error(`Would create negative duration: ${remainingDur}`);
+          return;
+        }
+        silentTraj.durTot = remainingDur;
         phrase.trajectoryGrid[stringIdx].splice(tIdx + 1, 0, newTraj);
         phrase.reset();
       } else { // if replaces internal portion of silent traj
         const firstDur = times[0] - st;
         const lastDur = (st + silentTraj.durTot) - times[times.length - 1];
+        
+        // Validate that splitting doesn't create negative durations
+        if (firstDur < 0) {
+          console.error(`Would create negative firstDur: ${firstDur}`);
+          return;
+        }
+        if (lastDur < 0) {
+          console.error(`Would create negative lastDur: ${lastDur}`);
+          return;
+        }
+        
         silentTraj.durTot = firstDur;
         const lstObj: {
           id: number,
