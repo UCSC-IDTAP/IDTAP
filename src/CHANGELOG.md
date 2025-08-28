@@ -1,6 +1,9 @@
 # Changelog
 
 
+* feat: add Python Package, ISMIR Paper, and NEH Whitepaper links to landing page [e1bd633] (Jon Myers)
+### 2025-08-28
+
 * Fix: standardize UI for editing transcriptions permissions [a199f18] (Jon Myers)
 * fix: update sha.js to 2.4.12 to resolve security vulnerability [f942083] (Jon Myers)
 ### 2025-08-26
