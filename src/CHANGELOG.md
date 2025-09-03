@@ -1,6 +1,10 @@
 # Changelog
 
 
+* fix: use IntersectionObserver API for immediate meter rendering [0493fd5] (Jon Myers)
+* refactor: simplify meter refresh fix to only handle meters [27c8c58] (Jon Myers)
+* fix: render meters immediately for visible chunks after zoom [3a10f96] (Jon Myers)
+* fix: ensure meters are cleared and regenerated on zoom changes [4489e61] (Jon Myers)
 * fix: enable Git LFS in GitHub Actions deployment [5cf35ea] (Jon Myers)
 * feat: add timing display toggle for excerpt transcriptions [89d02d8] (Jon Myers)
 ### 2025-09-03
