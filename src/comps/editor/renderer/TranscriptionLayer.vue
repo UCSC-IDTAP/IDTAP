@@ -2387,6 +2387,7 @@ export default defineComponent({
       d3.selectAll('.sargamLinesG').remove();
       d3.selectAll('.chikariG').remove();
       d3.selectAll('.bolsG').remove();
+      d3.selectAll('.metricGrid').remove();
       d3.selectAll('.regionG').remove();
       d3.selectAll('.meterG').remove();
 
