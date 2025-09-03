@@ -18,7 +18,8 @@ import {
 import * as d3 from 'd3';
 import { getContrastingTextColor } from '@/ts/utils.ts';
 import { Piece } from '@model';
-import { InstrumentTrackType } from '@shared/types';
+import { InstrumentTrackType, ExcerptRange } from '@shared/types';
+import { TimingDisplay } from '@shared/enums';
 
 export default defineComponent({
   name: 'XAxis',
@@ -55,6 +56,14 @@ export default defineComponent({
       type: Array as PropType<InstrumentTrackType[]>,
       required: true
     },
+    timingDisplay: {
+      type: String as PropType<TimingDisplay>,
+      required: true
+    },
+    excerptRange: {
+      type: Object as PropType<ExcerptRange>,
+      required: false
+    },
   },
   setup(props, { emit }) {
     const xAxisContainer = ref<HTMLDivElement | null>(null);
@@ -83,6 +92,7 @@ export default defineComponent({
       }
     })
     watch(() => props.instIdx, () => resetAxis())
+    watch(() => props.timingDisplay, () => resetAxis())
 
     const leadingZeros = (int: number) => {
       if (int < 10) {
@@ -92,9 +102,14 @@ export default defineComponent({
       }
     }
     const structuredTime = (dur: number) => {
-      const hours = String(Math.floor(dur / 3600));
-      let minutes = Math.floor((dur % 3600) / 60);
-      const seconds = leadingZeros(dur % 60);
+      // Apply offset for real time display if in real time mode
+      const adjustedDur = props.timingDisplay === TimingDisplay.RealTime && props.excerptRange
+        ? dur + props.excerptRange.start
+        : dur;
+      
+      const hours = String(Math.floor(adjustedDur / 3600));
+      let minutes = Math.floor((adjustedDur % 3600) / 60);
+      const seconds = leadingZeros(adjustedDur % 60);
       if (Number(hours) > 0) {
         return `${hours}:${leadingZeros(minutes)}:${seconds}`
       } else {

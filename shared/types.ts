@@ -15,6 +15,7 @@ import {
   Instrument, 
   PlayheadAnimations, 
   ScaleSystem,
+  TimingDisplay,
   Segmentation,
   PitchInclusionMethod,
   PitchRepresentation,
@@ -927,6 +928,7 @@ type DisplaySettings = {
   highlightTrajs: boolean,
   uniqueId: string,
   scaleSystem?: ScaleSystem,
+  timingDisplay?: TimingDisplay,
   visibility?: {
     spectrogram: boolean,
     melograph: boolean,
