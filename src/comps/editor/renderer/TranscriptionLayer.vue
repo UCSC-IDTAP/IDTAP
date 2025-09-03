@@ -422,7 +422,7 @@ export default defineComponent({
     const dragDotColor = 'purple';
     const selectedDragDotColor = '#d602d6';
     let dragDotIdx: number | undefined = undefined;
-    const minTrajDur = 0.05;
+    const minTrajDur = 0.01;
     let pulseDragEnabled = false;
     let meterHovering: Meter | undefined = undefined;
     let selMeterHovering = false;
@@ -5682,7 +5682,7 @@ export default defineComponent({
           return Math.abs(ttp.time - time)
         });
         const minDiff = Math.min(...diffs);
-        setIt = minDiff > 0.05;
+        setIt = minDiff > minTrajDur;
         if (setIt) {
           const startTime = phrase.startTime! + traj.startTime!;
           if (time - startTime < minTrajDur) {
