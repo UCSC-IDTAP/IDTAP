@@ -287,7 +287,7 @@
         <label>Timing Display</label>
         <div class='row'>
           <select v-model='timingDisplayProxy'>
-            <option v-for='timing in possibleTimingDisplays' :value='timing'>
+            <option v-for='timing in possibleTimingDisplays' :value='timing' :key='timing'>
               {{ timing }}
             </option>
           </select>
