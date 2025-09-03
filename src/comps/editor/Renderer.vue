@@ -37,6 +37,8 @@
           :instIdx='editingInstIdx'
           :showPhrases='showPhrases'
           :instTracks='instTracks'
+          :timingDisplay='timingDisplay'
+          :excerptRange='piece.excerptRange'
           @update:region='updateRegion'
           ref='xAxis'/>
       </div>
@@ -223,6 +225,7 @@ import {
   Instrument, 
   PlayheadAnimations, 
   ScaleSystem,
+  TimingDisplay,
   PhonemeRepresentation,
   SargamRepresentation,
 } from '@shared/enums';
@@ -425,6 +428,10 @@ export default defineComponent({
     },
     scaleSystem: {
       type: String as PropType<ScaleSystem>,
+      required: true
+    },
+    timingDisplay: {
+      type: String as PropType<TimingDisplay>,
       required: true
     },
     audioPlayerRef: {

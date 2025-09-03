@@ -283,6 +283,16 @@
           </select>
         </div>
       </div>
+      <div class='rowBox' v-if='excerptRange !== undefined'>
+        <label>Timing Display</label>
+        <div class='row'>
+          <select v-model='timingDisplayProxy'>
+            <option v-for='timing in possibleTimingDisplays' :value='timing' :key='timing'>
+              {{ timing }}
+            </option>
+          </select>
+        </div>
+      </div>
     </div>
     <div class='col'>
       <div class='titleBox'>
@@ -364,7 +374,7 @@ import {
   ExcerptRange,
   ProcessMessage
 } from '@shared/types';
-import { PlayheadAnimations, ScaleSystem } from '@shared/enums';
+import { PlayheadAnimations, ScaleSystem, TimingDisplay } from '@shared/enums';
 import SwatchSelect from '@/comps/SwatchSelect.vue';
 import {
   Pitch, 
@@ -492,6 +502,10 @@ export default defineComponent({
       type: String as PropType<ScaleSystem>,
       required: true
     },
+    timingDisplay: {
+      type: String as PropType<TimingDisplay>,
+      required: true
+    },
     hasSitar: {
       type: Boolean,
       required: true
@@ -571,6 +585,7 @@ export default defineComponent({
     'update:highlightTrajs',
     'update:zoomFactors',
     'update:scaleSystem',
+    'update:timingDisplay',
     'update:showSpectrogram',
     'update:showMelograph',
     'update:showSargam',
@@ -623,6 +638,7 @@ export default defineComponent({
       "highlightTrajs": true,
       "uniqueId": "ffa38001-f592-4778-a91e-c4ef5c99b081",
       "scaleSystem": ScaleSystem.Sargam,
+      "timingDisplay": TimingDisplay.ExcerptTime,
     } as DisplaySettings;
 
     const intensityPower = ref(1);
@@ -651,6 +667,7 @@ export default defineComponent({
     const savedSettings = ref<DisplaySettings[]>([]);
     const selectedSetting = ref<DisplaySettings>(defaultSetting);
     const possibleScaleSystems = Object.values(ScaleSystem);
+    const possibleTimingDisplays = Object.values(TimingDisplay);
 
     const playheadAnimations = Object.values(PlayheadAnimations);
     const store = useStore();
@@ -677,6 +694,14 @@ export default defineComponent({
       },
       set(val) {
         emit('update:scaleSystem', val);
+      }
+    })
+    const timingDisplayProxy = computed({
+      get() {
+        return props.timingDisplay;
+      },
+      set(val) {
+        emit('update:timingDisplay', val);
       }
     })
     const spectrogramToggleProxy = computed({
@@ -1087,6 +1112,7 @@ export default defineComponent({
         zoomXFactor: props.zoomXFactor,
         zoomYFactor: props.zoomYFactor,
         scaleSystem: scaleSystemProxy.value,
+        timingDisplay: timingDisplayProxy.value,
         visibility
       }
     };
@@ -1150,6 +1176,9 @@ export default defineComponent({
       }
       if (s.scaleSystem !== undefined) {
         scaleSystemProxy.value = s.scaleSystem;
+      }
+      if (s.timingDisplay !== undefined) {
+        timingDisplayProxy.value = s.timingDisplay;
       }
       if (s.visibility !== undefined) {
         spectrogramToggleProxy.value = s.visibility.spectrogram;
@@ -1267,6 +1296,8 @@ export default defineComponent({
       highlightTrajsProxy,
       possibleScaleSystems,
       scaleSystemProxy,
+      timingDisplayProxy,
+      possibleTimingDisplays,
       preventSpaceToggle,
       spectrogramToggleProxy,
       melographToggleProxy,

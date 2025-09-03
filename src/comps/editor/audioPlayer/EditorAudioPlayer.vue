@@ -337,6 +337,7 @@
       :zoomXFactor='zoomXFactor'
       :zoomYFactor='zoomYFactor'
       :scaleSystem='scaleSystem'
+      :timingDisplay='timingDisplay'
       :hasSitar='hasSitar'
       :hasVocal='hasVocal'
       :hasRecording='hasRecording'
@@ -369,6 +370,7 @@
       @update:highlightTrajs='$emit("update:highlightTrajs", $event)'
       @update:zoomFactors='$emit("update:zoomFactors", $event)'
       @update:scaleSystem='$emit("update:scaleSystem", $event)'
+      @update:timingDisplay='$emit("update:timingDisplay", $event)'
       @update:showSpectrogram='$emit("update:showSpectrogram", $event)'
       @update:showMelograph='$emit("update:showMelograph", $event)'
       @update:showSargam='$emit("update:showSargam", $event)'
@@ -443,7 +445,8 @@ import {
   PlayheadAnimations,
   ControlsMode,
   Instrument,
-  ScaleSystem
+  ScaleSystem,
+  TimingDisplay
  } from '@shared/enums';
 import { AudioWorklet } from '@/audio-worklet';
 import { excelData, jsonData } from '@/js/serverCalls.ts';
@@ -1020,6 +1023,10 @@ export default defineComponent({
     },
     scaleSystem: {
       type: String as PropType<ScaleSystem>,
+      required: true
+    },
+    timingDisplay: {
+      type: String as PropType<TimingDisplay>,
       required: true
     },
     hasSitar: {

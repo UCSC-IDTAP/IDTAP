@@ -51,6 +51,7 @@
       :queryTime='queryTime'
       :editableCols='editableCols'
       :scaleSystem='scaleSystem'
+      :timingDisplay='timingDisplay'
       :audioPlayerRef='$refs.audioPlayer as APType'
       :showPhrases='showPhrases'
       @zoomInY='zoomInY'
@@ -227,6 +228,7 @@
   :zoomXFactor='zoomXFactor'
   :zoomYFactor='zoomYFactor'
   :scaleSystem='scaleSystem'
+  :timingDisplay='timingDisplay'
   :hasSitar='hasSitar'
   :hasVocal='vocal'
   :showSpectrogram='showSpectrogram'
@@ -273,6 +275,7 @@
   @scrollBackForPlayheadReturn='scrollBackForPlayhead'
   @update:zoomFactors='updateZoomFactors'
   @update:scaleSystem='scaleSystem = $event'
+  @update:timingDisplay='timingDisplay = $event'
   @update:showSpectrogram='showSpectrogram = $event'
   @update:showMelograph='melographVisible = $event'
   @update:showSargam='showSargam = $event'
@@ -411,6 +414,7 @@ import {
   ControlsMode, 
   PlayheadAnimations,
   ScaleSystem,
+  TimingDisplay,
   SargamRepresentation,
   PhonemeRepresentation
 } from '@shared/enums';
@@ -647,6 +651,7 @@ type EditorDataType = {
   editableCols: CollectionType[],
   showRemoveFromCollection: boolean,
   scaleSystem: ScaleSystem,
+  timingDisplay: TimingDisplay,
   excerptRange?: ExcerptRange,
   showPhrases: boolean,
 }
@@ -815,6 +820,7 @@ export default defineComponent({
       editableCols: [],
       showRemoveFromCollection: false,
       scaleSystem: ScaleSystem.Sargam,
+      timingDisplay: TimingDisplay.ExcerptTime,
       excerptRange: undefined,
       showPhrases: true,
     }

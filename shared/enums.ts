@@ -63,6 +63,11 @@ enum ScaleSystem {
   MovableCCents = 'Movable C Pitch + Cents',
 }
 
+enum TimingDisplay {
+  ExcerptTime = 'Excerpt Time',
+  RealTime = 'Real Time',
+}
+
 enum SargamRepresentation {
   Sargam = 'Sargam',
   Solfege = 'Solfege',
@@ -114,6 +119,7 @@ export {
   ControlsMode,
   PlayheadAnimations,
   ScaleSystem,
+  TimingDisplay,
   SargamRepresentation,
   PhonemeRepresentation,
   LabelScheme,
