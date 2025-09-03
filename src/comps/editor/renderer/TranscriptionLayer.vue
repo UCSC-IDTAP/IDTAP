@@ -2387,7 +2387,6 @@ export default defineComponent({
       d3.selectAll('.sargamLinesG').remove();
       d3.selectAll('.chikariG').remove();
       d3.selectAll('.bolsG').remove();
-      d3.selectAll('.metricGrid').remove();
       d3.selectAll('.regionG').remove();
       d3.selectAll('.meterG').remove();
 
@@ -4375,6 +4374,50 @@ export default defineComponent({
       observer.disconnect();
       emptyDivs.value.forEach(div => {
         observer.observe(div);
+        // Check if div is already intersecting and render immediately if so
+        const rect = div.getBoundingClientRect();
+        const containerRect = emptyOverlay.value?.getBoundingClientRect();
+        if (containerRect) {
+          const isIntersecting = rect.left < containerRect.right && 
+                                rect.right > containerRect.left &&
+                                rect.top < containerRect.bottom && 
+                                rect.bottom > containerRect.top;
+          if (isIntersecting) {
+            const idx = emptyDivIdxMap.get(div)!;
+            const dur = chunkDur.value;
+            for (let inst = 0; inst < props.piece.instrumentation.length; inst++) {
+              props.piece.chunkedDisplaySargam(inst, dur)[idx].forEach(s => {
+                renderSargam(s);
+              });
+              const insts = [Instrument.Vocal_M, Instrument.Vocal_F];
+              if (insts.includes(props.piece.instrumentation[inst] as Instrument)) {
+                props.piece.chunkedDisplayVowels(inst, dur)[idx].forEach(v => {
+                  renderVowel(v);
+                })
+                props.piece.chunkedDisplayConsonants(inst, dur)[idx].forEach(c => {
+                  renderEndingConsonant(c);
+                })
+              } else if (props.piece.instrumentation[inst] === Instrument.Sitar) {
+                props.piece.chunkedDisplayChikaris(inst, dur)[idx].forEach(cd => {
+                  renderChikari(cd);
+                });
+                props.piece.chunkedDisplayBols(inst, dur)[idx].forEach(b => {
+                  renderBol(b);
+                })
+              }
+              props.piece.chunkedTrajs(inst, dur)[idx].forEach(traj => {
+                if (traj.id !== 12) renderTraj(traj);
+              });
+              props.piece.chunkedPhraseDivs(inst, dur)[idx].forEach(pd => {
+                renderPhraseDiv(pd);
+              });
+            }
+            props.piece.chunkedMeters(dur)[idx].forEach(m => {
+              renderMeter(m);
+            })
+            observer.unobserve(div);
+          }
+        }
       });
     };
 
