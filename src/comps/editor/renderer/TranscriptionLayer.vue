@@ -4377,12 +4377,14 @@ export default defineComponent({
       const tempObserver = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
-            const idx = emptyDivIdxMap.get(entry.target as HTMLDivElement)!;
-            const dur = chunkDur.value;
-            // Only render meters for already visible chunks
-            props.piece.chunkedMeters(dur)[idx].forEach(m => {
-              renderMeter(m);
-            });
+            const idx = emptyDivIdxMap.get(entry.target as HTMLDivElement);
+            if (idx !== undefined) {
+              const dur = chunkDur.value;
+              // Only render meters for already visible chunks
+              props.piece.chunkedMeters(dur)[idx].forEach(m => {
+                renderMeter(m);
+              });
+            }
           }
         });
         tempObserver.disconnect(); // Clean up temp observer
