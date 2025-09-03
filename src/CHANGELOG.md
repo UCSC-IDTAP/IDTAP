@@ -1,6 +1,11 @@
 # Changelog
 
 
+* feat: add timing display toggle for excerpt transcriptions [89d02d8] (Jon Myers)
+### 2025-09-03
+
+## September 2025
+
 * feat: add Python Package, ISMIR Paper, and NEH Whitepaper links to landing page [e1bd633] (Jon Myers)
 ### 2025-08-28
 
