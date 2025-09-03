@@ -1,6 +1,7 @@
 # Changelog
 
 
+* fix: enable Git LFS in GitHub Actions deployment [5cf35ea] (Jon Myers)
 * feat: add timing display toggle for excerpt transcriptions [89d02d8] (Jon Myers)
 ### 2025-09-03
 
