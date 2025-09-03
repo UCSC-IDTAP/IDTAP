@@ -4372,8 +4372,31 @@ export default defineComponent({
 
     const resetObserver = () => {
       observer.disconnect();
+      
+      // Create a temporary observer to immediately check for intersections
+      const tempObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const idx = emptyDivIdxMap.get(entry.target as HTMLDivElement);
+            if (idx !== undefined) {
+              const dur = chunkDur.value;
+              // Only render meters for already visible chunks
+              props.piece.chunkedMeters(dur)[idx].forEach(m => {
+                renderMeter(m);
+              });
+            }
+          }
+        });
+        tempObserver.disconnect(); // Clean up temp observer
+      }, {
+        root: emptyOverlay.value,
+        rootMargin: '0px',
+        threshold: 0.0
+      });
+      
       emptyDivs.value.forEach(div => {
         observer.observe(div);
+        tempObserver.observe(div); // Check immediate intersection
       });
     };
 
