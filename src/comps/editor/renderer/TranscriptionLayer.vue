@@ -3881,7 +3881,7 @@ export default defineComponent({
             const diff = Math.abs(logFreq - prevPitch.logFreq);
             const prevTime = phrase.startTime! + prevTraj.startTime! + prevTraj.durTot;
             const timeDiff = Math.abs(newTime - prevTime);
-            if (diff < 0.05 && timeDiff < 0.1) {
+            if (diff < 0.05 && timeDiff < minTrajDur) {
               logFreq = prevPitch.logFreq;
               newTime = prevTime;
             }
@@ -3901,7 +3901,7 @@ export default defineComponent({
             const diff = Math.abs(logFreq - nextPitch.logFreq);
             const nextTime = phrase.startTime! + nextTraj.startTime!;
             const timeDiff = Math.abs(nextTime - newTime);
-            if (diff < 0.05 && timeDiff < 0.1) {
+            if (diff < 0.05 && timeDiff < minTrajDur) {
               logFreq = nextPitch.logFreq;
               newTime = nextTime;
             }
@@ -4931,7 +4931,7 @@ export default defineComponent({
               const diff = Math.abs(newLogFreq - prevPitch.logFreq);
               const prevTime = phrase.startTime! + prevTraj.startTime! + prevTraj.durTot;
               const timeDiff = Math.abs(newTime - prevTime);
-              if (diff < 0.05 && timeDiff < 0.1) {
+              if (diff < 0.05 && timeDiff < minTrajDur) {
                 newTime = prevTime;
                 newLogFreq = prevPitch.logFreq;
                 const x = props.xScale(newTime);
@@ -4957,7 +4957,7 @@ export default defineComponent({
               const diff = Math.abs(newLogFreq - nextPitch.logFreq);
               const nextTime = phrase.startTime! + nextTraj.startTime!;
               const timeDiff = Math.abs(nextTime - newTime);
-              if (diff < 0.05 && timeDiff < 0.1) {
+              if (diff < 0.05 && timeDiff < minTrajDur) {
                 newTime = nextTime;
                 newLogFreq = nextPitch.logFreq;
                 const x = props.xScale(newTime);
@@ -5005,7 +5005,7 @@ export default defineComponent({
               const diff = Math.abs(newLogFreq - prevPitch.logFreq);
               const prevTime = phrase.startTime! + prevTraj.startTime! + prevTraj.durTot;
               const timeDiff = Math.abs(newTime - prevTime);
-              if (diff < 0.05 && timeDiff < 0.1) {
+              if (diff < 0.05 && timeDiff < minTrajDur) {
                 newLogFreq = prevPitch.logFreq;
                 newTime = prevTime;
               }
@@ -5025,7 +5025,7 @@ export default defineComponent({
               const diff = Math.abs(newLogFreq - nextPitch.logFreq);
               const nextTime = phrase.startTime! + nextTraj.startTime!;
               const timeDiff = Math.abs(nextTime - newTime);
-              if (diff < 0.05 && timeDiff < 0.1) {
+              if (diff < 0.05 && timeDiff < minTrajDur) {
                 newLogFreq = nextPitch.logFreq;
                 newTime = nextTime;
               }
@@ -5076,7 +5076,7 @@ export default defineComponent({
               const diff = Math.abs(newLogFreq - prevPitch.logFreq);
               const prevTime = phrase.startTime! + prevTraj.startTime! + prevTraj.durTot;
               const timeDiff = Math.abs(newTime - prevTime);
-              if (diff < 0.05 && timeDiff < 0.1) {
+              if (diff < 0.05 && timeDiff < minTrajDur) {
                 newLogFreq = prevPitch.logFreq;
                 newTime = prevTime;
               }
@@ -5096,7 +5096,7 @@ export default defineComponent({
               const diff = Math.abs(newLogFreq - nextPitch.logFreq);
               const nextTime = phrase.startTime! + nextTraj.startTime!;
               const timeDiff = Math.abs(nextTime - newTime);
-              if (diff < 0.05 && timeDiff < 0.1) {
+              if (diff < 0.05 && timeDiff < minTrajDur) {
                 newLogFreq = nextPitch.logFreq;
                 newTime = nextTime;
               }
@@ -5674,7 +5674,7 @@ export default defineComponent({
             const diff = Math.abs(lastPitch.logFreq - logFreq);
             const lastTime = prevTraj.startTime! + prevTraj.durTot;
             const timeDiff = Math.abs(time - lastTime);
-            if (diff < 0.05 && timeDiff < 0.1) {
+            if (diff < 0.05 && timeDiff < minTrajDur) {
               logFreq = lastPitch.logFreq;
             }
           }
@@ -5687,7 +5687,7 @@ export default defineComponent({
             const diff = Math.abs(firstPitch.logFreq - logFreq);
             const lastTime = traj.startTime! + traj.durTot;
             const timeDiff = Math.abs(lastTime - time);
-            if (diff < 0.05 && timeDiff < 0.1) {
+            if (diff < 0.05 && timeDiff < minTrajDur) {
               logFreq = firstPitch.logFreq;
             }
           }
