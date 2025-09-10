@@ -1,6 +1,7 @@
 # Changelog
 
 
+* fix: update Claude workflow to use official OAuth action [b15d9c7] (Jon Myers)
 * feat: add Claude PR review workflow [b5e9e0b] (Jon Myers)
 ### 2025-09-10
 
