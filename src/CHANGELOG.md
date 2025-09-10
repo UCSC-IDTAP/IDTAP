@@ -4,6 +4,10 @@
 * fix: replace Claude workflow with working version from python-api [5c9f7b9] (Jon Myers)
 * fix: update Claude workflow to use official OAuth action [b15d9c7] (Jon Myers)
 * feat: add Claude PR review workflow [b5e9e0b] (Jon Myers)
+* feat: add Claude PR review GitHub Action workflow [aa9086b] (Jon Myers)
+* revert: remove Claude review workflow [e1f2a3d] (Jon Myers)
+* feat: add Claude PR review GitHub Action workflow [3dc7119] (Jon Myers)
+* feat: implement pulse-based getMusicalTime() method in TypeScript Meter class [622ac80] (Jon Myers)
 ### 2025-09-10
 
 * fix: use minTrajDur for pitch snapping time threshold [0625a3b] (Jon Myers)
