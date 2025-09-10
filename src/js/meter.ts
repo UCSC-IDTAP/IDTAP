@@ -3,7 +3,7 @@ const approxEqual = (v1: number, v2: number, epsilon = 0.001) => {
   return Math.abs(v1 - v2) <= epsilon
 };
 
-import { AffiliationType } from '@shared/types'
+import { AffiliationType, MusicalTime } from '@shared/types'
 class Pulse {
   realTime: number;
   uniqueId: string;
@@ -1631,6 +1631,276 @@ class Meter {
       const summed = sum(this.hierarchy[0]);
       return 60 * summed / this.tempo;
     }
+  }
+
+  // Helper methods for musical time calculation
+  
+  getPulsesPerCycle(): number {
+    // Calculate total pulses per cycle based on hierarchy
+    let pulsesPerCycle = 1;
+    for (const level of this.hierarchy) {
+      if (typeof level === 'number') {
+        pulsesPerCycle *= level;
+      } else {
+        // For array hierarchies (like [4, 3] at top level), sum the values
+        pulsesPerCycle *= level.reduce((sum, val) => sum + val, 0);
+      }
+    }
+    return pulsesPerCycle;
+  }
+
+  private hierarchicalPositionToPulseIndex(positions: number[], cycleNumber: number): number {
+    let pulseIndex = 0;
+    let multiplier = 1;
+    
+    // Work from finest to coarsest level
+    for (let level = this.hierarchy.length - 1; level >= 0; level--) {
+      const position = positions[level] || 0;
+      pulseIndex += position * multiplier;
+      
+      let hierarchySize = this.hierarchy[level];
+      if (Array.isArray(hierarchySize)) {
+        hierarchySize = hierarchySize.reduce((sum, val) => sum + val, 0);
+      }
+      multiplier *= hierarchySize;
+    }
+    
+    // Add offset for cycle
+    const cycleOffset = cycleNumber * this.getPulsesPerCycle();
+    return pulseIndex + cycleOffset;
+  }
+
+  private calculateLevelStartTime(positions: number[], cycleNumber: number, referenceLevel: number): number {
+    // Create positions for start of reference-level unit
+    const startPositions = positions.slice(0, referenceLevel + 1);
+    // Extend with zeros for levels below reference level
+    while (startPositions.length < this.hierarchy.length) {
+      startPositions.push(0);
+    }
+    
+    const startPulseIndex = this.hierarchicalPositionToPulseIndex(startPositions, cycleNumber);
+    
+    if (startPulseIndex < this.allPulses.length) {
+      return this.allPulses[startPulseIndex].realTime;
+    }
+    
+    // Fallback to theoretical calculation
+    return this.startTime + cycleNumber * this.cycleDur;
+  }
+
+  private calculateLevelDuration(positions: number[], cycleNumber: number, referenceLevel: number): number {
+    // Get start time of current unit
+    const startTime = this.calculateLevelStartTime(positions, cycleNumber, referenceLevel);
+    
+    // Calculate start time of next unit at same level
+    const nextPositions = positions.slice();
+    nextPositions[referenceLevel] = (nextPositions[referenceLevel] || 0) + 1;
+    
+    // Handle overflow - if we've exceeded this level
+    let hierarchySize = this.hierarchy[referenceLevel];
+    if (Array.isArray(hierarchySize)) {
+      hierarchySize = hierarchySize.reduce((sum, val) => sum + val, 0);
+    }
+    
+    if (nextPositions[referenceLevel] >= hierarchySize) {
+      // Handle overflow by moving to next cycle
+      const nextCycleNumber = cycleNumber + 1;
+      if (nextCycleNumber >= this.repetitions) {
+        // Use meter end time
+        return this.startTime + this.repetitions * this.cycleDur - startTime;
+      }
+      nextPositions[referenceLevel] = 0;
+      return this.calculateLevelStartTime(nextPositions, nextCycleNumber, referenceLevel) - startTime;
+    }
+    
+    const endTime = this.calculateLevelStartTime(nextPositions, cycleNumber, referenceLevel);
+    return endTime - startTime;
+  }
+
+  private validateReferenceLevel(referenceLevel?: number): number {
+    if (referenceLevel === undefined) {
+      return this.hierarchy.length - 1;
+    }
+    
+    if (!Number.isInteger(referenceLevel)) {
+      throw new Error(`reference_level must be an integer, got ${typeof referenceLevel}`);
+    }
+    
+    if (referenceLevel < 0) {
+      throw new Error(`reference_level must be non-negative, got ${referenceLevel}`);
+    }
+    
+    if (referenceLevel >= this.hierarchy.length) {
+      throw new Error(`reference_level ${referenceLevel} exceeds hierarchy depth ${this.hierarchy.length}`);
+    }
+    
+    return referenceLevel;
+  }
+
+  pulseIndexToHierarchicalPosition(pulseIndex: number, _cycleNumber: number): number[] {
+    // Convert pulse index back to hierarchical position
+    const withinCycleIndex = pulseIndex % this.getPulsesPerCycle();
+    
+    const positions: number[] = [];
+    let remainingIndex = Math.max(0, withinCycleIndex);
+    
+    // Work from coarsest to finest level
+    for (let level = 0; level < this.hierarchy.length; level++) {
+      let hierarchySize = this.hierarchy[level];
+      
+      if (Array.isArray(hierarchySize)) {
+        hierarchySize = hierarchySize.reduce((sum, val) => sum + val, 0);
+      }
+      
+      // Calculate how many pulses are in each subdivision at this level
+      let divisor = 1;
+      for (let innerLevel = level + 1; innerLevel < this.hierarchy.length; innerLevel++) {
+        let innerSize = this.hierarchy[innerLevel];
+        if (Array.isArray(innerSize)) {
+          innerSize = innerSize.reduce((sum, val) => sum + val, 0);
+        }
+        divisor *= innerSize;
+      }
+      
+      const positionAtLevel = Math.floor(remainingIndex / divisor);
+      positions.push(positionAtLevel);
+      remainingIndex = remainingIndex % divisor;
+    }
+    return positions;
+  }
+
+  getMusicalTime(realTime: number, referenceLevel?: number): MusicalTime | false {
+    // Step 1: Boundary validation
+    if (realTime < this.startTime) {
+      return false;
+    }
+    
+    const endTime = this.startTime + this.repetitions * this.cycleDur;
+    if (realTime >= endTime) {
+      return false;
+    }
+    
+    // Validate reference level
+    this.validateReferenceLevel(referenceLevel);
+    
+    // Step 2: Pulse-based cycle calculation
+    if (!this.allPulses || this.allPulses.length === 0) {
+      throw new Error("No pulse data available for meter. Pulse data is required for musical time calculation.");
+    }
+    
+    let cycleNumber: number | null = null;
+    
+    for (let cycle = 0; cycle < this.repetitions; cycle++) {
+      const cycleStartPulseIdx = cycle * this.getPulsesPerCycle();
+      
+      if (cycleStartPulseIdx < this.allPulses.length) {
+        const cycleStartTime = this.allPulses[cycleStartPulseIdx].realTime;
+        
+        // Get actual cycle end time using next cycle's first pulse
+        const nextCycleStartPulseIdx = (cycle + 1) * this.getPulsesPerCycle();
+        let cycleEndTime: number;
+        
+        if (nextCycleStartPulseIdx < this.allPulses.length) {
+          cycleEndTime = this.allPulses[nextCycleStartPulseIdx].realTime;
+        } else {
+          // Final cycle - use theoretical end
+          cycleEndTime = this.startTime + this.repetitions * this.cycleDur;
+        }
+        
+        // Check if time falls within this cycle's actual boundaries
+        if (cycle === this.repetitions - 1) {
+          // Final cycle: include exact end time
+          if (cycleStartTime <= realTime && realTime <= cycleEndTime) {
+            cycleNumber = cycle;
+            break;
+          }
+        } else {
+          // Intermediate cycles: exclude end time (belongs to next cycle)
+          if (cycleStartTime <= realTime && realTime < cycleEndTime) {
+            cycleNumber = cycle;
+            break;
+          }
+        }
+      }
+    }
+    
+    if (cycleNumber === null) {
+      throw new Error(`Unable to determine cycle for time ${realTime} using pulse data`);
+    }
+    
+    // Step 3: Pulse-based hierarchical position calculation
+    // Find the pulse at or before the query time within the current cycle
+    const cycleStartPulseIdx = cycleNumber * this.getPulsesPerCycle();
+    const cycleEndPulseIdx = Math.min((cycleNumber + 1) * this.getPulsesPerCycle(), this.allPulses.length);
+    
+    let currentPulseIndex: number | null = null;
+    for (let pulseIdx = cycleStartPulseIdx; pulseIdx < cycleEndPulseIdx; pulseIdx++) {
+      const pulseTime = this.allPulses[pulseIdx].realTime;
+      if (pulseTime <= realTime) {
+        currentPulseIndex = pulseIdx;
+      } else {
+        break;
+      }
+    }
+    
+    if (currentPulseIndex === null) {
+      currentPulseIndex = cycleStartPulseIdx; // Fallback to cycle start
+    }
+    
+    // Derive hierarchical position from the actual pulse found
+    const positions = this.pulseIndexToHierarchicalPosition(currentPulseIndex, cycleNumber);
+    
+    // Step 4: Pulse-based fractional beat calculation
+    const currentPulseTime = this.allPulses[currentPulseIndex].realTime;
+    
+    let fractionalBeat: number;
+    
+    // For reference levels, we need to calculate fractional position relative to that level
+    if (referenceLevel !== undefined && referenceLevel < this.hierarchy.length - 1) {
+      // Calculate duration of the reference level unit
+      const refLevelDuration = this.calculateLevelDuration(positions, cycleNumber, referenceLevel);
+      const refLevelStartTime = this.calculateLevelStartTime(positions, cycleNumber, referenceLevel);
+      
+      if (refLevelDuration > 0) {
+        const timeFromLevelStart = realTime - refLevelStartTime;
+        fractionalBeat = timeFromLevelStart / refLevelDuration;
+      } else {
+        fractionalBeat = 0.0;
+      }
+    } else {
+      // Default: use finest level (pulse-to-pulse)
+      if (currentPulseIndex + 1 < this.allPulses.length) {
+        const nextPulseTime = this.allPulses[currentPulseIndex + 1].realTime;
+        const pulseDuration = nextPulseTime - currentPulseTime;
+        
+        if (pulseDuration <= 0) {
+          fractionalBeat = 0.0;
+        } else {
+          const timeFromCurrentPulse = realTime - currentPulseTime;
+          fractionalBeat = timeFromCurrentPulse / pulseDuration;
+        }
+      } else {
+        // This is the last pulse - can't calculate duration
+        fractionalBeat = 0.0;
+      }
+    }
+    
+    // Clamp to [0, 1) range (exclusive upper bound)
+    fractionalBeat = Math.max(0.0, Math.min(0.9999999999999999, fractionalBeat));
+    
+    // Step 5: Handle reference level truncation (if specified)
+    let finalPositions = positions;
+    if (referenceLevel !== undefined && referenceLevel < this.hierarchy.length - 1) {
+      // Truncate positions to reference level for final result
+      finalPositions = positions.slice(0, referenceLevel + 1);
+    }
+    
+    // Step 6: Result construction
+    return {
+      cycleNumber: cycleNumber,
+      hierarchicalPosition: finalPositions,
+      fractionalBeat: fractionalBeat
+    };
   }
 
   toJSON() {

@@ -1192,6 +1192,12 @@ type AssemblageDescriptor = {
   loosePhraseIDs: string[];
 }
 
+interface MusicalTime {
+  cycleNumber: number;
+  hierarchicalPosition: number[];
+  fractionalBeat: number;
+}
+
 export type { 
   CollectionType, 
   UserType, 
@@ -1301,6 +1307,7 @@ export type {
   DN_ExtractorOptions,
   Temporality,
   AssemblageDescriptor,
-  AssemblageEditorType
+  AssemblageEditorType,
+  MusicalTime
 };
 
