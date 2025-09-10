@@ -49,15 +49,15 @@ jobs:
 
           # Direct prompt for manual review (triggered by @claude review comment)
           direct_prompt: |
-            Please review this pull request for the IDTAP (Interactive Digital Transcription and Analysis Platform) project and provide feedback on:
-            - Code quality and TypeScript/JavaScript best practices
+            Please review this pull request and provide feedback on:
+            - Code quality and best practices
             - Potential bugs or issues
             - Performance considerations
             - Security concerns
             - Test coverage
-            - Consistency with the existing codebase
             
             Be constructive and helpful in your feedback.
 
           # Use sticky comments to update the same comment on subsequent reviews
           use_sticky_comment: true
+
