@@ -1,6 +1,11 @@
 # Changelog
 
 
+* fix: replace Claude workflow with working version from python-api [5c9f7b9] (Jon Myers)
+* fix: update Claude workflow to use official OAuth action [b15d9c7] (Jon Myers)
+* feat: add Claude PR review workflow [b5e9e0b] (Jon Myers)
+### 2025-09-10
+
 * fix: use minTrajDur for pitch snapping time threshold [0625a3b] (Jon Myers)
 * fix: use IntersectionObserver API for immediate meter rendering [0493fd5] (Jon Myers)
 * refactor: simplify meter refresh fix to only handle meters [27c8c58] (Jon Myers)
