@@ -12,30 +12,35 @@
         @showTooltip='$emit("showTooltip", $event)'
         @hideTooltip='$emit("hideTooltip")'
         />
-      <ModeSelector
-        class='modeSelector'
-        :height='modeSelectorHeight'
-        :selectedMode='editingInstIdx'
-        :enum='instTracksEnum'
-        :noneEnumItem='-1'
-        :tooltipTexts='instTrackTexts'
-        @update:selectedMode='$emit("update:editingInstIdx", $event)'
-        @showTooltip='handleShowTooltip'
-        @hideTooltip='$emit("hideTooltip")'
-        @contextmenu='handleContextMenuClick'
-      />
-      <ModeSelector
-        v-if='showPolyToggle'
-        class='modeSelector poly-toggle'
-        :height='modeSelectorHeight'
-        :selectedMode='currentStringIdx'
-        :enum='polyModeOptions'
-        :noneEnumItem='-999'
-        :tooltipTexts='polyModeTexts'
-        @update:selectedMode='currentStringIdx = $event'
-        @showTooltip='$emit("showTooltip", $event)'
-        @hideTooltip='$emit("hideTooltip")'
-      />
+      <div class='selector-with-label'>
+        <span class='selector-label'>Instrument:</span>
+        <ModeSelector
+          class='modeSelector'
+          :height='modeSelectorHeight'
+          :selectedMode='editingInstIdx'
+          :enum='instTracksEnum'
+          :noneEnumItem='-1'
+          :tooltipTexts='instTrackTexts'
+          @update:selectedMode='$emit("update:editingInstIdx", $event)'
+          @showTooltip='handleShowTooltip'
+          @hideTooltip='$emit("hideTooltip")'
+          @contextmenu='handleContextMenuClick'
+        />
+      </div>
+      <div class='selector-with-label' v-if='showPolyToggle'>
+        <span class='selector-label'>String:</span>
+        <ModeSelector
+          class='modeSelector poly-toggle'
+          :height='modeSelectorHeight'
+          :selectedMode='currentStringIdx'
+          :enum='polyModeOptions'
+          :noneEnumItem='-999'
+          :tooltipTexts='polyModeTexts'
+          @update:selectedMode='currentStringIdx = $event'
+          @showTooltip='$emit("showTooltip", $event)'
+          @hideTooltip='$emit("hideTooltip")'
+        />
+      </div>
     </div>
     <div class='wrapper'>
       <div class='xAxisContainer' ref='xAxisContainer'>
@@ -1112,10 +1117,26 @@ export default defineComponent({
   display: flex;
   flex-direction: row;
   align-items: center;          /* Center align vertically */
-  gap: 60px;                    /* 60px spacing between mode selectors */
+  gap: 60px;                    /* Consistent spacing between all selectors */
   width: 100%;
   background-color: #202621;
   padding-left: 0;              /* Keep leftmost aligned to left edge */
+}
+
+.selector-with-label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;                     /* Small gap between label and selector */
+  flex-shrink: 0;               /* Prevent shrinking */
+  width: fit-content;           /* Only take up necessary space */
+}
+
+.selector-label {
+  color: lightgrey;
+  font-size: 12px;
+  font-weight: normal;
+  white-space: nowrap;          /* Prevent text wrapping */
 }
 
 </style>
