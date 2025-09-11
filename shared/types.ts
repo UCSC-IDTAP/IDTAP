@@ -1120,13 +1120,12 @@ type SarangiSynthType = {
   secondNode: SarangiNodeType,              // NEW: second string node
   intGain: GainNode,
   intSecondGain: GainNode,                  // NEW: internal second string gain
+  mainStringsSubmix: GainNode,              // NEW: submix for main + second for capture
   extGain: GainNode,
   idx: number,
   capture: CaptureNodeType,
   sarangiLoopSourceNode: LoopSourceNode,
-  secondLoopSourceNode: LoopSourceNode,     // NEW: second string loop source
   sarangiLoopGainNode: GainNode,
-  secondLoopGainNode: GainNode,             // NEW: second string loop gain
   sonifyNode: GainNode,
 }
 

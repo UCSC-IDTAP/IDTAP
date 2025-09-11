@@ -361,14 +361,13 @@ export default defineComponent({
           SarangiNodeType;                                                // NEW: second string node
         const intGain = props.ac.createGain();
         const intSecondGain = props.ac.createGain();                      // NEW: second string internal gain
+        const mainStringsSubmix = props.ac.createGain();                  // NEW: submix for main + second for capture
         const extGain = props.ac.createGain();
         const capOpts = { numberOfInputs: 2, numberOfOutputs: 0 };
         const capture = new AudioWorkletNode(props.ac, 'captureAudio', capOpts) as 
         CaptureNodeType;
         const sarangiLoopSourceNode = props.ac.createBufferSource();
-        const secondLoopSourceNode = props.ac.createBufferSource();       // NEW: second loop source
         const sarangiLoopGainNode = props.ac.createGain();
-        const secondLoopGainNode = props.ac.createGain();                 // NEW: second loop gain
         const sonifyNode = props.ac.createGain();
         
         // map parameters
@@ -391,26 +390,29 @@ export default defineComponent({
         intSecondGain.gain.value = 0;                                     // NEW: second string internal gain
         extGain.gain.value = control.params.extSarangiGain!;
         sarangiLoopGainNode.gain.value = 0;
-        secondLoopGainNode.gain.value = 0;                                // NEW: second loop gain
         sarangiLoopSourceNode.loop = true;
-        secondLoopSourceNode.loop = true;                                 // NEW: second loop source
         sonifyNode.gain.value = props.instTracks[control.idx].sounding ? 1 : 0;
 
         // connect nodes - main string
         sarangiNode
           .connect(intGain)
-          .connect(extGain)
-          .connect(sonifyNode)
-          .connect(mixNode);
+          .connect(mainStringsSubmix);                                    // NEW: connect to submix first
         // NEW: second string routing
         secondNode
           .connect(intSecondGain)
-          .connect(extGain);                                              // converges with main at extGain
+          .connect(mainStringsSubmix);                                    // NEW: connect to submix first
+        
+        // NEW: submix connects to external gain (for user volume control)
+        mainStringsSubmix.connect(extGain);
+        
+        // Final routing to mix
+        extGain
+          .connect(sonifyNode)
+          .connect(mixNode);
+        
+        // Loop source connects to external gain (after submix)
         sarangiLoopSourceNode
           .connect(sarangiLoopGainNode)
-          .connect(extGain);
-        secondLoopSourceNode                                              // NEW: second loop connections
-          .connect(secondLoopGainNode)
           .connect(extGain);
 
         return {
@@ -418,13 +420,12 @@ export default defineComponent({
           secondNode,                                                     // NEW
           intGain,
           intSecondGain,                                                  // NEW
+          mainStringsSubmix,                                              // NEW: submix for mixed capture
           extGain,
           idx: control.idx,
           capture, 
           sarangiLoopSourceNode,
-          secondLoopSourceNode,                                           // NEW
           sarangiLoopGainNode,
-          secondLoopGainNode,                                             // NEW
           sonifyNode
         }
       } catch (e) {
@@ -562,7 +563,7 @@ export default defineComponent({
       }
     };
     const initializeSarangiCapture = (synth: SarangiSynthType) => {
-      synth.sarangiNode.connect(synth.capture, 0, 0);
+      synth.mainStringsSubmix.connect(synth.capture, 0, 0);  // Connect submix (main + second) to input 0
       const emptyGainNode = props.ac.createGain();
       emptyGainNode.gain.value = 0;
       emptyGainNode.connect(synth.capture, 0, 1);
@@ -1165,9 +1166,13 @@ export default defineComponent({
       synth.capture.bufferSize!.setValueAtTime(bufSize, now());
       synth.capture.active!.setValueAtTime(1, start);
       synth.capture.active!.setValueAtTime(0, end);
-      const curGain = synth.intGain.gain.value;
-      synth.intGain.gain.setValueAtTime(curGain, end);
+      const curMainGain = synth.intGain.gain.value;
+      synth.intGain.gain.setValueAtTime(curMainGain, end);
       synth.intGain.gain.setValueAtTime(0, end + lagTime);
+      // NEW: Also handle second string gain
+      const curSecondGain = synth.intSecondGain.gain.value;
+      synth.intSecondGain.gain.setValueAtTime(curSecondGain, end);
+      synth.intSecondGain.gain.setValueAtTime(0, end + lagTime);
       synth.sarangiLoopGainNode.gain.setValueAtTime(0, end - lagTime);
       synth.sarangiLoopGainNode.gain.setValueAtTime(1, end);
     };
