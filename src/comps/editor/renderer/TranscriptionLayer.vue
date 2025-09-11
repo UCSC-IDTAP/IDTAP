@@ -911,9 +911,24 @@ export default defineComponent({
         d3.selectAll(`${selector} .chikari`)
           .attr('stroke', track.color)
 
-        // phrase divs
+        // phrase divs - respect current selection
         d3.selectAll(`${selector} .phraseDiv`)
-          .attr('stroke', track.color)
+          .attr('stroke', (d, i, nodes) => {
+            const element = nodes[i] as SVGLineElement;
+            const classList = element.classList;
+            let phraseUId = '';
+            for (let j = 0; j < classList.length; j++) {
+              if (classList[j].startsWith('uId')) {
+                phraseUId = classList[j].substring(3);
+                break;
+              }
+            }
+            // If this phrase division is currently selected, use selection color
+            if (selectedPhraseDivUid.value === phraseUId) {
+              return track.selColor;
+            }
+            return track.color;
+          })
       })
       selectedTrajs.value.forEach(traj => {
         const renderObj = trajRenderStatus.value.flat().find(obj => {
@@ -940,29 +955,36 @@ export default defineComponent({
     });
     watch(selectedPhraseDivUid, (newVal, oldVal) => {
       if (newVal !== undefined) {
-        const track = props.piece.trackFromPhraseUId(newVal);
-        const selColor = props.instTracks[track].selColor;
-        const normColor = props.instTracks[track].color;
-        const selector = `.phraseDiv.uId${newVal}`;
-        d3.select(selector)
-          .attr('stroke', selColor);
-        if (oldVal !== undefined) {
-          const oldSelector = `.phraseDiv.uId${oldVal}`;
-          d3.select(oldSelector)
-            .attr('stroke', normColor)
-        }
+        // Use nextTick to ensure DOM is updated before trying to find elements
+        nextTick(() => {
+          try {
+            const track = props.piece.trackFromPhraseUId(newVal);
+            const selColor = props.instTracks[track].selColor;
+            const selector = `.phraseDiv.uId${newVal}`;
+            const elements = d3.selectAll(selector);
+            elements.attr('stroke', selColor);
+          } catch (error) {
+            // Phrase division no longer exists (likely deleted during nudging)
+            return;
+          }
+        });
+        // Note: oldVal deselection is now handled in the else block below for reliability
         emit('update:selPhraseDivUid', newVal);
       } else {
+        // newVal is undefined (deselection) - reset all phrase divisions to normal color
+        nextTick(() => {
+          props.instTracks.forEach((track, tIdx) => {
+            const selector = `.track${tIdx}`;
+            d3.selectAll(`${selector} .phraseDiv`)
+              .attr('stroke', track.color);
+          });
+        });
+        
+        // Always emit the deselection to keep parent Editor in sync
+        emit('update:selPhraseDivUid', undefined);
+        
         if (justDeletedPhraseDiv) {
           justDeletedPhraseDiv = false;
-          return;
-        } else {
-          const track = props.piece.trackFromPhraseUId(oldVal!);
-          const normColor = props.instTracks[track].color;
-          const selector = `.phraseDiv.uId${oldVal}`;
-          d3.select(selector)
-            .attr('stroke', normColor)
-          emit('update:selPhraseDivUid', undefined);
         }      
       }
     })
@@ -2379,8 +2401,8 @@ export default defineComponent({
       const y2 = props.yScale.range()[1];
       const trackG = tracks[pd.track];
       const g = trackG.select('.phraseDivG');
-      const color = selectedPhraseDivUid.value === pd.uId ? 
-        props.instTracks[pd.track].selColor : props.instTracks[pd.track].color;
+      const isSelected = selectedPhraseDivUid.value === pd.uId;
+      const color = isSelected ? props.instTracks[pd.track].selColor : props.instTracks[pd.track].color;
       g.append('line')
         .attr('x1', x)
         .attr('x2', x)
@@ -5136,7 +5158,6 @@ export default defineComponent({
     };
 
     const nudgePhraseDiv = (amt: 1 | -1) => {
-      console.log('nudgePhraseDiv called with amt:', amt);
       if (selectedPhraseDivUid.value === undefined) {
         throw new Error('No phrase div selected');
       }
@@ -6369,16 +6390,8 @@ export default defineComponent({
         
         resetTranscription();
         
-        const pd: PhraseDivDisplayType = {
-          time: newPhrase.startTime!,
-          type: 'phrase',
-          idx: newPhrase.pieceIdx!,
-          track: track,
-          uId: newPhrase.uniqueId
-        };
-        
+        // Phrase division will be rendered automatically by chunking process after resetTranscription
         selectedPhraseDivUid.value = newPhrase.uniqueId;
-        renderPhraseDiv(pd);
         emit('unsavedChanges', true);
         emit('update:selectedMode', EditorMode.None);
         emit('update:xAxisPhraseLabels');
@@ -6480,16 +6493,8 @@ export default defineComponent({
         
         resetTranscription();
         
-        const pd: PhraseDivDisplayType = {
-          time: newPhrase.startTime!,
-          type: 'phrase',
-          idx: newPhrase.pieceIdx!,
-          track: track,
-          uId: newPhrase.uniqueId
-        };
-        
+        // Phrase division will be rendered automatically by chunking process after resetTranscription
         selectedPhraseDivUid.value = newPhrase.uniqueId;
-        renderPhraseDiv(pd);
         emit('unsavedChanges', true);
         emit('update:selectedMode', EditorMode.None);
         emit('update:xAxisPhraseLabels');
