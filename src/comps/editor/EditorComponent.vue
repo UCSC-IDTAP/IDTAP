@@ -32,6 +32,7 @@
       :initViewDur='initViewDur'
       :meterMagnetMode='meterMagnetMode'
       :editingInstIdx='editingInstIdx'
+      :currentStringIdx='currentStringIdx'
       :currentTime='currentTime'
       :browser='browser'
       :playing='playing'
@@ -64,6 +65,7 @@
       @update:selPhraseDivUid='updateSelPhraseDivUid($event)'
       @update:trajTimePts='updateTrajTimePts'
       @update:editingInstIdx='editingInstIdx = $event'
+      @update:currentStringIdx='currentStringIdx = $event'
       @update:currentTime='updateCurrentTime'
       @update:recomputeTrigger='recomputeTrigger += 1'
       @update:slope='nudgeSlope'
@@ -163,6 +165,7 @@
         :instrument='piece.instrumentation[editingInstIdx]'
         :selectedMode='selectedMode'
         :editingInstIdx='editingInstIdx'
+        :currentStringIdx='currentStringIdx'
         @mutateTraj='mutateTrajEmit'
         @pluckBool='pluckBoolEmit'
         @newTraj='newTrajEmit'
@@ -629,6 +632,7 @@ type EditorDataType = {
   throttledAlterSlope: ReturnType<typeof throttle> | undefined,
   throttledAlterVibObj: ReturnType<typeof throttle> | undefined,
   editingInstIdx: number,
+  currentStringIdx: 0 | 1,
   heldLogFreq?: number,
   recomputeTrigger: number,
   tooltipX: number,
@@ -798,6 +802,7 @@ export default defineComponent({
       throttledAlterSlope: undefined,
       throttledAlterVibObj: undefined,
       editingInstIdx: 0,
+      currentStringIdx: 0 as 0 | 1,
       heldLogFreq: undefined,
       recomputeTrigger: 0,
       tooltipX: 0,

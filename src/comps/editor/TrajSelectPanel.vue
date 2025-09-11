@@ -500,6 +500,10 @@ export default defineComponent({
       type: Number,
       required: true
     },
+    currentStringIdx: {
+      type: Number as PropType<0 | 1>,
+      required: true
+    },
   },
 
   async mounted() {
@@ -784,6 +788,12 @@ export default defineComponent({
       let realIdx = this.trajIdxs[idx];
       if (realIdx >= 12) {
         realIdx += 1;
+      }
+      
+      // Restriction: Only allow trajectory ID 0 (fixed pitch) on string 2
+      if (this.currentStringIdx === 1 && realIdx !== 0) {
+        console.warn('Only fixed pitch trajectories (ID 0) are allowed on string 2');
+        return;
       }
       let realSelectedIdx = this.trajIdxs[this.selectedIdx!];
       if (realSelectedIdx >= 12) {

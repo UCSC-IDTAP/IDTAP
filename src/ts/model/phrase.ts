@@ -316,58 +316,58 @@ class Phrase {
   consolidateSilentTrajs() {
     // within phrase, if there are ever two or more silent trajectories in a 
     // row, consolidate them into one.
-    let chain = false;
-    let start: number | undefined = undefined;
-    const delIdxs: number[] = [];
-    this.trajectories.forEach((traj, i) => {
-      if (traj.id === 12) {
-        if (chain === false) {
-          start = i;
-          chain = true
-        }
-        if (i === this.trajectories.length - 1) {
-          if (start === undefined) {
-            throw new Error('start is undefined')
+    
+    // Helper function to consolidate silent trajectories in a trajectory array
+    const consolidateArray = (trajArray: Trajectory[]) => {
+      const result: Trajectory[] = [];
+      let i = 0;
+      
+      while (i < trajArray.length) {
+        const currentTraj = trajArray[i];
+        
+        if (currentTraj.id === 12) {
+          // This is a silent trajectory - look ahead for consecutive silent trajectories
+          let totalDuration = currentTraj.durTot;
+          let j = i + 1;
+          
+          // Find all consecutive silent trajectories
+          while (j < trajArray.length && trajArray[j].id === 12) {
+            totalDuration += trajArray[j].durTot;
+            j++;
           }
-          const extraDur = this.trajectories
-            .slice(start+1)
-            .map(t => t.durTot)
-            .reduce((a, b) => a + b, 0);
-          this.trajectories[start].durTot += extraDur;
-          const dIdxs = [...Array(this.trajectories.length - start - 1)]
-            .map((_, i) => i + start! + 1);
-          delIdxs.push(...dIdxs)
-        }
-      } else {
-        if (chain === true) {
-          if (start === undefined) {
-            throw new Error('start is undefined')
-          }
-          const extraDur = this.trajectories
-            .slice(start+1, i)
-            .map(t => t.durTot)
-            .reduce((a, b) => a + b, 0);
-          const dIdxs = [...Array(i - (start+1))].map((_, i) => i + start! + 1);
-          this.trajectories[start].durTot += extraDur;
-          delIdxs.push(...dIdxs);
-          chain = false;
-          start = undefined;
+          
+          // Create consolidated silent trajectory
+          const consolidatedTraj = new Trajectory({
+            id: 12,
+            durTot: totalDuration,
+            pitches: [],
+            fundID12: currentTraj.fundID12 || this.raga?.fundamental,
+            instrumentation: currentTraj.instrumentation
+          });
+          
+          result.push(consolidatedTraj);
+          i = j; // Skip all the trajectories we just consolidated
+        } else {
+          // Non-silent trajectory - keep as is
+          result.push(currentTraj);
+          i++;
         }
       }
-    });
-    const newTs = this.trajectories.filter(traj => {
-      if (traj.num === undefined) {
-        console.log(traj)
-        throw new Error('traj.num is undefined')
-      }
-      return !delIdxs.includes(traj.num)
-    });
-    // this.trajectories = newTrajs;
-    this.trajectoryGrid[0] = newTs;
-    this.durArrayFromTrajectories();
-    this.assignStartTimes();
-    this.assignTrajNums();
-    this.assignPhraseIdx();
+      
+      return result;
+    };
+
+    // Consolidate string 1 (main) trajectories
+    this.trajectories = consolidateArray(this.trajectories);
+    this.trajectoryGrid[0] = this.trajectories;
+    
+    // Consolidate string 2 trajectories if they exist
+    if (this.trajectoryGrid[1] && this.trajectoryGrid[1].length > 0) {
+      this.trajectoryGrid[1] = consolidateArray(this.trajectoryGrid[1]);
+    }
+    
+    // Reset phrase to recalculate timing and numbering
+    this.reset();
   }
 
   chikarisDuringTraj(traj: Trajectory, track: number) {

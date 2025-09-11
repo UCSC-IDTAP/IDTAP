@@ -36,7 +36,7 @@
           :enum='polyModeOptions'
           :noneEnumItem='-999'
           :tooltipTexts='polyModeTexts'
-          @update:selectedMode='currentStringIdx = $event'
+          @update:selectedMode='$emit("update:currentStringIdx", $event)'
           @showTooltip='$emit("showTooltip", $event)'
           @hideTooltip='$emit("hideTooltip")'
         />
@@ -220,7 +220,8 @@ import {
   watch, 
   PropType,
   computed,
-  nextTick
+  nextTick,
+  toRef
 } from 'vue';
 import { throttle } from 'lodash';
 
@@ -371,6 +372,10 @@ export default defineComponent({
     },
     editingInstIdx: {
       type: Number,
+      required: true
+    },
+    currentStringIdx: {
+      type: Number as PropType<0 | 1>,
       required: true
     },
     currentTime: {
@@ -568,8 +573,8 @@ export default defineComponent({
       return props.instTracks.map(it => `Track ${ it.idx + 1 }: ${ it.inst }`);
     })
 
-    // NEW: Polyphonic mode state and computed properties
-    const currentStringIdx = ref(0 as 0 | 1);
+    // NEW: Polyphonic mode state and computed properties - now comes from props
+    // const currentStringIdx = ref(0 as 0 | 1); // REMOVED: Now a prop
     const showPolyToggle = computed(() => {
       if (props.editingInstIdx === -1 || !props.instTracks[props.editingInstIdx]) {
         return false;
@@ -782,7 +787,8 @@ export default defineComponent({
           const currentInst = props.instTracks[props.editingInstIdx]?.inst;
           if (!e.metaKey && !e.ctrlKey && !e.altKey && 
               (currentInst === Instrument.Sitar || currentInst === Instrument.Sarangi)) {
-            currentStringIdx.value = currentStringIdx.value === 0 ? 1 : 0;
+            const newStringIdx = props.currentStringIdx === 0 ? 1 : 0;
+            emit('update:currentStringIdx', newStringIdx);
             e.preventDefault();
           }
         }
@@ -938,8 +944,8 @@ export default defineComponent({
       updateXAxisPhraseLabels,
       onWheel,
       onTouchMove,
-      // NEW: Polyphonic mode properties
-      currentStringIdx,
+      // NEW: Polyphonic mode properties  
+      currentStringIdx: toRef(props, 'currentStringIdx'),
       showPolyToggle,
       polyModeOptions,
       polyModeTexts,
