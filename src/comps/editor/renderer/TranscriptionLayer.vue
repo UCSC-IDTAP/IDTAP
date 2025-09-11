@@ -5685,7 +5685,8 @@ export default defineComponent({
             endTime,
             minLogFreq: lowLogFreq,
             maxLogFreq: highLogFreq,
-            track: props.editingInstIdx
+            track: props.editingInstIdx,
+            stringIdx: props.currentStringIdx
           });
         } else {
           debouncedHandleClick(e.sourceEvent! as MouseEvent);
@@ -6338,27 +6339,30 @@ export default defineComponent({
       endTime?: number, 
       minLogFreq?: number, 
       maxLogFreq?: number,
-      track?: number
+      track?: number,
+      stringIdx?: number
     } = {
       startTime: undefined,
       endTime: undefined,
       minLogFreq: undefined,
       maxLogFreq: undefined,
-      track: undefined
+      track: undefined,
+      stringIdx: undefined
     }) => {
       
       if (options.startTime === undefined || 
           options.endTime === undefined ||
           options.minLogFreq === undefined || 
           options.maxLogFreq === undefined || 
-          options.track === undefined) {
+          options.track === undefined ||
+          options.stringIdx === undefined) {
         throw new Error('Missing selection box parameters');
       }
       const startTime = options.startTime;
       const endTime = options.endTime;
       const minLogFreq = options.minLogFreq;
       const maxLogFreq = options.maxLogFreq;
-      const trajs = props.piece.allTrajectories(options.track)
+      const trajs = props.piece.allTrajectories(options.track, options.stringIdx)
         .filter(traj => {
           const track = props.piece.trackFromTraj(traj);
           const phraseStart = props.piece.phraseGrid[track][traj.phraseIdx!].startTime!;
