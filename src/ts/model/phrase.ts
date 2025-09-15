@@ -314,37 +314,38 @@ class Phrase {
   }
 
   consolidateSilentTrajs() {
-    // within phrase, if there are ever two or more silent trajectories in a 
+    // within phrase, if there are ever two or more silent trajectories in a
     // row, consolidate them into one.
-    
+
     // Helper function to consolidate silent trajectories in a trajectory array
     const consolidateArray = (trajArray: Trajectory[]) => {
       const result: Trajectory[] = [];
       let i = 0;
-      
+
       while (i < trajArray.length) {
         const currentTraj = trajArray[i];
-        
+
         if (currentTraj.id === 12) {
           // This is a silent trajectory - look ahead for consecutive silent trajectories
           let totalDuration = currentTraj.durTot;
           let j = i + 1;
-          
+
           // Find all consecutive silent trajectories
           while (j < trajArray.length && trajArray[j].id === 12) {
             totalDuration += trajArray[j].durTot;
             j++;
           }
-          
+
           // Create consolidated silent trajectory
           const consolidatedTraj = new Trajectory({
             id: 12,
             durTot: totalDuration,
             pitches: [],
             fundID12: currentTraj.fundID12 || this.raga?.fundamental,
-            instrumentation: currentTraj.instrumentation
+            instrumentation: currentTraj.instrumentation,
+            uniqueId: currentTraj.uniqueId // Preserve the unique ID from first trajectory
           });
-          
+
           result.push(consolidatedTraj);
           i = j; // Skip all the trajectories we just consolidated
         } else {
@@ -353,21 +354,100 @@ class Phrase {
           i++;
         }
       }
-      
+
       return result;
     };
 
     // Consolidate string 1 (main) trajectories
     this.trajectories = consolidateArray(this.trajectories);
     this.trajectoryGrid[0] = this.trajectories;
-    
+
     // Consolidate string 2 trajectories if they exist
     if (this.trajectoryGrid[1] && this.trajectoryGrid[1].length > 0) {
       this.trajectoryGrid[1] = consolidateArray(this.trajectoryGrid[1]);
     }
-    
+
     // Reset phrase to recalculate timing and numbering
     this.reset();
+  }
+
+  consolidateContinuousTrajectories() {
+    // First, consolidate silent trajectories using existing method
+    this.consolidateSilentTrajs();
+
+    // Then, additionally consolidate continuous fixed pitch trajectories on string 2
+    if (this.trajectoryGrid[1] && this.trajectoryGrid[1].length > 0) {
+      // Helper to check if trajectory has initial pluck articulation
+      const hasInitialPluck = (traj: Trajectory): boolean => {
+        // Check if trajectory has articulations
+        if (!traj.articulations || Object.keys(traj.articulations).length === 0) {
+          return false;
+        }
+
+        // Check for pluck at time 0.00 (start of trajectory)
+        const firstArticulation = traj.articulations['0.00'];
+        return firstArticulation?.name === 'pluck';
+      };
+
+      // Consolidate fixed pitch trajectories on string 2
+      const result: Trajectory[] = [];
+      let i = 0;
+      const trajectories = this.trajectoryGrid[1];
+
+      while (i < trajectories.length) {
+        const currentTraj = trajectories[i];
+
+        if (currentTraj.id === 0) {
+          // For string 2, consolidate fixed pitch trajectories
+          let j = i + 1;
+          let totalDuration = currentTraj.durTot;
+
+          // Find consecutive fixed trajectories with same pitch
+          // BUT stop if we encounter a pluck articulation at the start
+          while (j < trajectories.length &&
+                 trajectories[j].id === 0 &&
+                 trajectories[j].pitches.length === 1 &&
+                 currentTraj.pitches[0].frequency === trajectories[j].pitches[0].frequency &&
+                 !hasInitialPluck(trajectories[j])) {  // Don't merge if next traj has pluck at 0.00
+            totalDuration += trajectories[j].durTot;
+            j++;
+          }
+
+          if (j > i + 1) {
+            // Create consolidated fixed trajectory
+            const consolidatedTraj = new Trajectory({
+              id: 0,
+              durTot: totalDuration,
+              pitches: [currentTraj.pitches[0]], // Keep the single pitch
+              fundID12: currentTraj.fundID12,
+              instrumentation: currentTraj.instrumentation,
+              // Preserve properties from first trajectory
+              articulations: currentTraj.articulations, // Keep original articulations
+              vowel: currentTraj.vowel,
+              vowelIpa: currentTraj.vowelIpa,
+              vowelHindi: currentTraj.vowelHindi,
+              groupId: currentTraj.groupId,
+              uniqueId: currentTraj.uniqueId // Preserve the unique ID from first trajectory
+            });
+            result.push(consolidatedTraj);
+            i = j;
+          } else {
+            result.push(currentTraj);
+            i++;
+          }
+        } else {
+          // Keep all other trajectories as-is
+          result.push(currentTraj);
+          i++;
+        }
+      }
+
+      // Update string 2 trajectories
+      this.trajectoryGrid[1] = result;
+
+      // Reset phrase to recalculate timing after string 2 consolidation
+      this.reset();
+    }
   }
 
   chikarisDuringTraj(traj: Trajectory, track: number) {

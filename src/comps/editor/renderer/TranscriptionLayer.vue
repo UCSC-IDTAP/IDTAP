@@ -2753,12 +2753,12 @@ export default defineComponent({
         prevPhrase.trajectoryGrid[1].push(...phrase.trajectoryGrid[1]);
       }
       
-      prevPhrase.consolidateSilentTrajs();
+      prevPhrase.consolidateContinuousTrajectories();
       props.piece.phraseGrid[track].splice(phrase.pieceIdx!, 1);
       props.piece.durArrayFromPhrases();
-      
-      // Rebuild render status array to sync with merged trajectories
-      resetTrajRenderStatus();
+
+      // Clear all trajectory SVG elements and rebuild everything
+      resetTranscription();
       
       justDeletedPhraseDiv = true;
       selectedPhraseDivUid.value = undefined;
@@ -5178,6 +5178,10 @@ export default defineComponent({
         deletePhraseDiv(selectedPhraseDivUid.value);
         // Insert new division at computed time in the merged phrase (oldPIdx - 1)
         insertNewPhraseDiv(newDivisionTime, curTrack, oldPIdx - 1);
+        // Consolidate trajectories after the operation
+        props.piece.phraseGrid[curTrack][oldPIdx - 1].consolidateContinuousTrajectories();
+        // Clear all trajectory SVG elements and rebuild everything
+        resetTranscription();
         return;
       } else {
         if (pIdx === 0) {
@@ -5197,6 +5201,10 @@ export default defineComponent({
         deletePhraseDiv(selectedPhraseDivUid.value);
         // Insert new division at computed time in the merged phrase (oldPIdx - 1)
         insertNewPhraseDiv(newDivisionTime, curTrack, oldPIdx - 1);
+        // Consolidate trajectories after the operation
+        props.piece.phraseGrid[curTrack][oldPIdx - 1].consolidateContinuousTrajectories();
+        // Clear all trajectory SVG elements and rebuild everything
+        resetTranscription();
         return;
       };
       // insertNewPhraseDiv handles emits and rendering
