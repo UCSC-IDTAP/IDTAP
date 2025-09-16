@@ -249,9 +249,8 @@
       </p>
       <ul>
         <li><strong>Rewind</strong>: Jump back 15 seconds</li>
-        <li><strong>Play/Pause</strong>: Start or stop audio playback</li>
+        <li><strong>Play/Pause</strong>: Start or stop audio playback (click play button or press <kbd>Spacebar</kbd>)</li>
         <li><strong>Fast Forward</strong>: Jump forward 15 seconds</li>
-        <li><strong>Spacebar Shortcut</strong>: Press <kbd>Spacebar</kbd> for play/pause</li>
       </ul>
 
       <hr>
