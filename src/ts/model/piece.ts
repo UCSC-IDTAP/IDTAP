@@ -699,8 +699,20 @@ class Piece {
     }
     if (track === undefined) {
       throw new Error('Trajectory not found')
-    }  
+    }
     return track
+  }
+
+  stringFromTraj(traj: Trajectory) {
+    const track = this.trackFromTraj(traj);
+    for (let stringIdx = 0; stringIdx < 2; stringIdx++) {
+      const trajs = this.allTrajectories(track, stringIdx);
+      const trajUIds = trajs.map(t => t.uniqueId);
+      if (trajUIds.includes(traj.uniqueId)) {
+        return stringIdx;
+      }
+    }
+    throw new Error('Trajectory not found in any string');
   }
 
   phraseFromUId(uId: string): Phrase {

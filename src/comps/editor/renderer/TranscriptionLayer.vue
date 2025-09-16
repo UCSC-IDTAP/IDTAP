@@ -2805,8 +2805,8 @@ export default defineComponent({
           instrumentation: props.piece.instrumentation[track],
           num: traj.num,
         });
-        // Use selected string for trajectory operations
-        const stringIdx = props.currentStringIdx ?? 0;
+        // Find which string this trajectory actually belongs to
+        const stringIdx = props.piece.stringFromTraj(traj);
         if (!phrase.trajectoryGrid[stringIdx]) {
           phrase.trajectoryGrid[stringIdx] = [];
         }
