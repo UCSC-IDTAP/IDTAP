@@ -625,8 +625,6 @@
       <ul>
         <li><strong>JSON</strong>: Complete transcription data in IDTAP native format</li>
         <li><strong>XLSX (Excel)</strong>: Spreadsheet format for analysis</li>
-        <li><strong>CSV</strong>: Comma-separated values for data processing</li>
-        <li><strong>MIDI</strong>: Musical data for external software (where applicable)</li>
       </ul>
 
       <hr>
