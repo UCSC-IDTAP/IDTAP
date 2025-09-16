@@ -108,15 +108,15 @@ class Phrase {
     this.raga = raga;
     if (trajectoryGrid !== undefined) {
       this.trajectoryGrid = trajectoryGrid;
-      for (let i = trajectoryGrid.length; i < instrumentation.length; i++) {
-        this.trajectoryGrid.push([])
+      // Ensure we have at least 2 slots for strings (0: main, 1: second)
+      while (this.trajectoryGrid.length < 2) {
+        this.trajectoryGrid.push([]);
       }
-      this.trajectoryGrid.length = instrumentation.length;
     } else {
-      this.trajectoryGrid = [trajectories];
-      for (let i = 1; i < instrumentation.length; i++) {
-        this.trajectoryGrid.push([])
-      }
+      // Initialize with main string trajectories at index 0
+      this.trajectoryGrid = [trajectories || []];
+      // Add empty array for second string at index 1
+      this.trajectoryGrid.push([]);
     }
     if (chikariGrid !== undefined) {
       this.chikariGrid = chikariGrid;
@@ -195,11 +195,27 @@ class Phrase {
   }
 
   assignPhraseIdx() {
-    this.trajectories.forEach(traj => traj.phraseIdx = this.pieceIdx)
+    // Update main trajectories array
+    this.trajectories.forEach(traj => traj.phraseIdx = this.pieceIdx);
+    
+    // Update trajectoryGrid for both strings
+    [0, 1].forEach(stringIdx => {
+      if (this.trajectoryGrid[stringIdx]) {
+        this.trajectoryGrid[stringIdx].forEach(traj => traj.phraseIdx = this.pieceIdx);
+      }
+    });
   }
 
   assignTrajNums() {
-    this.trajectories.forEach((traj, i) => traj.num = i)
+    // Update main trajectories array  
+    this.trajectories.forEach((traj, i) => traj.num = i);
+    
+    // Update trajectoryGrid for both strings
+    [0, 1].forEach(stringIdx => {
+      if (this.trajectoryGrid[stringIdx]) {
+        this.trajectoryGrid[stringIdx].forEach((traj, i) => traj.num = i);
+      }
+    });
   }
 
   durTotFromTrajectories() {
@@ -246,9 +262,29 @@ class Phrase {
       throw new Error('durTot is undefined')
     }
     const starts = getStarts(this.durArray).map(s => s * this.durTot!)
+    
+    // Update main trajectories array
     this.trajectories.forEach((traj, i) => {
       traj.startTime = starts[i]
-    })
+    });
+    
+    // Update trajectoryGrid for both strings
+    [0, 1].forEach(stringIdx => {
+      if (this.trajectoryGrid[stringIdx]) {
+        // For polyphonic instruments, calculate timing for each string separately
+        const stringTrajs = this.trajectoryGrid[stringIdx];
+        const stringDurs = stringTrajs.map(t => t.durTot);
+        const stringTotalDur = stringDurs.reduce((a, b) => a + b, 0);
+        
+        if (stringTotalDur > 0) {
+          const stringDurArray = stringDurs.map(d => d / stringTotalDur);
+          const stringStarts = getStarts(stringDurArray).map(s => s * stringTotalDur);
+          stringTrajs.forEach((traj, i) => {
+            traj.startTime = stringStarts[i];
+          });
+        }
+      }
+    });
   }
 
   getRange() {
@@ -278,60 +314,140 @@ class Phrase {
   }
 
   consolidateSilentTrajs() {
-    // within phrase, if there are ever two or more silent trajectories in a 
+    // within phrase, if there are ever two or more silent trajectories in a
     // row, consolidate them into one.
-    let chain = false;
-    let start: number | undefined = undefined;
-    const delIdxs: number[] = [];
-    this.trajectories.forEach((traj, i) => {
-      if (traj.id === 12) {
-        if (chain === false) {
-          start = i;
-          chain = true
-        }
-        if (i === this.trajectories.length - 1) {
-          if (start === undefined) {
-            throw new Error('start is undefined')
+
+    // Helper function to consolidate silent trajectories in a trajectory array
+    const consolidateArray = (trajArray: Trajectory[]) => {
+      const result: Trajectory[] = [];
+      let i = 0;
+
+      while (i < trajArray.length) {
+        const currentTraj = trajArray[i];
+
+        if (currentTraj.id === 12) {
+          // This is a silent trajectory - look ahead for consecutive silent trajectories
+          let totalDuration = currentTraj.durTot;
+          let j = i + 1;
+
+          // Find all consecutive silent trajectories
+          while (j < trajArray.length && trajArray[j].id === 12) {
+            totalDuration += trajArray[j].durTot;
+            j++;
           }
-          const extraDur = this.trajectories
-            .slice(start+1)
-            .map(t => t.durTot)
-            .reduce((a, b) => a + b, 0);
-          this.trajectories[start].durTot += extraDur;
-          const dIdxs = [...Array(this.trajectories.length - start - 1)]
-            .map((_, i) => i + start! + 1);
-          delIdxs.push(...dIdxs)
-        }
-      } else {
-        if (chain === true) {
-          if (start === undefined) {
-            throw new Error('start is undefined')
-          }
-          const extraDur = this.trajectories
-            .slice(start+1, i)
-            .map(t => t.durTot)
-            .reduce((a, b) => a + b, 0);
-          const dIdxs = [...Array(i - (start+1))].map((_, i) => i + start! + 1);
-          this.trajectories[start].durTot += extraDur;
-          delIdxs.push(...dIdxs);
-          chain = false;
-          start = undefined;
+
+          // Create consolidated silent trajectory
+          const consolidatedTraj = new Trajectory({
+            id: 12,
+            durTot: totalDuration,
+            pitches: [],
+            fundID12: currentTraj.fundID12 || this.raga?.fundamental,
+            instrumentation: currentTraj.instrumentation,
+            uniqueId: currentTraj.uniqueId // Preserve the unique ID from first trajectory
+          });
+
+          result.push(consolidatedTraj);
+          i = j; // Skip all the trajectories we just consolidated
+        } else {
+          // Non-silent trajectory - keep as is
+          result.push(currentTraj);
+          i++;
         }
       }
-    });
-    const newTs = this.trajectories.filter(traj => {
-      if (traj.num === undefined) {
-        console.log(traj)
-        throw new Error('traj.num is undefined')
+
+      return result;
+    };
+
+    // Consolidate string 1 (main) trajectories
+    this.trajectories = consolidateArray(this.trajectories);
+    this.trajectoryGrid[0] = this.trajectories;
+
+    // Consolidate string 2 trajectories if they exist
+    if (this.trajectoryGrid[1] && this.trajectoryGrid[1].length > 0) {
+      this.trajectoryGrid[1] = consolidateArray(this.trajectoryGrid[1]);
+    }
+
+    // Reset phrase to recalculate timing and numbering
+    this.reset();
+  }
+
+  consolidateContinuousTrajectories() {
+    // First, consolidate silent trajectories using existing method
+    this.consolidateSilentTrajs();
+
+    // Then, additionally consolidate continuous fixed pitch trajectories on string 2
+    if (this.trajectoryGrid[1] && this.trajectoryGrid[1].length > 0) {
+      // Helper to check if trajectory has initial pluck articulation
+      const hasInitialPluck = (traj: Trajectory): boolean => {
+        // Check if trajectory has articulations
+        if (!traj.articulations || Object.keys(traj.articulations).length === 0) {
+          return false;
+        }
+
+        // Check for pluck at time 0.00 (start of trajectory)
+        const firstArticulation = traj.articulations['0.00'];
+        return firstArticulation?.name === 'pluck';
+      };
+
+      // Consolidate fixed pitch trajectories on string 2
+      const result: Trajectory[] = [];
+      let i = 0;
+      const trajectories = this.trajectoryGrid[1];
+
+      while (i < trajectories.length) {
+        const currentTraj = trajectories[i];
+
+        if (currentTraj.id === 0) {
+          // For string 2, consolidate fixed pitch trajectories
+          let j = i + 1;
+          let totalDuration = currentTraj.durTot;
+
+          // Find consecutive fixed trajectories with same pitch
+          // BUT stop if we encounter a pluck articulation at the start
+          while (j < trajectories.length &&
+                 trajectories[j].id === 0 &&
+                 trajectories[j].pitches.length === 1 &&
+                 currentTraj.pitches[0].frequency === trajectories[j].pitches[0].frequency &&
+                 !hasInitialPluck(trajectories[j])) {  // Don't merge if next traj has pluck at 0.00
+            totalDuration += trajectories[j].durTot;
+            j++;
+          }
+
+          if (j > i + 1) {
+            // Create consolidated fixed trajectory
+            const consolidatedTraj = new Trajectory({
+              id: 0,
+              durTot: totalDuration,
+              pitches: [currentTraj.pitches[0]], // Keep the single pitch
+              fundID12: currentTraj.fundID12,
+              instrumentation: currentTraj.instrumentation,
+              // Preserve properties from first trajectory
+              articulations: currentTraj.articulations, // Keep original articulations
+              vowel: currentTraj.vowel,
+              vowelIpa: currentTraj.vowelIpa,
+              vowelHindi: currentTraj.vowelHindi,
+              groupId: currentTraj.groupId,
+              uniqueId: currentTraj.uniqueId // Preserve the unique ID from first trajectory
+            });
+            result.push(consolidatedTraj);
+            i = j;
+          } else {
+            result.push(currentTraj);
+            i++;
+          }
+        } else {
+          // Keep all other trajectories as-is
+          result.push(currentTraj);
+          i++;
+        }
       }
-      return !delIdxs.includes(traj.num)
-    });
-    // this.trajectories = newTrajs;
-    this.trajectoryGrid[0] = newTs;
-    this.durArrayFromTrajectories();
-    this.assignStartTimes();
-    this.assignTrajNums();
-    this.assignPhraseIdx();
+
+      // Update string 2 trajectories
+      this.trajectoryGrid[1] = result;
+
+      // Reset phrase to recalculate timing after string 2 consolidation
+      this.reset();
+    }
   }
 
   chikarisDuringTraj(traj: Trajectory, track: number) {
@@ -340,7 +456,6 @@ class Phrase {
     const end = start + dur;
     const chikaris = this.chikariGrid[0];
     const chikarisDuring = Object.keys(chikaris).filter(k => {
-      const chikari = chikaris[k];
       const time = Number(k);
       return time >= start && time <= end
     }).map(k => {
@@ -360,6 +475,10 @@ class Phrase {
 
   get trajectories() {
     return this.trajectoryGrid[0]
+  }
+
+  set trajectories(arr: Trajectory[]) {
+    this.trajectoryGrid[0] = arr
   }
 
   get chikaris() {
@@ -427,7 +546,7 @@ class Phrase {
     return allPitches
   }
 
-  firstTrajIdxs() {
+  firstTrajIdxs(stringIdx = 0) {
     // returns the indexes of each traj that non-silent and 1) is the first of 
     // the phrase, or 2) is preceded by a silent traj, or 3) has a starting 
     // consonant, or 4) follows a traj that has an ending consonant, or 5) is a
@@ -438,7 +557,8 @@ class Phrase {
     let silentTrigger = false;
     let lastVowel: string | undefined = undefined;
     let endConsonantTrigger: boolean | undefined = undefined;
-    this.trajectories.forEach((traj, tIdx) => {
+    const trajectoryArray = this.trajectoryGrid[stringIdx] || this.trajectories;
+    trajectoryArray.forEach((traj, tIdx) => {
       if (traj.id !== 12) {
         const c1 = ct === 0;
         const c2 = silentTrigger;
@@ -457,9 +577,10 @@ class Phrase {
     return idxs
   }
 
-  trajIdxFromTime(time: number) {
+  trajIdxFromTime(time: number, stringIdx = 0) {
     const phraseTime = time - this.startTime!;
-    const trajs = this.trajectories.filter(traj => {
+    const trajectoryArray = this.trajectoryGrid[stringIdx] || this.trajectories;
+    const trajs = trajectoryArray.filter(traj => {
       const smallOffset = 1e-10;
       const a = phraseTime >= traj.startTime! - smallOffset;
       const b = phraseTime < traj.startTime! + traj.durTot;
@@ -469,7 +590,8 @@ class Phrase {
       // breakpoint
       throw new Error('No trajectory found')
     }
-    return trajs[0].num
+    // Return the index within the specific string's trajectory array, not the num property
+    return trajectoryArray.indexOf(trajs[0])
   }
 
   toJSON() {

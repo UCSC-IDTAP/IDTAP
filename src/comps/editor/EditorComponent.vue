@@ -32,6 +32,7 @@
       :initViewDur='initViewDur'
       :meterMagnetMode='meterMagnetMode'
       :editingInstIdx='editingInstIdx'
+      :currentStringIdx='currentStringIdx'
       :currentTime='currentTime'
       :browser='browser'
       :playing='playing'
@@ -64,6 +65,7 @@
       @update:selPhraseDivUid='updateSelPhraseDivUid($event)'
       @update:trajTimePts='updateTrajTimePts'
       @update:editingInstIdx='editingInstIdx = $event'
+      @update:currentStringIdx='currentStringIdx = $event'
       @update:currentTime='updateCurrentTime'
       @update:recomputeTrigger='recomputeTrigger += 1'
       @update:slope='nudgeSlope'
@@ -163,6 +165,7 @@
         :instrument='piece.instrumentation[editingInstIdx]'
         :selectedMode='selectedMode'
         :editingInstIdx='editingInstIdx'
+        :currentStringIdx='currentStringIdx'
         @mutateTraj='mutateTrajEmit'
         @pluckBool='pluckBoolEmit'
         @newTraj='newTrajEmit'
@@ -629,6 +632,7 @@ type EditorDataType = {
   throttledAlterSlope: ReturnType<typeof throttle> | undefined,
   throttledAlterVibObj: ReturnType<typeof throttle> | undefined,
   editingInstIdx: number,
+  currentStringIdx: 0 | 1,
   heldLogFreq?: number,
   recomputeTrigger: number,
   tooltipX: number,
@@ -798,6 +802,7 @@ export default defineComponent({
       throttledAlterSlope: undefined,
       throttledAlterVibObj: undefined,
       editingInstIdx: 0,
+      currentStringIdx: 0 as 0 | 1,
       heldLogFreq: undefined,
       recomputeTrigger: 0,
       tooltipX: 0,
@@ -1006,6 +1011,10 @@ export default defineComponent({
         }
         const silentPhrase = new Phrase(phraseObj);
         this.piece.phrases.push(silentPhrase);
+        
+        // Ensure polyphonic instruments have proper second string setup
+        this.piece.ensureStringSynchronization();
+        
         this.piece.durArrayFromPhrases();
         this.piece.updateStartTimes();
       }
@@ -1789,31 +1798,66 @@ export default defineComponent({
       const pIdx = this.trajTimePts[0].pIdx;
       const tIdx = this.trajTimePts[0].tIdx;
       const track = this.trajTimePts[0].track;
+      const stringIdx = this.trajTimePts[0].stringIdx ?? 0;
       const phrase = this.piece.phraseGrid[track][pIdx];
       // console.log(track, tIdx, pIdx, phrase)
       if (this.piece.instrumentation) {
         trajObj.instrumentation = this.piece.instrumentation[track];
       }
       const newTraj = new Trajectory(trajObj);
-      const trajs = phrase.trajectories;
-      const silentTraj = phrase.trajectories[tIdx];
+      
+      // Ensure trajectoryGrid exists for this string
+      if (!phrase.trajectoryGrid[stringIdx]) {
+        phrase.trajectoryGrid[stringIdx] = [];
+      }
+      
+      const trajs = phrase.trajectoryGrid[stringIdx];
+      const silentTraj = phrase.trajectoryGrid[stringIdx][tIdx];
       const st = phrase.startTime! + silentTraj.startTime!
       const startsEqual = times[0] === st;
       const endsEqual = times[times.length - 1] === st + silentTraj.durTot;
+      
+      // Prevent negative durations by validating bounds
+      if (durTot > silentTraj.durTot) {
+        console.error(`Cannot insert trajectory with duration ${durTot} into silent trajectory with duration ${silentTraj.durTot}`);
+        return;
+      }
+      
       if (startsEqual && endsEqual) { // if replaces entire silent traj
         trajs[tIdx] = newTraj;
         phrase.reset();
       } else if (startsEqual) { // if replaces left side of silent traj
-        silentTraj.durTot = silentTraj.durTot - durTot;
+        const remainingDur = silentTraj.durTot - durTot;
+        if (remainingDur < 0) {
+          console.error(`Would create negative duration: ${remainingDur}`);
+          return;
+        }
+        silentTraj.durTot = remainingDur;
         trajs.splice(tIdx, 0, newTraj);
         phrase.reset();
       } else if (endsEqual) { // if replaces right side of silent traj
-        silentTraj.durTot = silentTraj.durTot - durTot;
-        phrase.trajectories.splice(tIdx + 1, 0, newTraj);
+        const remainingDur = silentTraj.durTot - durTot;
+        if (remainingDur < 0) {
+          console.error(`Would create negative duration: ${remainingDur}`);
+          return;
+        }
+        silentTraj.durTot = remainingDur;
+        phrase.trajectoryGrid[stringIdx].splice(tIdx + 1, 0, newTraj);
         phrase.reset();
       } else { // if replaces internal portion of silent traj
         const firstDur = times[0] - st;
         const lastDur = (st + silentTraj.durTot) - times[times.length - 1];
+        
+        // Validate that splitting doesn't create negative durations
+        if (firstDur < 0) {
+          console.error(`Would create negative firstDur: ${firstDur}`);
+          return;
+        }
+        if (lastDur < 0) {
+          console.error(`Would create negative lastDur: ${lastDur}`);
+          return;
+        }
+        
         silentTraj.durTot = firstDur;
         const lstObj: {
           id: number,
@@ -1829,8 +1873,8 @@ export default defineComponent({
         };
         lstObj.instrumentation = this.piece.instrumentation[track];
         const lastSilentTraj = new Trajectory(lstObj);
-        phrase.trajectories.splice(tIdx + 1, 0, newTraj);
-        phrase.trajectories.splice(tIdx + 2, 0, lastSilentTraj);
+        phrase.trajectoryGrid[stringIdx].splice(tIdx + 1, 0, newTraj);
+        phrase.trajectoryGrid[stringIdx].splice(tIdx + 2, 0, lastSilentTraj);
         phrase.reset();
       }
       
@@ -1961,15 +2005,29 @@ export default defineComponent({
     extendDurTot(dur=10) {
       // if no audio (!this.audioDBDoc), call this after each new traj is added,
       // if necessary, extend audio such that it is dur beyond end of last traj.
-      const allTrajs = this.piece.phrases
-                        .map(p => p.trajectories)
-                        .flat()
-                        .filter(t => t.id !== 12);
+      
+      // Collect trajectories from all strings for all instruments
+      const allTrajs: Trajectory[] = [];
+      const allSilences: Trajectory[] = [];
+      
+      for (let instIdx = 0; instIdx < this.piece.instrumentation.length; instIdx++) {
+        const currentInst = this.piece.instrumentation[instIdx];
+        const isPolyphonic = currentInst === Instrument.Sitar || currentInst === Instrument.Sarangi;
+        
+        if (isPolyphonic) {
+          // For polyphonic instruments, collect from both strings
+          allTrajs.push(...this.piece.allTrajectories(instIdx, 0).filter(t => t.id !== 12));
+          allTrajs.push(...this.piece.allTrajectories(instIdx, 1).filter(t => t.id !== 12));
+          allSilences.push(...this.piece.allTrajectories(instIdx, 0).filter(t => t.id === 12));
+          allSilences.push(...this.piece.allTrajectories(instIdx, 1).filter(t => t.id === 12));
+        } else {
+          // For monophonic instruments, only from string 0
+          allTrajs.push(...this.piece.allTrajectories(instIdx, 0).filter(t => t.id !== 12));
+          allSilences.push(...this.piece.allTrajectories(instIdx, 0).filter(t => t.id === 12));
+        }
+      }
+      
       const lastTraj = allTrajs[allTrajs.length - 1];
-      const allSilences = this.piece.phrases
-                        .map(p => p.trajectories)
-                        .flat()
-                        .filter(t => t.id === 12);
       const lastSilence = allSilences[allSilences.length - 1];
       const lastPhrase = this.piece.phrases[this.piece.phrases.length - 1];
       const phraseStart = this.piece.phrases[lastTraj.phraseIdx!].startTime!;

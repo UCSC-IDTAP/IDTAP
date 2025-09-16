@@ -12,18 +12,35 @@
         @showTooltip='$emit("showTooltip", $event)'
         @hideTooltip='$emit("hideTooltip")'
         />
-      <ModeSelector
-        class='modeSelector'
-        :height='modeSelectorHeight'
-        :selectedMode='editingInstIdx'
-        :enum='instTracksEnum'
-        :noneEnumItem='-1'
-        :tooltipTexts='instTrackTexts'
-        @update:selectedMode='$emit("update:editingInstIdx", $event)'
-        @showTooltip='handleShowTooltip'
-        @hideTooltip='$emit("hideTooltip")'
-        @contextmenu='handleContextMenuClick'
-      />
+      <div class='selector-with-label'>
+        <span class='selector-label'>Instrument:</span>
+        <ModeSelector
+          class='modeSelector'
+          :height='modeSelectorHeight'
+          :selectedMode='editingInstIdx'
+          :enum='instTracksEnum'
+          :noneEnumItem='-1'
+          :tooltipTexts='instTrackTexts'
+          @update:selectedMode='$emit("update:editingInstIdx", $event)'
+          @showTooltip='handleShowTooltip'
+          @hideTooltip='$emit("hideTooltip")'
+          @contextmenu='handleContextMenuClick'
+        />
+      </div>
+      <div class='selector-with-label' v-if='showPolyToggle'>
+        <span class='selector-label'>String:</span>
+        <ModeSelector
+          class='modeSelector poly-toggle'
+          :height='modeSelectorHeight'
+          :selectedMode='currentStringIdx'
+          :enum='polyModeOptions'
+          :noneEnumItem='-999'
+          :tooltipTexts='polyModeTexts'
+          @update:selectedMode='$emit("update:currentStringIdx", $event)'
+          @showTooltip='$emit("showTooltip", $event)'
+          @hideTooltip='$emit("hideTooltip")'
+        />
+      </div>
     </div>
     <div class='wrapper'>
       <div class='xAxisContainer' ref='xAxisContainer'>
@@ -100,6 +117,7 @@
               :width='scaledWidth'
               :height='scaledHeight'
               :showTranscription='showTranscription'
+              :currentStringIdx='currentStringIdx'
               :xScale='xScale'
               :yScale='yScale'
               :lowOctOffset='lowOctOffset'
@@ -150,6 +168,7 @@
               @moveToX='moveToX'
               @horizontalMoveGraph='horizontalMoveGraph'
               @update:editingInstIdx='$emit("update:editingInstIdx", $event)'
+              @update:currentStringIdx='currentStringIdx = $event'
               @update:trajTimePts='$emit("update:trajTimePts", $event)'
               @update:currentTime='$emit("update:currentTime", $event)'
               @update:insertPulses='$emit("update:insertPulses", $event)'
@@ -201,7 +220,8 @@ import {
   watch, 
   PropType,
   computed,
-  nextTick
+  nextTick,
+  toRef
 } from 'vue';
 import { throttle } from 'lodash';
 
@@ -354,6 +374,10 @@ export default defineComponent({
       type: Number,
       required: true
     },
+    currentStringIdx: {
+      type: Number as PropType<0 | 1>,
+      required: true
+    },
     currentTime: {
       type: Number,
       required: true
@@ -450,6 +474,7 @@ export default defineComponent({
   emits: [
     'update:recomputeTrigger',
     'update:editingInstIdx',
+    'update:currentStringIdx',
     'showTooltip',
     'hideTooltip',
     'update:selectedMode',
@@ -547,6 +572,38 @@ export default defineComponent({
     const instTrackTexts = computed(() => {
       return props.instTracks.map(it => `Track ${ it.idx + 1 }: ${ it.inst }`);
     })
+
+    // NEW: Polyphonic mode state and computed properties - now comes from props
+    // const currentStringIdx = ref(0 as 0 | 1); // REMOVED: Now a prop
+    const showPolyToggle = computed(() => {
+      if (props.editingInstIdx === -1 || !props.instTracks[props.editingInstIdx]) {
+        return false;
+      }
+      const currentInst = props.instTracks[props.editingInstIdx]?.inst;
+      return currentInst === Instrument.Sitar || currentInst === Instrument.Sarangi;
+    });
+    const polyModeOptions = computed((): Record<string, number> => {
+      if (props.editingInstIdx === -1 || !props.instTracks[props.editingInstIdx]) {
+        return { 'Main': 0, 'Second': 1 };
+      }
+      const currentInst = props.instTracks[props.editingInstIdx]?.inst;
+      if (currentInst === Instrument.Sitar) {
+        return { 'Main': 0, 'Jor': 1 };
+      } else {
+        return { 'Main': 0, 'Second': 1 };
+      }
+    });
+    const polyModeTexts = computed(() => {
+      if (props.editingInstIdx === -1 || !props.instTracks[props.editingInstIdx]) {
+        return ['Main String Only', 'Second String Only'];
+      }
+      const currentInst = props.instTracks[props.editingInstIdx]?.inst;
+      if (currentInst === Instrument.Sitar) {
+        return ['Main String Only', 'Jor String Only'];
+      } else {
+        return ['Main String Only', 'Second String Only'];
+      }
+    });
 
     const clientWidth = ref(0);
     const modeSelectorHeight = 30;
@@ -724,6 +781,18 @@ export default defineComponent({
         contextMenuClosed.value = true;
         showEditInstrumentation.value = false;
       }
+      // NEW: 'J' key to toggle between strings for Sitar/Sarangi
+      if (e.key === 'j' || e.key === 'J') {
+        if (props.editingInstIdx !== -1 && props.instTracks[props.editingInstIdx]) {
+          const currentInst = props.instTracks[props.editingInstIdx]?.inst;
+          if (!e.metaKey && !e.ctrlKey && !e.altKey && 
+              (currentInst === Instrument.Sitar || currentInst === Instrument.Sarangi)) {
+            const newStringIdx = props.currentStringIdx === 0 ? 1 : 0;
+            emit('update:currentStringIdx', newStringIdx);
+            e.preventDefault();
+          }
+        }
+      }
     };
     const handleShowTooltip = (e: MouseEvent) => {
       if (contextMenuClosed.value) emit('showTooltip', e);
@@ -875,6 +944,11 @@ export default defineComponent({
       updateXAxisPhraseLabels,
       onWheel,
       onTouchMove,
+      // NEW: Polyphonic mode properties  
+      currentStringIdx: toRef(props, 'currentStringIdx'),
+      showPolyToggle,
+      polyModeOptions,
+      polyModeTexts,
 
     }
   }
@@ -1032,9 +1106,11 @@ export default defineComponent({
 }
 
 .modeSelector {
-  width: 100%;
+  width: fit-content;  /* Changed from 100% to fit content */
   height: var(--modeSelectorHeight);
 }
+
+
 
 .trackOption {
   width: 30px;
@@ -1046,8 +1122,27 @@ export default defineComponent({
 .topRow {
   display: flex;
   flex-direction: row;
+  align-items: center;          /* Center align vertically */
+  gap: 60px;                    /* Consistent spacing between all selectors */
   width: 100%;
-  background-color: #202621
+  background-color: #202621;
+  padding-left: 0;              /* Keep leftmost aligned to left edge */
+}
+
+.selector-with-label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;                     /* Small gap between label and selector */
+  flex-shrink: 0;               /* Prevent shrinking */
+  width: fit-content;           /* Only take up necessary space */
+}
+
+.selector-label {
+  color: lightgrey;
+  font-size: 12px;
+  font-weight: normal;
+  white-space: nowrap;          /* Prevent text wrapping */
 }
 
 </style>

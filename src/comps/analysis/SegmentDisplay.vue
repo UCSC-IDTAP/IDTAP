@@ -178,13 +178,19 @@ export default defineComponent({
       .style('stroke', 'grey')
       .style('stroke-width', d => strokeWidths[this.visibleSargam!.indexOf(d)])
     
-    // add the trajectories
+    // add the trajectories from first string
     this.trajectories
       .filter(traj => traj.id !== 12)
-      .forEach(traj => this.addTrajectory(traj));
+      .forEach(traj => this.addTrajectory(traj, false));
+    
+    // add the trajectories from second string if polyphonic
+    if (this.isPolyphonic && this.secondStringTrajectories.length > 0) {
+      this.secondStringTrajectories
+        .filter(traj => traj.id !== 12)
+        .forEach(traj => this.addTrajectory(traj, true));
+    }
     
     if (this.vocal) {
-      console.log('getting vocal?')
       const vowelIdxs = this.firstTrajIdxs();  
       this.trajectories.forEach((traj, idx) => {
         if (vowelIdxs.includes(idx)) {
@@ -205,6 +211,7 @@ export default defineComponent({
       .style('font-size', this.titleInAxis ? '16px' : '20px')
       .style('fill', this.titleColor)
       .text(this.queryAnswer.title);
+    
 
     window.addEventListener('keydown', this.handleKeydown);
     
@@ -312,6 +319,48 @@ export default defineComponent({
   },
 
   computed: {
+    isPolyphonic() {
+      // Check if the instrument for the trajectories is polyphonic (Sitar or Sarangi)
+      if (this.trajectories.length === 0) return false;
+      const firstTraj = this.trajectories[0];
+      const inst = firstTraj.instrumentation;
+      return inst === Instrument.Sitar || inst === Instrument.Sarangi;
+    },
+
+    secondStringTrajectories() {
+      // Get trajectories from the second string if instrument is polyphonic
+      if (!this.isPolyphonic || this.trajectories.length === 0) return [];
+      
+      const secondStringTrajs: Trajectory[] = [];
+      
+      // Use the query answer time range to find relevant trajectories
+      const segmentStartTime = this.queryAnswer.startTime;
+      const segmentEndTime = this.queryAnswer.endTime;
+      
+      // Find the track from the first trajectory
+      const firstTraj = this.trajectories[0];
+      const track = this.piece.trackFromTraj(firstTraj);
+      
+      // Look through all phrases in this track
+      this.piece.phraseGrid[track].forEach((phrase) => {
+        const phraseStart = phrase.startTime!;
+        
+        // Check if this phrase overlaps with our segment
+        if (phrase.trajectoryGrid[1] && phrase.trajectoryGrid[1].length > 0) {
+          phrase.trajectoryGrid[1].forEach(traj => {
+            const trajStart = phraseStart + traj.startTime!;
+            const trajEnd = trajStart + traj.durTot;
+            
+            // Include if trajectory overlaps with segment time range
+            if (trajStart < segmentEndTime && trajEnd > segmentStartTime) {
+              secondStringTrajs.push(traj);
+            }
+          });
+        }
+      });
+      return secondStringTrajs;
+    },
+
     maxTrajLogFreq() {
       if (this.logFreqOverride) {
         return this.logFreqOverride.high
@@ -452,7 +501,7 @@ export default defineComponent({
       }
     },
 
-    handleClick(e: MouseEvent) {
+    handleClick(_e: MouseEvent) {
       this.contextMenuClosed = true;
       this.$emit('segment-click', {
         startTime: this.queryAnswer.startTime,
@@ -509,7 +558,7 @@ export default defineComponent({
       })
     },
 
-    addTrajectory(traj: Trajectory) {
+    addTrajectory(traj: Trajectory, _isSecondString = false) {
       const horizontalMargin = this.outerMargin.left + this.outerMargin.right;
       let totWidth = this.displayWidth - horizontalMargin;
       totWidth -= this.innerMargin.left + this.innerMargin.right;
@@ -536,16 +585,25 @@ export default defineComponent({
         .curve(d3.curveLinear);
       const yVal = this.innerMargin.top + this.titleMargin;
       const xVal = this.innerMargin.left;
+      
+      // Same styling for both strings
+      const strokeColor = 'black';
+      const strokeWidth = '1.5px';
+      const dashArray = 'none';
+      
       this.svg!.append('path')
         .datum(samplePoints)
         .attr('d', line)
         .attr('fill', 'none')
-        .attr('stroke', 'black')
-        .attr('stroke-width', '1.5px')
+        .attr('stroke', strokeColor)
+        .attr('stroke-width', strokeWidth)
+        .attr('stroke-dasharray', dashArray)
         .attr('transform', `translate(${ xVal }, ${ yVal })`)
 
       // add articulations
       const artKeys = Object.keys(traj.articulations);
+      const artColor = 'black';  // Same color for all articulations
+      
       artKeys.forEach(artKey => {
         const art = traj.articulations[artKey];
         const artTime = Number(artKey) * traj.durTot + startTime;
@@ -557,7 +615,7 @@ export default defineComponent({
           const tY = this.innerMargin.top + this.titleMargin + artY;
           this.svg!.append('path')
             .attr('d', sym)
-            .attr('fill', 'black')
+            .attr('fill', artColor)
             .attr('transform', `translate(${tX}, ${tY}) rotate(90)`)
         } else if (art.name === 'hammer-off') {
           const artX = this.xScale!(artTime);
@@ -566,7 +624,7 @@ export default defineComponent({
           const tY = this.innerMargin.top + this.titleMargin + artY;
           this.svg!.append('path')
             .attr('d', d3.line()([[-10, 0], [0, 0], [0, 10]]))
-            .attr('stroke', 'black')
+            .attr('stroke', artColor)
             .attr('stroke-width', 1.5)
             .attr('fill', 'none')
             .attr('marker-end', 'url(#arrow)')
@@ -578,7 +636,7 @@ export default defineComponent({
           const tY = this.innerMargin.top + this.titleMargin + artY;
           this.svg!.append('path')
             .attr('d', d3.line()([[-10, 0], [0, 0], [0, -10]]))
-            .attr('stroke', 'black')
+            .attr('stroke', artColor)
             .attr('stroke-width', 1.5)
             .attr('fill', 'none')
             .attr('marker-end', 'url(#arrow)')
@@ -593,7 +651,7 @@ export default defineComponent({
           if (curY < artY) line = [[0, 10], [0, -10]] as [number, number][];
           this.svg!.append('path')
             .attr('d', d3.line()(line))
-            .attr('stroke', 'black')
+            .attr('stroke', artColor)
             .attr('stroke-width', 1.5)
             .attr('fill', 'none')
             .attr('marker-end', 'url(#arrow)')
@@ -605,7 +663,7 @@ export default defineComponent({
           const tY = this.innerMargin.top + this.titleMargin + artY;
           this.svg!.append('path')
             .attr('d', d3.line()([[-2, -8], [0, -8], [0, 8], [-2, 8]]))
-            .attr('stroke', 'black')
+            .attr('stroke', artColor)
             .attr('stroke-width', 1.5)
             .attr('fill', 'none')
             .attr('stroke-linecap', 'round')
@@ -622,13 +680,14 @@ export default defineComponent({
             const tY = this.innerMargin.top + this.titleMargin + artY;
             this.svg!.append('path')
               .attr('d', sym)
-              .attr('fill', 'black')
+              .attr('fill', artColor)
               .attr('transform', `translate(${tX}, ${tY})`)
           }
 
         }
       })
     },
+
 
     addMarkers() {
       this.defs = this.svg!.append('defs') as d3.Selection<SVGDefsElement, unknown, null, any>;

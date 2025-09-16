@@ -875,6 +875,7 @@ type TrajTimePoint = {
   pIdx: number,
   tIdx: number,
   track: number,
+  stringIdx?: number,
 }
 
 type LabelEditorOptions = {
@@ -1092,26 +1093,34 @@ type SynthType = SitarSynthType | SarangiSynthType | KlattSynthType;
 
 type SitarSynthType = {
   sitarNode: PluckNodeType,
+  jorNode: PluckNodeType,                    // NEW: jor string node
   chikariNode: ChikariNodeType,
   sDCOffsetNode: BiquadFilterNode,
   lpNode: BiquadFilterNode,
   outGainNode: GainNode,
   intSitarGainNode: GainNode,
+  intJorGainNode: GainNode,                  // NEW: internal jor gain node
   extSitarGainNode: GainNode,
   intChikariGainNode: GainNode,
   extChikariGainNode: GainNode,
+  mainStringsSubmix: GainNode,               // NEW: submix for main + jor for capture
   idx: number,
   sitarLoopSourceNode: LoopSourceNode,
+  jorLoopSourceNode: LoopSourceNode,         // NEW: jor loop source
   chikariLoopSourceNode: LoopSourceNode,
   capture: CaptureNodeType,
   sitarLoopGainNode: GainNode,
+  jorLoopGainNode: GainNode,                 // NEW: jor loop gain node
   chikariLoopGainNode: GainNode,
   sonifyNode: GainNode,
 }
 
 type SarangiSynthType = {
   sarangiNode: SarangiNodeType,
+  secondNode: SarangiNodeType,              // NEW: second string node
   intGain: GainNode,
+  intSecondGain: GainNode,                  // NEW: internal second string gain
+  mainStringsSubmix: GainNode,              // NEW: submix for main + second for capture
   extGain: GainNode,
   idx: number,
   capture: CaptureNodeType,
