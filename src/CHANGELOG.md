@@ -1,6 +1,11 @@
 # Changelog
 
 
+* feat: implement Polyphonic Individual Instrumentality for Sitar and Sarangi [bd55a2d] (Jon Myers)
+### 2025-08-26
+
+## August 2025
+
 * fix: replace Claude workflow with working version from python-api [5c9f7b9] (Jon Myers)
 * fix: update Claude workflow to use official OAuth action [b15d9c7] (Jon Myers)
 * feat: add Claude PR review workflow [b5e9e0b] (Jon Myers)
