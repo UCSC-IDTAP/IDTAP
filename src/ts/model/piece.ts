@@ -345,7 +345,6 @@ class Piece {
         debugger;
       }
       if (ss.length > this.sectionCatGrid[ssIdx].length) {
-        console.log('this is where the fix is')
         const dif = ss.length - this.sectionCatGrid[ssIdx].length;
         for (let i = 0; i < dif; i++) {
           this.sectionCatGrid[ssIdx].push(initSecCategorization())
@@ -741,7 +740,6 @@ class Piece {
       }
     }
     if (track === undefined) {
-      console.log('here')
       throw new Error('Phrase not found')
     }
     return track

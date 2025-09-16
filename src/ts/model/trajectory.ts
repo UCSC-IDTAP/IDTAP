@@ -349,7 +349,6 @@ class Trajectory {
     }
     this.durArray?.forEach((d, idx) => {
       if (d === 0) {
-        console.log('removing zero dur')
         this.durArray!.splice(idx, 1)
         this.logFreqs.splice(idx + 1, 1);
         this.pitches.splice(idx + 1, 1);
@@ -543,7 +542,7 @@ class Trajectory {
       const starts = getStarts(durArray!);
       const index = findLastIndex(starts, s => x >= s);
       if (index === -1) {
-        console.log(outs, index)
+        throw new Error(`Invalid interpolation index: ${index}`)
       }
       return outs[index](x)
     };
