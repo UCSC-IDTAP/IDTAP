@@ -824,8 +824,6 @@ class Piece {
   phraseIdxFromTime(time: number, track: number) {
     const starts = this.durStarts(track);
     const idx = findLastIndex(starts, s => time >= s);
-    
-    
     return idx
   }
 
