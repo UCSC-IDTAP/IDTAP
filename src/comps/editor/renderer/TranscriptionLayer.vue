@@ -5165,6 +5165,17 @@ export default defineComponent({
       const track = props.piece.trackFromPhraseUId(selectedPhraseDivUid.value);
       const pIdx = phrase.pieceIdx!;
       const phrases = props.piece.phraseGrid[track];
+
+      // Check if this division is a section before we delete it, and preserve its metadata
+      const wasSection = props.piece.sectionStartsGrid[track].includes(pIdx);
+      let sectionCat: any = null;
+      let adHocSectionCat: string[] | null = null;
+      if (wasSection) {
+        const sectionIdx = props.piece.sectionStartsGrid[track].indexOf(pIdx);
+        sectionCat = props.piece.sectionCatGrid[track][sectionIdx];
+        adHocSectionCat = props.piece.adHocSectionCatGrid[track][sectionIdx];
+      }
+
       if (amt === 1) {
         // Move division right by one string-1 boundary by deleting and re-inserting
         if (phrase.trajectories.length < 2) {
@@ -5180,6 +5191,19 @@ export default defineComponent({
         insertNewPhraseDiv(newDivisionTime, curTrack, oldPIdx - 1);
         // Consolidate trajectories after the operation
         props.piece.phraseGrid[curTrack][oldPIdx - 1].consolidateContinuousTrajectories();
+
+        // Restore section status and metadata if it was a section
+        if (wasSection) {
+          // The new phrase is now at oldPIdx (since we merged and re-split)
+          const newPhraseIdx = oldPIdx;
+          props.piece.sectionStartsGrid[curTrack].push(newPhraseIdx);
+          props.piece.sectionStartsGrid[curTrack].sort((a, b) => a - b);
+          // Find the new position in the sorted array and insert categorization data
+          const newSectionIdx = props.piece.sectionStartsGrid[curTrack].indexOf(newPhraseIdx);
+          props.piece.sectionCatGrid[curTrack].splice(newSectionIdx, 0, sectionCat);
+          props.piece.adHocSectionCatGrid[curTrack].splice(newSectionIdx, 0, adHocSectionCat);
+        }
+
         // Clear all trajectory SVG elements and rebuild everything
         resetTranscription();
         return;
@@ -5203,6 +5227,19 @@ export default defineComponent({
         insertNewPhraseDiv(newDivisionTime, curTrack, oldPIdx - 1);
         // Consolidate trajectories after the operation
         props.piece.phraseGrid[curTrack][oldPIdx - 1].consolidateContinuousTrajectories();
+
+        // Restore section status and metadata if it was a section
+        if (wasSection) {
+          // The new phrase is now at oldPIdx (since we merged and re-split)
+          const newPhraseIdx = oldPIdx;
+          props.piece.sectionStartsGrid[curTrack].push(newPhraseIdx);
+          props.piece.sectionStartsGrid[curTrack].sort((a, b) => a - b);
+          // Find the new position in the sorted array and insert categorization data
+          const newSectionIdx = props.piece.sectionStartsGrid[curTrack].indexOf(newPhraseIdx);
+          props.piece.sectionCatGrid[curTrack].splice(newSectionIdx, 0, sectionCat);
+          props.piece.adHocSectionCatGrid[curTrack].splice(newSectionIdx, 0, adHocSectionCat);
+        }
+
         // Clear all trajectory SVG elements and rebuild everything
         resetTranscription();
         return;
