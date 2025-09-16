@@ -94,7 +94,7 @@
         <li><strong>Vertical Movement</strong>:
           <ul>
             <li><strong>Up/Down Arrows</strong>: Navigate pitch range</li>
-            <li><strong>Shift + Mouse Wheel</strong>: Scroll vertically through pitch</li>
+            <li><strong>Mouse Wheel</strong>: Scroll vertically</li>
           </ul>
         </li>
         <li><strong>Zoom Controls</strong>:
