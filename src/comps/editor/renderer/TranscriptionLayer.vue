@@ -2287,6 +2287,12 @@ export default defineComponent({
     }
 
     const renderBol = (b: BolDisplayType) => {
+      // Skip rendering if logFreq is invalid (NaN, undefined, or Infinity)
+      if (!isFinite(b.logFreq) || b.logFreq === undefined || b.logFreq === null) {
+        console.warn(`Skipping bol rendering: invalid logFreq ${b.logFreq} for trajectory ${b.uId}`);
+        return;
+      }
+
       const y = props.yScale(b.logFreq);
       const x = props.xScale(b.time);
       const track = props.piece.trackFromTrajUId(b.uId);
