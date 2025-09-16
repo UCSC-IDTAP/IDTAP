@@ -6300,10 +6300,15 @@ export default defineComponent({
               // Split the silent trajectory at exact time
               const firstTrajDur = time - (phrase.startTime! + currentTraj.startTime!);
               const secondTrajDur = currentTraj.durTot - firstTrajDur;
-              
+
+              // Skip split if either part would be negligible (<= 1ms)
+              if (firstTrajDur <= 0.001 || secondTrajDur <= 0.001) {
+                return; // Don't split trajectories into negligible parts
+              }
+
               // Update original trajectory to be just the first part
               currentTraj.durTot = firstTrajDur;
-              
+
               // Create new trajectory for the second part (no startTime - will be calculated by reset)
               const ntObj = {
                 id: 12,
@@ -6312,9 +6317,9 @@ export default defineComponent({
                 fundID12: props.piece.raga.fundamental,
                 instrumentation: props.piece.instrumentation[track]
               };
-              
+
               const newTraj = new Trajectory(ntObj);
-              
+
               // Insert new trajectory right after the split point
               trajArray.splice(tIdx + 1, 0, newTraj);
               
@@ -6390,18 +6395,49 @@ export default defineComponent({
               trajsToKeep.push(traj);
             } else {
               // Trajectory spans division point - need to split
-              
+
               const firstPartDur = finalTime - trajAbsoluteStartTime;
               const secondPartDur = trajAbsoluteEndTime - finalTime;
+
+              // Skip split if either part would be negligible (<= 1ms)
+              if (firstPartDur <= 0.001 || secondPartDur <= 0.001) {
+                // If first part is negligible, move entire trajectory to new phrase
+                if (firstPartDur <= 0.001) {
+                  trajsToMove.push(traj);
+                } else {
+                  // If second part is negligible, keep entire trajectory in current phrase
+                  trajsToKeep.push(traj);
+                }
+                return;
+              }
+
               const splitRatio = firstPartDur / traj.durTot;
               const splitIdx = Math.floor(splitRatio * (traj.pitches.length - 1));
-              
+
+              // Split articulations between the two parts
+              const firstPartArticulations: { [key: string]: any } = {};
+              const secondPartArticulations: { [key: string]: any } = {};
+
+              Object.keys(traj.articulations).forEach(timeKey => {
+                const timeRatio = parseFloat(timeKey);
+                if (timeRatio <= splitRatio) {
+                  // Articulation belongs to first part
+                  firstPartArticulations[timeKey] = traj.articulations[timeKey];
+                } else {
+                  // Articulation belongs to second part - adjust time to be relative to second part
+                  const newTimeRatio = (timeRatio - splitRatio) / (1 - splitRatio);
+                  const newTimeKey = newTimeRatio.toFixed(2);
+                  secondPartArticulations[newTimeKey] = traj.articulations[timeKey];
+                }
+              });
+
               // First part stays in current phrase
               const firstPartPitches = traj.pitches.slice(0, splitIdx + 1);
               traj.pitches = firstPartPitches;
               traj.durTot = firstPartDur;
+              traj.articulations = firstPartArticulations;
               trajsToKeep.push(traj);
-              
+
               // Second part goes to new phrase
               const secondPartPitches = traj.pitches.slice(splitIdx);
               const secondPartObj = {
@@ -6409,6 +6445,7 @@ export default defineComponent({
                 durTot: secondPartDur,
                 pitches: secondPartPitches,
                 instrumentation: traj.instrumentation,
+                articulations: secondPartArticulations,
                 automation: traj.automation
               };
               const secondPartTraj = new Trajectory(secondPartObj);
@@ -6471,16 +6508,40 @@ export default defineComponent({
               // Split the trajectory at the division point
               const firstPartDur = time - trajStartTime;
               const secondPartDur = trajEndTime - time;
+
+              // Skip split if either part would be negligible (<= 1ms)
+              if (firstPartDur <= 0.001 || secondPartDur <= 0.001) {
+                return; // Skip this trajectory split
+              }
+
               const splitRatio = firstPartDur / secondStringTraj.durTot;
-              
+
               // Find the split point in the trajectory's pitches array
               const splitIdx = Math.floor(splitRatio * (secondStringTraj.pitches.length - 1));
-              
+
+              // Split articulations between the two parts
+              const firstPartArticulations: { [key: string]: any } = {};
+              const secondPartArticulations: { [key: string]: any } = {};
+
+              Object.keys(secondStringTraj.articulations).forEach(timeKey => {
+                const timeRatio = parseFloat(timeKey);
+                if (timeRatio <= splitRatio) {
+                  // Articulation belongs to first part
+                  firstPartArticulations[timeKey] = secondStringTraj.articulations[timeKey];
+                } else {
+                  // Articulation belongs to second part - adjust time to be relative to second part
+                  const newTimeRatio = (timeRatio - splitRatio) / (1 - splitRatio);
+                  const newTimeKey = newTimeRatio.toFixed(2);
+                  secondPartArticulations[newTimeKey] = secondStringTraj.articulations[timeKey];
+                }
+              });
+
               // Create first part (keep original trajectory, truncate it)
               const firstPartPitches = secondStringTraj.pitches.slice(0, splitIdx + 1);
               secondStringTraj.pitches = firstPartPitches;
               secondStringTraj.durTot = firstPartDur;
-              
+              secondStringTraj.articulations = firstPartArticulations;
+
               // Create second part (new trajectory)
               const secondPartPitches = secondStringTraj.pitches.slice(splitIdx);
               const secondPartObj = {
@@ -6488,6 +6549,7 @@ export default defineComponent({
                 durTot: secondPartDur,
                 pitches: secondPartPitches,
                 instrumentation: secondStringTraj.instrumentation,
+                articulations: secondPartArticulations,
                 automation: secondStringTraj.automation // Copy automation reference
               };
               const secondPartTraj = new Trajectory(secondPartObj);
@@ -6622,19 +6684,37 @@ export default defineComponent({
               const firstPartDur = finalTime - trajAbsoluteStartTime;
               const secondPartDur = trajAbsoluteEndTime - finalTime;
               
-              if (firstPartDur > 0 && secondPartDur > 0) {
+              if (firstPartDur > 0.001 && secondPartDur > 0.001) {
                 // Split the trajectory
                 removeTraj(traj);
                 
                 const splitRatio = firstPartDur / traj.durTot;
                 const splitIdx = Math.floor(splitRatio * (traj.pitches.length - 1));
                 
+                // Split articulations between the two parts
+                const firstPartArticulations: { [key: string]: any } = {};
+                const secondPartArticulations: { [key: string]: any } = {};
+
+                Object.keys(traj.articulations).forEach(timeKey => {
+                  const timeRatio = parseFloat(timeKey);
+                  if (timeRatio <= splitRatio) {
+                    // Articulation belongs to first part
+                    firstPartArticulations[timeKey] = traj.articulations[timeKey];
+                  } else {
+                    // Articulation belongs to second part - adjust time to be relative to second part
+                    const newTimeRatio = (timeRatio - splitRatio) / (1 - splitRatio);
+                    const newTimeKey = newTimeRatio.toFixed(2);
+                    secondPartArticulations[newTimeKey] = traj.articulations[timeKey];
+                  }
+                });
+
                 // First part stays in current phrase
                 const firstPartPitches = traj.pitches.slice(0, splitIdx + 1);
                 traj.pitches = firstPartPitches;
                 traj.durTot = firstPartDur;
+                traj.articulations = firstPartArticulations;
                 remainingTrajs.push(traj);
-                
+
                 // Second part goes to new phrase
                 const secondPartPitches = traj.pitches.slice(splitIdx);
                 const secondPartObj = {
@@ -6642,6 +6722,7 @@ export default defineComponent({
                   durTot: secondPartDur,
                   pitches: secondPartPitches,
                   instrumentation: traj.instrumentation,
+                  articulations: secondPartArticulations,
                   automation: traj.automation
                 };
                 const secondPartTraj = new Trajectory(secondPartObj);
