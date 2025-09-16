@@ -454,7 +454,7 @@
         <li><strong>Simple Meters</strong>: Even subdivisions (e.g., 4, 8, 16)</li>
         <li><strong>Compound Meters</strong>: Uneven patterns (e.g., 3+4 for 7-beat cycles)</li>
         <li><strong>Cycles</strong>: Number of pattern repetitions</li>
-        <li><strong>Tempo Control</strong>: Adjust playback tempo</li>
+        <li><strong>Tempo Control</strong>: Set the tempo marking for the meter object</li>
         <li><strong>Layer Visibility</strong>: Show/hide different hierarchical levels</li>
       </ul>
 
