@@ -705,7 +705,6 @@ export default defineComponent({
       const endTime = startTime + traj.durTot;
       const valueCt = Math.round((endTime - startTime) / valueDur);
       const freq = node.frequency!;  // Same as main sitar frequency parameter
-      console.log(freq)
       const verySmall = 0.000000000001;
       if (first) {
         const offset = startTime < now() ? now() - startTime : 0;
