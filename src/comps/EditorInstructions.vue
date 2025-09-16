@@ -1,92 +1,258 @@
 <template>
     <div id="idtap-editor-instructions" :style='mainStyle'>
-      <h1>Instructions for the Editor Tab of IDTAP</h1>
+      <h1>IDTAP Editor User Guide</h1>
+      <p><em>Complete instructions for musical transcription and analysis in IDTAP</em></p>
       <hr>
+
       <h2>Table of Contents</h2>
       <ol>
         <li>
-          <a href="#navigation-and-interface">Navigation and Interface</a>
+          <a href="#getting-started">Getting Started</a>
+          <ol type="a">
+            <li><a href="#editor-overview">Editor Overview</a></li>
+            <li><a href="#basic-navigation">Basic Navigation</a></li>
+          </ol>
+        </li>
+        <li>
+          <a href="#interface-elements">Interface Elements</a>
           <ol type="a">
             <li><a href="#editor-modes">Editor Modes</a></li>
             <li><a href="#instrument-tracks">Instrument Tracks</a></li>
+            <li><a href="#polyphonic-instruments">Polyphonic Instruments (Sitar & Sarangi)</a></li>
             <li><a href="#editor-graph">Editor Graph</a></li>
-            <li><a href="#visibility-options">Visibility Options</a></li>
+            <li><a href="#visibility-controls">Visibility Controls</a></li>
             <li><a href="#playback-controls">Playback Controls</a></li>
           </ol>
         </li>
         <li>
           <a href="#working-with-trajectories">Working with Trajectories</a>
           <ol type="a">
+            <li><a href="#understanding-trajectories">Understanding Trajectories</a></li>
             <li><a href="#trajectory-types">Trajectory Types</a></li>
-            <li><a href="#entering-trajectories">Entering Trajectories</a></li>
-            <li><a href="#selecting-and-editing-trajectories">Selecting and Editing Trajectories</a></li>
+            <li><a href="#creating-trajectories">Creating Trajectories</a></li>
+            <li><a href="#selecting-and-editing">Selecting and Editing Trajectories</a></li>
+            <li><a href="#advanced-trajectory-editing">Advanced Trajectory Editing</a></li>
           </ol>
         </li>
-        <li><a href="#phrase-and-section-divisions">Phrase and Section Divisions</a></li>
-        <li><a href="#meter-functionality">Meter Functionality</a></li>
-        <li><a href="#chikari-mode">Chikari Mode (Sitar Only)</a></li>
-        <li><a href="#region-selection">Region Selection</a></li>
         <li>
-          <a href="#additional-controls">Additional Controls</a>
+          <a href="#structural-elements">Structural Elements</a>
           <ol type="a">
-            <li><a href="#synthesis-controls">Synthesis Controls</a></li>
-            <li><a href="#tuning-controls">Tuning Controls</a></li>
-            <li><a href="#download-data">Download Data</a></li>
-            <li><a href="#meter-controls">Meter Controls</a></li>
-            <li><a href="#label-editor">Label Editor</a></li>
-            <li><a href="#transcription-and-graphic-controls">Transcription and Graphic Controls</a></li>
+            <li><a href="#phrase-divisions">Phrase and Section Divisions</a></li>
+            <li><a href="#meter-system">Meter System</a></li>
+            <li><a href="#chikari-strokes">Chikari Strokes (Sitar)</a></li>
+            <li><a href="#region-selection">Region Selection</a></li>
           </ol>
         </li>
-        <li><a href="#keyboard-shortcuts-and-tips">Keyboard Shortcuts and Tips</a></li>
-        <li><a href="#support-and-feedback">Support and Feedback</a></li>
+        <li>
+          <a href="#advanced-features">Advanced Features</a>
+          <ol type="a">
+            <li><a href="#synthesis-audio">Synthesis and Audio</a></li>
+            <li><a href="#tuning-system">Tuning System</a></li>
+            <li><a href="#labeling-categorization">Labeling and Categorization</a></li>
+            <li><a href="#visual-customization">Visual Customization</a></li>
+            <li><a href="#data-export">Data Export</a></li>
+          </ol>
+        </li>
+        <li><a href="#keyboard-shortcuts">Complete Keyboard Shortcuts Reference</a></li>
+        <li><a href="#workflows-examples">Common Workflows and Examples</a></li>
+        <li><a href="#troubleshooting">Troubleshooting and Tips</a></li>
+        <li><a href="#support">Support and Feedback</a></li>
       </ol>
 
       <hr>
 
-      <h2 id="navigation-and-interface">2. Navigation and Interface</h2>
+      <h2 id="getting-started">1. Getting Started</h2>
+
+      <h3 id="editor-overview">1.1 Editor Overview</h3>
+      <p>
+        The IDTAP Editor is a sophisticated tool for creating detailed musical transcriptions of Indian classical music.
+        The interface consists of several key areas:
+      </p>
+      <ul>
+        <li><strong>Top Row</strong>: Editor modes and instrument track selectors</li>
+        <li><strong>Main Graph</strong>: Visual representation of pitch over time</li>
+        <li><strong>Right Panel</strong>: Visibility controls and editing options</li>
+        <li><strong>Bottom Row</strong>: Playback controls and advanced features</li>
+      </ul>
+      <p>
+        <strong>Key Concept</strong>: Musical phrases are represented as <em>trajectories</em> - continuous lines showing
+        pitch changes over time. These trajectories can represent various musical ornaments, slides, and techniques
+        specific to Indian classical music.
+      </p>
+
+      <h3 id="basic-navigation">1.2 Basic Navigation</h3>
+      <p><strong>Essential Navigation Controls:</strong></p>
+      <ul>
+        <li><strong>Horizontal Movement</strong>:
+          <ul>
+            <li><strong>Arrow Keys</strong>: Left/Right arrows for precise movement</li>
+            <li><strong>Jump Navigation</strong>: <kbd>[</kbd> and <kbd>]</kbd> to jump left/right by half screen</li>
+            <li><strong>Phrase Navigation</strong>: <kbd>Tab</kbd> (next phrase) / <kbd>Shift+Tab</kbd> (previous phrase)</li>
+            <li><strong>Mouse Wheel</strong>: Scroll horizontally through time</li>
+          </ul>
+        </li>
+        <li><strong>Vertical Movement</strong>:
+          <ul>
+            <li><strong>Up/Down Arrows</strong>: Navigate pitch range</li>
+            <li><strong>Shift + Mouse Wheel</strong>: Scroll vertically through pitch</li>
+          </ul>
+        </li>
+        <li><strong>Zoom Controls</strong>:
+          <ul>
+            <li><strong>Time Zoom</strong>: "+" and "-" buttons (bottom-left)</li>
+            <li><strong>Pitch Zoom</strong>: "+" and "-" buttons (top-right)</li>
+          </ul>
+        </li>
+        <li><strong>Playhead Control</strong>:
+          <ul>
+            <li><strong>Double-click</strong>: Move playhead to clicked position</li>
+            <li><strong>Spacebar</strong>: Play/pause audio</li>
+          </ul>
+        </li>
+      </ul>
+
+      <hr>
+
+      <h2 id="interface-elements">2. Interface Elements</h2>
 
       <h3 id="editor-modes">2.1 Editor Modes</h3>
       <p>
-        At the top-left of the screen, beneath the main navigation bar, you'll find the <strong>Editor Modes</strong> represented by squares with letters in their lower-right corners:
+        Editor modes determine what type of editing operation you can perform. Mode selector squares appear
+        at the top-left of the screen, each marked with a letter:
       </p>
       <ul>
-        <li><strong>T</strong>: <em>Trajectory Mode</em></li>
-        <li><strong>S</strong>: <em>Series Mode</em></li>
-        <li><strong>P</strong>: <em>Phrase Division Mode</em></li>
-        <li><strong>M</strong>: <em>Meter Mode</em></li>
-        <li><strong>C</strong>: <em>Chikari Mode</em> (available only if the instrument is Sitar)</li>
-        <li><strong>R</strong>: <em>Region Selection Mode</em></li>
+        <li><strong>T - Trajectory Mode</strong>: Create and edit individual musical trajectories</li>
+        <li><strong>S - Series Mode</strong>: Create sequences of connected trajectories efficiently</li>
+        <li><strong>P - Phrase Division Mode</strong>: Add and edit phrase and section boundaries</li>
+        <li><strong>M - Meter Mode</strong>: Create and edit rhythmic meter structures</li>
+        <li><strong>C - Chikari Mode</strong>: Add sympathetic string strokes (Sitar only)</li>
+        <li><strong>R - Region Selection Mode</strong>: Select time regions for looping and focus</li>
+        <li><strong>A - Assemblage Phrase Pick Mode</strong>: Advanced phrase selection and organization</li>
       </ul>
-      <p><strong>How to Use:</strong></p>
+
+      <p><strong>Mode Selection:</strong></p>
       <ul>
-        <li><strong>Select a Mode</strong>: Click on a mode square or press the corresponding keyboard letter.</li>
-        <li><strong>Tooltips</strong>: Hover over a mode square to see a tooltip explaining its function.</li>
+        <li><strong>Click</strong>: Click on any mode square to activate it</li>
+        <li><strong>Keyboard</strong>: Press the corresponding letter key (<kbd>T</kbd>, <kbd>S</kbd>, <kbd>P</kbd>, <kbd>M</kbd>, <kbd>C</kbd>, <kbd>R</kbd>, <kbd>A</kbd>)</li>
+        <li><strong>Tooltips</strong>: Hover over mode squares for detailed descriptions</li>
+        <li><strong>Exit Mode</strong>: Press <kbd>Escape</kbd> to exit current mode</li>
       </ul>
+
+      <p><strong>Important</strong>: The active mode affects how mouse clicks and keyboard inputs are interpreted.
+      Always check which mode is selected before beginning an editing operation.</p>
 
       <h3 id="instrument-tracks">2.2 Instrument Tracks</h3>
       <p>
-        Next to the Editor Modes are the <strong>Instrument Tracks</strong>, displayed as green boxes with numbers in their lower-right corners (starting from 1):
+        Instrument track selectors appear as numbered green boxes next to the editor modes.
+        Each transcription can contain multiple instrument tracks for ensemble recordings.
       </p>
+
+      <p><strong>Track Management:</strong></p>
       <ul>
-        <li><strong>Select a Track</strong>: Click on a box to switch to that instrument's track for editing.</li>
-        <li><strong>Instrument Information</strong>: Hover over a box to see "Track X: Instrument Name".</li>
-        <li><strong>Edit Instrumentation</strong>: Right-click on any track box and select <em>"Edit Instrumentation"</em> to add, remove, or change instruments.</li>
-      </ul>
-      <p><strong>Available Instruments:</strong></p>
-      <ul>
-        <li>Sitar</li>
-        <li>Sarangi</li>
-        <li>Vocal (M): Male vocal</li>
-        <li>Vocal (F): Female vocal</li>
+        <li><strong>Select Track</strong>: Click on a numbered box to switch to that instrument track</li>
+        <li><strong>Track Information</strong>: Hover over a track box to see "Track X: Instrument Name"</li>
+        <li><strong>Edit Instrumentation</strong>: Right-click on any track box → "Edit Instrumentation" to modify instruments</li>
+        <li><strong>Multiple Tracks</strong>: Use different tracks for different performers or instruments</li>
       </ul>
 
-      <h3 id="editor-graph">2.3 Editor Graph</h3>
+      <p><strong>Available Instruments:</strong></p>
+      <ul>
+        <li><strong>Sitar</strong>: Polyphonic plucked string instrument with dual-string support</li>
+        <li><strong>Sarangi</strong>: Polyphonic bowed string instrument with dual-string support</li>
+        <li><strong>Vocal (M)</strong>: Male vocal with phoneme support</li>
+        <li><strong>Vocal (F)</strong>: Female vocal with phoneme support</li>
+      </ul>
+
+      <p><strong>Note</strong>: Sitar and Sarangi instruments support polyphonic transcription.
+      When these instruments are selected, additional string selection controls become available.</p>
+
+      <h3 id="polyphonic-instruments">2.3 Polyphonic Instruments (Sitar & Sarangi)</h3>
       <p>
-        The main area below the green row is the <strong>Editor Graph</strong>, which displays:
+        Sitar and Sarangi instruments support <strong>polyphonic transcription</strong> with two independent strings.
+        This allows you to transcribe multiple melodic lines simultaneously within a single instrument track.
+      </p>
+
+      <p><strong>String System:</strong></p>
+      <ul>
+        <li><strong>String 1 (Main String)</strong>: Primary melodic line, supports all trajectory types</li>
+        <li><strong>String 2 (Secondary String)</strong>: Secondary melodic line, limited to fixed pitch trajectories</li>
+      </ul>
+
+      <p><strong>String Selection:</strong></p>
+      <ul>
+        <li><strong>String Selector</strong>: When editing Sitar or Sarangi, a "String" selector appears showing "1" or "2"</li>
+        <li><strong>Switch Strings</strong>: Click the string selector or press <kbd>X</kbd> to toggle between strings</li>
+        <li><strong>Visual Indication</strong>: The currently active string is highlighted in the interface</li>
+      </ul>
+
+      <p><strong>String-Specific Editing:</strong></p>
+      <ul>
+        <li><strong>Independent Trajectories</strong>: Each string maintains its own set of trajectories</li>
+        <li><strong>String 1</strong>: Supports all trajectory types (fixed, bends, ornaments, etc.)</li>
+        <li><strong>String 2</strong>: Limited to fixed pitch trajectories only</li>
+        <li><strong>Synchronized Structure</strong>: Phrase divisions automatically affect both strings</li>
+        <li><strong>String-Aware Selection</strong>: Selection operations respect string boundaries</li>
+      </ul>
+
+      <p><strong>Important</strong>: When working with polyphonic instruments, always check which string is
+      currently selected before creating or editing trajectories. The string selector shows which string
+      will be affected by your edits.</p>
+
+      <h3 id="editor-graph">2.4 Editor Graph</h3>
+      <p>
+        The main visualization area displays musical content as a graph with time and pitch axes:
       </p>
       <ul>
-        <li><strong>X-Axis (Time)</strong>: Represented in seconds, located at the top of the graph.</li>
-        <li><strong>Y-Axis (Pitch/Frequency)</strong>: Uses a logarithmic scale with sargam pitch notation.</li>
+        <li><strong>X-Axis (Time)</strong>: Horizontal axis showing time in seconds</li>
+        <li><strong>Y-Axis (Pitch)</strong>: Vertical axis using logarithmic scale with sargam notation</li>
+        <li><strong>Trajectories</strong>: Continuous lines representing musical phrases and ornaments</li>
+        <li><strong>Spectrogram</strong>: Background visualization showing frequency content (optional)</li>
+        <li><strong>Melograph</strong>: Automatic pitch tracking overlay (optional)</li>
+      </ul>
+
+      <p><strong>Sargam Pitch System:</strong></p>
+      <ul>
+        <li><strong>Natural Pitches</strong>: Sa, Re, Ga, Ma, Pa, Dha, Ni (S, R, G, M, P, D, N)</li>
+        <li><strong>Altered Pitches</strong>: Lowercase for komal (flat), uppercase for shuddha/tivra</li>
+        <li><strong>Octaves</strong>: Dots above/below letters indicate higher/lower octaves</li>
+        <li><strong>Reference</strong>: Sa (tonic) serves as the pitch reference point</li>
+      </ul>
+
+      <h3 id="visibility-controls">2.5 Visibility Controls</h3>
+      <p>
+        The right panel contains visibility toggles and editing options:
+      </p>
+      <ul>
+        <li><strong>Spectrogram</strong>: Display frequency analysis background</li>
+        <li><strong>Melograph</strong>: Show automatic pitch tracking</li>
+        <li><strong>Sargam</strong>: Display pitch labels on trajectories</li>
+        <li><strong>Sargam Lines</strong>: Show horizontal pitch reference lines</li>
+        <li><strong>Bols</strong>: Show plucking stroke indicators (Sitar only)</li>
+        <li><strong>Transcription</strong>: Display trajectory transcription</li>
+        <li><strong>Meter</strong>: Show rhythmic meter grids</li>
+        <li><strong>Phrase Divs</strong>: Display phrase and section boundaries</li>
+      </ul>
+
+      <p><strong>Additional Options:</strong></p>
+      <ul>
+        <li><strong>Loop</strong>: Enable region looping during playback</li>
+        <li><strong>Playhead Return</strong>: Return playhead to start when stopping</li>
+        <li><strong>Meter Magnet</strong>: Snap trajectory points to meter grid</li>
+        <li><strong>Sargam Magnet</strong>: Snap trajectory points to sargam pitches</li>
+        <li><strong>Save Button</strong>: Save transcription progress</li>
+        <li><strong>Phoneme Script</strong>: Choose text script for vocal tracks (Latin/Devanagari/IPA)</li>
+      </ul>
+
+      <h3 id="playback-controls">2.6 Playback Controls</h3>
+      <p>
+        Playback controls are located in the bottom black row:
+      </p>
+      <ul>
+        <li><strong>Rewind</strong>: Jump back 15 seconds</li>
+        <li><strong>Play/Pause</strong>: Start or stop audio playback</li>
+        <li><strong>Fast Forward</strong>: Jump forward 15 seconds</li>
+        <li><strong>Spacebar Shortcut</strong>: Press <kbd>Spacebar</kbd> for play/pause</li>
+      </ul>
       </ul>
       <p><strong>Sargam Notation:</strong></p>
       <ul>
