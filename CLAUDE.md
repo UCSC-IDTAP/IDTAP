@@ -3,6 +3,13 @@
 ## Overview
 IDTAP (Interactive Digital Transcription and Analysis Platform) is a sophisticated full-stack web application for musical transcription and analysis, specifically focused on Indian classical music. The system combines modern web technologies with specialized audio processing and visualization capabilities.
 
+**Key Features:**
+- **Polyphonic Individual Instrumentality** - Dual-string support for Sitar and Sarangi instruments
+- **Python API Integration** - PyPI package with OAuth authentication for programmatic access
+- **Research Integration** - Academic paper accessibility and waiver system
+- **Advanced Musical Notation** - Microtonal pitch representation with raga-based theoretical framework
+- **Real-time Audio Synthesis** - Physical modeling synthesis engines for Indian instruments
+
 **Note:** This CLAUDE.md covers the web development aspects. For Python API development, see `/python/CLAUDE.md`.
 
 ## Technology Stack
@@ -46,13 +53,17 @@ IDTAP (Interactive Digital Transcription and Analysis Platform) is a sophisticat
 - Explicit permissions with granular edit/view access
 - Owner-based access control
 - Collection-based permission inheritance
+- **Research waiver system** - Consent tracking for Python API access
+- **JWT-based authentication** - Secure token-based access for programmatic clients
 
 ## API Architecture
 
 ### Authentication Endpoints
-- `/userLoginGoogle` - Google OAuth login
-- `/handleGoogleAuthCode` - Token exchange
-- Modern `/oauth/*` routes with JWT for Python API clients
+- `/userLoginGoogle` - Google OAuth login (web client)
+- `/handleGoogleAuthCode` - Token exchange (web client)
+- `/oauth/authorize` - OAuth authorization for Python API clients
+- `/oauth/token` - JWT token generation for Python API clients
+- `/api/agreeToWaiver` - Research waiver consent tracking
 
 ### Transcription Management
 - `/insertNewTranscription` - Create new transcription
@@ -62,7 +73,9 @@ IDTAP (Interactive Digital Transcription and Analysis Platform) is a sophisticat
 - Clone, delete, and permission update endpoints
 
 ### Audio Processing
-- `/newUploadFile` - Upload with progress tracking
+- `/newUploadFile` - Upload with progress tracking (web client)
+- `/api/audio/upload` - Programmatic audio upload for Python API clients
+- `/api/audio/metadata` - Audio file metadata endpoints
 - `/makeSpectrograms` - Generate visualizations via Python
 - `/makeMelograph` - Generate melodic contour analysis
 - Audio format conversion pipeline (opus → wav)
@@ -71,6 +84,33 @@ IDTAP (Interactive Digital Transcription and Analysis Platform) is a sophisticat
 - `/excelData` - Excel export generation
 - `/jsonData` - JSON export
 - `/DNExtractExcel` - Advanced data extraction
+
+## Polyphonic Individual Instrumentality System
+
+### Overview
+The Polyphonic Individual Instrumentality system enables dual-string support for Sitar and Sarangi instruments, allowing simultaneous transcription and playback of multiple melodic lines within a single instrument track.
+
+### Architecture
+- **String-indexed trajectory grids** - `trajectoryGrid[0]` (main string) and `trajectoryGrid[1]` (second string)
+- **Automatic synchronization** - Silent trajectory generation to maintain temporal alignment
+- **Cross-string coordination** - Phrase division operations affect both strings simultaneously
+- **String-aware editing** - Selection, deletion, and modification operations respect string boundaries
+
+### Key Components
+- **Piece.ensureStringSynchronization()** - Maintains temporal alignment between strings
+- **Piece.stringFromTraj()** - Determines which string contains a given trajectory
+- **Phrase.trajectoryGrid** - Multi-dimensional trajectory storage (track → string → trajectories)
+- **String mode selector** - UI component for switching between string views
+
+### Supported Instruments
+- **Sitar** - Main string (melody) + Jor string (secondary melody/drone)
+- **Sarangi** - Main string (melody) + Second string (harmony/accompaniment)
+
+### Integration Points
+- **Audio synthesis** - Separate AudioWorklet nodes for each string
+- **Visual rendering** - String-aware trajectory display and selection
+- **MIDI/Audio export** - Multi-channel output for polyphonic content
+- **Analysis tools** - String-specific pitch analysis and visualization
 
 ## Frontend Architecture
 
@@ -85,11 +125,14 @@ src/
 ```
 
 ### Key Components
-- **EditorComponent.vue** - Main editor interface with complex state management
-- **Renderer.vue** - Canvas-based visualization renderer
+- **EditorComponent.vue** - Main editor interface with complex state management and polyphonic support
+- **Renderer.vue** - Canvas-based visualization renderer with string-aware rendering
 - **EditorAudioPlayer.vue** - Custom audio player with Web Audio API
-- **TranscriptionLayer.vue** - Musical notation rendering
+- **TranscriptionLayer.vue** - Musical notation rendering with dual-string trajectory support
 - **SpectrogramLayer.vue** - Real-time spectrogram visualization
+- **ModeSelector.vue** - Generic mode selection component with tooltip system (used for string selection)
+- **TrajSelectPanel.vue** - Trajectory selection interface with polyphonic awareness
+- **XAxis.vue** - Time axis display with excerpt/real time toggle support
 
 ### State Management
 - Vuex store for authentication state
@@ -100,11 +143,13 @@ src/
 ## Audio Processing System
 
 ### Synthesis Engines
-- **Karplus-Strong** - Plucked string synthesis (sitar)
+- **Karplus-Strong** - Plucked string synthesis (sitar main string + jor string)
 - **Klatt synthesizer** - Vocal synthesis
-- **Sarangi** - Physical modeling synthesis
-- **Chikari** - Drone string synthesis
+- **Sarangi** - Physical modeling synthesis (main string + second string)
+- **Chikari** - Drone string synthesis with 4-string support
 - Real-time parameter control via AudioWorklet
+- **Polyphonic audio routing** - Separate AudioWorklet nodes for each string with mixed output
+- **String-specific gain control** - Independent volume control for main and secondary strings
 
 ### Audio Pipeline
 1. Client upload with progress tracking
@@ -135,20 +180,42 @@ pnpm test            # Vitest test runner
 - **TypeScript** strict mode enforcement
 - Vue 3 Composition API patterns
 
+## GitHub Workflows and Automation
+
+### Claude PR Review System
+- **Manual trigger** - Comment `@claude review` on any PR for AI-powered code review
+- **Automated review** - GitHub Actions workflow with sticky comment updates
+- **Security model** - Read-only permissions with proper secret handling
+- **Integration** - Works with conventional commit patterns and changelog generation
+
+### Automated Development Workflows
+- **`claude-review.yml`** - Manual PR review trigger workflow
+- **`claude.yml`** - General Claude integration for issues and PRs
+- **Dependency management** - Automated security updates and vulnerability scanning
+- **Quality gates** - TypeScript compilation and linting checks in CI/CD
+
+### Conventional Commit Integration
+- **Changelog automation** - Conventional commits (`feat:`, `fix:`, `chore:`) trigger changelog updates
+- **Version management** - Semantic versioning based on commit types
+- **Release automation** - Automated tagging and release note generation
+
 ## Security Implementation
 
 ### Authentication Flow
-- Client-side Google OAuth via vue3-google-login
-- Server-side token verification with google-auth-library
-- JWT-based API authentication for Python clients
-- Automatic user registration/login
+- **Web clients** - Client-side Google OAuth via vue3-google-login with server-side verification
+- **Python API clients** - OAuth 2.0 authorization code flow with JWT token exchange
+- **Token management** - Secure storage with keyring (primary) and encrypted file fallback
+- **Waiver system** - Research participation consent required for API access
+- **Automatic user registration** - Seamless onboarding for new users
 
 ### Security Measures
-- CORS configuration
-- Request timeouts (10 minutes for analysis)
-- File upload limits (1GB)
-- Input validation and sanitization
-- MongoDB query parameter sanitization
+- **CORS configuration** - Properly configured cross-origin resource sharing
+- **Request timeouts** - 10 minutes for analysis operations, shorter for standard requests
+- **File upload limits** - 1GB maximum file size with validation
+- **Input validation** - Comprehensive sanitization of user inputs
+- **MongoDB security** - Query parameter sanitization and injection prevention
+- **Dependency scanning** - Automated vulnerability detection and updates
+- **Secret management** - Secure handling of API keys and authentication tokens
 
 ## Visualization System
 
@@ -160,11 +227,14 @@ pnpm test            # Vitest test runner
 - Real-time audio-visual synchronization
 
 ### Musical Transcription Features
-- Continuous melodic trajectory system
-- Microtonal pitch representation
-- Multi-instrument simultaneous transcription
-- Raga-based theoretical framework
-- Spectrogram-guided transcription workflow
+- **Continuous melodic trajectory system** with polyphonic string support
+- **Microtonal pitch representation** with cents-based precision
+- **Multi-instrument simultaneous transcription** across multiple tracks
+- **Polyphonic individual instrumentality** - Dual-string support for Sitar and Sarangi
+- **Raga-based theoretical framework** with pitch class analysis
+- **Spectrogram-guided transcription workflow** with real-time audio feedback
+- **Timing display modes** - Toggle between excerpt time and real time display
+- **Musical time calculations** - Pulse-based meter analysis with hierarchical reference levels
 
 ## Deployment
 
@@ -238,13 +308,41 @@ pnpm deployShared       # Deploy shared TypeScript types (manual)
 - Efficient MongoDB queries with proper indexing
 - Progressive Web App capabilities
 
+## Python API and Research Integration
+
+### PyPI Package Distribution
+- **Package name** - `idtap-api` available on PyPI for public installation
+- **OAuth integration** - Seamless authentication with IDTAP web application
+- **Data classes** - Structured Python objects for transcription data manipulation
+- **Audio upload** - Programmatic audio file upload with metadata handling
+
+### Research Framework
+- **Waiver system** - Research participation consent tracking and validation
+- **Academic papers** - ISMIR 2025 research paper and NEH whitepaper accessibility
+- **Git LFS integration** - Large file storage for research documents and media
+- **Institutional access** - API endpoints designed for academic and research use
+
+### Data Access Patterns
+- **Authenticated queries** - JWT-based secure access to transcription data
+- **Metadata endpoints** - Comprehensive transcription and audio file metadata
+- **Export formats** - JSON, Excel, and custom format support for analysis
+- **Batch operations** - Efficient bulk data access for research workflows
+
+### Integration with Analysis Tools
+- **Python data science stack** - Compatible with pandas, numpy, matplotlib
+- **Audio analysis** - Integration with librosa, essentia, and other audio libraries
+- **Machine learning** - Prepared datasets for computational musicology research
+- **Visualization** - Export-ready data for academic publication graphics
+
 ## Integration Points
 
 ### Python Integration
-- Server calls Python scripts for audio analysis
-- Spectrogram and melograph generation
-- Audio format conversion via FFmpeg
-- Data exchange via JSON serialization
+- **Server-side processing** - Python scripts for audio analysis and visualization generation
+- **API client access** - PyPI package for programmatic data access and manipulation
+- **Spectrogram and melograph generation** - Automated visualization pipeline
+- **Audio format conversion** - FFmpeg integration for format standardization
+- **Data exchange** - JSON serialization with structured data classes
+- **Research workflows** - OAuth-authenticated access for academic and institutional use
 
 ### File System
 - Organized audio storage by ID
@@ -252,4 +350,4 @@ pnpm deployShared       # Deploy shared TypeScript types (manual)
 - User-uploaded file management
 - Temporary file cleanup
 
-This architecture provides a sophisticated platform for musical transcription and analysis, balancing research-grade analytical capabilities with intuitive user interfaces for both academic and practical applications.
+This architecture provides a sophisticated platform for musical transcription and analysis, balancing research-grade analytical capabilities with intuitive user interfaces for both academic and practical applications. The polyphonic individual instrumentality system enables detailed study of complex Indian classical music performances, while the Python API integration facilitates computational musicology research and institutional data access. The platform continues to evolve with automated development workflows and comprehensive security measures to support both individual musicians and academic research communities.
