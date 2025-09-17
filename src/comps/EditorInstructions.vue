@@ -20,8 +20,22 @@
             <li><a href="#instrument-tracks">Instrument Tracks</a></li>
             <li><a href="#polyphonic-instruments">Polyphonic Instruments (Sitar & Sarangi)</a></li>
             <li><a href="#editor-graph">Editor Graph</a></li>
-            <li><a href="#visibility-controls">Visibility Controls</a></li>
-            <li><a href="#playback-controls">Playback Controls</a></li>
+            <li><a href="#editor-control-box">Editor Control Box (Upper Right Side)</a></li>
+            <li><a href="#trajectory-editing-panel">Trajectory Editing Panel (Lower Right Side)</a></li>
+          </ol>
+        </li>
+        <li>
+          <a href="#control-panels">Control Panels</a>
+          <ol type="a">
+            <li><a href="#control-panels-overview">Control Panels Overview</a></li>
+            <li><a href="#transcription-graphic-controls">Transcription and Graphic Controls</a></li>
+            <li><a href="#assemblage-controls">Assemblage Controls</a></li>
+            <li><a href="#label-editor">Label Editor</a></li>
+            <li><a href="#meter-controls">Meter Controls</a></li>
+            <li><a href="#download-data">Download Data</a></li>
+            <li><a href="#share-transcription">Share Transcription</a></li>
+            <li><a href="#tuning-controls">Tuning Controls</a></li>
+            <li><a href="#synthesis-controls">Synthesis Controls</a></li>
           </ol>
         </li>
         <li>
@@ -38,7 +52,6 @@
           <a href="#structural-elements">Structural Elements</a>
           <ol type="a">
             <li><a href="#phrase-divisions">Phrase and Section Divisions</a></li>
-            <li><a href="#meter-system">Meter System</a></li>
             <li><a href="#chikari-strokes">Chikari Strokes (Sitar)</a></li>
             <li><a href="#region-selection">Region Selection</a></li>
           </ol>
@@ -54,8 +67,6 @@
           </ol>
         </li>
         <li><a href="#keyboard-shortcuts">Complete Keyboard Shortcuts Reference</a></li>
-        <li><a href="#workflows-examples">Common Workflows and Examples</a></li>
-        <li><a href="#troubleshooting">Troubleshooting and Tips</a></li>
         <li><a href="#support">Support and Feedback</a></li>
       </ol>
 
@@ -69,13 +80,27 @@
         The interface consists of several key areas:
       </p>
       <ul>
-        <li><strong>Top Row</strong>: Editor modes and instrument track selectors</li>
+        <li><strong>Top Row</strong>: Editor modes, instrument track selectors, and string selectors (for Sitar and Sarangi instruments)</li>
         <li><strong>Main Graph</strong>: Visual representation of pitch over time</li>
-        <li><strong>Right Panel</strong>: Visibility controls and editing options</li>
-        <li><strong>Bottom Row</strong>: Playback controls and advanced features</li>
+        <li><strong>Right Panel</strong>: Trajectory selection and transformation options, articulation editing, interface settings, and save functionality</li>
+        <li><strong>Control Panels Area</strong>: Swappable control panels accessible via bottom row icons</li>
+        <li><strong>Bottom Row</strong>: Playback controls and icons for opening different control panels</li>
       </ul>
       <p>
-        <strong>Key Concept</strong>: Musical phrases are represented as <em>trajectories</em> - continuous lines showing
+        <strong>Control Panels</strong> (accessed via bottom row icons):
+      </p>
+      <ul>
+        <li><strong>Transcription and Graphic Controls</strong>: Visual display settings and spectrogram options</li>
+        <li><strong>Assemblage Controls</strong>: Advanced phrase organization tools</li>
+        <li><strong>Label Editor</strong>: Section and phrase categorization tools</li>
+        <li><strong>Meter Controls</strong>: Rhythmic structure and tempo settings</li>
+        <li><strong>Download Data</strong>: Export options for transcription data</li>
+        <li><strong>Share Transcription</strong>: Collaboration and sharing features</li>
+        <li><strong>Tuning Controls</strong>: Pitch system customization</li>
+        <li><strong>Synthesis Controls</strong>: Audio mixer and synthesis parameters</li>
+      </ul>
+      <p>
+        <strong>Key Concept</strong>: Melodic contour is represented as a stream of <em>trajectories</em> - continuous lines showing
         pitch changes over time. These trajectories can represent various musical ornaments, slides, and techniques
         specific to Indian classical music.
       </p>
@@ -99,8 +124,8 @@
         </li>
         <li><strong>Zoom Controls</strong>:
           <ul>
-            <li><strong>Time Zoom</strong>: "+" and "-" buttons (bottom-left)</li>
-            <li><strong>Pitch Zoom</strong>: "+" and "-" buttons (top-right)</li>
+            <li><strong>Horizontal Zoom</strong>: "+" and "-" buttons (bottom-left)</li>
+            <li><strong>Vertical Zoom</strong>: "+" and "-" buttons (top-right)</li>
           </ul>
         </li>
         <li><strong>Playhead Control</strong>:
@@ -121,19 +146,18 @@
         at the top-left of the screen, each marked with a letter:
       </p>
       <ul>
-        <li><strong>T - Trajectory Mode</strong>: Create and edit individual musical trajectories</li>
-        <li><strong>S - Series Mode</strong>: Create sequences of connected trajectories efficiently</li>
-        <li><strong>P - Phrase Division Mode</strong>: Add and edit phrase and section boundaries</li>
+        <li><strong>T - Trajectory Mode</strong>: Create individual musical trajectories</li>
+        <li><strong>S - Series Mode</strong>: Create sequences of connected fixed trajectories efficiently</li>
+        <li><strong>P - Phrase Division Mode</strong>: Add phrase and section boundaries</li>
         <li><strong>M - Meter Mode</strong>: Create and edit rhythmic meter structures</li>
         <li><strong>C - Chikari Mode</strong>: Add sympathetic string strokes (Sitar only)</li>
         <li><strong>R - Region Selection Mode</strong>: Select time regions for looping and focus</li>
-        <li><strong>A - Assemblage Phrase Pick Mode</strong>: Advanced phrase selection and organization</li>
       </ul>
 
       <p><strong>Mode Selection:</strong></p>
       <ul>
         <li><strong>Click</strong>: Click on any mode square to activate it</li>
-        <li><strong>Keyboard</strong>: Press the corresponding letter key (<kbd>T</kbd>, <kbd>S</kbd>, <kbd>P</kbd>, <kbd>M</kbd>, <kbd>C</kbd>, <kbd>R</kbd>, <kbd>A</kbd>)</li>
+        <li><strong>Keyboard</strong>: Press the corresponding letter key (<kbd>T</kbd>, <kbd>S</kbd>, <kbd>P</kbd>, <kbd>M</kbd>, <kbd>C</kbd>, <kbd>R</kbd>)</li>
         <li><strong>Tooltips</strong>: Hover over mode squares for detailed descriptions</li>
         <li><strong>Exit Mode</strong>: Press <kbd>Escape</kbd> to exit current mode</li>
       </ul>
@@ -169,7 +193,7 @@
       <h3 id="polyphonic-instruments">2.3 Polyphonic Instruments (Sitar & Sarangi)</h3>
       <p>
         Sitar and Sarangi instruments support <strong>polyphonic transcription</strong> with two independent strings.
-        This allows you to transcribe multiple melodic lines simultaneously within a single instrument track.
+        This allows you to transcribe a melodic line and a secondary simultaneous fixed-pitch line within a single instrument track.
       </p>
 
       <p><strong>String System:</strong></p>
@@ -181,7 +205,7 @@
       <p><strong>String Selection:</strong></p>
       <ul>
         <li><strong>String Selector</strong>: When editing Sitar or Sarangi, a "String" selector appears showing "1" or "2"</li>
-        <li><strong>Switch Strings</strong>: Click the string selector or press <kbd>X</kbd> to toggle between strings</li>
+        <li><strong>Switch Strings</strong>: Click the string selector to toggle between strings</li>
         <li><strong>Visual Indication</strong>: The currently active string is highlighted in the interface</li>
       </ul>
 
@@ -190,8 +214,6 @@
         <li><strong>Independent Trajectories</strong>: Each string maintains its own set of trajectories</li>
         <li><strong>String 1</strong>: Supports all trajectory types (fixed, bends, ornaments, etc.)</li>
         <li><strong>String 2</strong>: Limited to fixed pitch trajectories only</li>
-        <li><strong>Synchronized Structure</strong>: Phrase divisions automatically affect both strings</li>
-        <li><strong>String-Aware Selection</strong>: Selection operations respect string boundaries</li>
       </ul>
 
       <p><strong>Important</strong>: When working with polyphonic instruments, always check which string is
@@ -206,81 +228,308 @@
         <li><strong>X-Axis (Time)</strong>: Horizontal axis showing time in seconds</li>
         <li><strong>Y-Axis (Pitch)</strong>: Vertical axis using logarithmic scale with sargam notation</li>
         <li><strong>Trajectories</strong>: Continuous lines representing musical phrases and ornaments</li>
-        <li><strong>Spectrogram</strong>: Background visualization showing frequency content (optional)</li>
-        <li><strong>Melograph</strong>: Automatic pitch tracking overlay (optional)</li>
+        <li><strong>Spectrogram</strong>: Background visualization showing frequency spectrum over time with color-coded intensity (optional)</li>
+        <li><strong>Melograph</strong>: Automated pitch trace overlay (optional)</li>
       </ul>
 
       <p><strong>Sargam Pitch System:</strong></p>
       <ul>
         <li><strong>Natural Pitches</strong>: Sa, Re, Ga, Ma, Pa, Dha, Ni (S, R, G, M, P, D, N)</li>
-        <li><strong>Altered Pitches</strong>: Lowercase for komal (flat), uppercase for shuddha/tivra</li>
-        <li><strong>Octaves</strong>: Dots above/below letters indicate higher/lower octaves</li>
-        <li><strong>Reference</strong>: Sa (tonic) serves as the pitch reference point</li>
+        <li><strong>Altered Pitches</strong>: Lowercase for lowered, uppercase for raised</li>
+        <li><strong>Octaves</strong>: Dots above/below letters indicate higher/lower octaves (center octave has no dots)</li>
       </ul>
 
-      <h3 id="visibility-controls">2.5 Visibility Controls</h3>
+      <h3 id="editor-control-box">2.5 Editor Control Box (Upper Right Side)</h3>
       <p>
-        The right panel contains visibility toggles and editing options:
+        The control box in the upper right contains editing modes and playback options:
       </p>
-      <ul>
-        <li><strong>Spectrogram</strong>: Display frequency analysis background</li>
-        <li><strong>Melograph</strong>: Show automatic pitch tracking</li>
-        <li><strong>Sargam</strong>: Display pitch labels on trajectories</li>
-        <li><strong>Sargam Lines</strong>: Show horizontal pitch reference lines</li>
-        <li><strong>Bols</strong>: Show plucking stroke indicators (Sitar only)</li>
-        <li><strong>Transcription</strong>: Display trajectory transcription</li>
-        <li><strong>Meter</strong>: Show rhythmic meter grids</li>
-        <li><strong>Phrase Divs</strong>: Display phrase and section boundaries</li>
-      </ul>
-
-      <p><strong>Additional Options:</strong></p>
       <ul>
         <li><strong>Loop</strong>: Enable region looping during playback</li>
         <li><strong>Playhead Return</strong>: Return playhead to start when stopping</li>
         <li><strong>Meter Magnet</strong>: Snap trajectory points to meter grid</li>
         <li><strong>Sargam Magnet</strong>: Snap trajectory points to sargam pitches</li>
         <li><strong>Save Button</strong>: Save transcription progress</li>
-        <li><strong>Phoneme Script</strong>: Choose text script for vocal tracks (Latin/Devanagari/IPA)</li>
+        <li><strong>Phoneme Script</strong>: Choose text script for vocal tracks (Devanagari/IPA/Latin)</li>
+        <li><strong>Reset Audio</strong>: Reset audio synthesis engine</li>
       </ul>
 
-      <h3 id="playback-controls">2.6 Playback Controls</h3>
+      <h3 id="trajectory-editing-panel">2.6 Trajectory Editing Panel (Lower Right Side)</h3>
       <p>
-        Playback controls are located in the bottom black row:
+        The lower right panel contains trajectory editing controls and parameter adjustments.
+        <strong>Note</strong>: Many controls only appear when relevant trajectories are selected.
       </p>
       <ul>
-        <li><strong>Rewind</strong>: Jump back 15 seconds</li>
-        <li><strong>Play/Pause</strong>: Start or stop audio playback (click play button or press <kbd>Spacebar</kbd>)</li>
-        <li><strong>Fast Forward</strong>: Jump forward 15 seconds</li>
+        <li><strong>Octave Shift</strong>: Up/down arrows to transpose selected trajectories</li>
+        <li><strong>Trajectory Type Icons</strong>: Visual thumbnails for selecting trajectory types</li>
+        <li><strong>Instrument-Specific Controls</strong>:
+          <ul>
+            <li><strong>Sitar</strong>: Pluck and Dampen checkboxes (appear when sitar trajectories selected)</li>
+            <li><strong>Vocal</strong>: Start consonant, Vowel, End consonant selectors (appear when vocal trajectories selected)</li>
+          </ul>
+        </li>
+        <li><strong>Trajectory Parameters</strong> (appear based on trajectory type):
+          <ul>
+            <li><strong>Slope</strong>: Controls for bend trajectories</li>
+            <li><strong>Vibrato Settings</strong>: Periods, extent, offset, phase (appear for vibrato trajectories)</li>
+          </ul>
+        </li>
+        <li><strong>Grouped Trajectory Toggle</strong>: Controls for grouped trajectory editing (when multiple trajectories selected)</li>
       </ul>
+
 
       <hr>
 
-      <h2 id="working-with-trajectories">3. Working with Trajectories</h2>
+      <h2 id="control-panels">3. Control Panels</h2>
 
-      <h3 id="understanding-trajectories">3.1 Understanding Trajectories</h3>
+      <h3 id="control-panels-overview">3.1 Control Panels Overview</h3>
+      <p>
+        The bottom row of the editor contains icons that open specialized control panels.
+        These panels provide advanced functionality for different aspects of transcription and analysis:
+      </p>
+      <ul>
+        <li><strong>Transcription and Graphic Controls</strong>: Visual display settings and spectrogram options</li>
+        <li><strong>Assemblage Controls</strong>: Advanced phrase organization tools</li>
+        <li><strong>Label Editor</strong>: Section and phrase categorization tools</li>
+        <li><strong>Meter Controls</strong>: Rhythmic structure and tempo settings</li>
+        <li><strong>Download Data</strong>: Export options for transcription data</li>
+        <li><strong>Share Transcription</strong>: Collaboration and sharing features</li>
+        <li><strong>Tuning Controls</strong>: Pitch system customization</li>
+        <li><strong>Synthesis Controls</strong>: Audio mixer and synthesis parameters</li>
+      </ul>
+
+      <h3 id="transcription-graphic-controls">3.2 Transcription and Graphic Controls</h3>
+      <p>
+        Access via the spectrogram icon. This comprehensive panel controls visual display and analysis settings:
+      </p>
+
+      <p><strong>Spectrogram Settings:</strong></p>
+      <ul>
+        <li><strong>Colormap Selection</strong>: Choose from 50+ scientific colormaps</li>
+        <li><strong>Intensity Power</strong>: Adjust contrast (1-5 range)</li>
+        <li><strong>Update Buttons</strong>: Apply colormap and intensity changes</li>
+      </ul>
+
+      <p><strong>Sa Frequency Control:</strong></p>
+      <ul>
+        <li><strong>Frequency Input</strong>: Set tonic pitch (100-400 Hz)</li>
+        <li><strong>Fine Adjustment</strong>: Logarithmic slider for precise tuning</li>
+        <li><strong>Audition</strong>: Gain slider to hear the Sa reference tone</li>
+      </ul>
+
+      <p><strong>Display Customization:</strong></p>
+      <ul>
+        <li><strong>Pitch Range</strong>: Set maximum and minimum visible pitches</li>
+        <li><strong>Color Scheme</strong>: Customize colors for background, axes, melograph, sargam lines, meter, and playhead</li>
+        <li><strong>Track Colors</strong>: Individual trajectory colors per instrument track</li>
+        <li><strong>Animation Style</strong>: Choose playhead animation (Animated, Block, DottedLine, None)</li>
+      </ul>
+
+      <p><strong>Display Presets:</strong></p>
+      <ul>
+        <li>Save custom display configurations</li>
+        <li>Load saved presets</li>
+        <li>Set default settings</li>
+      </ul>
+
+      <h3 id="assemblage-controls">3.3 Assemblage Controls</h3>
+      <p>
+        Access via the assemblage icon. Organize phrases into thematic groups.
+        This assemblage system is linked to a panel in the analysis suite for advanced research workflows.
+      </p>
+
+      <p><strong>Assemblage Management:</strong></p>
+      <ul>
+        <li><strong>Create Assemblages</strong>: Name and organize phrase collections</li>
+        <li><strong>Select Existing</strong>: Choose from dropdown list</li>
+        <li><strong>Delete Assemblages</strong>: Remove unwanted collections</li>
+      </ul>
+
+      <p><strong>Strand Organization:</strong></p>
+      <ul>
+        <li><strong>Create Strands</strong>: Named sub-groups within assemblages</li>
+        <li><strong>Edit Names</strong>: Click to rename strands</li>
+        <li><strong>Move Phrases</strong>: Drag phrases between strands</li>
+        <li><strong>Loose Phrases</strong>: Unorganized phrase storage</li>
+      </ul>
+
+      <p><strong>Interactive Features:</strong></p>
+      <ul>
+        <li><strong>Visual Selection</strong>: Highlighting for active phrases</li>
+        <li><strong>Keyboard Shortcuts</strong>: Escape to deselect, Delete to remove</li>
+        <li><strong>Phrase Picking Mode</strong>: Integration with assemblage editor functionality</li>
+      </ul>
+
+      <h3 id="label-editor">3.4 Label Editor</h3>
+      <p>
+        Access via the tags icon. Organize and categorize musical sections and phrases:
+      </p>
+
+      <p><strong>Hierarchy Selection:</strong></p>
+      <ul>
+        <li><strong>Section Mode</strong>: Edit labels for major structural divisions</li>
+        <li><strong>Phrase Mode</strong>: Edit labels for individual phrases</li>
+        <li><strong>Track Indicator</strong>: Shows which instrument track is being labeled</li>
+      </ul>
+
+      <p><strong>Navigation:</strong></p>
+      <ul>
+        <li><strong>Horizontal Scrolling</strong>: Navigate through sections/phrases</li>
+        <li><strong>Double-Click</strong>: Jump directly to a section or phrase in the editor</li>
+      </ul>
+
+      <p><strong>Labeling Options:</strong></p>
+      <ul>
+        <li><strong>Structured Labels</strong>: Use predefined categories</li>
+        <li><strong>Ad-hoc Labels</strong>: Create custom labels</li>
+      </ul>
+
+      <h3 id="meter-controls">3.5 Meter Controls</h3>
+      <p>
+        Access via the meter icon. Create and edit hierarchical rhythmic structures:
+      </p>
+
+      <p><strong>Hierarchy Configuration:</strong></p>
+      <ul>
+        <li><strong>Depth Selector</strong>: Choose 1-4 hierarchical layers</li>
+        <li><strong>Layer Controls</strong>: Configure subdivisions for each layer</li>
+        <li><strong>Compound Patterns</strong>: Create complex rhythmic cycles</li>
+      </ul>
+
+      <p><strong>Tempo and Timing:</strong></p>
+      <ul>
+        <li><strong>Tempo Control</strong>: Set BPM (20-300)</li>
+        <li><strong>Cycles</strong>: Number of pattern repetitions</li>
+        <li><strong>Duration Display</strong>: Shows calculated meter duration</li>
+      </ul>
+
+      <p><strong>Insert Pulse Mode:</strong></p>
+      <p>
+        When in Meter Mode (M), users can place pulses by clicking on the transcription canvas.
+        These pulses serve as timing references for creating or extending meters:
+      </p>
+      <ul>
+        <li><strong>Pulse Placement</strong>: Click to place timing pulses (minimum 2 required for meter creation)</li>
+        <li><strong>Layer Selection</strong>: Choose Layer 0 (primary beats) or Layer 1 (subdivisions) via radio buttons</li>
+        <li><strong>Insert Meter from Pulses</strong>: Create new meter using placed pulse timing (available when 2+ pulses placed)</li>
+        <li><strong>Attach to Previous Meter</strong>: Extend existing meter by adding pulse points to specified layer (checkbox appears when previous meter detected)</li>
+        <li><strong>Validation</strong>: System prevents overlapping meters and guides valid pulse placement areas</li>
+      </ul>
+
+      <p><strong>Workflow Options:</strong></p>
+      <ul>
+        <li><strong>New Meter Creation</strong>: Place pulses → select layer → click "Insert Meter from Pulses"</li>
+        <li><strong>Meter Extension</strong>: Place pulses after existing meter → check "Attach to Prev Meter" → add time points</li>
+        <li><strong>Manual Insertion</strong>: Position playhead → configure parameters → click "Insert Meter at Playhead"</li>
+      </ul>
+
+      <h3 id="download-data">3.6 Download Data</h3>
+      <p>
+        Access via the download icon. Export transcription data in various formats:
+      </p>
+      <ul>
+        <li><strong>JSON Export</strong>: Complete transcription data in IDTAP format</li>
+        <li><strong>Excel Export</strong>: Structured spreadsheet with trajectory data</li>
+        <li><strong>Staff Tuning Export</strong>: Tuning information for notation software</li>
+      </ul>
+
+      <h3 id="share-transcription">3.7 Share Transcription</h3>
+      <p>
+        Access via the share icon. Generate shareable links:
+      </p>
+      <ul>
+        <li><strong>Link Generation</strong>: Create URL for current transcription</li>
+        <li><strong>Time Option</strong>: "Start at current time" checkbox</li>
+        <li><strong>Copy Function</strong>: One-click copy to clipboard</li>
+      </ul>
+
+      <h3 id="tuning-controls">3.8 Tuning Controls</h3>
+      <p>
+        Access via the tuning fork icon. Customize the tuning system for accurate transcription.
+        This system is designed to be used while audio is playing to enable aural tuning alignment.
+      </p>
+
+      <p><strong>Individual Pitch Tuning:</strong></p>
+      <ul>
+        <li><strong>Per-Sargam Adjustment</strong>: ±50 cents tuning slider for each note in the transcriptions's raga</li>
+        <li><strong>Visual Feedback</strong>: Sargam lines on the main graph update in real-time as you adjust tuning</li>
+        <li><strong>Aural Reference</strong>: Individual gain sliders for each pitch generate reference tones</li>
+        <li><strong>Cent Display</strong>: See exact deviation from equal temperament (+50¢, 0¢, -50¢ labels)</li>
+        <li><strong>Reset Function</strong>: Return all pitches to standard equal temperament tuning</li>
+      </ul>
+
+      <p><strong>Tuning Workflow:</strong></p>
+      <ul>
+        <li><strong>Play Audio</strong>: Start recording playback for aural reference</li>
+        <li><strong>Adjust Tuning</strong>: Move pitch sliders while observing visual changes to sargam lines</li>
+        <li><strong>Aural Verification</strong>: Turn up gain sliders to hear reference tones and compare with recording</li>
+        <li><strong>Fine-tune</strong>: Make precise adjustments until visual and aural alignment is achieved</li>
+        <li><strong>Apply</strong>: Tuning changes affect both display and transcription pitch synthesis</li>
+      </ul>
+
+      <h3 id="synthesis-controls">3.9 Synthesis Controls</h3>
+      <p>
+        Access via the diagonal ruler icon. Control real-time audio synthesis using sophisticated AudioWorklet engines.
+        IDTAP generates audio that matches your transcribed musical content using physical modeling synthesis.
+      </p>
+
+      <p><strong>Instrument-Specific Controls:</strong></p>
+      <ul>
+        <li><strong>Sonify Toggle</strong>: Enable/disable synthesis per instrument (checkbox in upper-right of each instrument panel)</li>
+        <li><strong>Sitar (Polyphonic)</strong>:
+          <ul>
+            <li><strong>Volume</strong>: Overall instrument output level</li>
+            <li><strong>String</strong>: Combined level for main sitar string + jor string (polyphonic mode)</li>
+            <li><strong>Chikari</strong>: Rhythmic drone strings volume (strummed for rhythmic accompaniment)</li>
+            <li><strong>Dampen</strong>: Synthesis algorithm damping parameter</li>
+          </ul>
+        </li>
+        <li><strong>Sarangi (Polyphonic)</strong>:
+          <ul>
+            <li><strong>Volume</strong>: Combined level for main string + second string (polyphonic mode)</li>
+          </ul>
+        </li>
+        <li><strong>Vocal</strong>:
+          <ul>
+            <li><strong>Volume</strong>: Klatt synthesizer output level with phoneme synthesis</li>
+          </ul>
+        </li>
+      </ul>
+
+      <p><strong>Global Controls:</strong></p>
+      <ul>
+        <li><strong>Mixed Synth Gain</strong>: Overall synthesis volume balance (appears when multiple instrument tracks present)</li>
+        <li><strong>Recording Gain</strong>: Original audio recording playback level (appears when audio recording present)</li>
+        <li><strong>Pitch Shift</strong>: ±200 cents transposition using RubberBand processing
+          <ul>
+            <li><strong>Prerequisites</strong>: Must enable checkbox first, disabled during playback</li>
+            <li><strong>Range</strong>: -200¢ to +200¢ in real-time</li>
+          </ul>
+        </li>
+        <li><strong>Region Speed</strong>: 0.5x to 2.0x time-stretching of selected regions
+          <ul>
+            <li><strong>Prerequisites</strong>: Must select a time region first (Region Mode R then click on a phrase to add a region; otherwise add a region by clicking and dragging on the graph with alt/option held down, or clicking and dragging on the x axis), must enable checkbox</li>
+            <li><strong>Behavior</strong>: Only affects selected region, loops within region if Loop enabled</li>
+            <li><strong>Escape</strong>: Press <kbd>Escape</kbd> key to return to normal playback speed</li>
+            <li><strong>Range</strong>: Logarithmic scale from 0.5x (slower) to 2.0x (faster)</li>
+          </ul>
+        </li>
+      </ul>
+
+
+
+
+      <hr>
+
+      <h2 id="working-with-trajectories">4. Working with Trajectories</h2>
+
+      <h3 id="understanding-trajectories">4.1 Understanding Trajectories</h3>
       <p>
         Trajectories are the fundamental elements of musical transcription in IDTAP. They represent
         continuous musical phrases, ornaments, and melodic movements over time.
       </p>
 
-      <p><strong>Trajectory Characteristics:</strong></p>
-      <ul>
-        <li><strong>Pitch Contour</strong>: Represents how pitch changes over time</li>
-        <li><strong>Duration</strong>: Each trajectory has a specific time duration</li>
-        <li><strong>Type</strong>: Different trajectory types represent various musical techniques</li>
-        <li><strong>Articulations</strong>: Specific techniques at trajectory boundaries (plucks, slides, etc.)</li>
-        <li><strong>Control Points</strong>: Drag dots that define trajectory shape and timing</li>
-      </ul>
 
-      <p><strong>Visual Elements:</strong></p>
-      <ul>
-        <li><strong>Trajectory Line</strong>: Colored curve showing pitch over time</li>
-        <li><strong>Drag Dots</strong>: Small circles at control points for editing</li>
-        <li><strong>Start/End Points</strong>: Larger dots marking trajectory boundaries</li>
-        <li><strong>Selection Highlight</strong>: Highlighted appearance when selected</li>
-      </ul>
-
-      <h3 id="trajectory-types">3.2 Trajectory Types</h3>
+      <h3 id="trajectory-types">4.2 Trajectory Types</h3>
       <p>
         IDTAP supports multiple trajectory types representing different musical techniques.
         Each type has specific characteristics and control points:
@@ -288,23 +537,23 @@
 
       <p><strong>Basic Trajectory Types:</strong></p>
       <ul>
-        <li><strong>Fixed (0)</strong>: Constant pitch throughout duration - <kbd>0</kbd></li>
-        <li><strong>Bend: Simple (1)</strong>: Smooth transition between two pitches - <kbd>1</kbd></li>
-        <li><strong>Bend: Sloped Start (2)</strong>: Quick start, smooth approach to end - <kbd>2</kbd></li>
-        <li><strong>Bend: Sloped End (3)</strong>: Smooth start, quick approach to end - <kbd>3</kbd></li>
-        <li><strong>Bend: Ladle (4)</strong>: Combination of sloped start and simple bend - <kbd>4</kbd></li>
-        <li><strong>Bend: Reverse Ladle (5)</strong>: Combination of simple and sloped end - <kbd>5</kbd></li>
-        <li><strong>Bend: Simple Multiple (6)</strong>: Series of connected simple bends - <kbd>6</kbd></li>
-        <li><strong>Vibrato (e)</strong>: Oscillating pitch with adjustable parameters - <kbd>E</kbd></li>
+        <li><strong>Fixed <kbd>0</kbd></strong>: Constant pitch throughout duration (2 points)</li>
+        <li><strong>Bend: Simple <kbd>1</kbd></strong>: Smooth transition between two pitches (2 points)</li>
+        <li><strong>Bend: Sloped Start <kbd>2</kbd></strong>: Quick start, smooth approach to end (3 points)</li>
+        <li><strong>Bend: Sloped End <kbd>3</kbd></strong>: Smooth start, quick approach to end (3 points)</li>
+        <li><strong>Bend: Ladle <kbd>4</kbd></strong>: Combination of sloped start and simple bend (4 points)</li>
+        <li><strong>Bend: Reverse Ladle <kbd>5</kbd></strong>: Combination of simple and sloped end (4 points)</li>
+        <li><strong>Bend: Simple Multiple <kbd>6</kbd></strong>: Series of connected simple bends (unlimited points)</li>
+        <li><strong>Vibrato <kbd>E</kbd></strong>: Oscillating pitch with adjustable parameters (2 points)</li>
       </ul>
 
       <p><strong>Sitar-Specific Trajectory Types:</strong></p>
       <ul>
-        <li><strong>Krintin (7)</strong>: "Hammer-off" technique to lower pitch - <kbd>7</kbd></li>
-        <li><strong>Krintin Slide (8)</strong>: Hammer-off followed by downward slide - <kbd>8</kbd></li>
-        <li><strong>Krintin Slide Hammer (9)</strong>: Extended sequence with multiple techniques - <kbd>9</kbd></li>
-        <li><strong>Dense Krintin Slide Hammer (a)</strong>: Complex multi-pitch sequence - <kbd>A</kbd></li>
-        <li><strong>Slide (b)</strong>: Continuous slide between pitches - <kbd>B</kbd></li>
+        <li><strong>Krintin <kbd>7</kbd></strong>: "Hammer-off" technique to lower pitch (3 points)</li>
+        <li><strong>Krintin Slide <kbd>8</kbd></strong>: Hammer-off followed by downward slide (4 points)</li>
+        <li><strong>Krintin Slide Hammer <kbd>9</kbd></strong>: Extended sequence with multiple techniques (5 points)</li>
+        <li><strong>Dense Krintin Slide Hammer <kbd>A</kbd></strong>: Complex multi-pitch sequence (7 points)</li>
+        <li><strong>Slide <kbd>B</kbd></strong>: Continuous slide between pitches (2 points)</li>
       </ul>
 
       <p><strong>Polyphonic Instrument Restrictions:</strong></p>
@@ -314,7 +563,7 @@
         <li><strong>Automatic Validation</strong>: System prevents invalid trajectory types on string 2</li>
       </ul>
 
-      <h3 id="creating-trajectories">3.3 Creating Trajectories</h3>
+      <h3 id="creating-trajectories">4.3 Creating Trajectories</h3>
 
       <h4>Trajectory Mode (T)</h4>
       <p><strong>Creating Individual Trajectories:</strong></p>
@@ -331,7 +580,7 @@
       <ol>
         <li><strong>Activate Series Mode</strong>: Press <kbd>S</kbd> or click the S mode square</li>
         <li><strong>Place First Point</strong>: Click to start the series</li>
-        <li><strong>Add Sequential Points</strong>: Each click creates a new connected trajectory</li>
+        <li><strong>Add Sequential Points</strong>: Each subsequent click creates a new connected trajectory</li>
         <li><strong>Change Trajectory Types</strong>: Select different types for each trajectory as needed</li>
         <li><strong>Exit Series Mode</strong>: Press <kbd>Escape</kbd> or select different mode</li>
       </ol>
@@ -340,10 +589,9 @@
       <ul>
         <li><strong>Efficiency</strong>: Quickly create multiple connected trajectories</li>
         <li><strong>Automatic Connection</strong>: End of one trajectory becomes start of next</li>
-        <li><strong>Consistent Timing</strong>: Maintains proper temporal relationships</li>
       </ul>
 
-      <h3 id="selecting-and-editing">3.4 Selecting and Editing Trajectories</h3>
+      <h3 id="selecting-and-editing">4.4 Selecting and Editing Trajectories</h3>
 
       <p><strong>Selection Methods:</strong></p>
       <ul>
@@ -356,10 +604,14 @@
 
       <p><strong>Editing Trajectory Shape:</strong></p>
       <ul>
-        <li><strong>Drag Control Points</strong>: Click and drag the small dots to adjust pitch and timing</li>
-        <li><strong>Fine Adjustment</strong>: <kbd>Option + Click</kbd> on a dot, then use arrow keys for precision</li>
-        <li><strong>Boundary Points</strong>: Drag start/end points to adjust trajectory duration and pitch</li>
-        <li><strong>Parameter Sliders</strong>: Use right panel sliders for trajectory-specific parameters</li>
+        <li><strong>Drag Orientation Dots</strong>: Click and drag the orientation dots to adjust pitch and timing</li>
+        <li><strong>Fine Adjustment</strong>: Click on a dot, then use arrow keys for precision adjustment</li>
+        <li><strong>Parameter Sliders</strong>: Use right panel sliders for trajectory-specific parameters:
+          <ul>
+            <li><strong>Slope</strong>: For sloped trajectories (types 2, 3, 4, 5)</li>
+            <li><strong>Vibrato</strong>: Periods, Extent, Offset, Phase (for vibrato trajectories)</li>
+          </ul>
+        </li>
       </ul>
 
       <p><strong>Trajectory Operations:</strong></p>
@@ -368,41 +620,61 @@
         <li><strong>Copy</strong>: <kbd>Cmd/Ctrl + C</kbd> to copy selected trajectories</li>
         <li><strong>Paste</strong>: <kbd>Cmd/Ctrl + V</kbd> to paste at current time position</li>
         <li><strong>Delete</strong>: <kbd>Delete</kbd> or <kbd>Backspace</kbd> to remove selected trajectories</li>
-        <li><strong>Group/Ungroup</strong>: <kbd>G</kbd> to group adjacent trajectories for unified editing</li>
       </ul>
 
-      <h3 id="advanced-trajectory-editing">3.5 Advanced Trajectory Editing</h3>
+      <h3 id="advanced-trajectory-editing">4.5 Advanced Trajectory Editing</h3>
+
+      <p><strong>Trajectory Navigation:</strong></p>
+      <ul>
+        <li><strong>Tab</strong>: Move to next trajectory when trajectory is selected</li>
+        <li><strong>Shift + Tab</strong>: Move to previous trajectory when trajectory is selected</li>
+      </ul>
 
       <p><strong>Context Menu Options:</strong></p>
       <ul>
         <li><strong>Right-Click on Trajectory</strong>: Access advanced editing options</li>
-        <li><strong>Insert Silence Left/Right</strong>: Add 0.1-second silence before/after trajectory</li>
-        <li><strong>Insert Fixed Left/Right</strong>: Add short fixed trajectory before/after</li>
-        <li><strong>Split Trajectory</strong>: Divide trajectory at specific time point</li>
-        <li><strong>Merge Trajectories</strong>: Combine adjacent trajectories (when compatible)</li>
+        <li><strong>Insert Silence Left/Right</strong>: Add silent trajectory before/after current trajectory</li>
+        <li><strong>Insert Fixed Pitch Left/Right</strong>: Add fixed-pitch trajectory before/after current trajectory</li>
+        <li><strong>Attach Trajectory Left/Right</strong>: Start creating new trajectory attached to current trajectory</li>
+        <li><strong>Connect to next/last Traj</strong>: Connect current trajectory to adjacent trajectory</li>
+        <li><strong>Add to Selected Group</strong>: Add trajectory to existing selected group (when available)</li>
+        <li><strong>Adjust Volume</strong>: Open volume adjustment (Sarangi and Vocal only)</li>
+        <li><strong>Stroke Options</strong>: Set stroke annotations (da, di, d, ra, ri, r) for pluck articulations</li>
+        <li><strong>Annotate Trajectory</strong>: Open trajectory annotation window</li>
+        <li><strong>Adjust Orientation Dots</strong>: Switch to trajectory mode for editing control points</li>
       </ul>
 
-      <p><strong>Drag Dot Navigation:</strong></p>
+      <p><strong>Orientation Dot Navigation (when trajectory is selected):</strong></p>
       <ul>
-        <li><strong>Tab Between Dots</strong>: <kbd>Tab</kbd> to move to next control point</li>
-        <li><strong>Shift+Tab</strong>: Move to previous control point</li>
-        <li><strong>Arrow Keys</strong>: Move selected control point in small increments</li>
-        <li><strong>Shift + Arrow Keys</strong>: Move in larger increments</li>
+        <li><strong>Click on Dot</strong>: Select an orientation dot directly</li>
+        <li><strong>Shift + Left</strong>: Select different orientation dot (leftmost if none selected, or move to previous dot)</li>
+        <li><strong>Shift + Right</strong>: Select different orientation dot (rightmost if none selected, or move to next dot)</li>
+        <li><strong>Arrow Keys</strong>: Move selected orientation dot in small increments</li>
+        <li><strong>Shift + Up/Down</strong>: Move selected orientation dot in larger increments</li>
       </ul>
 
-      <p><strong>Articulation Editing:</strong></p>
+      <p><strong>Articulation Editing (when trajectory is selected):</strong></p>
       <ul>
-        <li><strong>Start Articulations</strong>: Techniques at trajectory beginning (plucks, slides)</li>
-        <li><strong>End Articulations</strong>: Techniques at trajectory end</li>
-        <li><strong>Stroke Selection</strong>: Choose appropriate stroke type for instrument</li>
-        <li><strong>Phoneme Entry</strong>: For vocal tracks, enter consonants and vowels</li>
+        <li><strong>Sitar Articulations</strong>:
+          <ul>
+            <li><strong>Pluck</strong>: Checkbox in right panel or press <kbd>P</kbd> (appears at trajectory start)</li>
+            <li><strong>Dampen</strong>: Checkbox in right panel or press <kbd>D</kbd> (appears at trajectory end)</li>
+          </ul>
+        </li>
+        <li><strong>Vocal Articulations</strong>: Controlled via right panel when vocal trajectory selected
+          <ul>
+            <li><strong>Start Consonant</strong>: Consonant at beginning of trajectory</li>
+            <li><strong>Vowel</strong>: Vowel sound during trajectory</li>
+            <li><strong>End Consonant</strong>: Consonant at end of trajectory</li>
+          </ul>
+        </li>
       </ul>
 
       <hr>
 
-      <h2 id="structural-elements">4. Structural Elements</h2>
+      <h2 id="structural-elements">5. Structural Elements</h2>
 
-      <h3 id="phrase-divisions">4.1 Phrase and Section Divisions</h3>
+      <h3 id="phrase-divisions">5.1 Phrase and Section Divisions</h3>
       <p>
         Phrase and section divisions help organize musical content into meaningful structural units.
         These divisions are essential for analysis and navigation.
@@ -412,56 +684,28 @@
       <ul>
         <li><strong>Phrase Divisions</strong>: Mark smaller musical units within sections (thin vertical lines)</li>
         <li><strong>Section Divisions</strong>: Mark major structural boundaries (thick vertical lines)</li>
-        <li><strong>Polyphonic Behavior</strong>: Divisions automatically affect both strings on polyphonic instruments</li>
       </ul>
 
       <p><strong>Creating Divisions (Phrase Division Mode - P):</strong></p>
       <ol>
         <li><strong>Activate Mode</strong>: Press <kbd>P</kbd> or click the P mode square</li>
-        <li><strong>Place Division</strong>: Click at the desired time position on the graph</li>
-        <li><strong>Set Division Type</strong>: Use right panel to choose "Phrase" or "Section"</li>
+        <li><strong>Place Division</strong>: Click at the desired time position on the graph. If clicking overlaps with a trajectory, the division will be placed at the nearest trajectory boundary to where you clicked (based on main string of currently selected instrument)</li>
+        <li><strong>Set Division Type</strong>: With a division selected, use right panel to choose "Phrase" or "Section"</li>
         <li><strong>Adjust Position</strong>: Select division and use <kbd>Left/Right arrows</kbd> to nudge</li>
       </ol>
 
       <p><strong>Division Management:</strong></p>
       <ul>
         <li><strong>Select Division</strong>: Click on the vertical division line</li>
-        <li><strong>Nudge Position</strong>: <kbd>Left/Right arrows</kbd> for fine adjustment</li>
-        <li><strong>Change Type</strong>: Use right panel dropdown to switch between phrase/section</li>
+        <li><strong>Nudge Position</strong>: <kbd>Left/Right arrows</kbd> to move division to next trajectory boundary in the selected direction</li>
+        <li><strong>Change Type</strong>: Use right panel radio button selection to switch between phrase/section</li>
         <li><strong>Delete Division</strong>: Select and press <kbd>Delete</kbd> or <kbd>Backspace</kbd></li>
-        <li><strong>Automatic Synchronization</strong>: Changes affect all strings simultaneously</li>
       </ul>
 
-      <h3 id="meter-system">4.2 Meter System</h3>
-      <p>
-        The meter system allows you to create hierarchical rhythmic structures that represent
-        the tala (rhythmic cycle) and its subdivisions.
-      </p>
-
-      <p><strong>Creating Meters (Meter Mode - M):</strong></p>
-      <ol>
-        <li><strong>Activate Mode</strong>: Press <kbd>M</kbd> or click the M mode square</li>
-        <li><strong>Place Pulses</strong>: Click to place beats at desired time positions</li>
-        <li><strong>Open Meter Controls</strong>: Click the meter controls icon (comb-like) in bottom row</li>
-        <li><strong>Define Hierarchy</strong>: Set hierarchy depth and layer assignments</li>
-        <li><strong>Set Pattern Type</strong>: Choose simple (even) or compound (uneven) subdivisions</li>
-        <li><strong>Insert Meter</strong>: Click "Insert Meter from Pulses" to create the grid</li>
-      </ol>
-
-      <p><strong>Meter Configuration:</strong></p>
-      <ul>
-        <li><strong>Hierarchy Layers</strong>: Multiple levels (e.g., beat, subdivision, accent patterns)</li>
-        <li><strong>Simple Meters</strong>: Even subdivisions (e.g., 4, 8, 16)</li>
-        <li><strong>Compound Meters</strong>: Uneven patterns (e.g., 3+4 for 7-beat cycles)</li>
-        <li><strong>Cycles</strong>: Number of pattern repetitions</li>
-        <li><strong>Tempo Control</strong>: Set the tempo marking for the meter object</li>
-        <li><strong>Layer Visibility</strong>: Show/hide different hierarchical levels</li>
-      </ul>
-
-      <h3 id="chikari-strokes">4.3 Chikari Strokes (Sitar)</h3>
+      <h3 id="chikari-strokes">5.2 Chikari Strokes (Sitar)</h3>
       <p>
         Chikari strokes represent sympathetic string strums on the sitar, adding rhythmic
-        and harmonic accompaniment to the main melodic line.
+        and harmonic accompaniment to the main melodic line. Strokes are displayed as "X" symbols on the graph.
       </p>
 
       <p><strong>Creating Chikari Strokes (Chikari Mode - C):</strong></p>
@@ -470,17 +714,10 @@
         <li><strong>Place Stroke</strong>: Click at desired time position</li>
         <li><strong>Pitch Alignment</strong>: Stroke aligns to trajectory pitch or tonic if in silence</li>
         <li><strong>Edit Stroke</strong>: Select and use arrow keys to adjust timing</li>
+        <li><strong>Delete Stroke</strong>: Select chikari and press <kbd>Delete</kbd> or <kbd>Backspace</kbd></li>
       </ol>
 
-      <p><strong>Chikari Stroke Behavior:</strong></p>
-      <ul>
-        <li><strong>During Trajectory</strong>: Stroke aligns with current trajectory pitch</li>
-        <li><strong>In Silence</strong>: Stroke appears at tonic (Sa) in octave 0</li>
-        <li><strong>Visual Indicator</strong>: Displayed as "X" symbol on the graph</li>
-        <li><strong>Polyphonic Awareness</strong>: Works with both strings on polyphonic sitar</li>
-      </ul>
-
-      <h3 id="region-selection">4.4 Region Selection</h3>
+      <h3 id="region-selection">5.3 Region Selection</h3>
       <p>
         Region selection allows you to focus on specific time ranges for detailed editing,
         analysis, or looped playback.
@@ -497,134 +734,6 @@
       <p><strong>Region Features:</strong></p>
       <ul>
         <li><strong>Loop Playback</strong>: Enable "Loop" in visibility controls for region looping</li>
-        <li><strong>Visual Highlight</strong>: Selected region appears highlighted on graph</li>
-        <li><strong>Zoom to Region</strong>: Automatically focuses view on selected area</li>
-        <li><strong>Analysis Focus</strong>: Restrict analysis operations to selected region</li>
-      </ul>
-
-      <hr>
-
-      <h2 id="advanced-features">5. Advanced Features</h2>
-
-      <h3 id="synthesis-audio">5.1 Synthesis and Audio</h3>
-      <p>
-        IDTAP includes sophisticated audio synthesis engines that can generate audio playback
-        of your transcriptions using physical modeling synthesis.
-      </p>
-
-      <p><strong>Accessing Synthesis Controls:</strong></p>
-      <ul>
-        <li><strong>Icon</strong>: Diagonal ruler in bottom row</li>
-        <li><strong>Per-Instrument Controls</strong>: Volume, damping, and instrument-specific parameters</li>
-        <li><strong>Global Controls</strong>: Mixed synth gain, recording gain, pitch shift (macOS)</li>
-      </ul>
-
-      <p><strong>Sitar Synthesis (Polyphonic):</strong></p>
-      <ul>
-        <li><strong>Main String Volume</strong>: Control primary melodic line</li>
-        <li><strong>Jor String Volume</strong>: Control secondary string (polyphonic mode)</li>
-        <li><strong>Chikari Volume</strong>: Control sympathetic string level</li>
-        <li><strong>Dampen</strong>: Adjust string damping characteristics</li>
-        <li><strong>Sonify Toggle</strong>: Enable/disable synthesis for this instrument</li>
-      </ul>
-
-      <p><strong>Sarangi Synthesis (Polyphonic):</strong></p>
-      <ul>
-        <li><strong>Main String Volume</strong>: Control primary bowed string</li>
-        <li><strong>Second String Volume</strong>: Control secondary string (polyphonic mode)</li>
-        <li><strong>Bow Pressure</strong>: Adjust bowing dynamics</li>
-        <li><strong>Resonance</strong>: Control sympathetic string resonance</li>
-      </ul>
-
-      <h3 id="tuning-system">5.2 Tuning System</h3>
-      <p>
-        Customize the pitch system and tuning for accurate transcription of different ragas
-        and performance contexts.
-      </p>
-
-      <p><strong>Accessing Tuning Controls:</strong></p>
-      <ul>
-        <li><strong>Icon</strong>: Tuning fork in bottom row</li>
-        <li><strong>Sa Frequency</strong>: Set tonic pitch in Hz</li>
-        <li><strong>Individual Pitch Adjustment</strong>: Fine-tune each sargam note</li>
-        <li><strong>Reference Sine Wave</strong>: Gain sliders to hear reference pitches</li>
-      </ul>
-
-      <p><strong>Tuning Features:</strong></p>
-      <ul>
-        <li><strong>Cents Adjustment</strong>: ±50 cents tuning range for each pitch</li>
-        <li><strong>Reset Function</strong>: Return to equal temperament</li>
-        <li><strong>Real-time Playback</strong>: Hear tuning changes immediately</li>
-        <li><strong>Raga-Specific Tuning</strong>: Save custom tuning systems</li>
-      </ul>
-
-      <h3 id="labeling-categorization">5.3 Labeling and Categorization</h3>
-      <p>
-        Comprehensive labeling system for musical analysis and research documentation.
-      </p>
-
-      <p><strong>Accessing Label Editor:</strong></p>
-      <ul>
-        <li><strong>Icon</strong>: Set of tags in bottom row</li>
-        <li><strong>Track Selection</strong>: Choose which instrument track to label</li>
-        <li><strong>Navigation</strong>: Double-click to jump to labeled sections</li>
-      </ul>
-
-      <p><strong>Section Labels:</strong></p>
-      <ul>
-        <li><strong>Pre-Chiz Alap</strong>: Opening improvisational section</li>
-        <li><strong>Alap</strong>: Free-rhythm melodic development</li>
-        <li><strong>Composition</strong>: Fixed compositional material</li>
-        <li><strong>Improvisation</strong>: Structured improvisational sections</li>
-        <li><strong>Other</strong>: Custom section types</li>
-      </ul>
-
-      <p><strong>Phrase Labels:</strong></p>
-      <ul>
-        <li><strong>Phrase Type</strong>: Categorize melodic phrase types</li>
-        <li><strong>Elaboration Type</strong>: Identify ornamental patterns</li>
-        <li><strong>Articulation Type</strong>: Document performance techniques</li>
-        <li><strong>Incidental</strong>: Mark special events or anomalies</li>
-      </ul>
-
-      <h3 id="visual-customization">5.4 Visual Customization</h3>
-      <p>
-        Customize the visual appearance and display settings for optimal transcription workflow.
-      </p>
-
-      <p><strong>Accessing Visual Controls:</strong></p>
-      <ul>
-        <li><strong>Icon</strong>: Bar graph with control knobs in bottom row</li>
-        <li><strong>Spectrogram Settings</strong>: Colormap and intensity adjustments</li>
-        <li><strong>Color Customization</strong>: Modify element colors for accessibility</li>
-        <li><strong>Display Presets</strong>: Save and load visual configurations</li>
-      </ul>
-
-      <p><strong>Customizable Elements:</strong></p>
-      <ul>
-        <li><strong>Background Color</strong>: Adjust for eye strain reduction</li>
-        <li><strong>Trajectory Colors</strong>: Different colors per instrument/string</li>
-        <li><strong>Selection Colors</strong>: Highlight colors for selected elements</li>
-        <li><strong>Meter Display</strong>: Rhythm grid appearance and visibility</li>
-        <li><strong>Playhead Animation</strong>: Smooth, block, or no animation options</li>
-      </ul>
-
-      <h3 id="data-export">5.5 Data Export</h3>
-      <p>
-        Export transcription data in multiple formats for analysis and documentation.
-      </p>
-
-      <p><strong>Accessing Export Options:</strong></p>
-      <ul>
-        <li><strong>Icon</strong>: Downward arrow to tray in bottom row</li>
-        <li><strong>Format Selection</strong>: Choose export format</li>
-        <li><strong>Data Filtering</strong>: Select specific elements to export</li>
-      </ul>
-
-      <p><strong>Available Export Formats:</strong></p>
-      <ul>
-        <li><strong>JSON</strong>: Complete transcription data in IDTAP native format</li>
-        <li><strong>XLSX (Excel)</strong>: Spreadsheet format for analysis</li>
       </ul>
 
       <hr>
@@ -639,7 +748,6 @@
         <li><kbd>M</kbd> - Meter Mode</li>
         <li><kbd>C</kbd> - Chikari Mode (Sitar only)</li>
         <li><kbd>R</kbd> - Region Selection Mode</li>
-        <li><kbd>A</kbd> - Assemblage Phrase Pick Mode</li>
         <li><kbd>Escape</kbd> - Exit current mode</li>
       </ul>
 
@@ -687,113 +795,38 @@
         <li><kbd>Cmd/Ctrl + C</kbd> - Copy selected trajectories</li>
         <li><kbd>Cmd/Ctrl + V</kbd> - Paste trajectories</li>
         <li><kbd>Delete/Backspace</kbd> - Delete selected elements</li>
-        <li><kbd>G</kbd> - Group/ungroup trajectories</li>
         <li><kbd>Option + Click</kbd> - Fine adjustment mode</li>
       </ul>
 
       <h3>6.6 Polyphonic Instruments</h3>
       <ul>
-        <li><kbd>X</kbd> - Toggle between String 1 and String 2</li>
         <li><kbd>Click string selector</kbd> - Switch strings</li>
         <li><kbd>Automatic string switching</kbd> - Click trajectory switches to its string</li>
       </ul>
 
-      <h3>6.7 Advanced Editing</h3>
+      <h3>6.7 Advanced Editing (While Trajectory Selected)</h3>
       <ul>
-        <li><kbd>Tab</kbd> - Navigate between control points</li>
-        <li><kbd>Shift + Tab</kbd> - Navigate to previous control point</li>
-        <li><kbd>Arrow keys</kbd> - Move selected control point</li>
+        <li><kbd>Tab</kbd> - Navigate to next trajectory</li>
+        <li><kbd>Shift + Tab</kbd> - Navigate to previous trajectory</li>
+        <li><kbd>Shift + Left/Right</kbd> - Navigate between orientation dots within trajectory</li>
+        <li><kbd>Arrow keys</kbd> - Adjust selected orientation dot position</li>
+        <li><kbd>P</kbd> - Toggle pluck (Sitar only)</li>
+        <li><kbd>D</kbd> - Toggle dampen (Sitar only)</li>
         <li><kbd>Right-click</kbd> - Context menu options</li>
-        <li><kbd>D</kbd> - Toggle dampen (Sitar synthesis)</li>
       </ul>
 
       <hr>
 
-      <h2 id="workflows-examples">7. Common Workflows and Examples</h2>
-
-      <h3>7.1 Creating a Basic Monophonic Transcription</h3>
-      <ol>
-        <li>Select appropriate instrument track</li>
-        <li>Activate Trajectory Mode (<kbd>T</kbd>)</li>
-        <li>Create trajectories by clicking start/end points</li>
-        <li>Select trajectory types using number keys</li>
-        <li>Add phrase divisions (<kbd>P</kbd> mode) for structure</li>
-        <li>Fine-tune with drag dots and arrow keys</li>
-        <li>Save transcription regularly</li>
-      </ol>
-
-      <h3>7.2 Working with Polyphonic Sitar</h3>
-      <ol>
-        <li>Ensure Sitar is selected as instrument</li>
-        <li>Note string selector appearance</li>
-        <li>Transcribe main melody on String 1 (all trajectory types available)</li>
-        <li>Switch to String 2 (<kbd>X</kbd> key) for secondary line</li>
-        <li>Use only Fixed (0) trajectories on String 2</li>
-        <li>Add chikari strokes (<kbd>C</kbd> mode) for rhythmic accompaniment</li>
-        <li>Phrase divisions automatically affect both strings</li>
-      </ol>
-
-      <h3>7.3 Series Mode for Rapid Transcription</h3>
-      <ol>
-        <li>Activate Series Mode (<kbd>S</kbd>)</li>
-        <li>Click to place connected trajectory sequence</li>
-        <li>Use number keys to set trajectory types as you go</li>
-        <li>Press <kbd>Escape</kbd> to exit series mode</li>
-        <li>Fine-tune individual trajectories as needed</li>
-      </ol>
-
-      <h3>7.4 Adding Rhythmic Structure</h3>
-      <ol>
-        <li>Activate Meter Mode (<kbd>M</kbd>)</li>
-        <li>Click to place pulse points</li>
-        <li>Open Meter Controls (comb icon)</li>
-        <li>Define hierarchy and pattern type</li>
-        <li>Insert meter grid</li>
-        <li>Enable Meter Magnet for trajectory quantization</li>
-      </ol>
-
-      <hr>
-
-      <h2 id="troubleshooting">8. Troubleshooting and Tips</h2>
-
-      <h3>8.1 Common Issues</h3>
-      <ul>
-        <li><strong>Can't create trajectory on String 2</strong>: Only Fixed (0) trajectories allowed</li>
-        <li><strong>Trajectory won't select</strong>: Check if correct string is active (polyphonic instruments)</li>
-        <li><strong>Keyboard shortcuts not working</strong>: Ensure correct mode is selected</li>
-        <li><strong>Audio synthesis not playing</strong>: Check Sonify toggle in synthesis controls</li>
-        <li><strong>String selector missing</strong>: Only appears for Sitar and Sarangi instruments</li>
-      </ul>
-
-      <h3>8.2 Performance Tips</h3>
-      <ul>
-        <li><strong>Use Series Mode</strong>: For rapid creation of connected trajectories</li>
-        <li><strong>Enable Magnets</strong>: Meter and Sargam magnets for precise alignment</li>
-        <li><strong>Regular Saving</strong>: Use Save button frequently during work</li>
-        <li><strong>Region Selection</strong>: Focus on specific sections for detailed editing</li>
-        <li><strong>Keyboard Navigation</strong>: Learn keyboard shortcuts for efficient workflow</li>
-      </ul>
-
-      <h3>8.3 Best Practices</h3>
-      <ul>
-        <li><strong>Plan Structure First</strong>: Add phrase divisions before detailed trajectory work</li>
-        <li><strong>Work in Layers</strong>: Basic trajectories first, then refinement</li>
-        <li><strong>Use Appropriate String</strong>: String 1 for complex ornaments, String 2 for simple lines</li>
-        <li><strong>Label Early</strong>: Add section labels for better organization</li>
-        <li><strong>Visual Clarity</strong>: Adjust colors and visibility for eye strain reduction</li>
-      </ul>
-
-      <hr>
-
-      <h2 id="support">9. Support and Feedback</h2>
+      <h2 id="support">7. Support and Feedback</h2>
       <p>
-        If you have questions, need assistance, or wish to provide feedback about IDTAP:
+        If you have questions, need assistance, or wish to provide feedback about the IDTAP:
       </p>
       <ul>
         <li><strong>Email</strong>: JBMYERS [at] UCSC [dot] EDU</li>
         <li><strong>GitHub Issues</strong>: <a href="https://github.com/UCSC-IDTAP/IDTAP/issues">Report bugs and feature requests</a></li>
-        <li><strong>Documentation</strong>: Visit the project repository for additional resources</li>
-        <li><strong>Research Collaboration</strong>: Contact for academic research partnerships</li>
+        <li><strong>Documentation</strong>: <a href="https://github.com/UCSC-IDTAP/IDTAP">Visit the project repository</a> for additional resources</li>
+        <li><strong>ISMIR Paper</strong>: <a href="/papers/ismir-paper.pdf" target="_blank">Read our research paper</a></li>
+        <li><strong>NEH Whitepaper</strong>: <a href="/papers/neh-whitepaper.pdf" target="_blank">Read our NEH whitepaper</a></li>
       </ul>
 
       <p>
@@ -808,7 +841,7 @@
       </ul>
 
       <p><em>
-        This user guide covers the complete IDTAP Editor functionality as of January 2025.
+        This user guide covers the complete IDTAP Editor functionality as of September 2025.
         The editor continues to evolve with new features for advanced musical transcription and analysis.
       </em></p>
 
