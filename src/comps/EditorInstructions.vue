@@ -56,16 +56,6 @@
             <li><a href="#region-selection">Region Selection</a></li>
           </ol>
         </li>
-        <li>
-          <a href="#advanced-features">Advanced Features</a>
-          <ol type="a">
-            <li><a href="#synthesis-audio">Synthesis and Audio</a></li>
-            <li><a href="#tuning-system">Tuning System</a></li>
-            <li><a href="#labeling-categorization">Labeling and Categorization</a></li>
-            <li><a href="#visual-customization">Visual Customization</a></li>
-            <li><a href="#data-export">Data Export</a></li>
-          </ol>
-        </li>
         <li><a href="#keyboard-shortcuts">Complete Keyboard Shortcuts Reference</a></li>
         <li><a href="#support">Support and Feedback</a></li>
       </ol>
@@ -150,7 +140,7 @@
         <li><strong>S - Series Mode</strong>: Create sequences of connected fixed trajectories efficiently</li>
         <li><strong>P - Phrase Division Mode</strong>: Add phrase and section boundaries</li>
         <li><strong>M - Meter Mode</strong>: Create and edit rhythmic meter structures</li>
-        <li><strong>C - Chikari Mode</strong>: Add sympathetic string strokes (Sitar only)</li>
+        <li><strong>C - Chikari Mode</strong>: Add rhythmic drone string strokes (Sitar only)</li>
         <li><strong>R - Region Selection Mode</strong>: Select time regions for looping and focus</li>
       </ul>
 
@@ -450,7 +440,7 @@
 
       <p><strong>Individual Pitch Tuning:</strong></p>
       <ul>
-        <li><strong>Per-Sargam Adjustment</strong>: ±50 cents tuning slider for each note in the transcriptions's raga</li>
+        <li><strong>Per-Sargam Adjustment</strong>: ±50 cents tuning slider for each note in the transcription's raga</li>
         <li><strong>Visual Feedback</strong>: Sargam lines on the main graph update in real-time as you adjust tuning</li>
         <li><strong>Aural Reference</strong>: Individual gain sliders for each pitch generate reference tones</li>
         <li><strong>Cent Display</strong>: See exact deviation from equal temperament (+50¢, 0¢, -50¢ labels)</li>
@@ -704,7 +694,7 @@
 
       <h3 id="chikari-strokes">5.2 Chikari Strokes (Sitar)</h3>
       <p>
-        Chikari strokes represent sympathetic string strums on the sitar, adding rhythmic
+        Chikari strokes represent rhythmic drone string strums on the sitar, adding rhythmic
         and harmonic accompaniment to the main melodic line. Strokes are displayed as "X" symbols on the graph.
       </p>
 
@@ -759,7 +749,6 @@
         <li><kbd>]</kbd> - Jump right by half screen</li>
         <li><kbd>Tab</kbd> - Next phrase division</li>
         <li><kbd>Shift + Tab</kbd> - Previous phrase division</li>
-        <li><kbd>Shift + Left/Right</kbd> - Move in larger increments</li>
         <li><kbd>Double-click</kbd> - Move playhead to position</li>
       </ul>
 
@@ -795,7 +784,6 @@
         <li><kbd>Cmd/Ctrl + C</kbd> - Copy selected trajectories</li>
         <li><kbd>Cmd/Ctrl + V</kbd> - Paste trajectories</li>
         <li><kbd>Delete/Backspace</kbd> - Delete selected elements</li>
-        <li><kbd>Option + Click</kbd> - Fine adjustment mode</li>
       </ul>
 
       <h3>6.6 Polyphonic Instruments</h3>
