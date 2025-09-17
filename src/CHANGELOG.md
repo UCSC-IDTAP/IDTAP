@@ -1,6 +1,21 @@
 # Changelog
 
 
+* docs: fix accuracy issues in editor instructions [149495b] (Jon Myers)
+* docs: refine editor instructions with accuracy improvements [bcbc3b1] (Jon Myers)
+### 2025-09-17
+
+* docs: correct tempo control description - sets meter tempo, not playback speed [4728e5c] (Jon Myers)
+* docs: remove non-existent MIDI and CSV export options [fe07666] (Jon Myers)
+* docs: clarify play/pause can be done via button click or spacebar [e767801] (Jon Myers)
+* docs: correct mouse wheel navigation - no shift required for vertical scroll [b3f09a4] (Jon Myers)
+* docs: complete comprehensive rewrite of user instructions [4be24e8] (Jon Myers)
+* docs: start comprehensive rewrite of user instructions [5803562] (Jon Myers)
+* docs: comprehensive update to CLAUDE.md development guide [df2337b] (Jon Myers)
+### 2025-09-16
+
+## September 2025
+
 * feat: implement Polyphonic Individual Instrumentality for Sitar and Sarangi [bd55a2d] (Jon Myers)
 ### 2025-08-26
 
