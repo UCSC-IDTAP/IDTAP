@@ -1,6 +1,7 @@
 # Changelog
 
 
+* fix: resolve dependabot security vulnerabilities [df29ebe] (Jon Myers)
 * docs: fix accuracy issues in editor instructions [149495b] (Jon Myers)
 * docs: refine editor instructions with accuracy improvements [bcbc3b1] (Jon Myers)
 ### 2025-09-17
