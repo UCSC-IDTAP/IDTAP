@@ -22,6 +22,7 @@
           @showTooltip='showTooltip($event)'
           @hideTooltip='hideTooltip'
         />
+        <div class='instructionsIcon' @click='toggleInstructions'>?</div>
       </div>
       <div class='controls' v-if='selectedATIdx === 0'>
         <div class='scrollingCBHolder' :style="{
@@ -1715,6 +1716,11 @@ export default defineComponent({
       }) 
     },
 
+    toggleInstructions() {
+      const routeData = this.$router.resolve({ name: 'Analysis Instructions' });
+      window.open(routeData.href, '_blank');
+    },
+
     setProportions() {
       if (this.displayTrajs === undefined) {
         throw new Error('displayTrajs is undefined');
@@ -2125,5 +2131,25 @@ export default defineComponent({
 
   .spaceBelow {
     margin-bottom: 5px;
+  }
+
+  .instructionsIcon {
+    width: 20px;
+    height: 20px;
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    border: 1px solid white;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+  }
+
+  .instructionsIcon:hover {
+    background-color: #586958;
   }
 </style>
