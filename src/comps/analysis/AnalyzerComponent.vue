@@ -22,6 +22,7 @@
           @showTooltip='showTooltip($event)'
           @hideTooltip='hideTooltip'
         />
+        <div class='instructionsIcon' @click='toggleInstructions'>?</div>
       </div>
       <div class='controls' v-if='selectedATIdx === 0'>
         <div class='scrollingCBHolder' :style="{
@@ -1715,6 +1716,11 @@ export default defineComponent({
       }) 
     },
 
+    toggleInstructions() {
+      const routeData = this.$router.resolve({ name: 'Analysis Instructions' });
+      window.open(routeData.href, '_blank');
+    },
+
     setProportions() {
       if (this.displayTrajs === undefined) {
         throw new Error('displayTrajs is undefined');
@@ -1899,14 +1905,16 @@ export default defineComponent({
   }
 
   .analysisType {
-    min-width: 180px;
-    max-width: 180px;
+    width: fit-content;
+    min-width: auto;
+    padding: 0 20px;
     height: 30px;
     display: flex;
     flex-direction: row;
     justify-content: center;
     align-items: center;
     border-radius: 5px;
+    white-space: nowrap;
   }
 
   .analysisType:hover {
@@ -1937,6 +1945,7 @@ export default defineComponent({
     width: v-bind(controlBoxWidth + 'px');
     height: v-bind(controlsHeight - 20 + 'px');
     padding: 5px;
+    margin-right: 15px;
     box-sizing: border-box;
   }
   
@@ -2039,9 +2048,15 @@ export default defineComponent({
     height: 25px;
   }
 
+  .rightInputRow:not(:first-child) {
+    margin-top: 10px;
+  }
+
   .rightInputRow > label {
     text-align: right;
     margin-right: 5px;
+    min-width: 90px;
+    white-space: nowrap;
   }
 
   .patternSizeLabel {
@@ -2050,13 +2065,12 @@ export default defineComponent({
   }
 
   .patternSizeMatrix {
-    height: v-bind(controlsHeight - 40 + 'px');
-    min-height: v-bind(controlsHeight - 40 + 'px');
     display: flex;
     flex-direction: column;
-    justify-content: top;
+    justify-content: flex-start;
     align-items: center;
     width: 100%;
+    margin-top: 15px;
   }
 
   .patternSizeRow {
@@ -2125,5 +2139,23 @@ export default defineComponent({
 
   .spaceBelow {
     margin-bottom: 5px;
+  }
+
+  .instructionsIcon {
+    width: 20px;
+    height: 20px;
+    margin-left: 10px;
+    border: 1px solid white;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+  }
+
+  .instructionsIcon:hover {
+    background-color: #586958;
   }
 </style>

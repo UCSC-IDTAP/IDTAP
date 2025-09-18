@@ -48,7 +48,7 @@
         <input type='number' v-model='maxDur' :min='minDur' step='1' />
       </div>
       <div class='controlsRow'>
-        <label for='propToggle'>Proportional Vertical Display: </label>
+        <label for='propToggle'>Common Pitch Range: </label>
         <input 
           id='propToggle'
           type='checkbox' 

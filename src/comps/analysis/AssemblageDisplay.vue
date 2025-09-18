@@ -1,12 +1,13 @@
 <template>
   <div class='assemblage-selection' :style="styleVars">
     <span>Assemblage: </span>
-    <select v-model="selectedAssemblageId">
+    <select v-model="selectedAssemblageId" v-if="piece.assemblages && piece.assemblages.length > 0">
       <option v-for="assemblage in piece.assemblages" :key="assemblage.id" :value="assemblage.id">
         {{ assemblage.name }}
       </option>
     </select>
-    <div v-if="audioLoading" class="audio-loading">
+    <span v-else>There are no assemblages assigned to this transcription</span>
+    <div v-if="audioLoading && piece.assemblages && piece.assemblages.length > 0" class="audio-loading">
       <span class='audioLoadingSpan'>Loading audio<span style="display: inline-block; width: 0.5em; height: 1em; line-height: 1em; vertical-align: middle; text-align: left;" v-for="n in 3">{{ n <= loadingDots ? '.' : '' }}</span></span>
     </div>
   </div>
@@ -106,16 +107,19 @@ export default defineComponent({
   setup(props) {
     const colWidth = 400;
     const colHeight = 250
-    const selectedAssemblageId = ref(props.piece.assemblages[0]?.id);
+    const selectedAssemblageId = ref(props.piece.assemblages?.[0]?.id);
 
     const selectedAssemblage = computed(() => {
+      if (!props.piece.assemblages || props.piece.assemblages.length === 0) {
+        return null;
+      }
       return props.piece.assemblages.find(assemblage => assemblage.id === selectedAssemblageId.value) || props.piece.assemblages[0];
     });
     const startPIdx = computed(() => {
-      return selectedAssemblage.value.phrases[0]?.pieceIdx ?? 0;
+      return selectedAssemblage.value?.phrases[0]?.pieceIdx ?? 0;
     });
     const endPIdx = computed(() => {
-      return selectedAssemblage.value.phrases.at(-1)?.pieceIdx ?? 0;
+      return selectedAssemblage.value?.phrases.at(-1)?.pieceIdx ?? 0;
     });
     const range = computed(() => {
       const out = [];
@@ -127,7 +131,7 @@ export default defineComponent({
 
     const phraseMap = computed(() => {
       const m: Record<number, Phrase> = {};
-      selectedAssemblage.value.phrases.forEach(phrase => {
+      selectedAssemblage.value?.phrases.forEach(phrase => {
         m[phrase.pieceIdx!] = phrase;
       });
       return m;
@@ -141,7 +145,7 @@ export default defineComponent({
       '--label-height': '80px',
       '--col-width': `${colWidth}px`,
       '--col-height': `${colHeight}px`,
-      '--total-width': `${colWidth * selectedAssemblage.value.strands.length}px`,
+      '--total-width': `${colWidth * (selectedAssemblage.value?.strands.length ?? 0)}px`,
     }));
 
     const selectionHeightPx = parseInt(selectionHeight);
@@ -154,6 +158,7 @@ export default defineComponent({
 
     const sampleXs = Array.from({ length: 25 }, (_, i) => i / 24);
     const logFreqOverride = computed(() => {
+      if (!selectedAssemblage.value?.strands) return undefined;
       const allTrajs = selectedAssemblage.value.strands
         .flatMap(strand => strand.phrases)
         .flatMap(p => p.trajectories);
@@ -331,7 +336,7 @@ export default defineComponent({
     };
 
     const playStrand = async (strandId: string) => {
-      const strand = selectedAssemblage.value.strands.find(s => s.id === strandId);
+      const strand = selectedAssemblage.value?.strands.find(s => s.id === strandId);
       if (!strand || !audioContext.value || !masterAudioBuffer.value) return;
 
       // Stop any currently playing audio

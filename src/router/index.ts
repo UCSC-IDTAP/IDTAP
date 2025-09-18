@@ -48,6 +48,11 @@ const routes: Array<RouteRecordRaw> = [
     name: 'Editor Instructions',
     component: () => import('@/comps/EditorInstructions.vue')
   },
+  {
+    path:'/analysisInstructions',
+    name: 'Analysis Instructions',
+    component: () => import('@/comps/AnalysisInstructions.vue')
+  },
   { 
     path: '/changelog', 
     name: 'Changelog', 
