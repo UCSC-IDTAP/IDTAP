@@ -6,13 +6,7 @@
 
       <h2>Table of Contents</h2>
       <ol>
-        <li>
-          <a href="#getting-started">Getting Started</a>
-          <ol type="a">
-            <li><a href="#analysis-overview">Analysis Suite Overview</a></li>
-            <li><a href="#basic-navigation">Basic Navigation</a></li>
-          </ol>
-        </li>
+        <li><a href="#analysis-overview">Analysis Suite Overview</a></li>
         <li>
           <a href="#analysis-types">Analysis Types</a>
           <ol type="a">
@@ -23,82 +17,35 @@
             <li><a href="#excel-datasets">Excel Datasets</a></li>
           </ol>
         </li>
-        <li>
-          <a href="#data-controls">Data and Segmentation Controls</a>
-          <ol type="a">
-            <li><a href="#transcription-selection">Transcription Selection</a></li>
-            <li><a href="#segmentation-options">Segmentation Options</a></li>
-            <li><a href="#pitch-representation">Pitch Representation</a></li>
-            <li><a href="#filtering-controls">Filtering Controls</a></li>
-          </ol>
-        </li>
-        <li>
-          <a href="#analysis-workflows">Analysis Workflows</a>
-          <ol type="a">
-            <li><a href="#comparative-analysis">Comparative Analysis</a></li>
-            <li><a href="#pattern-discovery">Pattern Discovery</a></li>
-            <li><a href="#assemblage-organization">Assemblage Organization</a></li>
-            <li><a href="#data-export">Data Export</a></li>
-          </ol>
-        </li>
         <li><a href="#support">Support and Feedback</a></li>
       </ol>
 
       <hr>
 
-      <h2 id="getting-started">1. Getting Started</h2>
-
-      <h3 id="analysis-overview">1.1 Analysis Suite Overview</h3>
+      <h2 id="analysis-overview">1. Analysis Suite Overview</h2>
       <p>
-        The IDTAP Analysis Suite provides sophisticated tools for examining musical transcriptions created in the IDTAP Editor.
-        The analysis interface consists of several key areas:
+        The IDTAP Analysis Suite provides tools for examining transcriptions created in the IDTAP Editor or via the Python API client.
+        At the top of the interface, a green menu row contains buttons to select between five different analysis types,
+        along with an instrument track selector for multi-track transcriptions. The interface below this row changes
+        dynamically based on your selected analysis type, providing specialized controls and visualizations for each mode.
       </p>
-      <ul>
-        <li><strong>Analysis Type Selector</strong>: Choose from five analysis modes for different research questions</li>
-        <li><strong>Transcription Controls</strong>: Select and filter transcriptions for analysis</li>
-        <li><strong>Segmentation Panel</strong>: Control how musical data is divided and represented</li>
-        <li><strong>Main Display Area</strong>: Interactive visualizations and data displays</li>
-        <li><strong>Filter Controls</strong>: Refine datasets and focus analysis scope</li>
-      </ul>
 
       <p><strong>Five Analysis Types:</strong></p>
       <ul>
-        <li><strong>Pitch Prevalence</strong>: Statistical analysis of pitch usage and frequency distribution</li>
-        <li><strong>Pitch Patterns</strong>: Visualization of pitch sequences and melodic patterns</li>
+        <li><strong>Pitch Prevalence</strong>: Statistical analysis of pitch usage and occurrence distribution</li>
+        <li><strong>Pitch Patterns</strong>: Count and display occurrences of pitch sequences</li>
         <li><strong>Query Display</strong>: Advanced search and pattern matching across transcriptions</li>
-        <li><strong>Assemblage Display</strong>: Phrase organization and thematic grouping visualization</li>
+        <li><strong>Assemblage Display</strong>: Phrase organization and thematic grouping with audio-visual exploration</li>
         <li><strong>Excel Datasets</strong>: Export structured data for external analysis</li>
       </ul>
 
       <p>
         <strong>Key Concept</strong>: The Analysis Suite works with transcription data created in the IDTAP Editor,
-        providing multiple perspectives on musical content through statistical analysis, pattern recognition,
-        and data visualization techniques specifically designed for Indian classical music research.
+        analyzing "trajectories" - formally specified archetypal paths between pitches that represent the
+        fundamental units of musical structure in IDTAP. These trajectories provide a middle-level representation
+        of melodic motion, enabling sophisticated statistical analysis, pattern recognition, and data visualization
+        techniques specifically designed for oral melodic traditions and Indian classical music research.
       </p>
-
-      <h3 id="basic-navigation">1.2 Basic Navigation</h3>
-      <p><strong>Essential Analysis Controls:</strong></p>
-      <ul>
-        <li><strong>Analysis Type Selection</strong>:
-          <ul>
-            <li><strong>Dropdown Menu</strong>: Select from available analysis types in the upper panel</li>
-            <li><strong>Dynamic Interface</strong>: Controls and displays change based on selected analysis type</li>
-          </ul>
-        </li>
-        <li><strong>Transcription Management</strong>:
-          <ul>
-            <li><strong>Transcription Selector</strong>: Choose from available transcriptions you have access to</li>
-            <li><strong>Permission-based Access</strong>: Only transcriptions you can view will appear in the list</li>
-          </ul>
-        </li>
-        <li><strong>Data Interaction</strong>:
-          <ul>
-            <li><strong>Interactive Visualizations</strong>: Click, hover, and explore data displays</li>
-            <li><strong>Zoom and Pan</strong>: Navigate through large datasets and detailed views</li>
-            <li><strong>Selection Tools</strong>: Highlight and focus specific data points or ranges</li>
-          </ul>
-        </li>
-      </ul>
 
       <hr>
 
@@ -106,406 +53,254 @@
 
       <h3 id="pitch-prevalence">2.1 Pitch Prevalence</h3>
       <p>
-        Pitch Prevalence analysis provides statistical insights into pitch usage within transcriptions,
-        revealing the frequency distribution and relative importance of different pitches in musical performances.
+        Pitch Prevalence analysis shows how much time is spent on each pitch within a transcription.
+        Use the controls below the green menu bar to configure the analysis.
       </p>
 
-      <p><strong>Core Features:</strong></p>
+      <p><strong>Pitch Representation Controls:</strong></p>
       <ul>
-        <li><strong>Pitch Distribution Charts</strong>: Visual representation of pitch frequency using D3.js visualizations</li>
-        <li><strong>Statistical Measures</strong>: Quantitative analysis of pitch usage patterns</li>
-        <li><strong>Segmentation-based Analysis</strong>: Break down pitch usage by sections, phrases, or duration</li>
-        <li><strong>Comparative Views</strong>: Compare pitch distributions across different segments or transcriptions</li>
+        <li><strong>Fixed Pitch</strong>: Counts time spent on sustained pitch values, excluding transitions between pitches</li>
+        <li><strong>Pitch Onsets</strong>: Counts all time from when a pitch begins until the next pitch begins as belonging to the first pitch (includes transitions and ornaments)</li>
+        <li><strong>Fade Time (when Pitch Onsets selected)</strong>: Duration in seconds of silence after a pitch that still counts as belonging to that pitch (allows for various approaches to the psychological question of how long a pitch "sounds" in the mind in the absence of a new pitch)</li>
       </ul>
 
-      <p><strong>Segmentation Options:</strong></p>
+      <p><strong>Segmentation Controls:</strong></p>
       <ul>
-        <li><strong>By Section</strong>: Analyze pitch prevalence within major structural divisions</li>
-        <li><strong>By Phrase</strong>: Examine pitch usage patterns at the phrase level</li>
-        <li><strong>By Duration</strong>: Time-based segmentation for temporal analysis</li>
+        <li><strong>Section</strong>: Divide analysis by major structural divisions in the transcription</li>
+        <li><strong>Phrase</strong>: Divide analysis by individual phrases</li>
+        <li><strong>Duration</strong>: Divide analysis by time intervals</li>
+        <li><strong>Duration (s) (when Duration selected)</strong>: Set the length in seconds for each time segment</li>
       </ul>
 
-      <p><strong>Pitch Representation Modes:</strong></p>
+      <p><strong>Display Options:</strong></p>
       <ul>
-        <li><strong>Fixed Pitch</strong>: Analyze exact pitch frequencies and their distributions</li>
-        <li><strong>Pitch Onsets</strong>: Focus on the starting pitches of melodic gestures</li>
+        <li><strong>Pitch Chroma</strong>: Group pitches by pitch class (ignoring octave differences)</li>
+        <li><strong>Condensed</strong>: Remove empty space for pitches not present in the transcription</li>
+        <li><strong>Heatmap</strong>: Show relative prevalence with grayscale gradient instead of binary highlighting</li>
       </ul>
 
-      <p><strong>Use Cases:</strong></p>
+      <p><strong>Section/Phrase Type Filtering (when Section or Phrase segmentation selected):</strong></p>
       <ul>
-        <li>Identify the most frequently used pitches in a raga performance</li>
-        <li>Compare pitch emphasis between different sections of a composition</li>
-        <li>Analyze the relative importance of different sargam notes</li>
-        <li>Study pitch distribution patterns across multiple performances</li>
+        <li><strong>Section Type checkboxes</strong>: Select which types of sections to include in analysis</li>
+        <li><strong>Phrase Type radio buttons</strong>: Choose to include or exclude specific phrase types</li>
       </ul>
+
+      <p><strong>Generating Results:</strong> After configuring your settings, click the "Generate Visualization" button to create the pitch prevalence chart with your current parameters.</p>
 
       <h3 id="pitch-patterns">2.2 Pitch Patterns</h3>
       <p>
-        Pitch Patterns analysis focuses on melodic sequences and recurring motifs within transcriptions,
-        helping identify characteristic musical phrases and ornamental patterns.
+        Pitch Patterns analysis counts how many times each unique pitch sequence appears in a given segment.
+        Use the controls below the green menu bar to configure the analysis.
       </p>
 
-      <p><strong>Pattern Detection Features:</strong></p>
+      <p><strong>Segmentation Controls:</strong></p>
       <ul>
-        <li><strong>Sequence Visualization</strong>: Graphical representation of pitch sequences over time</li>
-        <li><strong>Pattern Recognition</strong>: Automated identification of recurring melodic motifs</li>
-        <li><strong>Similarity Analysis</strong>: Compare and group similar melodic patterns</li>
-        <li><strong>Interactive Exploration</strong>: Click and explore individual patterns in detail</li>
+        <li><strong>Transcription</strong>: Analyze patterns across the entire transcription as one unit</li>
+        <li><strong>Section</strong>: Divide analysis by major structural divisions in the transcription</li>
+        <li><strong>Duration</strong>: Divide analysis by time intervals</li>
+        <li><strong>Duration (s) (when Duration selected)</strong>: Set the length in seconds for each time segment</li>
       </ul>
 
-      <p><strong>Analysis Capabilities:</strong></p>
+      <p><strong>Display Options:</strong></p>
       <ul>
-        <li><strong>Motif Discovery</strong>: Identify frequently occurring melodic fragments</li>
-        <li><strong>Phrase Analysis</strong>: Examine complete musical phrases and their variations</li>
-        <li><strong>Ornament Patterns</strong>: Focus on specific embellishment techniques and their usage</li>
-        <li><strong>Temporal Patterns</strong>: Analyze how patterns evolve throughout a performance</li>
+        <li><strong>Pitch Number/Sargam radio buttons</strong>: Choose whether to display pitches as numbers or sargam notation</li>
+        <li><strong>Chroma checkbox</strong>: Group pitches by pitch class (ignoring octave differences)</li>
       </ul>
 
-      <p><strong>Research Applications:</strong></p>
+      <p><strong>Target Pitch Selection:</strong></p>
       <ul>
-        <li>Study characteristic phrases of specific ragas or artists</li>
-        <li>Identify personal stylistic signatures in performances</li>
-        <li>Analyze the development and variation of melodic themes</li>
-        <li>Compare ornamental patterns across different performers</li>
+        <li><strong>Target checkbox</strong>: Check this box to enable target pitch filtering</li>
+        <li><strong>Target Pitch dropdown</strong>: Once the checkbox is selected, use this dropdown to choose a specific pitch. Patterns will be filtered to show only those that end on the selected target pitch</li>
       </ul>
+
+      <p><strong>Fade Time Controls:</strong></p>
+      <ul>
+        <li><strong>Fade Time (s)</strong>: Duration in seconds of silence after a pitch that still counts as belonging to that pitch (affects pattern continuity across gaps)</li>
+      </ul>
+
+      <p><strong>Pattern Size Controls:</strong></p>
+      <ul>
+        <li><strong>Pattern Size checkboxes</strong>: Select which lengths of pitch sequences to analyze (2, 3, 4, 5, 6, 7, 8, 9, or 10 notes)</li>
+      </ul>
+
+      <p><strong>Minimum Size and Plot Controls:</strong></p>
+      <ul>
+        <li><strong>Minimum Size</strong>: Set the minimum number of occurrences required to display a pattern</li>
+        <li><strong>Plot checkbox</strong>: When checked, displays the contour of every pitch pattern in the visualization</li>
+      </ul>
+
+      <p><strong>Generating Results:</strong> After configuring your settings, click the "Generate Visualization" button to create the pitch patterns display with your current parameters.</p>
 
       <h3 id="query-display">2.3 Query Display</h3>
       <p>
-        Query Display provides advanced search and pattern matching capabilities across transcriptions,
-        allowing researchers to find specific musical content and analyze search results.
+        Query Display enables creation of multi-part queries to filter transcriptions, displaying only
+        those segments that match your search criteria. Use the controls below the green menu bar to configure your search.
       </p>
 
-      <p><strong>Query Interface:</strong></p>
+      <p><strong>Segmentation Controls:</strong></p>
       <ul>
-        <li><strong>Search Controls</strong>: Define search parameters and criteria</li>
-        <li><strong>Pattern Matching</strong>: Find specific pitch sequences or rhythmic patterns</li>
-        <li><strong>Filter Options</strong>: Refine search results based on musical characteristics</li>
-        <li><strong>Results Display</strong>: Interactive presentation of search matches</li>
+        <li><strong>Segmentation dropdown</strong>: Choose how to organize search results:
+          <ul>
+            <li><strong>Phrase</strong>: Search within individual phrases</li>
+            <li><strong>Group</strong>: Search within trajectory groups</li>
+            <li><strong>Trajectory Sequence</strong>: Search within sequences of trajectories (skipping over silences)</li>
+            <li><strong>Connected Trajectories</strong>: Search within contiguous trajectory sequences (silences marking divisions)</li>
+          </ul>
+        </li>
+        <li><strong>Sequence Size</strong>: When "Trajectory Sequence" is selected, set the number of trajectories to include in each sequence</li>
       </ul>
 
-      <p><strong>Search Capabilities:</strong></p>
+      <p><strong>Query Configuration:</strong></p>
       <ul>
-        <li><strong>Pitch Sequence Search</strong>: Find occurrences of specific melodic patterns</li>
-        <li><strong>Structural Element Search</strong>: Locate sections, phrases, or divisions</li>
-        <li><strong>Temporal Queries</strong>: Search based on timing and duration criteria</li>
-        <li><strong>Compound Queries</strong>: Combine multiple search criteria for complex analysis</li>
+        <li><strong>Queries number input</strong>: Set how many individual search criteria to use (1 or more)</li>
+        <li><strong>Every/Some radio buttons</strong>: Choose whether segments must match all queries ("Every") or just at least one query ("Some")</li>
+        <li><strong>Min Dur and Max Dur</strong>: Set minimum and maximum duration limits (in seconds) for matching segments (used primarily to filter out long silent phrases at the ends of unfinished transcriptions)</li>
       </ul>
 
-      <p><strong>Segmentation Integration:</strong></p>
+      <p><strong>Individual Query Controls:</strong></p>
+      <p>For each query number you specify, a separate query box appears with these options:</p>
       <ul>
-        <li><strong>Section-based Queries</strong>: Search within specific structural divisions</li>
-        <li><strong>Phrase-level Search</strong>: Focus queries on individual phrases</li>
-        <li><strong>Duration-based Filtering</strong>: Limit searches to specific time ranges</li>
+        <li><strong>Category dropdown</strong>: Choose what type of musical element to search for:
+          <ul>
+            <li><strong>Pitch</strong>: Search for a specific pitch and octave</li>
+            <li><strong>Strict Pitch Sequence</strong>: Search for an exact sequence of pitches in order</li>
+            <li><strong>Loose Pitch Sequence</strong>: Search for pitches in the specified order, but allowing other pitches to be interspersed between them</li>
+            <li><strong>Trajectory</strong>: Search for a specific trajectory by type</li>
+            <li><strong>Strict Trajectory Sequence</strong>: Search for an exact sequence of trajectories in order</li>
+            <li><strong>Loose Traj Sequence</strong>: Search for trajectories in the specified order, but allowing other trajectories to be interspersed between them</li>
+          </ul>
+          <p><em>The following options are only available when segmenting by Phrase or Group:</em></p>
+          <ul>
+            <li><strong>Section Type</strong>: Search for specific section classifications</li>
+            <li><strong>Alap Section</strong>: Search for specific alap section types</li>
+            <li><strong>Composition Type</strong>: Search for specific composition types</li>
+            <li><strong>Comp.-section/Tempo</strong>: Search for specific composition section or tempo markings</li>
+            <li><strong>Tala</strong>: Search for specific tala (rhythmic cycle) types</li>
+            <li><strong>Phrase Type</strong>: Search for specific phrase classifications</li>
+            <li><strong>Elaboration Type</strong>: Search for specific elaboration techniques</li>
+            <li><strong>Incidental</strong>: Search for incidental musical elements</li>
+            <li><strong>Articulation Type</strong>: Search for specific vocal or instrumental articulation techniques</li>
+          </ul>
+        </li>
+        <li><strong>Pitch and Octave selectors</strong>: When "Pitch" category is selected, choose the specific pitch name and octave number</li>
+        <li><strong>Pitch sequence controls</strong>: When pitch sequence categories are selected, specify the number of pitches and then select each pitch and octave in the sequence</li>
+        <li><strong>Trajectory sequence controls</strong>: When trajectory sequence categories are selected, specify the number of trajectories and select each trajectory ID</li>
       </ul>
 
-      <p><strong>Research Use Cases:</strong></p>
+      <p><strong>Display and Export Controls:</strong></p>
       <ul>
-        <li>Find all occurrences of a specific melodic phrase across multiple transcriptions</li>
-        <li>Search for characteristic ornamental patterns within a raga</li>
-        <li>Identify structural similarities between different performances</li>
-        <li>Locate specific technical elements or articulations</li>
+        <li><strong>Common Pitch Range checkbox</strong>: When checked, displays all segments using the same pitch range for comparison</li>
+        <li><strong>Search button</strong>: Execute the query with current settings</li>
+        <li><strong>Save Query and Load Query buttons</strong>: Save your current query configuration or load a previously saved query</li>
+        <li><strong>Download Results button</strong>: Export the search results (only available after running a search)</li>
       </ul>
+
 
       <h3 id="assemblage-display">2.4 Assemblage Display</h3>
       <p>
-        Assemblage Display provides visualization and analysis tools for phrase organization and thematic grouping
-        created in the Editor's Assemblage Controls system.
+        Assemblage Display provides audio-visual exploration of phrase organization and thematic grouping
+        created in the Editor's Assemblage Controls system. Use the controls below the green menu bar to explore assemblages.
       </p>
 
-      <p><strong>Assemblage Visualization:</strong></p>
+      <p><strong>Assemblage Selection:</strong></p>
       <ul>
-        <li><strong>Phrase Organization</strong>: View how phrases are grouped into thematic collections</li>
-        <li><strong>Strand Visualization</strong>: Display named sub-groups within assemblages</li>
-        <li><strong>Interactive Navigation</strong>: Click to explore individual phrases and their context</li>
-        <li><strong>Hierarchical Display</strong>: Show relationships between assemblages, strands, and phrases</li>
+        <li><strong>Assemblage dropdown</strong>: Select which assemblage to view from those created in the Editor</li>
+        <li><strong>No assemblages message</strong>: If no assemblages exist, displays "There are no assemblages assigned to this transcription"</li>
       </ul>
 
-      <p><strong>Analysis Features:</strong></p>
+      <p><strong>Strand Display:</strong></p>
+      <p>Each assemblage contains one or more strands (thematic groupings). For each strand:</p>
       <ul>
-        <li><strong>Thematic Analysis</strong>: Study how musical themes are organized and developed</li>
-        <li><strong>Structural Overview</strong>: Understand the large-scale organization of musical content</li>
-        <li><strong>Comparative Display</strong>: Compare assemblage structures across different transcriptions</li>
-        <li><strong>Statistical Summary</strong>: Quantitative analysis of assemblage characteristics</li>
+        <li><strong>Strand label</strong>: Shows the name of each strand within the assemblage</li>
+        <li><strong>Play Strand button</strong>: Click to play audio for all phrases in that strand sequentially</li>
+        <li><strong>Stop Strand button</strong>: When audio is playing, click to stop playback</li>
       </ul>
 
-      <p><strong>Integration with Editor:</strong></p>
+      <p><strong>Phrase Visualization:</strong></p>
       <ul>
-        <li><strong>Synchronized Data</strong>: Displays assemblages created in the Editor's Assemblage Controls</li>
-        <li><strong>Live Updates</strong>: Reflects changes made to assemblage organization in the Editor</li>
-        <li><strong>Cross-reference</strong>: Navigate between analysis view and editor for detailed examination</li>
+        <li><strong>Grid layout</strong>: Phrases are arranged in columns by strand, with each phrase displayed as a miniature spectrogram</li>
+        <li><strong>Phrase timing</strong>: Phrases are positioned vertically according to their temporal position in the transcription</li>
+        <li><strong>Visual continuity</strong>: Empty spaces show where phrases from other strands occur, maintaining temporal alignment</li>
+        <li><strong>Pitch range synchronization</strong>: All phrase displays use a common pitch range for easy comparison</li>
+        <li><strong>Individual phrase playback</strong>: Click on any phrase to play its audio individually, without playing the entire strand</li>
       </ul>
 
-      <p><strong>Research Applications:</strong></p>
+      <p><strong>Audio Integration:</strong></p>
       <ul>
-        <li>Analyze how performers organize and develop musical themes</li>
-        <li>Study the structural approach to raga elaboration</li>
-        <li>Compare thematic development strategies across different artists</li>
-        <li>Understand the hierarchical organization of complex performances</li>
+        <li><strong>Automatic audio loading</strong>: Audio files are loaded automatically when assemblages are available</li>
+        <li><strong>Loading indicator</strong>: Shows "Loading audio..." when audio files are being prepared</li>
+        <li><strong>Sequential playback</strong>: Strand playback presents phrases in chronological order</li>
+      </ul>
+
+      <p><strong>Prerequisites:</strong></p>
+      <ul>
+        <li><strong>Editor assemblages</strong>: Assemblages must be created in the Editor's Assemblage Controls before they appear in this analysis</li>
+        <li><strong>Audio files</strong>: Associated audio must be available for playback features to function</li>
       </ul>
 
       <h3 id="excel-datasets">2.5 Excel Datasets</h3>
       <p>
-        Excel Datasets provides structured data export capabilities for external analysis,
-        creating formatted spreadsheets from transcription data for use in statistical software or further research.
+        Excel Datasets generates structured spreadsheet exports of transcription data for external analysis and research.
+        Use the controls below the green menu bar to configure your data export.
       </p>
 
-      <p><strong>Export Options:</strong></p>
+      <p><strong>Pitch Representation Options:</strong></p>
       <ul>
-        <li><strong>Trajectory Data</strong>: Complete trajectory information with timing and pitch data</li>
-        <li><strong>Structural Data</strong>: Section and phrase division information</li>
-        <li><strong>Assemblage Data</strong>: Phrase organization and thematic grouping data</li>
-        <li><strong>Summary Statistics</strong>: Calculated metrics and analytical measures</li>
+        <li><strong>Pitch Representation dropdown</strong>: Choose how pitches are encoded in the dataset:
+          <ul>
+            <li><strong>Chroma</strong>: Pitch class without octave information (0-11)</li>
+            <li><strong>PitchNumber</strong>: Absolute pitch number including octave</li>
+            <li><strong>SargamLetter</strong>: Indian sargam notation without octave (Sa, Re, Ga, etc.)</li>
+            <li><strong>OctavedSargamLetter</strong>: Sargam notation with octave indicators</li>
+            <li><strong>ScaleDegree</strong>: Scale degree numbers without octave (1-7)</li>
+            <li><strong>OctavedScaleDegree</strong>: Scale degree numbers with octave information</li>
+          </ul>
+        </li>
       </ul>
 
-      <p><strong>Format Specifications:</strong></p>
+      <p><strong>Segmentation Options:</strong></p>
       <ul>
-        <li><strong>Structured Columns</strong>: Organized data layout for easy analysis</li>
-        <li><strong>Time-coded Data</strong>: Precise timing information for all musical events</li>
-        <li><strong>Pitch Representation</strong>: Multiple pitch format options (Hz, cents, sargam)</li>
-        <li><strong>Metadata Inclusion</strong>: Performer, raga, and recording information</li>
+        <li><strong>Segmentation dropdown</strong>: Choose how to divide the transcription into segments:
+          <ul>
+            <li><strong>UserDefined</strong>: Use manually created phrase and section boundaries from the Editor</li>
+            <li><strong>Silence</strong>: Automatically segment at silence boundaries</li>
+            <li><strong>Chikari</strong>: Segment based on chikari (drone) string activity</li>
+            <li><strong>MelodicDiscontinuity</strong>: Segment at points of melodic discontinuity</li>
+          </ul>
+        </li>
       </ul>
 
-      <p><strong>Integration Capabilities:</strong></p>
+      <p><strong>End Sequence Length:</strong></p>
       <ul>
-        <li><strong>Statistical Software</strong>: Ready for import into R, SPSS, or other analysis tools</li>
-        <li><strong>Database Import</strong>: Formatted for database management systems</li>
-        <li><strong>Custom Processing</strong>: Structured for custom analysis scripts</li>
-        <li><strong>Archival Storage</strong>: Standardized format for long-term data preservation</li>
+        <li><strong>End Sequence Length dropdown</strong>: Select the number of final pitches to include as a sequence ending pattern (1-6)</li>
+        <li>This creates columns showing the last N pitches of each segment, useful for analyzing cadence patterns</li>
       </ul>
 
-      <p><strong>Research Workflow Integration:</strong></p>
+      <p><strong>Export Control:</strong></p>
       <ul>
-        <li>Export transcription data for computational musicology research</li>
-        <li>Create datasets for machine learning and pattern recognition studies</li>
-        <li>Generate data for cross-corpus comparative analysis</li>
-        <li>Prepare structured data for academic publication and data sharing</li>
+        <li><strong>Download Dataset button</strong>: Click to generate and download the Excel file</li>
+        <li>The file will be named "DN_Extract.xlsx" and will download automatically</li>
       </ul>
+
+      <p><strong>Generated Data Structure:</strong></p>
+      <ul>
+        <li><strong>Segment information</strong>: Start time, end time, and duration for each segment</li>
+        <li><strong>Pitch sequences</strong>: Complete pitch content of each segment in your chosen representation</li>
+        <li><strong>End sequences</strong>: The final N pitches of each segment (based on your End Sequence Length setting)</li>
+        <li><strong>Metadata</strong>: Track information and transcription details</li>
+        <li><strong>Timing data</strong>: Precise timestamps for all events</li>
+      </ul>
+
+      <p><strong>Usage Notes:</strong></p>
+      <ul>
+        <li>The export respects your current instrument track selection from the green menu bar</li>
+        <li>All pitch data uses a duration threshold of 0.1 seconds (pitches shorter than this are excluded)</li>
+      </ul>
+
 
       <hr>
 
-      <h2 id="data-controls">3. Data and Segmentation Controls</h2>
-
-      <h3 id="transcription-selection">3.1 Transcription Selection</h3>
-      <p>
-        The transcription selection system provides access to available transcriptions based on your permissions
-        and enables filtering for focused analysis.
-      </p>
-
-      <p><strong>Selection Interface:</strong></p>
-      <ul>
-        <li><strong>Transcription Dropdown</strong>: Choose from transcriptions you have view access to</li>
-        <li><strong>Permission-based Display</strong>: Only shows transcriptions you're authorized to analyze</li>
-        <li><strong>Multi-transcription Support</strong>: Some analysis types support multiple transcription comparison</li>
-        <li><strong>Metadata Display</strong>: View transcription details including performer, raga, and date</li>
-      </ul>
-
-      <p><strong>Access Control:</strong></p>
-      <ul>
-        <li><strong>Public Transcriptions</strong>: Available to all users for analysis</li>
-        <li><strong>Shared Transcriptions</strong>: Transcriptions explicitly shared with you</li>
-        <li><strong>Your Transcriptions</strong>: Transcriptions you have created or own</li>
-        <li><strong>Collection Access</strong>: Transcriptions available through collection membership</li>
-      </ul>
-
-      <h3 id="segmentation-options">3.2 Segmentation Options</h3>
-      <p>
-        Segmentation controls determine how musical data is divided and organized for analysis,
-        providing different perspectives on the same musical content.
-      </p>
-
-      <p><strong>Segmentation Types:</strong></p>
-      <ul>
-        <li><strong>Section</strong>: Analysis based on major structural divisions in the transcription</li>
-        <li><strong>Phrase</strong>: Analysis at the phrase level for detailed melodic examination</li>
-        <li><strong>Duration</strong>: Time-based segmentation for temporal analysis patterns</li>
-      </ul>
-
-      <p><strong>Section Segmentation:</strong></p>
-      <ul>
-        <li><strong>Structural Analysis</strong>: Examine large-scale musical organization</li>
-        <li><strong>Form Comparison</strong>: Compare different sections within a performance</li>
-        <li><strong>Development Tracking</strong>: Study how musical material evolves across sections</li>
-        <li><strong>Hierarchical View</strong>: Understand major structural divisions</li>
-      </ul>
-
-      <p><strong>Phrase Segmentation:</strong></p>
-      <ul>
-        <li><strong>Melodic Detail</strong>: Focus on individual musical gestures and phrases</li>
-        <li><strong>Micro-analysis</strong>: Examine small-scale musical patterns and ornaments</li>
-        <li><strong>Phrase Comparison</strong>: Compare individual phrases across different contexts</li>
-        <li><strong>Repetition Analysis</strong>: Study how phrases repeat and vary</li>
-      </ul>
-
-      <p><strong>Duration Segmentation:</strong></p>
-      <ul>
-        <li><strong>Temporal Patterns</strong>: Analyze music based on time intervals</li>
-        <li><strong>Performance Pacing</strong>: Study the temporal development of performances</li>
-        <li><strong>Rhythmic Analysis</strong>: Examine timing and duration patterns</li>
-        <li><strong>Temporal Density</strong>: Analyze the distribution of musical events over time</li>
-      </ul>
-
-      <h3 id="pitch-representation">3.3 Pitch Representation</h3>
-      <p>
-        Pitch representation options control how pitch data is analyzed and displayed,
-        providing different analytical perspectives on the same musical content.
-      </p>
-
-      <p><strong>Representation Types:</strong></p>
-      <ul>
-        <li><strong>Fixed Pitch</strong>: Analysis based on sustained pitch values throughout trajectory duration</li>
-        <li><strong>Pitch Onsets</strong>: Analysis focused on the initial pitch of each trajectory or musical gesture</li>
-      </ul>
-
-      <p><strong>Fixed Pitch Analysis:</strong></p>
-      <ul>
-        <li><strong>Duration-weighted</strong>: Considers how long each pitch is sustained</li>
-        <li><strong>Melodic Contour</strong>: Analyzes complete pitch trajectories and their shapes</li>
-        <li><strong>Ornament Inclusion</strong>: Includes all pitch movements within ornamental gestures</li>
-        <li><strong>Sustained Tone Analysis</strong>: Emphasizes longer-held pitches in the analysis</li>
-      </ul>
-
-      <p><strong>Pitch Onset Analysis:</strong></p>
-      <ul>
-        <li><strong>Structural Emphasis</strong>: Focuses on the starting points of musical gestures</li>
-        <li><strong>Melodic Skeleton</strong>: Reveals the underlying pitch structure without ornamental detail</li>
-        <li><strong>Phrase Beginning Analysis</strong>: Emphasizes how phrases and gestures begin</li>
-        <li><strong>Reduced Complexity</strong>: Simplifies complex ornamental passages to their essential pitches</li>
-      </ul>
-
-      <h3 id="filtering-controls">3.4 Filtering Controls</h3>
-      <p>
-        Filtering controls allow you to refine your analysis focus by selecting specific aspects
-        of the musical data for examination.
-      </p>
-
-      <p><strong>Track Filtering:</strong></p>
-      <ul>
-        <li><strong>Instrument Selection</strong>: Choose specific instrument tracks for analysis</li>
-        <li><strong>Multi-track Analysis</strong>: Include or exclude different instruments in ensemble transcriptions</li>
-        <li><strong>Polyphonic String Selection</strong>: For Sitar and Sarangi, choose main string, secondary string, or both</li>
-      </ul>
-
-      <p><strong>Temporal Filtering:</strong></p>
-      <ul>
-        <li><strong>Time Range Selection</strong>: Focus analysis on specific time periods within a transcription</li>
-        <li><strong>Section Filtering</strong>: Include or exclude specific structural sections</li>
-        <li><strong>Phrase Selection</strong>: Choose individual phrases or phrase ranges for focused analysis</li>
-      </ul>
-
-      <p><strong>Musical Content Filtering:</strong></p>
-      <ul>
-        <li><strong>Pitch Range Filtering</strong>: Limit analysis to specific pitch ranges or octaves</li>
-        <li><strong>Trajectory Type Filtering</strong>: Include only specific trajectory types (fixed, bends, ornaments)</li>
-        <li><strong>Articulation Filtering</strong>: Focus on trajectories with specific articulations or techniques</li>
-      </ul>
-
-      <hr>
-
-      <h2 id="analysis-workflows">4. Analysis Workflows</h2>
-
-      <h3 id="comparative-analysis">4.1 Comparative Analysis</h3>
-      <p>
-        Comparative analysis workflows enable systematic comparison of musical content across different
-        dimensions, supporting research into stylistic differences and performance practices.
-      </p>
-
-      <p><strong>Cross-transcription Comparison:</strong></p>
-      <ol>
-        <li><strong>Select Multiple Transcriptions</strong>: Choose transcriptions for comparison (where supported)</li>
-        <li><strong>Choose Analysis Type</strong>: Select appropriate analysis method for comparison goals</li>
-        <li><strong>Configure Segmentation</strong>: Use consistent segmentation across all transcriptions</li>
-        <li><strong>Apply Filters</strong>: Ensure comparable data scope across all selected transcriptions</li>
-        <li><strong>Examine Results</strong>: Use visualization tools to identify similarities and differences</li>
-      </ol>
-
-      <p><strong>Within-transcription Comparison:</strong></p>
-      <ol>
-        <li><strong>Select Single Transcription</strong>: Choose transcription for internal comparison</li>
-        <li><strong>Use Segmentation</strong>: Divide transcription into comparable units (sections, phrases)</li>
-        <li><strong>Apply Analysis</strong>: Examine different segments using the same analytical approach</li>
-        <li><strong>Compare Segments</strong>: Identify variations and developments within the performance</li>
-      </ol>
-
-      <p><strong>Instrument Comparison:</strong></p>
-      <ul>
-        <li><strong>Multi-track Analysis</strong>: Compare different instruments in ensemble transcriptions</li>
-        <li><strong>Polyphonic String Comparison</strong>: Compare main and secondary strings in Sitar/Sarangi</li>
-        <li><strong>Technique Comparison</strong>: Analyze how different instruments approach similar musical content</li>
-      </ul>
-
-      <h3 id="pattern-discovery">4.2 Pattern Discovery</h3>
-      <p>
-        Pattern discovery workflows help identify recurring musical elements and characteristic features
-        within transcriptions using systematic analytical approaches.
-      </p>
-
-      <p><strong>Motif Discovery Workflow:</strong></p>
-      <ol>
-        <li><strong>Choose Pitch Patterns Analysis</strong>: Select appropriate analysis type for pattern detection</li>
-        <li><strong>Set Segmentation Level</strong>: Use phrase-level segmentation for detailed pattern analysis</li>
-        <li><strong>Configure Pitch Representation</strong>: Choose Fixed Pitch or Pitch Onsets based on research focus</li>
-        <li><strong>Apply Filtering</strong>: Narrow focus to specific musical characteristics</li>
-        <li><strong>Examine Pattern Results</strong>: Identify recurring motifs and their variations</li>
-        <li><strong>Cross-reference with Editor</strong>: Return to Editor to examine patterns in musical context</li>
-      </ol>
-
-      <p><strong>Statistical Pattern Analysis:</strong></p>
-      <ol>
-        <li><strong>Use Pitch Prevalence Analysis</strong>: Identify statistically significant patterns</li>
-        <li><strong>Compare Different Segmentations</strong>: Examine patterns at section, phrase, and duration levels</li>
-        <li><strong>Apply Query Display</strong>: Search for specific patterns identified in statistical analysis</li>
-        <li><strong>Validate Findings</strong>: Use multiple analysis types to confirm pattern significance</li>
-      </ol>
-
-      <h3 id="assemblage-organization">4.3 Assemblage Organization</h3>
-      <p>
-        Assemblage organization workflows provide systematic approaches to understanding
-        the thematic and structural organization of complex musical performances.
-      </p>
-
-      <p><strong>Thematic Analysis Workflow:</strong></p>
-      <ol>
-        <li><strong>Create Assemblages in Editor</strong>: Organize phrases into thematic groups using Editor controls</li>
-        <li><strong>Use Assemblage Display</strong>: Visualize and analyze the organization in Analysis Suite</li>
-        <li><strong>Compare Thematic Development</strong>: Study how themes evolve across different assemblages</li>
-        <li><strong>Cross-reference with Other Analyses</strong>: Use other analysis types to examine assemblage characteristics</li>
-      </ol>
-
-      <p><strong>Structural Analysis Workflow:</strong></p>
-      <ol>
-        <li><strong>Examine Assemblage Hierarchy</strong>: Study the relationship between assemblages, strands, and phrases</li>
-        <li><strong>Analyze Distribution</strong>: Use statistical analysis to understand assemblage characteristics</li>
-        <li><strong>Compare Across Transcriptions</strong>: Study different approaches to musical organization</li>
-        <li><strong>Document Findings</strong>: Export assemblage data for detailed analysis</li>
-      </ol>
-
-      <h3 id="data-export">4.4 Data Export</h3>
-      <p>
-        Data export workflows enable researchers to use IDTAP analysis results in external tools
-        and integrate findings into broader research projects.
-      </p>
-
-      <p><strong>Excel Dataset Export Workflow:</strong></p>
-      <ol>
-        <li><strong>Complete Analysis</strong>: Finish analysis using appropriate Analysis Suite tools</li>
-        <li><strong>Select Excel Datasets</strong>: Choose Excel export option</li>
-        <li><strong>Configure Export Parameters</strong>: Select data types and format options</li>
-        <li><strong>Generate Dataset</strong>: Create structured spreadsheet for external analysis</li>
-        <li><strong>Verify Data Integrity</strong>: Check exported data for completeness and accuracy</li>
-      </ol>
-
-      <p><strong>Research Integration Workflow:</strong></p>
-      <ol>
-        <li><strong>Export Multiple Formats</strong>: Use different export options for comprehensive data capture</li>
-        <li><strong>Import to Analysis Software</strong>: Load data into R, SPSS, or other statistical tools</li>
-        <li><strong>Validate Analysis Results</strong>: Cross-check IDTAP findings with external analysis</li>
-        <li><strong>Document Methodology</strong>: Record analytical parameters and procedures</li>
-        <li><strong>Integrate with Publications</strong>: Use findings in academic research and publications</li>
-      </ol>
-
-      <hr>
-
-      <h2 id="support">5. Support and Feedback</h2>
+      <h2 id="support">3. Support and Feedback</h2>
       <p>
         If you have questions, need assistance, or wish to provide feedback about the IDTAP Analysis Suite:
       </p>
