@@ -1,7 +1,11 @@
 # Changelog
 
 
+* feat: comprehensive rewrite of Analysis Instructions as user guide [d448664] (Jon Myers)
+### 2025-09-18
+
 * fix: resolve dependabot security vulnerabilities [df29ebe] (Jon Myers)
+* feat: add comprehensive analysis suite documentation and help system [cad4648] (Jon Myers)
 * docs: fix accuracy issues in editor instructions [149495b] (Jon Myers)
 * docs: refine editor instructions with accuracy improvements [bcbc3b1] (Jon Myers)
 ### 2025-09-17
