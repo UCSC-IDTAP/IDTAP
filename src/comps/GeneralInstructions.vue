@@ -29,7 +29,7 @@
       <li>Delete unwanted transcriptions</li>
     </ul>
 
-    <p>A <strong>transcription</strong> in the IDTAP is a detailed musical notation that captures and represents the musical content of an audio recording using trajectories - an alphabet of possible melodic motions including continuous contours, stepwise movements, and articulations with idiomatic specificity.</p>
+    <p>A <strong>transcription</strong> in the IDTAP is a structured music representation/notation that captures and represents the melodic content of an audio recording using trajectories - an alphabet of possible melodic motions including continuous contours, stepwise movements, and articulations with idiomatic specificity.</p>
 
     <h2 id="editor">2. Editor</h2>
     <p>The <strong>Editor</strong> is where detailed transcription work happens.</p>
@@ -38,7 +38,7 @@
     <ul>
       <li>Create and edit trajectories</li>
       <li>Work with multiple instrument tracks</li>
-      <li>Play audio with real-time synthesis</li>
+      <li>Play recorded audio along with real-time synthesis for aural verification</li>
       <li>View spectrograms and other visualizations</li>
       <li>Add section and phrase labels</li>
       <li>Work with polyphonic instruments like Sitar and Sarangi</li>
