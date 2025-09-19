@@ -30,6 +30,7 @@
       <li>Click the user icon in the top-right corner of the navigation bar</li>
       <li>Select "Log in" from the dropdown menu</li>
       <li>Complete the Google authentication process</li>
+      <li>First-time users will need to agree to a research waiver before accessing the site</li>
       <li>Once logged in, your profile picture will appear in the navigation bar</li>
     </ol>
 
