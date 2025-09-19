@@ -133,7 +133,7 @@
       <li>Section and phrase labeling</li>
       <li>Polyphonic support for instruments like Sitar and Sarangi</li>
     </ul>
-    <p><em>[Detailed instructions available in Editor Instructions]</em></p>
+    <p><em>[Detailed instructions available in <a href="/editorInstructions">Editor Instructions</a>]</em></p>
 
     <h3>Recordings Interface</h3>
     <p>The <strong>Recordings</strong> interface manages your audio files. Capabilities include:</p>
@@ -166,7 +166,7 @@
       <li>Comparative studies</li>
       <li>Data export for external tools</li>
     </ul>
-    <p><em>[Detailed instructions available in Analysis Instructions]</em></p>
+    <p><em>[Detailed instructions available in <a href="/analysisInstructions">Analysis Instructions</a>]</em></p>
 
     <h3>Collections Interface</h3>
     <p>The <strong>Collections</strong> interface helps organize your work:</p>
