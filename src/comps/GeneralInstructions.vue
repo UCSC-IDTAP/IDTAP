@@ -43,7 +43,7 @@
     <h2>Core Concepts</h2>
 
     <h3>Transcriptions</h3>
-    <p>A <strong>transcription</strong> in the IDTAP represents a detailed musical analysis of an audio recording. It includes:</p>
+    <p>A <strong>transcription</strong> in the IDTAP is a detailed musical notation that captures and represents the musical content of an audio recording. It includes:</p>
     <ul>
       <li><strong>Melodic trajectories</strong> - Continuous pitch contours representing the melody</li>
       <li><strong>Multiple tracks</strong> - Different instruments or voices in the performance</li>
