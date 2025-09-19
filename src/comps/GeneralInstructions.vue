@@ -2,7 +2,7 @@
   <div id="general-instructions" :style='mainStyle'>
     <h1>IDTAP General Instructions</h1>
 
-    <h2>Welcome to IDTAP</h2>
+    <h2>Welcome to the IDTAP</h2>
     <p>
       The <strong>Interactive Digital Transcription and Analysis Platform (IDTAP)</strong> is a comprehensive web application
       designed for the transcription, analysis, and study of Indian classical music. This guide will help you navigate
@@ -11,7 +11,7 @@
 
     <h2>Platform Overview</h2>
     <p>
-      IDTAP consists of six main interfaces, each serving a specific purpose in the musical transcription and analysis workflow:
+      The IDTAP consists of six main interfaces, each serving a specific purpose in the musical transcription and analysis workflow:
     </p>
     <ol>
       <li><strong>Transcriptions</strong> - Manage and organize your musical transcriptions</li>
@@ -43,7 +43,7 @@
     <h2>Core Concepts</h2>
 
     <h3>Transcriptions</h3>
-    <p>A <strong>transcription</strong> in IDTAP represents a detailed musical analysis of an audio recording. It includes:</p>
+    <p>A <strong>transcription</strong> in the IDTAP represents a detailed musical analysis of an audio recording. It includes:</p>
     <ul>
       <li><strong>Melodic trajectories</strong> - Continuous pitch contours representing the melody</li>
       <li><strong>Multiple tracks</strong> - Different instruments or voices in the performance</li>
@@ -82,7 +82,7 @@
     </ul>
 
     <h3>Raags</h3>
-    <p><strong>Raags</strong> are melodic frameworks fundamental to Indian classical music. In IDTAP, raag definitions include:</p>
+    <p><strong>Raags</strong> are melodic frameworks fundamental to Indian classical music. In the IDTAP, raag definitions include:</p>
     <ul>
       <li>Scale degrees and microtonal variations</li>
       <li>Characteristic phrases and movements</li>
@@ -184,10 +184,10 @@
     <h2>Data Management</h2>
 
     <h3>File Types</h3>
-    <p>IDTAP works with several file types:</p>
+    <p>The IDTAP works with several file types:</p>
     <ul>
       <li><strong>Audio Files</strong> - MP3, WAV, M4A, and other common formats</li>
-      <li><strong>Transcription Data</strong> - Stored in IDTAP's internal format</li>
+      <li><strong>Transcription Data</strong> - Stored in the IDTAP's internal format</li>
       <li><strong>Exports</strong> - Excel (.xlsx) and JSON for external analysis</li>
       <li><strong>Visualizations</strong> - PNG images of spectrograms and melographs</li>
     </ul>
@@ -201,7 +201,7 @@
     </ul>
 
     <h3>Permissions System</h3>
-    <p>IDTAP uses a flexible permissions system:</p>
+    <p>The IDTAP uses a flexible permissions system:</p>
     <ul>
       <li><strong>Private</strong> - Only you can access</li>
       <li><strong>Public</strong> - Anyone can view</li>
@@ -267,7 +267,7 @@
     <h2>Advanced Features</h2>
 
     <h3>Python API Integration</h3>
-    <p>IDTAP provides a Python package (<code>idtap-api</code>) for programmatic access:</p>
+    <p>The IDTAP provides a Python package (<code>idtap-api</code>) for programmatic access:</p>
     <ul>
       <li>Install via pip: <code>pip install idtap-api</code></li>
       <li>OAuth authentication for secure access</li>
@@ -371,7 +371,7 @@
     </ul>
 
     <h2>Updates and Changelog</h2>
-    <p>IDTAP is regularly updated with new features and improvements:</p>
+    <p>The IDTAP is regularly updated with new features and improvements:</p>
     <ul>
       <li>Check the Changelog (accessible from navigation menu)</li>
       <li>Important updates announced via email</li>
@@ -381,7 +381,7 @@
 
     <h2>Conclusion</h2>
     <p>
-      IDTAP provides a comprehensive platform for musical transcription and analysis. Start with basic transcription
+      The IDTAP provides a comprehensive platform for musical transcription and analysis. Start with basic transcription
       tasks and gradually explore advanced features as you become familiar with the interface. The platform is designed
       to grow with your needs, from simple transcriptions to complex analytical research.
     </p>
