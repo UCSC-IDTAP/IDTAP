@@ -40,7 +40,7 @@
       The currently active page is highlighted. Click any navigation item to switch between interfaces.
     </p>
 
-    <h2>Core Concepts</h2>
+    <h2>Platform Interfaces</h2>
 
     <h3>Transcriptions</h3>
     <p>A <strong>transcription</strong> in the IDTAP is a detailed musical notation that captures and represents the musical content of an audio recording. It includes:</p>
@@ -52,13 +52,43 @@
       <li><strong>Permissions</strong> - Access control for sharing and collaboration</li>
     </ul>
 
-    <h3>Audio Recordings</h3>
+    <h3>Editor</h3>
+    <p>The <strong>Editor</strong> is where detailed transcription work happens. It provides sophisticated tools for creating musical notations with:</p>
+    <ul>
+      <li>Multi-track transcription support</li>
+      <li>Real-time audio playback with synthesis</li>
+      <li>Spectrogram visualization</li>
+      <li>Trajectory editing tools</li>
+      <li>Section and phrase labeling</li>
+      <li>Polyphonic support for instruments like Sitar and Sarangi</li>
+    </ul>
+
+    <h3>Recordings</h3>
     <p><strong>Audio recordings</strong> are the source material for transcriptions. They can be:</p>
     <ul>
       <li>Uploaded directly to the platform</li>
       <li>Associated with one or more transcriptions</li>
       <li>Processed to generate spectrograms and other visualizations</li>
       <li>Managed with metadata including musicians, instruments, and performance details</li>
+    </ul>
+
+    <h3>Raag Editor</h3>
+    <p><strong>Raags</strong> are melodic frameworks fundamental to Indian classical music. In the IDTAP, raag definitions include:</p>
+    <ul>
+      <li>Scale degrees and microtonal variations</li>
+      <li>Characteristic phrases and movements</li>
+      <li>Associated emotional qualities (rasa)</li>
+      <li>Performance rules and conventions</li>
+    </ul>
+
+    <h3>Analyzer</h3>
+    <p>The <strong>Analyzer</strong> provides tools for musical analysis including:</p>
+    <ul>
+      <li>Pitch prevalence analysis</li>
+      <li>Melodic pattern extraction</li>
+      <li>Statistical analysis</li>
+      <li>Comparative studies</li>
+      <li>Data export for external tools</li>
     </ul>
 
     <h3>Collections</h3>
@@ -79,15 +109,6 @@
       <li><strong>Appreciation</strong> - Curate performances for listening</li>
       <li><strong>Collaboration</strong> - Share related resources with others</li>
       <li><strong>Organization</strong> - Keep project materials together without duplicating files</li>
-    </ul>
-
-    <h3>Raags</h3>
-    <p><strong>Raags</strong> are melodic frameworks fundamental to Indian classical music. In the IDTAP, raag definitions include:</p>
-    <ul>
-      <li>Scale degrees and microtonal variations</li>
-      <li>Characteristic phrases and movements</li>
-      <li>Associated emotional qualities (rasa)</li>
-      <li>Performance rules and conventions</li>
     </ul>
 
     <h2>Workflow Overview</h2>
