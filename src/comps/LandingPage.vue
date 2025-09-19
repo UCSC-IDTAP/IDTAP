@@ -5,6 +5,7 @@
       <span class='subtitle'>{{ subtitleText }}</span>
       <div class='buttonRow'>
         <div class='enterButton' @click='goToLogin'>Enter IDTAP</div>
+        <div class='instructionsButton' @click='goToInstructions'>Instructions</div>
         <div class='demosButton'>
           <a href='https://www.youtube.com/channel/UCSsnBpY5Hh8mvZu-63lpmaQ'>
             Demos
@@ -158,6 +159,10 @@ export default {
 
     goToChangelog() {
       this.$router.push('/changelog');
+    },
+
+    goToInstructions() {
+      this.$router.push('/generalInstructions');
     }
   }
 }

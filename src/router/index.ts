@@ -53,10 +53,15 @@ const routes: Array<RouteRecordRaw> = [
     name: 'Analysis Instructions',
     component: () => import('@/comps/AnalysisInstructions.vue')
   },
-  { 
-    path: '/changelog', 
-    name: 'Changelog', 
-    component: ChangelogView 
+  {
+    path: '/changelog',
+    name: 'Changelog',
+    component: ChangelogView
+  },
+  {
+    path: '/generalInstructions',
+    name: 'General Instructions',
+    component: () => import('@/comps/GeneralInstructions.vue')
   },
 ];
 
@@ -70,13 +75,14 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const userID = window.$cookies.get('userID')
   if (
-    to.name !== 'LandingPage' && 
-    to.name !== 'LogIn' && 
+    to.name !== 'LandingPage' &&
+    to.name !== 'LogIn' &&
     to.name !== 'Changelog' &&
+    to.name !== 'General Instructions' &&
     (userID === 'undefined' || userID === null || userID === undefined)
   ) {
     store.commit('update_incomingFullPath', to.fullPath)
-    
+
     next({ name: 'LogIn' })
   } else {
       next()
