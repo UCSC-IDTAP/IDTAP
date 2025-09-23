@@ -60,7 +60,7 @@ class Stretcher {
     for (let i = 0; i < framesExtracted; i++) {
       this.leftOut[i] = this.samples[i * 2];
       this.rightOut[i] = this.samples[i * 2 + 1];
-    };
+    }
     const nanIndex = this.rightOut.findIndex(Number.isNaN);
     if (nanIndex !== -1) {
       this.leftOut = this.leftOut.slice(0, nanIndex);

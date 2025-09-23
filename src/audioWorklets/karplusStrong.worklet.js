@@ -25,12 +25,12 @@ class Processor extends AudioWorkletProcessor {
         this.port.onmessage = e => {
             if (e.data === 'reset') {
                 reset();
-            };
+            }
             if (e.data === 'status') {
                 console.log('readPtr', readPtr, 
                             'writePtr', writePtr,
                             'dead?', dead ? 'yes' : 'no')
-            };
+            }
             if (e.data === 'kill') {
                 dead = true;
             }
