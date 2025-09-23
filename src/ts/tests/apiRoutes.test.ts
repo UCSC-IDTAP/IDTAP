@@ -15,8 +15,18 @@ describe('apiRoutes /transcriptions', () => {
     };
     const collections = {
       transcriptions: { find: () => cursor } as any,
+      users: {
+        findOne: (query: any) => Promise.resolve({ _id: 'mock-mongo-user-id' })
+      } as any,
     };
     const app = express();
+
+    // Mock authentication middleware
+    app.use((req, res, next) => {
+      req.user = { id: 'mock-google-user-id' };
+      next();
+    });
+
     app.use(apiRoutes(collections as any));
     const res = await request(app)
       .get('/transcriptions')
