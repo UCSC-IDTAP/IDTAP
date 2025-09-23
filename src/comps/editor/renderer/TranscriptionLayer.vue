@@ -105,7 +105,7 @@ import {
   Group,
   Articulation
 } from '@model';
-import { throttle, debounce } from 'lodash';
+import { throttle, debounce, cloneDeep } from 'lodash';
 import { 
   SargamDisplayType, 
   VowelDisplayType, 
@@ -2752,6 +2752,11 @@ export default defineComponent({
       // updatePlayhead();
     };
 
+    // Helper function to check if two categorizations are identical
+    const areCategorizationsIdentical = (cat1: any, cat2: any): boolean => {
+      return JSON.stringify(cat1) === JSON.stringify(cat2);
+    };
+
     const deletePhraseDiv = (uId: string) => {
       const phrase = props.piece.phraseFromUId(uId);
       const track = props.piece.trackFromPhraseUId(uId);
@@ -2765,7 +2770,44 @@ export default defineComponent({
       })
       // Merge string 1 trajectories
       prevPhrase.trajectories.push(...phrase.trajectories);
-      
+
+      // Smart categorization merging
+      if (phrase.categorizationGrid && phrase.categorizationGrid.length > 0) {
+        phrase.categorizationGrid.forEach((phraseCat, stringIdx) => {
+          if (prevPhrase.categorizationGrid && prevPhrase.categorizationGrid[stringIdx]) {
+            const prevCat = prevPhrase.categorizationGrid[stringIdx];
+            if (!areCategorizationsIdentical(prevCat, phraseCat)) {
+              // Categorizations differ - for Phase 1, keep first phrase's and log warning
+              console.warn(`Phrase categorizations differ during merge for string ${stringIdx}. Keeping first phrase's categorization. Second phrase had:`, phraseCat);
+              // TODO Phase 2: Prompt user to choose which categorization to keep
+            }
+            // If identical, no action needed - prevPhrase already has the correct categorization
+          } else if (!prevPhrase.categorizationGrid) {
+            // prevPhrase has no categorization grid - shouldn't happen but handle gracefully
+            prevPhrase.categorizationGrid = phrase.categorizationGrid.map(cat => cloneDeep(cat));
+          }
+        });
+      }
+
+      // Merge ad-hoc categorizations (concatenate unique values)
+      if (phrase.adHocCategorizationGrid && phrase.adHocCategorizationGrid.length > 0) {
+        if (!prevPhrase.adHocCategorizationGrid) {
+          prevPhrase.adHocCategorizationGrid = [];
+        }
+        phrase.adHocCategorizationGrid.forEach((adHocCat, stringIdx) => {
+          if (!prevPhrase.adHocCategorizationGrid[stringIdx]) {
+            prevPhrase.adHocCategorizationGrid[stringIdx] = [];
+          }
+          // Add unique ad-hoc categories from the deleted phrase
+          if (adHocCat && adHocCat.length > 0) {
+            const uniqueCategories = adHocCat.filter(cat =>
+              !prevPhrase.adHocCategorizationGrid[stringIdx].includes(cat)
+            );
+            prevPhrase.adHocCategorizationGrid[stringIdx].push(...uniqueCategories);
+          }
+        });
+      }
+
       // Merge string 2 trajectories if they exist
       if (phrase.trajectoryGrid && phrase.trajectoryGrid[1] && phrase.trajectoryGrid[1].length > 0) {
         // Ensure prevPhrase has trajectoryGrid structure
@@ -5202,6 +5244,11 @@ export default defineComponent({
         adHocSectionCat = props.piece.adHocSectionCatGrid[track][sectionIdx];
       }
 
+      // Preserve phrase categorizations before nudging
+      // Every phrase always has a categorizationGrid (created by constructor if not provided)
+      const phraseCategorization = cloneDeep(phrase.categorizationGrid);
+      const phraseAdHocCategorization = [...phrase.adHocCategorizationGrid];
+
       if (amt === 1) {
         // Move division right by one string-1 boundary by deleting and re-inserting
         if (phrase.trajectories.length < 2) {
@@ -5215,6 +5262,11 @@ export default defineComponent({
         deletePhraseDiv(selectedPhraseDivUid.value);
         // Insert new division at computed time in the merged phrase (oldPIdx - 1)
         insertNewPhraseDiv(newDivisionTime, curTrack, oldPIdx - 1);
+
+        // Restore phrase categorizations to the newly created phrase
+        const newPhrase = props.piece.phraseGrid[curTrack][oldPIdx];
+        newPhrase.categorizationGrid = phraseCategorization;
+        newPhrase.adHocCategorizationGrid = phraseAdHocCategorization;
         // Consolidate trajectories after the operation
         props.piece.phraseGrid[curTrack][oldPIdx - 1].consolidateContinuousTrajectories();
 
@@ -5251,6 +5303,12 @@ export default defineComponent({
         deletePhraseDiv(selectedPhraseDivUid.value);
         // Insert new division at computed time in the merged phrase (oldPIdx - 1)
         insertNewPhraseDiv(newDivisionTime, curTrack, oldPIdx - 1);
+
+        // Restore phrase categorizations to the newly created phrase
+        const newPhrase = props.piece.phraseGrid[curTrack][oldPIdx];
+        newPhrase.categorizationGrid = phraseCategorization;
+        newPhrase.adHocCategorizationGrid = phraseAdHocCategorization;
+
         // Consolidate trajectories after the operation
         props.piece.phraseGrid[curTrack][oldPIdx - 1].consolidateContinuousTrajectories();
 
@@ -6369,10 +6427,15 @@ export default defineComponent({
           trajectories: Trajectory[],
           raga: Raga,
           chikaris?: { [key: string]: Chikari },
-          instrumentation?: string[]
+          instrumentation?: string[],
+          categorizationGrid?: any[],
+          adHocCategorizationGrid?: string[]
         } = {
           trajectories: phrase.trajectories.slice(splitIndex), // Take trajectories at/after split point
-          raga: phrase.raga!
+          raga: phrase.raga!,
+          // Preserve categorization data in the new phrase (deep copy to avoid reference issues)
+          categorizationGrid: phrase.categorizationGrid.map(cat => cloneDeep(cat)),
+          adHocCategorizationGrid: [...phrase.adHocCategorizationGrid]
         };
         
         // Move trajectories at/after split point to new phrase
