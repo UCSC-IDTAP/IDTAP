@@ -1,6 +1,8 @@
 # Changelog
 
 
+* fix: resolve ESLint configuration conflict and make linting optional in CI [71c312a] (Jon Myers)
+* feat: add CI workflow for automated testing on PRs [24f7479] (Jon Myers)
 * fix: resolve remaining failing tests in trajectory and apiRoutes [4f41fdf] (Jon Myers)
 * fix: correct outdated phrase tests to match current implementation [184f27e] (Jon Myers)
 * feat: implement categorization preservation for phrase division operations [75d3a13] (Jon Myers)
