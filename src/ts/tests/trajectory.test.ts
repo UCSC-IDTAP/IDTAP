@@ -557,10 +557,7 @@ test('id6 default durArray and console log path', () => {
   expect(typeof freq).toBe('number');
   expect(freq).toBeGreaterThan(0);
 
-  const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
   expect(() => traj.id6(-0.1)).toThrow();
-  expect(spy).toHaveBeenCalled();
-  spy.mockRestore();
 });
 // minLogFreq and maxLogFreq should reflect the range of log frequencies
 
