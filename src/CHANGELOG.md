@@ -1,6 +1,9 @@
 # Changelog
 
 
+* fix: resolve remaining failing tests in trajectory and apiRoutes [4f41fdf] (Jon Myers)
+* fix: correct outdated phrase tests to match current implementation [184f27e] (Jon Myers)
+* feat: implement categorization preservation for phrase division operations [75d3a13] (Jon Myers)
 * fix: use zoom-aware threshold consistently for all dot attachments [1f064d5] (Jon Myers)
 * refactor: extract attachment logic into reusable helper function [9d5eeed] (Jon Myers)
 * fix: add missing closing parenthesis in claude-review workflow [9dce4b8] (Jon Myers)
