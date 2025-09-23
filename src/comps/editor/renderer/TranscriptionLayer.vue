@@ -433,7 +433,15 @@ export default defineComponent({
     let dragDotIdx: number | undefined = undefined;
     const minTrajDur = 0.01;
 
-
+    // Helper function for attachment logic
+    const PITCH_ATTACHMENT_THRESHOLD = 0.05; // Pitch difference threshold for attachment
+    const shouldAttachToEndpoint = (
+      pitchDiff: number,
+      timeDiff: number,
+      timeThreshold: number
+    ): boolean => {
+      return pitchDiff < PITCH_ATTACHMENT_THRESHOLD && timeDiff < timeThreshold;
+    };
 
     let pulseDragEnabled = false;
     let meterHovering: Meter | undefined = undefined;
@@ -4224,7 +4232,7 @@ export default defineComponent({
             const diff = Math.abs(logFreq - prevPitch.logFreq);
             const prevTime = phrase.startTime! + prevPrevTraj.startTime! + prevPrevTraj.durTot;
             const timeDiff = Math.abs(newTime - prevTime);
-            if (diff < 0.05 && timeDiff < minTrajDur) {
+            if (shouldAttachToEndpoint(diff, timeDiff, minTrajDur)) {
               logFreq = prevPitch.logFreq;
               newTime = prevTime;
             }
@@ -4246,7 +4254,7 @@ export default defineComponent({
             const diff = Math.abs(logFreq - nextPitch.logFreq);
             const nextTime = phrase.startTime! + nextNextTraj.startTime!;
             const timeDiff = Math.abs(nextTime - newTime);
-            if (diff < 0.05 && timeDiff < minTrajDur) {
+            if (shouldAttachToEndpoint(diff, timeDiff, minTrajDur)) {
               logFreq = nextPitch.logFreq;
               newTime = nextTime;
             }
@@ -5403,7 +5411,7 @@ export default defineComponent({
               const diff = Math.abs(newLogFreq - prevPitch.logFreq);
               const prevTime = phrase.startTime! + prevPrevTraj.startTime! + prevPrevTraj.durTot;
               const timeDiff = Math.abs(newTime - prevTime);
-              if (diff < 0.05 && timeDiff < minTrajDur) {
+              if (shouldAttachToEndpoint(diff, timeDiff, minTrajDur)) {
                 newTime = prevTime;
                 newLogFreq = prevPitch.logFreq;
                 const x = props.xScale(newTime);
@@ -5430,7 +5438,7 @@ export default defineComponent({
               const diff = Math.abs(newLogFreq - nextPitch.logFreq);
               const nextTime = phrase.startTime! + nextNextTraj.startTime!;
               const timeDiff = Math.abs(nextTime - newTime);
-              if (diff < 0.05 && timeDiff < minTrajDur) {
+              if (shouldAttachToEndpoint(diff, timeDiff, minTrajDur)) {
                 newTime = nextTime;
                 newLogFreq = nextPitch.logFreq;
                 const x = props.xScale(newTime);
@@ -5479,7 +5487,7 @@ export default defineComponent({
               const diff = Math.abs(newLogFreq - prevPitch.logFreq);
               const prevTime = phrase.startTime! + prevPrevTraj.startTime! + prevPrevTraj.durTot;
               const timeDiff = Math.abs(newTime - prevTime);
-              if (diff < 0.05 && timeDiff < minTrajDur) {
+              if (shouldAttachToEndpoint(diff, timeDiff, minTrajDur)) {
                 newLogFreq = prevPitch.logFreq;
                 newTime = prevTime;
               }
@@ -5500,7 +5508,7 @@ export default defineComponent({
               const diff = Math.abs(newLogFreq - nextPitch.logFreq);
               const nextTime = phrase.startTime! + nextNextTraj.startTime!;
               const timeDiff = Math.abs(nextTime - newTime);
-              if (diff < 0.05 && timeDiff < minTrajDur) {
+              if (shouldAttachToEndpoint(diff, timeDiff, minTrajDur)) {
                 newLogFreq = nextPitch.logFreq;
                 newTime = nextTime;
               }
@@ -5552,7 +5560,7 @@ export default defineComponent({
               const diff = Math.abs(newLogFreq - prevPitch.logFreq);
               const prevTime = phrase.startTime! + prevPrevTraj.startTime! + prevPrevTraj.durTot;
               const timeDiff = Math.abs(newTime - prevTime);
-              if (diff < 0.05 && timeDiff < minTrajDur) {
+              if (shouldAttachToEndpoint(diff, timeDiff, minTrajDur)) {
                 newLogFreq = prevPitch.logFreq;
                 newTime = prevTime;
               }
@@ -5573,7 +5581,7 @@ export default defineComponent({
               const diff = Math.abs(newLogFreq - nextPitch.logFreq);
               const nextTime = phrase.startTime! + nextNextTraj.startTime!;
               const timeDiff = Math.abs(nextTime - newTime);
-              if (diff < 0.05 && timeDiff < minTrajDur) {
+              if (shouldAttachToEndpoint(diff, timeDiff, minTrajDur)) {
                 newLogFreq = nextPitch.logFreq;
                 newTime = nextTime;
               }
@@ -6180,7 +6188,7 @@ export default defineComponent({
             const diff = Math.abs(lastPitch.logFreq - logFreq);
             const lastTime = prevTraj.startTime! + prevTraj.durTot;
             const timeDiff = Math.abs(time - lastTime);
-            if (diff < 0.05 && timeDiff < minAttachTrajDur.value) {
+            if (shouldAttachToEndpoint(diff, timeDiff, minAttachTrajDur.value)) {
               logFreq = lastPitch.logFreq;
             }
           }
@@ -6193,7 +6201,7 @@ export default defineComponent({
             const diff = Math.abs(firstPitch.logFreq - logFreq);
             const lastTime = traj.startTime! + traj.durTot;
             const timeDiff = Math.abs(lastTime - time);
-            if (diff < 0.05 && timeDiff < minAttachTrajDur.value) {
+            if (shouldAttachToEndpoint(diff, timeDiff, minAttachTrajDur.value)) {
               logFreq = firstPitch.logFreq;
             }
           }
