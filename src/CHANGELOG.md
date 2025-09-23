@@ -1,6 +1,12 @@
 # Changelog
 
 
+* fix: use zoom-aware threshold consistently for all dot attachments [1f064d5] (Jon Myers)
+* refactor: extract attachment logic into reusable helper function [9d5eeed] (Jon Myers)
+* fix: add missing closing parenthesis in claude-review workflow [9dce4b8] (Jon Myers)
+* feat: implement zoom-aware attachment threshold for orientation dots [f77e171] (Jon Myers)
+### 2025-09-23
+
 * feat: comprehensive rewrite of Analysis Instructions as user guide [d448664] (Jon Myers)
 ### 2025-09-18
 
