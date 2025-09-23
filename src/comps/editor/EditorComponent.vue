@@ -55,6 +55,7 @@
       :timingDisplay='timingDisplay'
       :audioPlayerRef='$refs.audioPlayer as APType'
       :showPhrases='showPhrases'
+      :zoomXFactor='zoomXFactor'
       @zoomInY='zoomInY'
       @zoomOutY='zoomOutY'
       @zoomInX='zoomInX'
