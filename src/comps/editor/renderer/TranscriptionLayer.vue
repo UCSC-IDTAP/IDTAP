@@ -322,6 +322,10 @@ export default defineComponent({
       type: Number as PropType<0 | 1>,
       required: true
     },
+    zoomXFactor: {
+      type: Number,
+      required: true
+    }
   },
   emits: [
     'update:TrajSelStatus',
@@ -428,6 +432,9 @@ export default defineComponent({
     const selectedDragDotColor = '#d602d6';
     let dragDotIdx: number | undefined = undefined;
     const minTrajDur = 0.01;
+
+
+
     let pulseDragEnabled = false;
     let meterHovering: Meter | undefined = undefined;
     let selMeterHovering = false;
@@ -731,6 +738,11 @@ export default defineComponent({
       return props.editableCols.filter(c => {
         return c.transcriptions.includes(props.piece._id!)
       })
+    })
+    const minAttachTrajDur = computed(() => {
+      const initZoomXFactor = 165.15131294660856;
+      const zoomMult = props.zoomXFactor / initZoomXFactor;
+      return 0.05 / zoomMult;
     })
 
     // watched values
@@ -6168,7 +6180,7 @@ export default defineComponent({
             const diff = Math.abs(lastPitch.logFreq - logFreq);
             const lastTime = prevTraj.startTime! + prevTraj.durTot;
             const timeDiff = Math.abs(time - lastTime);
-            if (diff < 0.05 && timeDiff < minTrajDur) {
+            if (diff < 0.05 && timeDiff < minAttachTrajDur.value) {
               logFreq = lastPitch.logFreq;
             }
           }
@@ -6181,7 +6193,7 @@ export default defineComponent({
             const diff = Math.abs(firstPitch.logFreq - logFreq);
             const lastTime = traj.startTime! + traj.durTot;
             const timeDiff = Math.abs(lastTime - time);
-            if (diff < 0.05 && timeDiff < minTrajDur) {
+            if (diff < 0.05 && timeDiff < minAttachTrajDur.value) {
               logFreq = firstPitch.logFreq;
             }
           }
@@ -6202,9 +6214,9 @@ export default defineComponent({
         setIt = minDiff > minTrajDur;
         if (setIt) {
           const startTime = phrase.startTime! + traj.startTime!;
-          if (time - startTime < minTrajDur) {
+          if (time - startTime < minAttachTrajDur.value) {
             time = startTime
-          } else if (startTime + traj.durTot - time < minTrajDur) {
+          } else if (startTime + traj.durTot - time < minAttachTrajDur.value) {
             time = startTime + traj.durTot
           }
           const tpObj = {
@@ -7213,6 +7225,7 @@ export default defineComponent({
       onMainHover,
       onMainClick,
       selectPhrase,
+      minAttachTrajDur,
     }
   }
 })

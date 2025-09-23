@@ -159,6 +159,7 @@
               :preZoomMiddleTime='preZoomMiddleTime'
               :editableCols='editableCols'
               :audioPlayerRef='audioPlayerRef'
+              :zoomXFactor='zoomXFactor'
               @update:slope='$emit("update:slope", $event)'
               @update:prevMeter='$emit("update:prevMeter", $event)'
               @update:selectedMode='$emit("update:selectedMode", $event)'
@@ -468,6 +469,10 @@ export default defineComponent({
     },
     showPhrases: {
       type: Boolean,
+      required: true
+    },
+    zoomXFactor: {
+      type: Number,
       required: true
     }
   },
