@@ -1,6 +1,10 @@
 # Changelog
 
 
+* fix: resolve string 2 trajectory splitting and merging issues in polyphonic operations [c4e80d3] (Jon Myers)
+* fix: resolve polyphonic string cross-contamination in trajectory orientation dot operations [d065556] (Jon Myers)
+### 2025-09-24
+
 * fix: resolve ESLint configuration conflict and make linting optional in CI [71c312a] (Jon Myers)
 * feat: add CI workflow for automated testing on PRs [24f7479] (Jon Myers)
 * fix: resolve remaining failing tests in trajectory and apiRoutes [4f41fdf] (Jon Myers)
