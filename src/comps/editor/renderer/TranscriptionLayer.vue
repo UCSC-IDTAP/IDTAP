@@ -1886,6 +1886,18 @@ export default defineComponent({
       return getTrajectoryArrayForString(phrase, track, stringIdx);
     };
 
+    // Helper to get the last trajectory on a specific string in a phrase
+    const getLastTrajectoryOnString = (phrase: Phrase, track: number, stringIdx: number): Trajectory | undefined => {
+      const trajectories = getTrajectoryArrayForString(phrase, track, stringIdx);
+      return trajectories.length > 0 ? trajectories[trajectories.length - 1] : undefined;
+    };
+
+    // Helper to get the first trajectory on a specific string in a phrase
+    const getFirstTrajectoryOnString = (phrase: Phrase, track: number, stringIdx: number): Trajectory | undefined => {
+      const trajectories = getTrajectoryArrayForString(phrase, track, stringIdx);
+      return trajectories.length > 0 ? trajectories[0] : undefined;
+    };
+
     const renderTraj = (traj: Trajectory) => {
       const track = props.piece.trackFromTraj(traj);
       const renderObj = trajRenderStatus.value[track].find(obj => { 
@@ -3095,7 +3107,12 @@ export default defineComponent({
               nextTick(() => {
                 const time = phrase.startTime! + traj.startTime! + traj.durTot + 0.0000001;
                 const logFreq = traj.logFreqs[traj.logFreqs.length - 1];
-                const thisPIdx = traj.num === phrase.trajectories.length - 1 ? pIdx + 1 : pIdx;
+                // For polyphonic instruments, check if we're at the end of the current string
+                const isSecondString = checkIfSecondString(traj, track);
+                const stringIdx = isSecondString ? 1 : 0;
+                const trajectories = getTrajectoryArrayForString(phrase, track, stringIdx);
+                const trajIndexInString = trajectories.findIndex(t => t.uniqueId === traj.uniqueId);
+                const thisPIdx = trajIndexInString === trajectories.length - 1 ? pIdx + 1 : pIdx;
                 insertNewTrajDot(time, logFreq, track, thisPIdx);
                 contextMenuClosed.value = true;
               })
@@ -4125,8 +4142,11 @@ export default defineComponent({
         
         if (tIdx === 0) {
           const prevPhrase = props.piece.phraseGrid[track][pIdx - 1];
-          const prevTraj = prevPhrase.trajectories[prevPhrase.trajectories.length - 1];
-          updatePrevTraj(prevTraj, delta);
+          // For polyphonic instruments, get the last trajectory on the same string
+          const prevTraj = getLastTrajectoryOnString(prevPhrase, track, stringIdx);
+          if (prevTraj) {
+            updatePrevTraj(prevTraj, delta);
+          }
           updateDurArray(traj, delta);
           traj.durTot -= delta;
           phrase.startTime! += delta;
@@ -4153,8 +4173,14 @@ export default defineComponent({
         }
       } else if (idx === traj.durArray!.length) {
         const delta = time - (phrase.startTime! + traj.startTime! + traj.durTot);
-        if (tIdx < phrase.trajectories.length - 1) {
-          const nextTraj = phrase.trajectories[tIdx + 1];
+        const isSecondString = checkIfSecondString(traj, track);
+        const stringIdx = isSecondString ? 1 : 0;
+        const trajectories = getTrajectoryArrayForString(phrase, track, stringIdx);
+
+        // Check if there's a next trajectory on the same string in this phrase
+        const trajIndexInString = trajectories.findIndex(t => t.uniqueId === traj.uniqueId);
+        if (trajIndexInString < trajectories.length - 1) {
+          const nextTraj = trajectories[trajIndexInString + 1];
           updateNextTraj(nextTraj, delta);
           if (traj.durArray!.length > 1) {
             traj.durArray = newDurArrayZ(traj, delta);
@@ -4163,24 +4189,26 @@ export default defineComponent({
           phrase.durArrayFromTrajectories();
         } else if (props.piece.phraseGrid[track][pIdx + 1]) {
           const nextPhrase = props.piece.phraseGrid[track][pIdx + 1];
-          const nextTraj = nextPhrase.trajectories[0];
-          updateNextTraj(nextTraj, delta);
-          nextPhrase.startTime! += delta;
-          nextPhrase.durArrayFromTrajectories();
-          nextPhrase.assignStartTimes();
-          const tda = traj.durArray!;
-          if (tda.length > 1) {
-            const initPartZ = tda[tda.length - 1] * traj.durTot;
-            const newDur = traj.durTot + delta;
-            const newPropZ = (initPartZ + delta) / newDur;
-            const newDurArray = tda.map((i => i * traj.durTot / newDur));
-            newDurArray[tda.length - 1] = newPropZ;
-            traj.durArray = newDurArray;
+          const nextTraj = getFirstTrajectoryOnString(nextPhrase, track, stringIdx);
+          if (nextTraj) {
+            updateNextTraj(nextTraj, delta);
+            nextPhrase.startTime! += delta;
+            nextPhrase.durArrayFromTrajectories();
+            nextPhrase.assignStartTimes();
+            const tda = traj.durArray!;
+            if (tda.length > 1) {
+              const initPartZ = tda[tda.length - 1] * traj.durTot;
+              const newDur = traj.durTot + delta;
+              const newPropZ = (initPartZ + delta) / newDur;
+              const newDurArray = tda.map((i => i * traj.durTot / newDur));
+              newDurArray[tda.length - 1] = newPropZ;
+              traj.durArray = newDurArray;
+            }
+            traj.durTot += delta;
+            phrase.durArrayFromTrajectories();
+            phrase.assignStartTimes();
+            updatePhraseChikaris(nextPhrase, delta);
           }
-          traj.durTot += delta;
-          phrase.durArrayFromTrajectories();
-          phrase.assignStartTimes();
-          updatePhraseChikaris(nextPhrase, delta);
         }
       }
       
@@ -4330,28 +4358,42 @@ export default defineComponent({
       }
       const affectedTrajs = [traj];
       let affectedPhraseDivUid = undefined;
+      const isSecondString = checkIfSecondString(traj, track);
+      const stringIdx = isSecondString ? 1 : 0;
+
       if (idx === 0) {
         if (tIdx === 0) {
           if (pIdx > 0) {
             const prevPhrase = props.piece.phraseGrid[track][pIdx - 1];
-            const prevTraj = prevPhrase.trajectories[prevPhrase.trajectories.length - 1];
-            affectedTrajs.push(prevTraj);
-            affectedPhraseDivUid = phrase.uniqueId;
-            
+            const prevTraj = getLastTrajectoryOnString(prevPhrase, track, stringIdx);
+            if (prevTraj) {
+              affectedTrajs.push(prevTraj);
+              affectedPhraseDivUid = phrase.uniqueId;
+            }
           }
         } else {
-          const prevTraj = phrase.trajectories[tIdx - 1];
-          affectedTrajs.push(prevTraj);
+          // Find the previous trajectory on the same string
+          const trajectories = getTrajectoryArrayForString(phrase, track, stringIdx);
+          const trajIndexInString = trajectories.findIndex(t => t.uniqueId === traj.uniqueId);
+          if (trajIndexInString > 0) {
+            const prevTraj = trajectories[trajIndexInString - 1];
+            affectedTrajs.push(prevTraj);
+          }
         }
       } else if (idx === traj.durArray!.length) {
-        if (tIdx < phrase.trajectories.length - 1) {
-          const nextTraj = phrase.trajectories[tIdx + 1];
+        const trajectories = getTrajectoryArrayForString(phrase, track, stringIdx);
+        const trajIndexInString = trajectories.findIndex(t => t.uniqueId === traj.uniqueId);
+
+        if (trajIndexInString < trajectories.length - 1) {
+          const nextTraj = trajectories[trajIndexInString + 1];
           affectedTrajs.push(nextTraj);
         } else if (props.piece.phraseGrid[track][pIdx + 1]) {
           const nextPhrase = props.piece.phraseGrid[track][pIdx + 1];
-          const nextTraj = nextPhrase.trajectories[0];
-          affectedTrajs.push(nextTraj);
-          affectedPhraseDivUid = nextPhrase.uniqueId;
+          const nextTraj = getFirstTrajectoryOnString(nextPhrase, track, stringIdx);
+          if (nextTraj) {
+            affectedTrajs.push(nextTraj);
+            affectedPhraseDivUid = nextPhrase.uniqueId;
+          }
         }
       }
       affectedTrajs.forEach(traj => {
@@ -5680,8 +5722,11 @@ export default defineComponent({
         
         if (traj.num === 0) {
           const prevPhrase = props.piece.phraseGrid[track][traj.phraseIdx! - 1];
-          const prevTraj = prevPhrase.trajectories[prevPhrase.trajectories.length - 1];
-          updatePrevTraj(prevTraj, delta);
+          // For polyphonic instruments, get the last trajectory on the same string
+          const prevTraj = getLastTrajectoryOnString(prevPhrase, track, stringIdx);
+          if (prevTraj) {
+            updatePrevTraj(prevTraj, delta);
+          }
           updateDurArray(traj, delta);
           traj.durTot -= delta;
           phrase.startTime! += delta;
@@ -5708,8 +5753,14 @@ export default defineComponent({
         }
       } else if (idx === traj.durArray!.length) {
         const delta = newTime - (phrase.startTime! + traj.startTime! + traj.durTot);
-        if (traj.num! < phrase.trajectories.length - 1) {
-          const nextTraj = phrase.trajectories[traj.num! + 1];
+        const isSecondString = checkIfSecondString(traj, track);
+        const stringIdx = isSecondString ? 1 : 0;
+        const trajectories = getTrajectoryArrayForString(phrase, track, stringIdx);
+
+        // Check if there's a next trajectory on the same string in this phrase
+        const trajIndexInString = trajectories.findIndex(t => t.uniqueId === traj.uniqueId);
+        if (trajIndexInString < trajectories.length - 1) {
+          const nextTraj = trajectories[trajIndexInString + 1];
           updateNextTraj(nextTraj, delta);
           if (traj.durArray!.length > 1) {
             traj.durArray = newDurArrayZ(traj, delta);
@@ -5718,24 +5769,26 @@ export default defineComponent({
           phrase.durArrayFromTrajectories();
         } else if (props.piece.phraseGrid[track][traj.phraseIdx! + 1]) {
           const nextPhrase = props.piece.phraseGrid[track][traj.phraseIdx! + 1];
-          const nextTraj = nextPhrase.trajectories[0];
-          updateNextTraj(nextTraj, delta);
-          nextPhrase.startTime! += delta;
-          nextPhrase.durArrayFromTrajectories();
-          nextPhrase.assignStartTimes();
-          const tda = traj.durArray!;
-          if (tda.length > 1) {
-            const initPartZ = tda[tda.length - 1] * traj.durTot;
-            const newDur = traj.durTot + delta;
-            const newPropZ = (initPartZ + delta) / newDur;
-            const newDurArray = tda.map((i => i * traj.durTot / newDur));
-            newDurArray[tda.length - 1] = newPropZ;
-            traj.durArray = newDurArray;
+          const nextTraj = getFirstTrajectoryOnString(nextPhrase, track, stringIdx);
+          if (nextTraj) {
+            updateNextTraj(nextTraj, delta);
+            nextPhrase.startTime! += delta;
+            nextPhrase.durArrayFromTrajectories();
+            nextPhrase.assignStartTimes();
+            const tda = traj.durArray!;
+            if (tda.length > 1) {
+              const initPartZ = tda[tda.length - 1] * traj.durTot;
+              const newDur = traj.durTot + delta;
+              const newPropZ = (initPartZ + delta) / newDur;
+              const newDurArray = tda.map((i => i * traj.durTot / newDur));
+              newDurArray[tda.length - 1] = newPropZ;
+              traj.durArray = newDurArray;
+            }
+            traj.durTot += delta;
+            phrase.durArrayFromTrajectories();
+            phrase.assignStartTimes();
+            updatePhraseChikaris(nextPhrase, delta);
           }
-          traj.durTot += delta;
-          phrase.durArrayFromTrajectories();
-          phrase.assignStartTimes();
-          updatePhraseChikaris(nextPhrase, delta);
         }
         
       }
@@ -5743,28 +5796,42 @@ export default defineComponent({
       let affectedPhraseDivUid = undefined;
       const tIdx = traj.num!;
       const pIdx = traj.phraseIdx!;
+      const isSecondString = checkIfSecondString(traj, track);
+      const stringIdx = isSecondString ? 1 : 0;
+
       if (idx === 0) {
         if (tIdx === 0) {
           if (pIdx > 0) {
             const prevPhrase = props.piece.phraseGrid[track][pIdx - 1];
-            const prevTraj = prevPhrase.trajectories[prevPhrase.trajectories.length - 1];
-            affectedTrajs.push(prevTraj);
-            affectedPhraseDivUid = phrase.uniqueId;
-            
+            const prevTraj = getLastTrajectoryOnString(prevPhrase, track, stringIdx);
+            if (prevTraj) {
+              affectedTrajs.push(prevTraj);
+              affectedPhraseDivUid = phrase.uniqueId;
+            }
           }
         } else {
-          const prevTraj = phrase.trajectories[tIdx - 1];
-          affectedTrajs.push(prevTraj);
+          // Find the previous trajectory on the same string
+          const trajectories = getTrajectoryArrayForString(phrase, track, stringIdx);
+          const trajIndexInString = trajectories.findIndex(t => t.uniqueId === traj.uniqueId);
+          if (trajIndexInString > 0) {
+            const prevTraj = trajectories[trajIndexInString - 1];
+            affectedTrajs.push(prevTraj);
+          }
         }
       } else if (idx === traj.durArray!.length) {
-        if (tIdx < phrase.trajectories.length - 1) {
-          const nextTraj = phrase.trajectories[tIdx + 1];
+        const trajectories = getTrajectoryArrayForString(phrase, track, stringIdx);
+        const trajIndexInString = trajectories.findIndex(t => t.uniqueId === traj.uniqueId);
+
+        if (trajIndexInString < trajectories.length - 1) {
+          const nextTraj = trajectories[trajIndexInString + 1];
           affectedTrajs.push(nextTraj);
         } else if (props.piece.phraseGrid[track][pIdx + 1]) {
           const nextPhrase = props.piece.phraseGrid[track][pIdx + 1];
-          const nextTraj = nextPhrase.trajectories[0];
-          affectedTrajs.push(nextTraj);
-          affectedPhraseDivUid = nextPhrase.uniqueId;
+          const nextTraj = getFirstTrajectoryOnString(nextPhrase, track, stringIdx);
+          if (nextTraj) {
+            affectedTrajs.push(nextTraj);
+            affectedPhraseDivUid = nextPhrase.uniqueId;
+          }
         }
       }
 
