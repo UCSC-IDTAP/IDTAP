@@ -2045,6 +2045,46 @@ const updateInstrumentation = async (transcriptionID: string, instrumentation: I
   return out
 }
 
+const getTranscriptionInstrumentationAndTitles = async (transcriptionID: string) => {
+  let out: { instrumentation: Instrument[], trackTitles: string[] } = { instrumentation: [], trackTitles: [] };
+  const request = {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  };
+  try {
+    const params = new URLSearchParams({ transcriptionID: transcriptionID });
+    const res = await fetch(url + 'getTranscriptionInstrumentationAndTitles?' + params, request);
+    if (res.ok) {
+      out = await res.json()
+    }
+  } catch (err) {
+    console.error(err)
+  }
+  return out
+}
+
+const updateInstrumentationAndTitles = async (transcriptionID: string, instrumentation: Instrument[], trackTitles: string[]) => {
+  let out;
+  const request = {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ transcriptionID, instrumentation, trackTitles })
+  };
+  try {
+    const res = await fetch(url + 'updateInstrumentationAndTitles', request);
+    if (res.ok) {
+      out = await res.json()
+    }
+  } catch (err) {
+    console.error(err)
+  }
+  return out
+}
+
 const updateCollectionInviteCode = async (id: string, inviteCode: string) => {
   let out;
   const request = {
@@ -2236,6 +2276,8 @@ export {
   deleteSavedDisplaySettings,
   getTranscriptionInstrumentation,
   updateInstrumentation,
+  getTranscriptionInstrumentationAndTitles,
+  updateInstrumentationAndTitles,
   updateCollectionInviteCode,
   enrollUserInCollection,
   updateTranscriptionViewed,

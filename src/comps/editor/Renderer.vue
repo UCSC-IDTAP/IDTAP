@@ -575,7 +575,14 @@ export default defineComponent({
       return enumObj;
     })
     const instTrackTexts = computed(() => {
-      return props.instTracks.map(it => `Track ${ it.idx + 1 }: ${ it.inst }`);
+      return props.instTracks.map(it => {
+        const baseText = `Track ${ it.idx + 1 }: ${ it.inst }`;
+        const trackTitle = props.piece.trackTitles?.[it.idx];
+        if (trackTitle && trackTitle.trim() !== '') {
+          return `${baseText} - ${trackTitle}`;
+        }
+        return baseText;
+      });
     })
 
     // NEW: Polyphonic mode state and computed properties - now comes from props

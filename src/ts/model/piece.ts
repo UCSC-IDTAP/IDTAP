@@ -131,6 +131,7 @@ class Piece {
   given_name?: string;
   permissions?: string;
   instrumentation: Instrument[];
+  trackTitles: string[];
   possibleTrajs: { [key: string]: number[] };
   meters: Meter[];
   explicitPermissions: {
@@ -167,6 +168,7 @@ class Piece {
     permissions = undefined,
     sectionStarts = undefined,
     instrumentation = [Instrument.Sitar],
+    trackTitles = undefined,
     meters = [],
     sectionCategorization = undefined,
     explicitPermissions = undefined,
@@ -199,6 +201,7 @@ class Piece {
     permissions?: string,
     sectionStarts?: number[],
     instrumentation?: Instrument[],
+    trackTitles?: string[],
     meters?: Meter[],
     sectionCategorization?: SecCatType[],
     explicitPermissions?: {
@@ -319,6 +322,22 @@ class Piece {
     this.soloist = soloist;
     this.soloInstrument = soloInstrument;
     this.instrumentation = instrumentation;
+
+    // Initialize trackTitles array to match instrumentation length
+    if (trackTitles !== undefined) {
+      this.trackTitles = trackTitles;
+    } else {
+      // Create empty strings for each instrument track
+      this.trackTitles = new Array(this.instrumentation.length).fill('');
+    }
+    // Ensure trackTitles array matches instrumentation length
+    while (this.trackTitles.length < this.instrumentation.length) {
+      this.trackTitles.push('');
+    }
+    while (this.trackTitles.length > this.instrumentation.length) {
+      this.trackTitles.pop();
+    }
+
     // this is really confusing becuase id12 is silent. The current solution 
     // is to just skip that number; so 12 listed below is really id13
     this.possibleTrajs = {
@@ -444,6 +463,22 @@ class Piece {
 	return this.assemblageDescriptors.map(ad => 
 	  Assemblage.fromDescriptor(ad, this.phraseGrid.flat())
 	)
+  }
+
+  // Ensure trackTitles array stays synchronized with instrumentation
+  syncTrackTitles() {
+    // Initialize trackTitles if it doesn't exist
+    if (!this.trackTitles) {
+      this.trackTitles = new Array(this.instrumentation.length).fill('');
+    }
+
+    // Ensure trackTitles array matches instrumentation length
+    while (this.trackTitles.length < this.instrumentation.length) {
+      this.trackTitles.push('');
+    }
+    while (this.trackTitles.length > this.instrumentation.length) {
+      this.trackTitles.pop();
+    }
   }
 
   chikariFreqs(instIdx: number) {
@@ -1306,6 +1341,7 @@ class Piece {
       given_name: this.given_name,
       sectionStarts: this.sectionStarts,
       instrumentation: this.instrumentation,
+      trackTitles: this.trackTitles,
       meters: this.meters,
       sectionCategorization: this.sectionCategorization,
       explicitPermissions: this.explicitPermissions,

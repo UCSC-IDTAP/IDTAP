@@ -542,6 +542,7 @@ type NewPieceInfoType = {
   clone?: boolean;
   origID: string;
   instrumentation?: string[];
+  trackTitles?: string[];
   phrases?: Phrase[];
   family_name?: string;
   given_name?: string;
@@ -571,6 +572,7 @@ type RagaNewPieceInfoType = {
   clone?: boolean;
   origID: string;
   instrumentation?: Instrument[];
+  trackTitles?: string[];
   phrases?: Phrase[];
   family_name?: string;
   given_name?: string;

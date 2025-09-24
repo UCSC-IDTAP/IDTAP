@@ -21,6 +21,13 @@
                 {{inst}}
               </option>
             </select>
+            <input
+              type="text"
+              v-model="trackTitles[i]"
+              :placeholder="`Track Title`"
+              class="track-title-input"
+              @keydown.stop
+              />
           </div>
         </div>
       </div>
@@ -60,9 +67,9 @@ import {
   onUnmounted 
 } from 'vue';
 import { useStore } from 'vuex';
-import { 
-  getTranscriptionInstrumentation, 
-  updateInstrumentation 
+import {
+  getTranscriptionInstrumentationAndTitles,
+  updateInstrumentationAndTitles
 } from '@/js/serverCalls.ts';
 import { TransMetadataType } from '@shared/types';
 import { Instrument } from '@shared/enums';
@@ -82,7 +89,9 @@ export default defineComponent({
   setup(props, { emit }) {
     const store = useStore();
     const instrumentation = ref<(Instrument | undefined)[]>([]);
+    const trackTitles = ref<string[]>([]);
     const initInstrumentation = ref<Instrument[]>([]);
+    const initTrackTitles = ref<string[]>([]);
     const instruments: Instrument[] = [
       Instrument.Sitar,
       Instrument.Sarangi,
@@ -102,12 +111,15 @@ export default defineComponent({
           for (let i = instrumentation.value.length; i < newVal; i++) {
             if (initInstrumentation.value[i]) {
               instrumentation.value.push(initInstrumentation.value[i]);
+              trackTitles.value.push(initTrackTitles.value[i] || '');
             } else {
-              instrumentation.value.push(undefined)
+              instrumentation.value.push(undefined);
+              trackTitles.value.push('');
             }
           }
         } else if (newVal < instrumentation.value.length) {
-          instrumentation.value = instrumentation.value.slice(0, newVal)
+          instrumentation.value = instrumentation.value.slice(0, newVal);
+          trackTitles.value = trackTitles.value.slice(0, newVal);
         }
       }
     });
@@ -125,9 +137,13 @@ export default defineComponent({
     const altered = computed(() => {
       const c1 = initInstrumentation.value.some((inst, i) => {
         return inst !== instrumentation.value[i];
-      })
+      });
       const c2 = initInstrumentation.value.length !== instrumentation.value.length;
-      return c1 || c2;
+      const c3 = initTrackTitles.value.some((title, i) => {
+        return title !== (trackTitles.value[i] || '');
+      });
+      const c4 = initTrackTitles.value.length !== trackTitles.value.length;
+      return c1 || c2 || c3 || c4;
     });
     const permissionToEdit = (piece: TransMetadataType) => {
       const id = store.state.userID!;
@@ -142,7 +158,7 @@ export default defineComponent({
         }
         const insts = instrumentation.value as Instrument[];
         try {
-          await updateInstrumentation(props.transMetadata._id, insts);
+          await updateInstrumentationAndTitles(props.transMetadata._id, insts, trackTitles.value);
         } catch (e) {
           console.error(e);
         }
@@ -160,8 +176,11 @@ export default defineComponent({
     })
 
     onMounted(async () => {
-      initInstrumentation.value = await getTranscriptionInstrumentation(props.transMetadata._id);
+      const data = await getTranscriptionInstrumentationAndTitles(props.transMetadata._id);
+      initInstrumentation.value = data.instrumentation;
       instrumentation.value = [...initInstrumentation.value];
+      initTrackTitles.value = data.trackTitles;
+      trackTitles.value = [...initTrackTitles.value];
       window.addEventListener('click', (e) => {
         if (e.target === document.querySelector('.modal')) {
           emit('close');
@@ -187,8 +206,9 @@ export default defineComponent({
       altered,
       permissionText,
       permissible,
-      submitNewInstrumentation
-
+      submitNewInstrumentation,
+      trackTitles,
+      initTrackTitles
     }
 
   }
@@ -199,7 +219,7 @@ export default defineComponent({
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: 350px;
+    width: 425px;
     height: 250px;
     background-color: lightgrey;
     border: 1px solid black;
@@ -275,6 +295,18 @@ export default defineComponent({
   align-items: center;
   color: red;
   font-size: 13px;
+}
+
+.track-title-input {
+  margin-left: 8px;
+  padding: 4px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 12px;
+  width: 100px;
+  min-width: 100px;
+  max-width: 100px;
+  flex-shrink: 0;
 }
 
 

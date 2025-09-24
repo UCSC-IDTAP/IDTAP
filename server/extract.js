@@ -68731,7 +68731,6 @@ var Trajectory = class _Trajectory {
     }
     (_a = this.durArray) == null ? void 0 : _a.forEach((d, idx) => {
       if (d === 0) {
-        console.log("removing zero dur");
         this.durArray.splice(idx, 1);
         this.logFreqs.splice(idx + 1, 1);
         this.pitches.splice(idx + 1, 1);
@@ -69020,7 +69019,7 @@ var Trajectory = class _Trajectory {
       const starts = getStarts(durArray);
       const index = (0, import_lodash2.findLastIndex)(starts, (s) => x2 >= s);
       if (index === -1) {
-        console.log(outs, index);
+        throw new Error(`Invalid interpolation index: ${index}`);
       }
       return outs[index](x2);
     };
@@ -69459,15 +69458,12 @@ var Phrase = class _Phrase {
     this.raga = raga;
     if (trajectoryGrid !== void 0) {
       this.trajectoryGrid = trajectoryGrid;
-      for (let i = trajectoryGrid.length; i < instrumentation.length; i++) {
+      while (this.trajectoryGrid.length < 2) {
         this.trajectoryGrid.push([]);
       }
-      this.trajectoryGrid.length = instrumentation.length;
     } else {
-      this.trajectoryGrid = [trajectories];
-      for (let i = 1; i < instrumentation.length; i++) {
-        this.trajectoryGrid.push([]);
-      }
+      this.trajectoryGrid = [trajectories || []];
+      this.trajectoryGrid.push([]);
     }
     if (chikariGrid !== void 0) {
       this.chikariGrid = chikariGrid;
@@ -69543,16 +69539,40 @@ var Phrase = class _Phrase {
   }
   assignPhraseIdx() {
     this.trajectories.forEach((traj) => traj.phraseIdx = this.pieceIdx);
+    [0, 1].forEach((stringIdx) => {
+      if (this.trajectoryGrid[stringIdx]) {
+        this.trajectoryGrid[stringIdx].forEach((traj) => traj.phraseIdx = this.pieceIdx);
+      }
+    });
   }
   assignTrajNums() {
     this.trajectories.forEach((traj, i) => traj.num = i);
+    [0, 1].forEach((stringIdx) => {
+      if (this.trajectoryGrid[stringIdx]) {
+        this.trajectoryGrid[stringIdx].forEach((traj, i) => traj.num = i);
+      }
+    });
   }
   durTotFromTrajectories() {
-    this.durTot = this.trajectories.map((t) => t.durTot).reduce((a, b) => a + b, 0);
+    let maxStringDuration = 0;
+    this.trajectoryGrid.forEach((stringTrajs, stringIdx) => {
+      if (stringTrajs && stringTrajs.length > 0) {
+        const stringDuration = stringTrajs.map((t) => t.durTot).reduce((a, b) => a + b, 0);
+        maxStringDuration = Math.max(maxStringDuration, stringDuration);
+      }
+    });
+    if (maxStringDuration === 0 && this.trajectories.length > 0) {
+      maxStringDuration = this.trajectories.map((t) => t.durTot).reduce((a, b) => a + b, 0);
+    }
+    this.durTot = maxStringDuration;
   }
   durArrayFromTrajectories() {
     this.durTotFromTrajectories();
-    this.durArray = this.trajectories.map((t) => t.durTot / this.durTot);
+    if (this.trajectories.length > 0 && this.durTot > 0) {
+      this.durArray = this.trajectories.map((t) => t.durTot / this.durTot);
+    } else {
+      this.durArray = [];
+    }
   }
   compute(x, logScale = false) {
     if (this.durArray === void 0) {
@@ -69587,6 +69607,20 @@ var Phrase = class _Phrase {
     this.trajectories.forEach((traj, i) => {
       traj.startTime = starts[i];
     });
+    [0, 1].forEach((stringIdx) => {
+      if (this.trajectoryGrid[stringIdx]) {
+        const stringTrajs = this.trajectoryGrid[stringIdx];
+        const stringDurs = stringTrajs.map((t) => t.durTot);
+        const stringTotalDur = stringDurs.reduce((a, b) => a + b, 0);
+        if (stringTotalDur > 0) {
+          const stringDurArray = stringDurs.map((d) => d / stringTotalDur);
+          const stringStarts = getStarts(stringDurArray).map((s) => s * stringTotalDur);
+          stringTrajs.forEach((traj, i) => {
+            traj.startTime = stringStarts[i];
+          });
+        }
+      }
+    });
   }
   getRange() {
     const allPitches = this.trajectories.map((t) => t.pitches).flat();
@@ -69613,50 +69647,98 @@ var Phrase = class _Phrase {
     };
   }
   consolidateSilentTrajs() {
-    let chain = false;
-    let start = void 0;
-    const delIdxs = [];
-    this.trajectories.forEach((traj, i) => {
-      if (traj.id === 12) {
-        if (chain === false) {
-          start = i;
-          chain = true;
-        }
-        if (i === this.trajectories.length - 1) {
-          if (start === void 0) {
-            throw new Error("start is undefined");
+    const consolidateArray = (trajArray) => {
+      var _a;
+      const result = [];
+      let i = 0;
+      while (i < trajArray.length) {
+        const currentTraj = trajArray[i];
+        if (currentTraj.id === 12) {
+          let totalDuration = currentTraj.durTot;
+          let j = i + 1;
+          while (j < trajArray.length && trajArray[j].id === 12) {
+            totalDuration += trajArray[j].durTot;
+            j++;
           }
-          const extraDur = this.trajectories.slice(start + 1).map((t) => t.durTot).reduce((a, b) => a + b, 0);
-          this.trajectories[start].durTot += extraDur;
-          const dIdxs = [...Array(this.trajectories.length - start - 1)].map((_2, i2) => i2 + start + 1);
-          delIdxs.push(...dIdxs);
-        }
-      } else {
-        if (chain === true) {
-          if (start === void 0) {
-            throw new Error("start is undefined");
-          }
-          const extraDur = this.trajectories.slice(start + 1, i).map((t) => t.durTot).reduce((a, b) => a + b, 0);
-          const dIdxs = [...Array(i - (start + 1))].map((_2, i2) => i2 + start + 1);
-          this.trajectories[start].durTot += extraDur;
-          delIdxs.push(...dIdxs);
-          chain = false;
-          start = void 0;
+          const consolidatedTraj = new Trajectory({
+            id: 12,
+            durTot: totalDuration,
+            pitches: [],
+            fundID12: currentTraj.fundID12 || ((_a = this.raga) == null ? void 0 : _a.fundamental),
+            instrumentation: currentTraj.instrumentation,
+            uniqueId: currentTraj.uniqueId
+            // Preserve the unique ID from first trajectory
+          });
+          result.push(consolidatedTraj);
+          i = j;
+        } else {
+          result.push(currentTraj);
+          i++;
         }
       }
-    });
-    const newTs = this.trajectories.filter((traj) => {
-      if (traj.num === void 0) {
-        console.log(traj);
-        throw new Error("traj.num is undefined");
+      return result;
+    };
+    this.trajectories = consolidateArray(this.trajectories);
+    this.trajectoryGrid[0] = this.trajectories;
+    if (this.trajectoryGrid[1] && this.trajectoryGrid[1].length > 0) {
+      this.trajectoryGrid[1] = consolidateArray(this.trajectoryGrid[1]);
+    }
+    this.reset();
+  }
+  consolidateContinuousTrajectories() {
+    this.consolidateSilentTrajs();
+    if (this.trajectoryGrid[1] && this.trajectoryGrid[1].length > 0) {
+      const hasInitialPluck = (traj) => {
+        if (!traj.articulations || Object.keys(traj.articulations).length === 0) {
+          return false;
+        }
+        const firstArticulation = traj.articulations["0.00"];
+        return (firstArticulation == null ? void 0 : firstArticulation.name) === "pluck";
+      };
+      const result = [];
+      let i = 0;
+      const trajectories = this.trajectoryGrid[1];
+      while (i < trajectories.length) {
+        const currentTraj = trajectories[i];
+        if (currentTraj.id === 0) {
+          let j = i + 1;
+          let totalDuration = currentTraj.durTot;
+          while (j < trajectories.length && trajectories[j].id === 0 && trajectories[j].pitches.length === 1 && currentTraj.pitches[0].frequency === trajectories[j].pitches[0].frequency && !hasInitialPluck(trajectories[j])) {
+            totalDuration += trajectories[j].durTot;
+            j++;
+          }
+          if (j > i + 1) {
+            const consolidatedTraj = new Trajectory({
+              id: 0,
+              durTot: totalDuration,
+              pitches: [currentTraj.pitches[0]],
+              // Keep the single pitch
+              fundID12: currentTraj.fundID12,
+              instrumentation: currentTraj.instrumentation,
+              // Preserve properties from first trajectory
+              articulations: currentTraj.articulations,
+              // Keep original articulations
+              vowel: currentTraj.vowel,
+              vowelIpa: currentTraj.vowelIpa,
+              vowelHindi: currentTraj.vowelHindi,
+              groupId: currentTraj.groupId,
+              uniqueId: currentTraj.uniqueId
+              // Preserve the unique ID from first trajectory
+            });
+            result.push(consolidatedTraj);
+            i = j;
+          } else {
+            result.push(currentTraj);
+            i++;
+          }
+        } else {
+          result.push(currentTraj);
+          i++;
+        }
       }
-      return !delIdxs.includes(traj.num);
-    });
-    this.trajectoryGrid[0] = newTs;
-    this.durArrayFromTrajectories();
-    this.assignStartTimes();
-    this.assignTrajNums();
-    this.assignPhraseIdx();
+      this.trajectoryGrid[1] = result;
+      this.reset();
+    }
   }
   chikarisDuringTraj(traj, track) {
     const start = traj.startTime;
@@ -69664,7 +69746,6 @@ var Phrase = class _Phrase {
     const end = start + dur;
     const chikaris = this.chikariGrid[0];
     const chikarisDuring = Object.keys(chikaris).filter((k) => {
-      const chikari = chikaris[k];
       const time = Number(k);
       return time >= start && time <= end;
     }).map((k) => {
@@ -69683,6 +69764,9 @@ var Phrase = class _Phrase {
   }
   get trajectories() {
     return this.trajectoryGrid[0];
+  }
+  set trajectories(arr) {
+    this.trajectoryGrid[0] = arr;
   }
   get chikaris() {
     return this.chikariGrid[0];
@@ -69746,13 +69830,14 @@ var Phrase = class _Phrase {
     }
     return allPitches;
   }
-  firstTrajIdxs() {
+  firstTrajIdxs(stringIdx = 0) {
     const idxs = [];
     let ct = 0;
     let silentTrigger = false;
     let lastVowel = void 0;
     let endConsonantTrigger = void 0;
-    this.trajectories.forEach((traj, tIdx) => {
+    const trajectoryArray = this.trajectoryGrid[stringIdx] || this.trajectories;
+    trajectoryArray.forEach((traj, tIdx) => {
       if (traj.id !== 12) {
         const c1 = ct === 0;
         const c2 = silentTrigger;
@@ -69770,9 +69855,10 @@ var Phrase = class _Phrase {
     });
     return idxs;
   }
-  trajIdxFromTime(time) {
+  trajIdxFromTime(time, stringIdx = 0) {
     const phraseTime = time - this.startTime;
-    const trajs = this.trajectories.filter((traj) => {
+    const trajectoryArray = this.trajectoryGrid[stringIdx] || this.trajectories;
+    const trajs = trajectoryArray.filter((traj) => {
       const smallOffset = 1e-10;
       const a = phraseTime >= traj.startTime - smallOffset;
       const b = phraseTime < traj.startTime + traj.durTot;
@@ -69781,7 +69867,7 @@ var Phrase = class _Phrase {
     if (trajs.length === 0) {
       throw new Error("No trajectory found");
     }
-    return trajs[0].num;
+    return trajectoryArray.indexOf(trajs[0]);
   }
   toJSON() {
     return {
@@ -71842,6 +71928,192 @@ var Meter = class _Meter {
       return 60 * summed / this.tempo;
     }
   }
+  // Helper methods for musical time calculation
+  getPulsesPerCycle() {
+    let pulsesPerCycle = 1;
+    for (const level of this.hierarchy) {
+      if (typeof level === "number") {
+        pulsesPerCycle *= level;
+      } else {
+        pulsesPerCycle *= level.reduce((sum2, val) => sum2 + val, 0);
+      }
+    }
+    return pulsesPerCycle;
+  }
+  hierarchicalPositionToPulseIndex(positions, cycleNumber) {
+    let pulseIndex = 0;
+    let multiplier = 1;
+    for (let level = this.hierarchy.length - 1; level >= 0; level--) {
+      const position = positions[level] || 0;
+      pulseIndex += position * multiplier;
+      let hierarchySize = this.hierarchy[level];
+      if (Array.isArray(hierarchySize)) {
+        hierarchySize = hierarchySize.reduce((sum2, val) => sum2 + val, 0);
+      }
+      multiplier *= hierarchySize;
+    }
+    const cycleOffset = cycleNumber * this.getPulsesPerCycle();
+    return pulseIndex + cycleOffset;
+  }
+  calculateLevelStartTime(positions, cycleNumber, referenceLevel) {
+    const startPositions = positions.slice(0, referenceLevel + 1);
+    while (startPositions.length < this.hierarchy.length) {
+      startPositions.push(0);
+    }
+    const startPulseIndex = this.hierarchicalPositionToPulseIndex(startPositions, cycleNumber);
+    if (startPulseIndex < this.allPulses.length) {
+      return this.allPulses[startPulseIndex].realTime;
+    }
+    return this.startTime + cycleNumber * this.cycleDur;
+  }
+  calculateLevelDuration(positions, cycleNumber, referenceLevel) {
+    const startTime = this.calculateLevelStartTime(positions, cycleNumber, referenceLevel);
+    const nextPositions = positions.slice();
+    nextPositions[referenceLevel] = (nextPositions[referenceLevel] || 0) + 1;
+    let hierarchySize = this.hierarchy[referenceLevel];
+    if (Array.isArray(hierarchySize)) {
+      hierarchySize = hierarchySize.reduce((sum2, val) => sum2 + val, 0);
+    }
+    if (nextPositions[referenceLevel] >= hierarchySize) {
+      const nextCycleNumber = cycleNumber + 1;
+      if (nextCycleNumber >= this.repetitions) {
+        return this.startTime + this.repetitions * this.cycleDur - startTime;
+      }
+      nextPositions[referenceLevel] = 0;
+      return this.calculateLevelStartTime(nextPositions, nextCycleNumber, referenceLevel) - startTime;
+    }
+    const endTime = this.calculateLevelStartTime(nextPositions, cycleNumber, referenceLevel);
+    return endTime - startTime;
+  }
+  validateReferenceLevel(referenceLevel) {
+    if (referenceLevel === void 0) {
+      return this.hierarchy.length - 1;
+    }
+    if (!Number.isInteger(referenceLevel)) {
+      throw new Error(`reference_level must be an integer, got ${typeof referenceLevel}`);
+    }
+    if (referenceLevel < 0) {
+      throw new Error(`reference_level must be non-negative, got ${referenceLevel}`);
+    }
+    if (referenceLevel >= this.hierarchy.length) {
+      throw new Error(`reference_level ${referenceLevel} exceeds hierarchy depth ${this.hierarchy.length}`);
+    }
+    return referenceLevel;
+  }
+  pulseIndexToHierarchicalPosition(pulseIndex, _cycleNumber) {
+    const withinCycleIndex = pulseIndex % this.getPulsesPerCycle();
+    const positions = [];
+    let remainingIndex = Math.max(0, withinCycleIndex);
+    for (let level = 0; level < this.hierarchy.length; level++) {
+      let hierarchySize = this.hierarchy[level];
+      if (Array.isArray(hierarchySize)) {
+        hierarchySize = hierarchySize.reduce((sum2, val) => sum2 + val, 0);
+      }
+      let divisor = 1;
+      for (let innerLevel = level + 1; innerLevel < this.hierarchy.length; innerLevel++) {
+        let innerSize = this.hierarchy[innerLevel];
+        if (Array.isArray(innerSize)) {
+          innerSize = innerSize.reduce((sum2, val) => sum2 + val, 0);
+        }
+        divisor *= innerSize;
+      }
+      const positionAtLevel = Math.floor(remainingIndex / divisor);
+      positions.push(positionAtLevel);
+      remainingIndex = remainingIndex % divisor;
+    }
+    return positions;
+  }
+  getMusicalTime(realTime, referenceLevel) {
+    if (realTime < this.startTime) {
+      return false;
+    }
+    const endTime = this.startTime + this.repetitions * this.cycleDur;
+    if (realTime >= endTime) {
+      return false;
+    }
+    this.validateReferenceLevel(referenceLevel);
+    if (!this.allPulses || this.allPulses.length === 0) {
+      throw new Error("No pulse data available for meter. Pulse data is required for musical time calculation.");
+    }
+    let cycleNumber = null;
+    for (let cycle = 0; cycle < this.repetitions; cycle++) {
+      const cycleStartPulseIdx2 = cycle * this.getPulsesPerCycle();
+      if (cycleStartPulseIdx2 < this.allPulses.length) {
+        const cycleStartTime = this.allPulses[cycleStartPulseIdx2].realTime;
+        const nextCycleStartPulseIdx = (cycle + 1) * this.getPulsesPerCycle();
+        let cycleEndTime;
+        if (nextCycleStartPulseIdx < this.allPulses.length) {
+          cycleEndTime = this.allPulses[nextCycleStartPulseIdx].realTime;
+        } else {
+          cycleEndTime = this.startTime + this.repetitions * this.cycleDur;
+        }
+        if (cycle === this.repetitions - 1) {
+          if (cycleStartTime <= realTime && realTime <= cycleEndTime) {
+            cycleNumber = cycle;
+            break;
+          }
+        } else {
+          if (cycleStartTime <= realTime && realTime < cycleEndTime) {
+            cycleNumber = cycle;
+            break;
+          }
+        }
+      }
+    }
+    if (cycleNumber === null) {
+      throw new Error(`Unable to determine cycle for time ${realTime} using pulse data`);
+    }
+    const cycleStartPulseIdx = cycleNumber * this.getPulsesPerCycle();
+    const cycleEndPulseIdx = Math.min((cycleNumber + 1) * this.getPulsesPerCycle(), this.allPulses.length);
+    let currentPulseIndex = null;
+    for (let pulseIdx = cycleStartPulseIdx; pulseIdx < cycleEndPulseIdx; pulseIdx++) {
+      const pulseTime = this.allPulses[pulseIdx].realTime;
+      if (pulseTime <= realTime) {
+        currentPulseIndex = pulseIdx;
+      } else {
+        break;
+      }
+    }
+    if (currentPulseIndex === null) {
+      currentPulseIndex = cycleStartPulseIdx;
+    }
+    const positions = this.pulseIndexToHierarchicalPosition(currentPulseIndex, cycleNumber);
+    const currentPulseTime = this.allPulses[currentPulseIndex].realTime;
+    let fractionalBeat;
+    if (referenceLevel !== void 0 && referenceLevel < this.hierarchy.length - 1) {
+      const refLevelDuration = this.calculateLevelDuration(positions, cycleNumber, referenceLevel);
+      const refLevelStartTime = this.calculateLevelStartTime(positions, cycleNumber, referenceLevel);
+      if (refLevelDuration > 0) {
+        const timeFromLevelStart = realTime - refLevelStartTime;
+        fractionalBeat = timeFromLevelStart / refLevelDuration;
+      } else {
+        fractionalBeat = 0;
+      }
+    } else {
+      if (currentPulseIndex + 1 < this.allPulses.length) {
+        const nextPulseTime = this.allPulses[currentPulseIndex + 1].realTime;
+        const pulseDuration = nextPulseTime - currentPulseTime;
+        if (pulseDuration <= 0) {
+          fractionalBeat = 0;
+        } else {
+          const timeFromCurrentPulse = realTime - currentPulseTime;
+          fractionalBeat = timeFromCurrentPulse / pulseDuration;
+        }
+      } else {
+        fractionalBeat = 0;
+      }
+    }
+    fractionalBeat = Math.max(0, Math.min(0.9999999999999999, fractionalBeat));
+    let finalPositions = positions;
+    if (referenceLevel !== void 0 && referenceLevel < this.hierarchy.length - 1) {
+      finalPositions = positions.slice(0, referenceLevel + 1);
+    }
+    return {
+      cycleNumber,
+      hierarchicalPosition: finalPositions,
+      fractionalBeat
+    };
+  }
   toJSON() {
     return {
       uniqueId: this.uniqueId,
@@ -71968,6 +72240,7 @@ var Piece = class _Piece {
   given_name;
   permissions;
   instrumentation;
+  trackTitles;
   possibleTrajs;
   meters;
   explicitPermissions;
@@ -71999,6 +72272,7 @@ var Piece = class _Piece {
     permissions = void 0,
     sectionStarts = void 0,
     instrumentation = ["Sitar" /* Sitar */],
+    trackTitles = void 0,
     meters = [],
     sectionCategorization = void 0,
     explicitPermissions = void 0,
@@ -72110,6 +72384,17 @@ var Piece = class _Piece {
     this.soloist = soloist;
     this.soloInstrument = soloInstrument;
     this.instrumentation = instrumentation;
+    if (trackTitles !== void 0) {
+      this.trackTitles = trackTitles;
+    } else {
+      this.trackTitles = new Array(this.instrumentation.length).fill("");
+    }
+    while (this.trackTitles.length < this.instrumentation.length) {
+      this.trackTitles.push("");
+    }
+    while (this.trackTitles.length > this.instrumentation.length) {
+      this.trackTitles.pop();
+    }
     this.possibleTrajs = {
       ["Sitar" /* Sitar */]: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
       ["Vocal (M)" /* Vocal_M */]: [0, 1, 2, 3, 4, 5, 6, 12, 13],
@@ -72133,7 +72418,6 @@ var Piece = class _Piece {
         debugger;
       }
       if (ss.length > this.sectionCatGrid[ssIdx].length) {
-        console.log("this is where the fix is");
         const dif = ss.length - this.sectionCatGrid[ssIdx].length;
         for (let i = 0; i < dif; i++) {
           this.sectionCatGrid[ssIdx].push(initSecCategorization());
@@ -72155,6 +72439,31 @@ var Piece = class _Piece {
     } else {
       this.assemblageDescriptors = assemblageDescriptors;
     }
+    this.ensureStringSynchronization();
+  }
+  ensureStringSynchronization() {
+    this.phraseGrid.forEach((trackPhrases, trackIdx) => {
+      const instrument = this.instrumentation[trackIdx];
+      if (instrument === "Sitar" /* Sitar */ || instrument === "Sarangi" /* Sarangi */) {
+        trackPhrases.forEach((phrase) => {
+          if (!phrase.trajectoryGrid[1]) {
+            phrase.trajectoryGrid[1] = [];
+          }
+          const hasNonSilentContent = phrase.trajectoryGrid[1].some((traj) => traj.id !== 12);
+          if (phrase.trajectoryGrid[1].length === 0 || !hasNonSilentContent) {
+            phrase.trajectoryGrid[1] = [];
+            const silentTraj = new Trajectory({
+              id: 12,
+              durTot: phrase.durTot,
+              fundID12: this.raga.fundamental,
+              startTime: 0
+            });
+            phrase.trajectoryGrid[1].push(silentTraj);
+            phrase.reset();
+          }
+        });
+      }
+    });
   }
   get phrases() {
     return this.phraseGrid[0];
@@ -72184,6 +72493,18 @@ var Piece = class _Piece {
     return this.assemblageDescriptors.map(
       (ad) => Assemblage.fromDescriptor(ad, this.phraseGrid.flat())
     );
+  }
+  // Ensure trackTitles array stays synchronized with instrumentation
+  syncTrackTitles() {
+    if (!this.trackTitles) {
+      this.trackTitles = new Array(this.instrumentation.length).fill("");
+    }
+    while (this.trackTitles.length < this.instrumentation.length) {
+      this.trackTitles.push("");
+    }
+    while (this.trackTitles.length > this.instrumentation.length) {
+      this.trackTitles.pop();
+    }
   }
   chikariFreqs(instIdx) {
     const allChikaris = [];
@@ -72378,12 +72699,15 @@ var Piece = class _Piece {
   trackFromTraj(traj) {
     let track = void 0;
     for (let i = 0; i < this.instrumentation.length; i++) {
-      const trajs = this.allTrajectories(i);
-      const trajUIds = trajs.map((t) => t.uniqueId);
-      if (trajUIds.includes(traj.uniqueId)) {
-        track = i;
-        break;
+      for (let stringIdx = 0; stringIdx < 2; stringIdx++) {
+        const trajs = this.allTrajectories(i, stringIdx);
+        const trajUIds = trajs.map((t) => t.uniqueId);
+        if (trajUIds.includes(traj.uniqueId)) {
+          track = i;
+          break;
+        }
       }
+      if (track !== void 0) break;
     }
     if (track === void 0) {
       throw new Error("Trajectory not found");
@@ -72393,17 +72717,31 @@ var Piece = class _Piece {
   trackFromTrajUId(trajUId) {
     let track = void 0;
     for (let i = 0; i < this.instrumentation.length; i++) {
-      const trajs = this.allTrajectories(i);
-      const trajUIds = trajs.map((t) => t.uniqueId);
-      if (trajUIds.includes(trajUId)) {
-        track = i;
-        break;
+      for (let stringIdx = 0; stringIdx < 2; stringIdx++) {
+        const trajs = this.allTrajectories(i, stringIdx);
+        const trajUIds = trajs.map((t) => t.uniqueId);
+        if (trajUIds.includes(trajUId)) {
+          track = i;
+          break;
+        }
       }
+      if (track !== void 0) break;
     }
     if (track === void 0) {
       throw new Error("Trajectory not found");
     }
     return track;
+  }
+  stringFromTraj(traj) {
+    const track = this.trackFromTraj(traj);
+    for (let stringIdx = 0; stringIdx < 2; stringIdx++) {
+      const trajs = this.allTrajectories(track, stringIdx);
+      const trajUIds = trajs.map((t) => t.uniqueId);
+      if (trajUIds.includes(traj.uniqueId)) {
+        return stringIdx;
+      }
+    }
+    throw new Error("Trajectory not found in any string");
   }
   phraseFromUId(uId) {
     let phrase = void 0;
@@ -72430,7 +72768,6 @@ var Piece = class _Piece {
       }
     }
     if (track === void 0) {
-      console.log("here");
       throw new Error("Phrase not found");
     }
     return track;
@@ -72473,14 +72810,18 @@ var Piece = class _Piece {
   get lowestPitchNumber() {
     return Math.min(...this.allPitches({ pitchNumber: true }));
   }
-  allTrajectories(inst = 0) {
+  allTrajectories(inst = 0, stringIdx = 0) {
     const allTrajectories = [];
-    this.phraseGrid[inst].forEach((p) => allTrajectories.push(...p.trajectories));
+    this.phraseGrid[inst].forEach((phrase, pIdx) => {
+      if (phrase.trajectoryGrid[stringIdx]) {
+        allTrajectories.push(...phrase.trajectoryGrid[stringIdx]);
+      }
+    });
     return allTrajectories;
   }
-  trajFromTime(time, track) {
-    const trajs = this.allTrajectories(track);
-    const starts = this.trajStartTimes(track);
+  trajFromTime(time, track, stringIdx = 0) {
+    const trajs = this.allTrajectories(track, stringIdx);
+    const starts = this.trajStartTimes(track, stringIdx);
     const endTimes = starts.map((s, i) => s + trajs[i].durTot);
     const idx = (0, import_lodash3.findLastIndex)(starts, (s) => time >= s);
     if (idx === -1) {
@@ -72495,7 +72836,10 @@ var Piece = class _Piece {
     }
   }
   trajFromUId(uId, track) {
-    const traj = this.allTrajectories(track).find((t) => t.uniqueId === uId);
+    let traj = this.allTrajectories(track, 0).find((t) => t.uniqueId === uId);
+    if (!traj) {
+      traj = this.allTrajectories(track, 1).find((t) => t.uniqueId === uId);
+    }
     if (traj === void 0) {
       throw new Error("Trajectory not found");
     }
@@ -72511,8 +72855,20 @@ var Piece = class _Piece {
     const idx = (0, import_lodash3.findLastIndex)(starts, (s) => time >= s);
     return idx;
   }
-  trajStartTimes(inst = 0) {
-    const trajs = this.allTrajectories(inst);
+  trajStartTimes(inst = 0, stringIdx = 0) {
+    const trajs = this.allTrajectories(inst, stringIdx);
+    if (stringIdx > 0) {
+      return trajs.map((traj) => {
+        const phrase = this.phraseGrid[inst].find(
+          (p) => p.trajectoryGrid[stringIdx] && p.trajectoryGrid[stringIdx].includes(traj)
+        );
+        if (!phrase) {
+          console.error(`Phrase not found for trajectory ${traj.uniqueId} on string ${stringIdx}`);
+          return 0;
+        }
+        return phrase.startTime + traj.startTime;
+      });
+    }
     const durs = trajs.map((t) => t.durTot);
     return durs.reduce((acc, dur, idx) => {
       if (idx < durs.length - 1) {
@@ -72521,8 +72877,8 @@ var Piece = class _Piece {
       return acc;
     }, [0]);
   }
-  chunkedTrajs(inst = 0, duration = 30) {
-    const trajs = this.allTrajectories(inst);
+  chunkedTrajs(inst = 0, duration = 30, stringIdx = 0) {
+    const trajs = this.allTrajectories(inst, stringIdx);
     const durs = trajs.map((t) => t.durTot);
     const starts = getStarts(durs);
     const endTimes = getEnds(durs);
@@ -72547,8 +72903,8 @@ var Piece = class _Piece {
     });
     return chunks;
   }
-  allDisplayBols(inst = 0) {
-    const trajs = this.allTrajectories(inst);
+  allDisplayBols(inst = 0, stringIdx = 0) {
+    const trajs = this.allTrajectories(inst, stringIdx);
     const starts = this.trajStartTimes(inst);
     const idxs = [];
     const bols = trajs.filter((t, tIdx) => {
@@ -72566,8 +72922,8 @@ var Piece = class _Piece {
     });
     return bols;
   }
-  allDisplaySargam(inst = 0) {
-    const trajs = this.allTrajectories(inst);
+  allDisplaySargam(inst = 0, stringIdx = 0) {
+    const trajs = this.allTrajectories(inst, stringIdx);
     const starts = this.trajStartTimes(inst);
     const sargams = [];
     let lastPitch = {
@@ -72652,32 +73008,34 @@ var Piece = class _Piece {
     });
     return phraseDivObjs;
   }
-  allDisplayVowels(inst = 0) {
+  allDisplayVowels(inst = 0, stringIdx = 0) {
     const vocalInsts = ["Vocal (M)" /* Vocal_M */, "Vocal (F)" /* Vocal_F */];
     const displayVowels = [];
     if (vocalInsts.includes(this.instrumentation[inst])) {
       this.phraseGrid[inst].forEach((phrase) => {
-        const firstTrajIdxs = phrase.firstTrajIdxs();
+        const firstTrajIdxs = phrase.firstTrajIdxs(stringIdx);
         const phraseStart = phrase.startTime;
         firstTrajIdxs.forEach((tIdx) => {
-          const traj = phrase.trajectories[tIdx];
-          const time = phraseStart + traj.startTime;
-          const logFreq = traj.logFreqs[0];
-          const withC = traj.startConsonant !== void 0;
-          const art = withC ? traj.articulations["0.00"] : void 0;
-          let text = "";
-          const ipaText = withC ? art.ipa + traj.vowelIpa : traj.vowelIpa;
-          const devanagariText = withC ? art.hindi + traj.vowelHindi : traj.vowelHindi;
-          const englishText = withC ? art.engTrans + traj.vowelEngTrans : traj.vowelEngTrans;
-          const uId = traj.uniqueId;
-          displayVowels.push({
-            time,
-            logFreq,
-            ipaText,
-            devanagariText,
-            englishText,
-            uId
-          });
+          if (phrase.trajectoryGrid[stringIdx] && phrase.trajectoryGrid[stringIdx][tIdx]) {
+            const traj = phrase.trajectoryGrid[stringIdx][tIdx];
+            const time = phraseStart + traj.startTime;
+            const logFreq = traj.logFreqs[0];
+            const withC = traj.startConsonant !== void 0;
+            const art = withC ? traj.articulations["0.00"] : void 0;
+            let text = "";
+            const ipaText = withC ? art.ipa + traj.vowelIpa : traj.vowelIpa;
+            const devanagariText = withC ? art.hindi + traj.vowelHindi : traj.vowelHindi;
+            const englishText = withC ? art.engTrans + traj.vowelEngTrans : traj.vowelEngTrans;
+            const uId = traj.uniqueId;
+            displayVowels.push({
+              time,
+              logFreq,
+              ipaText,
+              devanagariText,
+              englishText,
+              uId
+            });
+          }
         });
       });
     } else {
@@ -72685,10 +73043,10 @@ var Piece = class _Piece {
     }
     return displayVowels;
   }
-  allDisplayEndingConsonants(inst = 0) {
+  allDisplayEndingConsonants(inst = 0, stringIdx = 0) {
     const vocalInsts = ["Vocal (M)", "Vocal (F)"];
     const displayEndingConsonants = [];
-    const trajs = this.allTrajectories(inst);
+    const trajs = this.allTrajectories(inst, stringIdx);
     trajs.forEach((t, i) => {
       if (t.endConsonant !== void 0) {
         const phrase = this.phraseGrid[inst].find((p) => p.trajectories.includes(t));
@@ -72742,8 +73100,8 @@ var Piece = class _Piece {
     }
     return chunks;
   }
-  chunkedDisplayConsonants(inst = 0, duration = 30) {
-    const displayEndingConsonants = this.allDisplayEndingConsonants(inst);
+  chunkedDisplayConsonants(inst = 0, duration = 30, stringIdx = 0) {
+    const displayEndingConsonants = this.allDisplayEndingConsonants(inst, stringIdx);
     const chunks = [];
     for (let i = 0; i < this.durTot; i += duration) {
       const chunk = displayEndingConsonants.filter((c) => {
@@ -72764,8 +73122,8 @@ var Piece = class _Piece {
     }
     return chunks;
   }
-  chunkedDisplaySargam(inst = 0, duration = 30) {
-    const displaySargam = this.allDisplaySargam(inst);
+  chunkedDisplaySargam(inst = 0, duration = 30, stringIdx = 0) {
+    const displaySargam = this.allDisplaySargam(inst, stringIdx);
     const chunks = [];
     for (let i = 0; i < this.durTot; i += duration) {
       const chunk = displaySargam.filter((s) => {
@@ -72775,8 +73133,8 @@ var Piece = class _Piece {
     }
     return chunks;
   }
-  chunkedDisplayBols(inst = 0, duration = 30) {
-    const displayBols = this.allDisplayBols(inst);
+  chunkedDisplayBols(inst = 0, duration = 30, stringIdx = 0) {
+    const displayBols = this.allDisplayBols(inst, stringIdx);
     const chunks = [];
     for (let i = 0; i < this.durTot; i += duration) {
       const chunk = displayBols.filter((b) => {
@@ -72808,10 +73166,12 @@ var Piece = class _Piece {
     }
     return chunks;
   }
-  mostRecentTraj(time, inst = 0) {
-    const trajs = this.allTrajectories(inst);
+  mostRecentTraj(time, inst = 0, stringIdx = 0) {
+    const trajs = this.allTrajectories(inst, stringIdx);
     const endTimes = trajs.map((t) => {
-      const phrase = this.phraseGrid[inst].find((p) => p.trajectories.includes(t));
+      const phrase = this.phraseGrid[inst].find(
+        (p) => p.trajectoryGrid[stringIdx] && p.trajectoryGrid[stringIdx].includes(t)
+      );
       const phraseStart = phrase == null ? void 0 : phrase.startTime;
       return phraseStart + t.startTime + t.durTot;
     });
@@ -72821,9 +73181,10 @@ var Piece = class _Piece {
   }
   durationsOfFixedPitches({
     inst = 0,
-    outputType = "pitchNumber"
+    outputType = "pitchNumber",
+    stringIdx = 0
   } = {}) {
-    const trajs = this.allTrajectories(inst);
+    const trajs = this.allTrajectories(inst, stringIdx);
     return durationsOfFixedPitches(trajs, {
       inst,
       outputType
@@ -72956,12 +73317,16 @@ var Piece = class _Piece {
     });
     piece.phraseGrid.forEach((phrases) => {
       phrases.forEach((phrase) => {
-        phrase.trajectories.forEach((traj) => {
-          const arts = traj.articulations;
-          const a1 = arts[0] && arts[0].name === "slide";
-          const a2 = arts["0.00"] && arts["0.00"].name === "slide";
-          if (a1 || a2) {
-            arts["0.00"].name = "pluck";
+        [0, 1].forEach((stringIdx) => {
+          if (phrase.trajectoryGrid[stringIdx]) {
+            phrase.trajectoryGrid[stringIdx].forEach((traj) => {
+              const arts = traj.articulations;
+              const a1 = arts[0] && arts[0].name === "slide";
+              const a2 = arts["0.00"] && arts["0.00"].name === "slide";
+              if (a1 || a2) {
+                arts["0.00"].name = "pluck";
+              }
+            });
           }
         });
         phrase.consolidateSilentTrajs();
@@ -72969,6 +73334,7 @@ var Piece = class _Piece {
     });
     piece.durArrayFromPhrases();
     piece.sectionStartsGrid = piece.sectionStartsGrid.map((arr) => [...new Set(arr)]);
+    piece.ensureStringSynchronization();
     return piece;
   }
 };

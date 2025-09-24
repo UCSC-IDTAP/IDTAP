@@ -2099,12 +2099,12 @@ app.post('/handleGoogleAuthCodePythonAPI', async (req, res) => {
 
 	app.post('/updateInstrumentation', async (req, res) => {
 	  try {
-		// first get the transcription included in the query under 
+		// first get the transcription included in the query under
 		// the transcriptionID key.
 		// then, update the instrumentation field of the transcription.
 		// If the new length of instrumentation is less than the original,
-		// delete the corresponding idxs from the following fields: 
-		// instrumentation, phrases, phraseGrid, durArrayGrid, sectionCatGrid, 
+		// delete the corresponding idxs from the following fields:
+		// instrumentation, phrases, phraseGrid, durArrayGrid, sectionCatGrid,
 		// and sectionStartsGrid.
 
 		// If the new length of instrumentation is greater than the original,
@@ -2126,21 +2126,94 @@ app.post('/handleGoogleAuthCodePythonAPI', async (req, res) => {
 		await transcriptions.updateOne(query, { $set: { instrumentation } });
 		if (newLength < originalLength) {
 		  const fieldsToUpdate = [
-			'instrumentation', 
-			'phraseGrid', 
-			'durArrayGrid', 
-			'sectionCatGrid', 
+			'instrumentation',
+			'phraseGrid',
+			'durArrayGrid',
+			'sectionCatGrid',
 			'sectionStartsGrid'
 		  ];
 		  const updateOps = fieldsToUpdate.map(field => ({
 			[field]: transcription[field].slice(0, newLength)
 		  }));
-		  await transcriptions.updateOne(query, { 
-			$set: Object.assign({}, ...updateOps) 
+		  await transcriptions.updateOne(query, {
+			$set: Object.assign({}, ...updateOps)
 		  });
 		}
 		// res.status(200).send('Instrumentation updated');
 		res.json({ status: 200, message: 'Instrumentation updated' });
+	  } catch (err) {
+		console.error(err);
+		res.status(500).send(err);
+	  }
+	});
+
+	app.get('/getTranscriptionInstrumentationAndTitles', async (req, res) => {
+	  // from the transcription - get both instrumentation and trackTitles
+	  try {
+		const transcriptionID = new ObjectId(req.query.transcriptionID as string);
+		const query = { _id: transcriptionID };
+		const projection = { projection: { instrumentation: 1, trackTitles: 1, _id: 0 } };
+		const result = await transcriptions.findOne(query, projection);
+		if (!result) {
+		  return res.status(404).send('Transcription not found');
+		}
+		// Return both instrumentation and trackTitles, with empty array fallback for trackTitles
+		res.json({
+		  instrumentation: result.instrumentation || [],
+		  trackTitles: result.trackTitles || []
+		});
+	  } catch (err) {
+		console.error(err);
+		res.status(500).send(err);
+	  }
+	});
+
+	app.post('/updateInstrumentationAndTitles', async (req, res) => {
+	  try {
+		const { transcriptionID, instrumentation, trackTitles } = req.body;
+		if (!transcriptionID || !instrumentation) {
+		  res.status(400).send('TranscriptionID and instrumentation are required');
+		  return;
+		}
+		const query = { _id: new ObjectId(transcriptionID) };
+		const transcription = await transcriptions.findOne(query);
+		if (!transcription) {
+		  res.status(404).send('Transcription not found');
+		  return;
+		}
+		const originalInstrumentation = transcription.instrumentation;
+		const originalLength = originalInstrumentation.length;
+		const newLength = instrumentation.length;
+
+		// Update both instrumentation and trackTitles
+		const updateData: { [key: string]: any } = { instrumentation };
+		if (trackTitles) {
+		  updateData.trackTitles = trackTitles;
+		}
+
+		await transcriptions.updateOne(query, { $set: updateData });
+
+		if (newLength < originalLength) {
+		  const fieldsToUpdate = [
+			'instrumentation',
+			'phraseGrid',
+			'durArrayGrid',
+			'sectionCatGrid',
+			'sectionStartsGrid',
+			'trackTitles'
+		  ];
+		  const updateOps = fieldsToUpdate.map(field => {
+			if (transcription[field]) {
+			  return { [field]: transcription[field].slice(0, newLength) };
+			}
+			return null;
+		  }).filter(op => op !== null);
+
+		  await transcriptions.updateOne(query, {
+			$set: Object.assign({}, ...updateOps)
+		  });
+		}
+		res.json({ status: 200, message: 'Instrumentation and track titles updated' });
 	  } catch (err) {
 		console.error(err);
 		res.status(500).send(err);

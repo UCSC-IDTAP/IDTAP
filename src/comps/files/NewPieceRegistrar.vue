@@ -130,6 +130,13 @@
                 {{inst}}
               </option>
             </select>
+            <input
+              type="text"
+              v-model="trackTitles[i]"
+              :placeholder="`Track Title`"
+              class="track-title-input"
+              @keydown.stop
+              />
           </div>
         </div>
       </div>
@@ -354,6 +361,7 @@ type NewPieceRegistrarDataType = {
   permissionTypes: string[];
   rulesTemplate: RulesType;
   instrumentation: Instrument[];
+  trackTitles: string[];
   instruments: Instrument[];
   noAE: boolean;
   looseRecs: RecType[];
@@ -451,6 +459,7 @@ export default defineComponent({
         }
       },
       instrumentation: [Instrument.Sitar],
+      trackTitles: [''],
       instruments: [
         Instrument.Sarangi,
         Instrument.Sitar,
@@ -506,9 +515,11 @@ export default defineComponent({
         if (newVal > this.instrumentation.length) {
           for (let i = this.instrumentation.length; i < newVal; i++) {
             this.instrumentation.push(Instrument.Sitar)
+            this.trackTitles.push('')  // Add empty title for new instrument
           }
         } else if (newVal < this.instrumentation.length) {
           this.instrumentation = this.instrumentation.slice(0, newVal)
+          this.trackTitles = this.trackTitles.slice(0, newVal)  // Keep trackTitles in sync
         }
       }
     },
@@ -899,6 +910,7 @@ export default defineComponent({
             soloist: this.passedInData.soloist,
             soloInstrument: this.passedInData.soloInstrument,
             instrumentation: this.instrumentation,
+            trackTitles: this.trackTitles,
             audioID: this.recording ? (this.recording as RecType)._id: undefined,
             fundamental: this.passedInData.raga.fundamental,
           };
@@ -915,6 +927,7 @@ export default defineComponent({
             clone: true,
             origID: this.passedInData.origID,
             instrumentation: this.instrumentation,
+            trackTitles: this.trackTitles,
             soloist: this.passedInData.soloist,
             soloInstrument: this.passedInData.soloInstrument,
             fundamental: this.passedInData.raga.fundamental,
@@ -957,6 +970,7 @@ export default defineComponent({
               explicitPermissions: this.explicitPermissions,
               clone: false,
               instrumentation: this.instrumentation,
+              trackTitles: this.trackTitles,
               soloist: undefined,
               soloInstrument: undefined,
               fundamental: fundamental
@@ -976,6 +990,7 @@ export default defineComponent({
               explicitPermissions: this.explicitPermissions,
               clone: false,
               instrumentation: this.instrumentation,
+              trackTitles: this.trackTitles,
               audioID: rec._id,
               soloist: soloist,
               soloInstrument: soloInstrument,
@@ -996,6 +1011,7 @@ export default defineComponent({
             explicitPermissions: this.explicitPermissions,
             clone: false,
             instrumentation: this.instrumentation,
+            trackTitles: this.trackTitles,
             soloist: soloist,
             soloInstrument: soloInstrument,
           };
@@ -1367,5 +1383,25 @@ input.time[type="number"] {
 
 .numInstruments {
   max-width: 30px;
+}
+
+.selectRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 5px;
+}
+
+.track-title-input {
+  flex: 1;
+  padding: 4px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.track-title-input::placeholder {
+  color: #888;
+  font-style: italic;
 }
 </style>
