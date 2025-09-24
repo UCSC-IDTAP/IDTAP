@@ -1,6 +1,7 @@
 # Changelog
 
 
+* docs: add critical git branching guidelines to prevent direct main pushes [d1f3a05] (Jon Myers)
 * feat: add custom track titles feature for instrument identification [770c1ef] (Jon Myers)
 * fix: resolve string 2 trajectory splitting and merging issues in polyphonic operations [c4e80d3] (Jon Myers)
 * fix: resolve polyphonic string cross-contamination in trajectory orientation dot operations [d065556] (Jon Myers)
