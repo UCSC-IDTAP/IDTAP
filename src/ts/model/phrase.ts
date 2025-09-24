@@ -219,14 +219,40 @@ class Phrase {
   }
 
   durTotFromTrajectories() {
-    this.durTot = this.trajectories
-      .map(t => t.durTot)
-      .reduce((a, b) => a + b, 0)
+    // For polyphonic instruments, calculate total duration for each string
+    // and use the maximum duration across all strings
+    let maxStringDuration = 0;
+
+    // Check all strings in trajectoryGrid
+    this.trajectoryGrid.forEach((stringTrajs, stringIdx) => {
+      if (stringTrajs && stringTrajs.length > 0) {
+        const stringDuration = stringTrajs
+          .map(t => t.durTot)
+          .reduce((a, b) => a + b, 0);
+        maxStringDuration = Math.max(maxStringDuration, stringDuration);
+      }
+    });
+
+    // Fallback to traditional method if no trajectoryGrid data
+    if (maxStringDuration === 0 && this.trajectories.length > 0) {
+      maxStringDuration = this.trajectories
+        .map(t => t.durTot)
+        .reduce((a, b) => a + b, 0);
+    }
+
+    this.durTot = maxStringDuration;
   }
 
   durArrayFromTrajectories() {
     this.durTotFromTrajectories();
-    this.durArray = this.trajectories.map(t => t.durTot / this.durTot!);
+
+    // durArray is still based on string 1 (main) trajectories for timing reference
+    // but now uses the corrected total duration that accounts for all strings
+    if (this.trajectories.length > 0 && this.durTot! > 0) {
+      this.durArray = this.trajectories.map(t => t.durTot / this.durTot!);
+    } else {
+      this.durArray = [];
+    }
   }
 
   compute(x: number, logScale = false) {
