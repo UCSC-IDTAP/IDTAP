@@ -161,6 +161,24 @@ src/
 
 ## Development Workflow
 
+### **CRITICAL: Git Branching Strategy**
+**⚠️ NEVER PUSH DIRECTLY TO MAIN BRANCH ⚠️**
+
+**Always use feature branches and pull requests:**
+1. **Create feature branch**: `git checkout -b feature/your-feature-name`
+2. **Make changes and commit**: `git add . && git commit -m "feat: your changes"`
+3. **Push branch**: `git push origin feature/your-feature-name`
+4. **Create Pull Request**: Use GitHub UI or `gh pr create`
+5. **Review and merge**: After review, merge PR to main
+
+**Why this matters:**
+- **Auto-deployment**: Main branch triggers automatic frontend deployment to production
+- **Code review**: PRs ensure code quality and catch issues before production
+- **CI/CD safety**: Branch protection prevents broken deployments
+- **Collaboration**: Team can review changes before they go live
+
+**The only exception**: Emergency hotfixes (but still prefer PRs when possible)
+
 ### Build Commands
 ```bash
 pnpm dev             # Vite development server
