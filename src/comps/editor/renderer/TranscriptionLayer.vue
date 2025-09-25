@@ -5061,13 +5061,20 @@ export default defineComponent({
           }
         } else if (selectedPulse.value !== undefined) {
           e.preventDefault();
-          nudgePulse('left');
+          if (shifted.value) {
+            selectPulse('left');
+          } else {
+            nudgePulse('left');
+          }
         } else if (selectedTraj.value !== undefined && alted.value) {
           e.preventDefault(); 
           nudgeSlope('left');
         } else if (selectedTraj.value !== undefined && shifted.value) {
           e.preventDefault();
           selectDragDot('left');
+        } else if (selectedMeter.value !== undefined && shifted.value) {
+          e.preventDefault();
+          selectPulse('left');
         } else {
           e.preventDefault();
           horizontalMoveGraph(-0.1);
@@ -5088,13 +5095,20 @@ export default defineComponent({
           }
         } else if (selectedPulse.value !== undefined) {
           e.preventDefault();
-          nudgePulse('right');
+          if (shifted.value) {
+            selectPulse('right');
+          } else {
+            nudgePulse('right');
+          }
         } else if (selectedTraj.value !== undefined && alted.value) {
           e.preventDefault();
           nudgeSlope('right');
         } else if (selectedTraj.value !== undefined && shifted.value) {
           e.preventDefault();
           selectDragDot('right');
+        } else if (selectedMeter.value !== undefined && shifted.value) {
+          e.preventDefault();
+          selectPulse('right');
         } else {
           e.preventDefault();
           horizontalMoveGraph(0.1);
@@ -5451,6 +5465,35 @@ export default defineComponent({
         renderChikari(newCd);
       });
       emit('unsavedChanges', true);
+    };
+
+    const selectPulse = (dir: 'right' | 'left') => {
+      if (selectedMeter.value === undefined) {
+        return;
+      }
+      const corporealPulses = selectedMeter.value.allCorporealPulses;
+      if (corporealPulses.length === 0) return;
+
+      if (selectedPulse.value === undefined) {
+        // No pulse selected yet, select first or last based on direction
+        if (dir === 'left') {
+          selectedPulse.value = corporealPulses[corporealPulses.length - 1];
+        } else {
+          selectedPulse.value = corporealPulses[0];
+        }
+      } else {
+        // Find current pulse index and move to next/previous
+        const currentIdx = corporealPulses.findIndex(p =>
+          p.uniqueId === selectedPulse.value!.uniqueId
+        );
+        if (currentIdx !== -1) {
+          if (dir === 'left' && currentIdx > 0) {
+            selectedPulse.value = corporealPulses[currentIdx - 1];
+          } else if (dir === 'right' && currentIdx < corporealPulses.length - 1) {
+            selectedPulse.value = corporealPulses[currentIdx + 1];
+          }
+        }
+      }
     };
 
     const nudgePulse = (dir: 'left' | 'right') => {
