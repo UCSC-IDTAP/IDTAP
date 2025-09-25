@@ -378,6 +378,16 @@
         Access via the meter icon. Create and edit hierarchical rhythmic structures:
       </p>
 
+      <p><strong>Pulse Selection and Editing (NEW):</strong></p>
+      <ul>
+        <li><strong>Click on pulse</strong>: Select pulse for editing (shows purple highlight)</li>
+        <li><strong>Drag selected pulse</strong>: Move pulse position (must select first to prevent accidental moves)</li>
+        <li><strong>Shift + Left/Right</strong>: Navigate between pulses in selected meter</li>
+        <li><strong>Left/Right arrows</strong>: Nudge selected pulse position by small increments</li>
+        <li><strong>Escape</strong>: Deselect current pulse</li>
+        <li><strong>Visual feedback</strong>: Pointer cursor for selection, resize cursor when ready to drag</li>
+      </ul>
+
       <p><strong>Hierarchy Configuration:</strong></p>
       <ul>
         <li><strong>Depth Selector</strong>: Choose 1-4 hierarchical layers</li>
@@ -640,6 +650,7 @@
         <li><strong>Shift + Left</strong>: Select different orientation dot (leftmost if none selected, or move to previous dot)</li>
         <li><strong>Shift + Right</strong>: Select different orientation dot (rightmost if none selected, or move to next dot)</li>
         <li><strong>Arrow Keys</strong>: Move selected orientation dot in small increments</li>
+        <li><strong>Option/Alt + Arrow Keys (NEW)</strong>: Move selected orientation dot 5x faster for rapid adjustments</li>
         <li><strong>Shift + Up/Down</strong>: Move selected orientation dot in larger increments</li>
       </ul>
 
@@ -798,9 +809,19 @@
         <li><kbd>Shift + Tab</kbd> - Navigate to previous trajectory</li>
         <li><kbd>Shift + Left/Right</kbd> - Navigate between orientation dots within trajectory</li>
         <li><kbd>Arrow keys</kbd> - Adjust selected orientation dot position</li>
+        <li><kbd>Option/Alt + Arrow keys</kbd> - Adjust orientation dot position 5x faster</li>
         <li><kbd>P</kbd> - Toggle pluck (Sitar only)</li>
         <li><kbd>D</kbd> - Toggle dampen (Sitar only)</li>
         <li><kbd>Right-click</kbd> - Context menu options</li>
+      </ul>
+
+      <h3>6.8 Meter Mode Controls</h3>
+      <ul>
+        <li><kbd>Click pulse</kbd> - Select pulse for editing</li>
+        <li><kbd>Drag selected pulse</kbd> - Move pulse position (must select first)</li>
+        <li><kbd>Shift + Left/Right</kbd> - Navigate between pulses</li>
+        <li><kbd>Arrow keys</kbd> - Nudge selected pulse position</li>
+        <li><kbd>Escape</kbd> - Deselect pulse</li>
       </ul>
 
       <hr>
