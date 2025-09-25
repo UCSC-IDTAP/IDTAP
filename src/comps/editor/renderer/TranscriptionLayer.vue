@@ -5586,8 +5586,10 @@ export default defineComponent({
       const idx = selectedDragDotIdx.value!;
       const summedDurArr = [0, ...traj.durArray!].map(cumsum())[idx];
       const curTime = trajStart + summedDurArr * traj.durTot;
-      const amt = 0.01;
-      const logAmt = 0.0025;
+      // Multiply amount by 5 when option/alt key is held
+      const multiplier = alted.value ? 5 : 1;
+      const amt = 0.01 * multiplier;
+      const logAmt = 0.0025 * multiplier;
       let newTime = curTime;
       let newLogFreq = traj.logFreqs.length > idx ? traj.logFreqs[idx] : 
         traj.logFreqs[idx - 1];
