@@ -2515,12 +2515,12 @@ export default defineComponent({
           .attr('transform', `translate(${x},0)`)
           .on('mouseover', () => {
             if (props.selectedMode === EditorMode.Meter) {
-              handleMouseOverMeter(meter)
+              handleMouseOverMeter(meter, pulse)
             }
           })
           .on('mouseout', () => {
             if (props.selectedMode === EditorMode.Meter) {
-              handleMouseOutMeter(meter)
+              handleMouseOutMeter(meter, pulse)
             }
           })
           .on('click', (e) => {
@@ -2545,8 +2545,12 @@ export default defineComponent({
         const meter = props.piece.meters.find(m => m.uniqueId === pulse.meterId)!;
         if (pulse === meter.allCorporealPulses[0]) return
 
-        // if (aff.idx === 0 && aff.layer === 0 && aff.segmentedMeterIdx === 0) return;
-        if (selectedMeter.value && pulse.meterId === selectedMeter.value.uniqueId) {
+        // Only enable dragging if this pulse is already selected
+        // This prevents accidental dragging and matches the drag dot behavior
+        if (selectedMeter.value &&
+            pulse.meterId === selectedMeter.value.uniqueId &&
+            selectedPulse.value &&
+            pulse.uniqueId === selectedPulse.value.uniqueId) {
           pulseDragEnabled = true;
         }
       }
@@ -2651,12 +2655,25 @@ export default defineComponent({
         }
       }
     }
-    const handleMouseOverMeter = (meter: Meter) => {
+    const handleMouseOverMeter = (meter: Meter, pulse?: Pulse) => {
       if (props.selectedMode === EditorMode.Meter) {
         if (selectedMeter.value && selectedMeter.value === meter) {
-          const cursor = alted.value ? 'pointer' : 'col-resize';
-          d3.selectAll(`.metricGrid.meterId${meter.uniqueId}`)
-            .attr('cursor', cursor)
+          // For selected meter, show different cursors based on pulse selection
+          if (pulse && selectedPulse.value && pulse.uniqueId === selectedPulse.value.uniqueId) {
+            // This specific pulse is selected - show resize cursor for dragging
+            d3.select(`#pulseId${pulse.uniqueId}.overlay`)
+              .attr('cursor', 'col-resize')
+          } else {
+            // Pulse is not selected - show pointer for selection
+            if (pulse) {
+              d3.select(`#pulseId${pulse.uniqueId}.overlay`)
+                .attr('cursor', 'pointer')
+            } else {
+              const cursor = alted.value ? 'pointer' : 'pointer';
+              d3.selectAll(`.metricGrid.meterId${meter.uniqueId}`)
+                .attr('cursor', cursor)
+            }
+          }
           selMeterHovering = true;
         } else {
           d3.selectAll(`.metricGrid.meterId${meter.uniqueId}`)
@@ -2666,8 +2683,12 @@ export default defineComponent({
       }
       meterHovering = meter;
     };
-    const handleMouseOutMeter = (meter: Meter) => {
+    const handleMouseOutMeter = (meter: Meter, pulse?: Pulse) => {
       const meterMode = props.selectedMode === EditorMode.Meter;
+      if (pulse) {
+        d3.select(`#pulseId${pulse.uniqueId}.overlay`)
+          .attr('cursor', meterMode ? 'crosshair' : 'default')
+      }
       d3.selectAll(`.metricGrid.meterId${meter.uniqueId}:not(.selected)`)
         .attr('stroke', props.meterColor)
         .attr('cursor', meterMode ? 'crosshair' : 'default')
@@ -2680,9 +2701,12 @@ export default defineComponent({
         e.preventDefault();
         e.stopPropagation();
         if (meter === selectedMeter.value) {
+          // Select the clicked pulse
           selectedPulse.value = pulse;
         } else {
+          // Selecting a new meter, clear pulse selection
           selectedMeter.value = meter;
+          selectedPulse.value = undefined;
         }
       }
     }
