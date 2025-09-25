@@ -1,6 +1,13 @@
 # Changelog
 
 
+* docs: update editor instructions with new UI controls [5f5b222] (Jon Myers)
+* feat: add 5x nudge speed for drag dots with option/alt key [8e4efbe] (Jon Myers)
+* fix: correct initial pulse selection direction with shift+arrow [9ca33b9] (Jon Myers)
+* feat: add shift+arrow navigation for meter pulse selection [b066c4d] (Jon Myers)
+* feat: implement select-then-drag pattern for meter pulses [ef8e138] (Jon Myers)
+### 2025-09-25
+
 * docs: add critical git branching guidelines to prevent direct main pushes [d1f3a05] (Jon Myers)
 * feat: add custom track titles feature for instrument identification [770c1ef] (Jon Myers)
 * fix: resolve string 2 trajectory splitting and merging issues in polyphonic operations [c4e80d3] (Jon Myers)
