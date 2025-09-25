@@ -2669,7 +2669,7 @@ export default defineComponent({
               d3.select(`#pulseId${pulse.uniqueId}.overlay`)
                 .attr('cursor', 'pointer')
             } else {
-              const cursor = alted.value ? 'pointer' : 'pointer';
+              const cursor = 'pointer';
               d3.selectAll(`.metricGrid.meterId${meter.uniqueId}`)
                 .attr('cursor', cursor)
             }
