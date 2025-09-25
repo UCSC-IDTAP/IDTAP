@@ -5477,9 +5477,9 @@ export default defineComponent({
       if (selectedPulse.value === undefined) {
         // No pulse selected yet, select first or last based on direction
         if (dir === 'left') {
-          selectedPulse.value = corporealPulses[corporealPulses.length - 1];
+          selectedPulse.value = corporealPulses[0];  // Leftmost pulse
         } else {
-          selectedPulse.value = corporealPulses[0];
+          selectedPulse.value = corporealPulses[corporealPulses.length - 1];  // Rightmost pulse
         }
       } else {
         // Find current pulse index and move to next/previous
