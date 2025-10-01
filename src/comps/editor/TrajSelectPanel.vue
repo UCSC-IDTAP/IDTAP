@@ -744,19 +744,20 @@ export default defineComponent({
       const wasSection = phrase.isSectionStart;
       const isNowSection = (this.phraseDivType === 'section');
 
+      // Get section index BEFORE changing the flag (for section→phrase removal)
+      const pIdx = phrase.pieceIdx!;
+      const oldSectionIdx = wasSection ? this.piece!.sectionStartsGrid[track].indexOf(pIdx) : -1;
+
       // Update the phrase property
       phrase.isSectionStart = isNowSection;
 
-      // Sync section categorization arrays
-      const ss = this.piece!.sectionStartsGrid[track];
-      const pIdx = phrase.pieceIdx!;
-      const sectionIdx = ss.indexOf(pIdx);
-
       if (isNowSection && !wasSection) {
         // Changed from phrase to section - add section categorization
-        if (sectionIdx !== -1) {
+        // Get NEW section index after flag change
+        const newSectionIdx = this.piece!.sectionStartsGrid[track].indexOf(pIdx);
+        if (newSectionIdx !== -1) {
           // Insert empty categorization at the correct position
-          this.piece!.sectionCatGrid[track].splice(sectionIdx, 0, {
+          this.piece!.sectionCatGrid[track].splice(newSectionIdx, 0, {
             "Pre-Chiz Alap": { "Pre-Chiz Alap": false },
             "Alap": { "Alap": false, "Jor": false, "Alap-Jhala": false },
             "Composition Type": {
@@ -774,13 +775,13 @@ export default defineComponent({
             "Other": { "Other": false },
             "Top Level": "None"
           });
-          this.piece!.adHocSectionCatGrid[track].splice(sectionIdx, 0, []);
+          this.piece!.adHocSectionCatGrid[track].splice(newSectionIdx, 0, []);
         }
       } else if (!isNowSection && wasSection) {
-        // Changed from section to phrase - remove section categorization
-        if (sectionIdx !== -1) {
-          this.piece!.sectionCatGrid[track].splice(sectionIdx, 1);
-          this.piece!.adHocSectionCatGrid[track].splice(sectionIdx, 1);
+        // Changed from section to phrase - remove section categorization using OLD index
+        if (oldSectionIdx !== -1) {
+          this.piece!.sectionCatGrid[track].splice(oldSectionIdx, 1);
+          this.piece!.adHocSectionCatGrid[track].splice(oldSectionIdx, 1);
         }
       }
 
