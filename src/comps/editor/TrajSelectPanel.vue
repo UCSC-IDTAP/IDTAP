@@ -745,41 +745,27 @@ export default defineComponent({
       const isNowSection = (this.phraseDivType === 'section');
       const pIdx = phrase.pieceIdx!;
 
-      console.log('=== updatePhraseDivType ===');
-      console.log('Phrase index:', pIdx);
-      console.log('Was section:', wasSection, '→ Is now section:', isNowSection);
-      console.log('BEFORE - sectionCatGrid length:', this.piece!.sectionCatGrid[track].length);
-      console.log('BEFORE - sectionCatGrid:', JSON.parse(JSON.stringify(this.piece!.sectionCatGrid[track])));
-      console.log('BEFORE - adHocSectionCatGrid length:', this.piece!.adHocSectionCatGrid[track].length);
-      console.log('BEFORE - adHocSectionCatGrid:', JSON.parse(JSON.stringify(this.piece!.adHocSectionCatGrid[track])));
-      console.log('BEFORE - sectionStartsGrid:', this.piece!.sectionStartsGrid[track]);
-
       // Safety check: ensure arrays are in sync
       const numSections = this.piece!.sectionStartsGrid[track].length;
       if (this.piece!.adHocSectionCatGrid[track].length !== numSections) {
-        console.warn(`⚠️ Array mismatch detected! adHocSectionCatGrid has ${this.piece!.adHocSectionCatGrid[track].length} entries but there are ${numSections} sections. Fixing...`);
         // Pad with empty arrays
         while (this.piece!.adHocSectionCatGrid[track].length < numSections) {
           this.piece!.adHocSectionCatGrid[track].push([]);
         }
         // Trim if too long
         this.piece!.adHocSectionCatGrid[track].splice(numSections);
-        console.log('Fixed adHocSectionCatGrid length:', this.piece!.adHocSectionCatGrid[track].length);
       }
 
       // Get section index BEFORE changing the flag (for section→phrase removal)
       const oldSectionIdx = wasSection ? this.piece!.sectionStartsGrid[track].indexOf(pIdx) : -1;
-      console.log('Old section index:', oldSectionIdx);
 
       // Update the phrase property
       phrase.isSectionStart = isNowSection;
-      console.log('Set phrase.isSectionStart =', isNowSection);
 
       if (isNowSection && !wasSection) {
         // Changed from phrase to section - add section categorization
         // Get NEW section index after flag change
         const newSectionIdx = this.piece!.sectionStartsGrid[track].indexOf(pIdx);
-        console.log('New section index:', newSectionIdx);
         if (newSectionIdx !== -1) {
           // Insert empty categorization at the correct position
           this.piece!.sectionCatGrid[track].splice(newSectionIdx, 0, {
@@ -801,24 +787,14 @@ export default defineComponent({
             "Top Level": "None"
           });
           this.piece!.adHocSectionCatGrid[track].splice(newSectionIdx, 0, []);
-          console.log('Added categorization at index', newSectionIdx);
         }
       } else if (!isNowSection && wasSection) {
         // Changed from section to phrase - remove section categorization using OLD index
-        console.log('Removing categorization at OLD index:', oldSectionIdx);
         if (oldSectionIdx !== -1) {
           this.piece!.sectionCatGrid[track].splice(oldSectionIdx, 1);
           this.piece!.adHocSectionCatGrid[track].splice(oldSectionIdx, 1);
-          console.log('Removed categorization');
         }
       }
-
-      console.log('AFTER - sectionCatGrid length:', this.piece!.sectionCatGrid[track].length);
-      console.log('AFTER - sectionCatGrid:', JSON.parse(JSON.stringify(this.piece!.sectionCatGrid[track])));
-      console.log('AFTER - adHocSectionCatGrid length:', this.piece!.adHocSectionCatGrid[track].length);
-      console.log('AFTER - adHocSectionCatGrid:', JSON.parse(JSON.stringify(this.piece!.adHocSectionCatGrid[track])));
-      console.log('AFTER - sectionStartsGrid:', this.piece!.sectionStartsGrid[track]);
-      console.log('AFTER - phrase.isSectionStart:', phrase.isSectionStart);
 
       const pdObj: PhraseDivDisplayType = this.piece.allPhraseDivs(track)
           .find(pd => pd.uId === this.selectedPhraseDivUid)!;
