@@ -741,9 +741,48 @@ export default defineComponent({
     updatePhraseDivType() {
       const phrase = this.piece!.phraseFromUId(this.selectedPhraseDivUid!);
       const track = this.piece!.trackFromPhraseUId(this.selectedPhraseDivUid!);
+      const wasSection = phrase.isSectionStart;
+      const isNowSection = (this.phraseDivType === 'section');
 
-      // Simply toggle the phrase property - no manual index management needed
-      phrase.isSectionStart = (this.phraseDivType === 'section');
+      // Update the phrase property
+      phrase.isSectionStart = isNowSection;
+
+      // Sync section categorization arrays
+      const ss = this.piece!.sectionStartsGrid[track];
+      const pIdx = phrase.pieceIdx!;
+      const sectionIdx = ss.indexOf(pIdx);
+
+      if (isNowSection && !wasSection) {
+        // Changed from phrase to section - add section categorization
+        if (sectionIdx !== -1) {
+          // Insert empty categorization at the correct position
+          this.piece!.sectionCatGrid[track].splice(sectionIdx, 0, {
+            "Pre-Chiz Alap": { "Pre-Chiz Alap": false },
+            "Alap": { "Alap": false, "Jor": false, "Alap-Jhala": false },
+            "Composition Type": {
+              "Dhrupad": false, "Bandish": false, "Thumri": false, "Ghazal": false,
+              "Qawwali": false, "Dhun": false, "Tappa": false, "Bhajan": false,
+              "Kirtan": false, "Kriti": false, "Masitkhani Gat": false,
+              "Razakhani Gat": false, "Ferozkhani Gat": false
+            },
+            "Comp.-section/Tempo": {
+              "Ati Vilambit": false, "Vilambit": false, "Madhya": false,
+              "Drut": false, "Ati Drut": false, "Jhala": false
+            },
+            "Tala": { "Ektal": false, "Tintal": false, "Rupak": false },
+            "Improvisation": { "Improvisation": false },
+            "Other": { "Other": false },
+            "Top Level": "None"
+          });
+          this.piece!.adHocSectionCatGrid[track].splice(sectionIdx, 0, []);
+        }
+      } else if (!isNowSection && wasSection) {
+        // Changed from section to phrase - remove section categorization
+        if (sectionIdx !== -1) {
+          this.piece!.sectionCatGrid[track].splice(sectionIdx, 1);
+          this.piece!.adHocSectionCatGrid[track].splice(sectionIdx, 1);
+        }
+      }
 
       const pdObj: PhraseDivDisplayType = this.piece.allPhraseDivs(track)
           .find(pd => pd.uId === this.selectedPhraseDivUid)!;
