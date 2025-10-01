@@ -69,6 +69,7 @@ class Phrase {
   categorizationGrid: PhraseCatType[];
   adHocCategorizationGrid: string[];
   uniqueId: string;
+  isSectionStart?: boolean;
   
   constructor({
     trajectories = [],
@@ -84,6 +85,7 @@ class Phrase {
     categorizationGrid = undefined,
     uniqueId = undefined,
     adHocCategorizationGrid = undefined,
+    isSectionStart = undefined,
   }: {
     trajectories?: Trajectory[],
     durTot?: number,
@@ -98,6 +100,7 @@ class Phrase {
     categorizationGrid?: PhraseCatType[],
     uniqueId?: string,
     adHocCategorizationGrid?: string[],
+    isSectionStart?: boolean,
   } = {}) {
     if (uniqueId === undefined) {
       this.uniqueId = uuidv4();
@@ -174,6 +177,7 @@ class Phrase {
     } else {
       this.adHocCategorizationGrid = [];
     }
+    this.isSectionStart = isSectionStart;
   }
 
   updateFundamental(fundamental: number) {
@@ -633,6 +637,7 @@ class Phrase {
       categorizationGrid: this.categorizationGrid,
       uniqueId: this.uniqueId,
       adHocCategorizationGrid: this.adHocCategorizationGrid,
+      isSectionStart: this.isSectionStart,
     }
   }
 

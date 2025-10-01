@@ -741,14 +741,10 @@ export default defineComponent({
     updatePhraseDivType() {
       const phrase = this.piece!.phraseFromUId(this.selectedPhraseDivUid!);
       const track = this.piece!.trackFromPhraseUId(this.selectedPhraseDivUid!);
-      const pIdx = phrase.pieceIdx!;
-      const ss = this.piece.sectionStartsGrid[track];
-      if (this.phraseDivType === 'section') {
-        ss.push(pIdx);
-        ss.sort((a, b) => a - b);
-      } else {
-        this.piece.sectionStartsGrid[track] = ss.filter(idx => idx !== pIdx); 
-      }
+
+      // Simply toggle the phrase property - no manual index management needed
+      phrase.isSectionStart = (this.phraseDivType === 'section');
+
       const pdObj: PhraseDivDisplayType = this.piece.allPhraseDivs(track)
           .find(pd => pd.uId === this.selectedPhraseDivUid)!;
       this.$emit('update:phraseDivRendering', pdObj);

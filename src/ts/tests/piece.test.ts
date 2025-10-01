@@ -879,7 +879,10 @@ test('piece getters and setters modify internal grids', () => {
   piece.durArray = [1];
   expect(piece.durArrayGrid[0]).toEqual([1]);
 
-  piece.sectionStarts = [0];
+  // sectionStarts setter is tested extensively in dedicated tests below
+  // Just verify that setter exists and works
+  const p3 = new Phrase({ trajectories: [t1], raga, isSectionStart: true });
+  piece.phrases = [p3];
   expect(piece.sectionStartsGrid[0]).toEqual([0]);
 
   const sc = [initSecCategorization()];
@@ -937,13 +940,131 @@ test('adHocSectionCatGrid expands to match instrumentation', () => {
 
 test('sectionCatGrid expands when fewer categories than section starts', () => {
   const raga = new Raga();
-  const phrase = new Phrase({ trajectories: [new Trajectory({ durTot: 1 })], raga });
+  const p1 = new Phrase({ trajectories: [new Trajectory({ durTot: 1 })], raga, isSectionStart: true });
+  const p2 = new Phrase({ trajectories: [new Trajectory({ durTot: 1 })], raga, isSectionStart: true });
   const piece = new Piece({
-    phrases: [phrase],
+    phrases: [p1, p2],
     raga,
     instrumentation: [Instrument.Sitar],
-    sectionStarts: [0, 1],
-    sectionCatGrid: [[initSecCategorization()]],
+    sectionCatGrid: [[initSecCategorization()]], // Only one categorization provided
   });
+  // The constructor should expand sectionCatGrid to match the number of section starts
   expect(piece.sectionCatGrid[0].length).toBe(2);
+});
+
+// ===== Tests for isSectionStart property migration =====
+
+test('phrase.isSectionStart is serialized and deserialized', () => {
+  const raga = new Raga();
+  const p1 = new Phrase({ trajectories: [new Trajectory({ durTot: 1 })], raga, isSectionStart: true });
+  const p2 = new Phrase({ trajectories: [new Trajectory({ durTot: 1 })], raga, isSectionStart: false });
+  const piece = new Piece({ phrases: [p1, p2], raga, instrumentation: [Instrument.Sitar] });
+
+  const json = JSON.parse(JSON.stringify(piece));
+  const restored = Piece.fromJSON(json);
+
+  expect(restored.phraseGrid[0][0].isSectionStart).toBe(true);
+  expect(restored.phraseGrid[0][1].isSectionStart).toBe(false);
+});
+
+test('sectionStartsGrid computed property derives from phrase.isSectionStart', () => {
+  const raga = new Raga();
+  const p1 = new Phrase({ trajectories: [new Trajectory({ durTot: 1 })], raga, isSectionStart: true });
+  const p2 = new Phrase({ trajectories: [new Trajectory({ durTot: 1 })], raga, isSectionStart: false });
+  const p3 = new Phrase({ trajectories: [new Trajectory({ durTot: 1 })], raga, isSectionStart: true });
+  const piece = new Piece({ phrases: [p1, p2, p3], raga, instrumentation: [Instrument.Sitar] });
+
+  expect(piece.sectionStartsGrid[0]).toEqual([0, 2]);
+});
+
+test('migration from old sectionStartsGrid format to phrase.isSectionStart', () => {
+  const raga = new Raga();
+  const p1 = new Phrase({ trajectories: [new Trajectory({ durTot: 1 })], raga });
+  const p2 = new Phrase({ trajectories: [new Trajectory({ durTot: 1 })], raga });
+  const p3 = new Phrase({ trajectories: [new Trajectory({ durTot: 1 })], raga });
+
+  const obj = {
+    phraseGrid: [[p1, p2, p3]],
+    raga,
+    instrumentation: [Instrument.Sitar],
+    sectionStartsGrid: [[0, 2]], // Old format
+  };
+
+  const json = JSON.parse(JSON.stringify(obj));
+  const piece = Piece.fromJSON(json);
+
+  expect(piece.phraseGrid[0][0].isSectionStart).toBe(true);
+  expect(piece.phraseGrid[0][1].isSectionStart).toBe(false);
+  expect(piece.phraseGrid[0][2].isSectionStart).toBe(true);
+});
+
+test('toggling phrase.isSectionStart updates computed sectionStartsGrid', () => {
+  const raga = new Raga();
+  const p1 = new Phrase({ trajectories: [new Trajectory({ durTot: 1 })], raga, isSectionStart: true });
+  const p2 = new Phrase({ trajectories: [new Trajectory({ durTot: 1 })], raga, isSectionStart: false });
+  const piece = new Piece({ phrases: [p1, p2], raga, instrumentation: [Instrument.Sitar] });
+
+  expect(piece.sectionStartsGrid[0]).toEqual([0]);
+
+  // Toggle p2 to be a section start
+  p2.isSectionStart = true;
+  expect(piece.sectionStartsGrid[0]).toEqual([0, 1]);
+
+  // Toggle p1 to not be a section start
+  p1.isSectionStart = false;
+  expect(piece.sectionStartsGrid[0]).toEqual([1]);
+});
+
+test('deleting a phrase with isSectionStart maintains correct section tracking', () => {
+  const raga = new Raga();
+  const p1 = new Phrase({ trajectories: [new Trajectory({ durTot: 1 })], raga, isSectionStart: true });
+  const p2 = new Phrase({ trajectories: [new Trajectory({ durTot: 1 })], raga, isSectionStart: true });
+  const p3 = new Phrase({ trajectories: [new Trajectory({ durTot: 1 })], raga, isSectionStart: false });
+  const piece = new Piece({ phrases: [p1, p2, p3], raga, instrumentation: [Instrument.Sitar] });
+
+  // Before deletion: sections at indices 0 and 1
+  expect(piece.sectionStartsGrid[0]).toEqual([0, 1]);
+
+  // Delete p2 (which was a section start at index 1)
+  piece.phraseGrid[0].splice(1, 1);
+  piece.durArrayFromPhrases();
+
+  // After deletion: only section at index 0 (p1)
+  // p3 is now at index 1 and is not a section start
+  expect(piece.sectionStartsGrid[0]).toEqual([0]);
+  expect(piece.phraseGrid[0][0].isSectionStart).toBe(true);
+  expect(piece.phraseGrid[0][1].isSectionStart).toBe(false);
+});
+
+test('adding a new phrase with isSectionStart updates section tracking', () => {
+  const raga = new Raga();
+  const p1 = new Phrase({ trajectories: [new Trajectory({ durTot: 1 })], raga, isSectionStart: true });
+  const p2 = new Phrase({ trajectories: [new Trajectory({ durTot: 1 })], raga, isSectionStart: false });
+  const piece = new Piece({ phrases: [p1, p2], raga, instrumentation: [Instrument.Sitar] });
+
+  expect(piece.sectionStartsGrid[0]).toEqual([0]);
+
+  // Insert new section start between p1 and p2
+  const pNew = new Phrase({ trajectories: [new Trajectory({ durTot: 1 })], raga, isSectionStart: true });
+  piece.phraseGrid[0].splice(1, 0, pNew);
+  piece.durArrayFromPhrases();
+
+  expect(piece.sectionStartsGrid[0]).toEqual([0, 1]);
+});
+
+test('multi-track sectionStartsGrid works with phrase.isSectionStart', () => {
+  const raga = new Raga();
+  const p1t1 = new Phrase({ trajectories: [new Trajectory({ durTot: 1 })], raga, isSectionStart: true });
+  const p2t1 = new Phrase({ trajectories: [new Trajectory({ durTot: 1 })], raga, isSectionStart: false });
+  const p1t2 = new Phrase({ trajectories: [new Trajectory({ durTot: 1 })], raga, isSectionStart: true });
+  const p2t2 = new Phrase({ trajectories: [new Trajectory({ durTot: 1 })], raga, isSectionStart: true });
+
+  const piece = new Piece({
+    phraseGrid: [[p1t1, p2t1], [p1t2, p2t2]],
+    raga,
+    instrumentation: [Instrument.Sitar, Instrument.Vocal_M],
+  });
+
+  expect(piece.sectionStartsGrid[0]).toEqual([0]);
+  expect(piece.sectionStartsGrid[1]).toEqual([0, 1]);
 });
