@@ -1,6 +1,10 @@
 # Changelog
 
 
+* fix: update phraseCategorizationPreservation test for new phrase-based system [89895bc] (Jon Myers)
+* feat: migrate to phrase-based section tracking with isSectionStart [057f8f0] (Jon Myers)
+### 2025-09-30
+
 * docs: update editor instructions with new UI controls [5f5b222] (Jon Myers)
 * feat: add 5x nudge speed for drag dots with option/alt key [8e4efbe] (Jon Myers)
 * fix: correct initial pulse selection direction with shift+arrow [9ca33b9] (Jon Myers)
