@@ -1,6 +1,9 @@
 # Changelog
 
 
+* chore: remove debug logging from updatePhraseDivType [c08540d] (Jon Myers)
+* fix: remove legacy sectionStartsGrid from database on save [1f21b2f] (Jon Myers)
+* fix: get section index at correct time when toggling phrase div type [71a9ccf] (Jon Myers)
 * fix: sync section categorization arrays when toggling phrase div type [61001b0] (Jon Myers)
 * fix: correct section metadata cleanup timing in deletePhraseDiv [49feb0d] (Jon Myers)
 * fix: update phraseCategorizationPreservation test for new phrase-based system [89895bc] (Jon Myers)
