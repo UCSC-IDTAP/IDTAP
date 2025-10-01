@@ -2840,37 +2840,21 @@ export default defineComponent({
       }
 
       // Merge ad-hoc categorizations (concatenate unique values)
+      // adHocCategorizationGrid is a flat string[] (phrase-level, not per-string)
       if (phrase.adHocCategorizationGrid && phrase.adHocCategorizationGrid.length > 0) {
         if (!prevPhrase.adHocCategorizationGrid) {
           prevPhrase.adHocCategorizationGrid = [];
         }
-        phrase.adHocCategorizationGrid.forEach((adHocCat, stringIdx) => {
-          if (!prevPhrase.adHocCategorizationGrid[stringIdx]) {
-            prevPhrase.adHocCategorizationGrid[stringIdx] = [];
-          }
-          // Add unique ad-hoc categories from the deleted phrase
-          if (adHocCat && adHocCat.length > 0) {
-            const uniqueCategories = adHocCat.filter(cat =>
-              !prevPhrase.adHocCategorizationGrid[stringIdx].includes(cat)
-            );
-            prevPhrase.adHocCategorizationGrid[stringIdx].push(...uniqueCategories);
-          }
-        });
+        // Add unique ad-hoc categories from the deleted phrase
+        const uniqueCategories = phrase.adHocCategorizationGrid.filter(cat =>
+          !prevPhrase.adHocCategorizationGrid.includes(cat)
+        );
+        prevPhrase.adHocCategorizationGrid.push(...uniqueCategories);
       }
 
       prevPhrase.consolidateContinuousTrajectories();
-      props.piece.phraseGrid[track].splice(phrase.pieceIdx!, 1);
-      props.piece.durArrayFromPhrases();
 
-      // Clear all trajectory SVG elements and rebuild everything
-      resetTranscription();
-      
-      justDeletedPhraseDiv = true;
-      selectedPhraseDivUid.value = undefined;
-      emit('unsavedChanges', true);
-      emit('update:selPhraseDivUid', undefined);
-
-      // Clear section metadata if this phrase was a section start
+      // Clear section metadata BEFORE deleting the phrase (since indices will shift after deletion)
       if (phrase.isSectionStart) {
         const ss = props.piece.sectionStartsGrid[track];
         const sectionIdx = ss.indexOf(phrase.pieceIdx!);
@@ -2880,6 +2864,18 @@ export default defineComponent({
         }
         phrase.isSectionStart = false;
       }
+
+      props.piece.phraseGrid[track].splice(phrase.pieceIdx!, 1);
+      props.piece.durArrayFromPhrases();
+
+      // Clear all trajectory SVG elements and rebuild everything
+      resetTranscription();
+
+      justDeletedPhraseDiv = true;
+      selectedPhraseDivUid.value = undefined;
+      emit('unsavedChanges', true);
+      emit('update:selPhraseDivUid', undefined);
+
       emit('update:xAxisPhraseLabels')
     }
 
