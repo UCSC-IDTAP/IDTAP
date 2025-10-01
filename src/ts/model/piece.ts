@@ -450,7 +450,7 @@ class Piece {
     return this.phraseGrid.map(phrases =>
       phrases
         .map((p, idx) => ({ phrase: p, idx }))
-        .filter(({ phrase }) => phrase.isSectionStart === true)
+        .filter(({ phrase }) => phrase.isSectionStart)
         .map(({ idx }) => idx)
     );
   }
