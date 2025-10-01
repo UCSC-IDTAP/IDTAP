@@ -282,7 +282,13 @@ const runServer = async () => {
 	  updateObj['dateModified'] = new Date();
 	  updateObj['dateCreated'] = new Date(updateObj['dateCreated'])
 	  const query = { '_id': new ObjectId(req.body._id) };
-	  const update = { '$set': updateObj };
+	  const update = {
+		'$set': updateObj,
+		'$unset': {
+		  'sectionStartsGrid': '',  // Remove legacy field - now using phrase.isSectionStart
+		  'sectionStarts': ''        // Remove even older legacy field
+		}
+	  };
 	  try {
 		const result = await transcriptions.updateOne(query, update);
 		res.send(JSON.stringify({ ...result, dateModified: updateObj['dateModified'] }))
