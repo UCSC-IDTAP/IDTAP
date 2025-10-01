@@ -143,7 +143,7 @@ class Piece {
   soloInstrument?: string;
   phraseGrid: Phrase[][];
   durArrayGrid: number[][];
-  sectionStartsGrid: number[][];
+  private _sectionStartsGrid?: number[][]; // Legacy storage for migration
   sectionCatGrid: SecCatType[][];
   excerptRange?: ExcerptRange;
   adHocSectionCatGrid: string[][][];
@@ -240,20 +240,22 @@ class Piece {
       this.durArrayGrid.push([])
     }
     this.durArrayGrid.length = instrumentation.length;
+
+    // Migration: Handle old sectionStartsGrid format
     if (sectionStartsGrid !== undefined) {
+      // Use setter to convert to phrase properties
       this.sectionStartsGrid = sectionStartsGrid;
+    } else if (sectionStarts !== undefined) {
+      // Old single-track format
+      this.sectionStartsGrid = [sectionStarts];
     } else {
-      this.sectionStartsGrid = sectionStarts === undefined ? 
-        [[0]] : 
-        [sectionStarts];
+      // Default: first phrase of each track is a section start
+      this.phraseGrid.forEach((phrases, trackIdx) => {
+        if (phrases.length > 0 && phrases[0]) {
+          phrases[0].isSectionStart = true;
+        }
+      });
     }
-    for (let i = 1; i < instrumentation.length; i++) {
-      this.sectionStartsGrid.push([0])
-    }
-    this.sectionStartsGrid.length = instrumentation.length;
-    this.sectionStartsGrid.forEach((ss, i) => {
-      ss.sort((a, b) => a - b);
-    })
     if (sectionCatGrid !== undefined) {
       this.sectionCatGrid = sectionCatGrid;
       if (this.sectionCatGrid.length === 0) {
@@ -441,6 +443,27 @@ class Piece {
 
   set durArray(arr) {
     this.durArrayGrid[0] = arr
+  }
+
+  // Computed property that derives section starts from phrase properties
+  get sectionStartsGrid(): number[][] {
+    return this.phraseGrid.map(phrases =>
+      phrases
+        .map((p, idx) => ({ phrase: p, idx }))
+        .filter(({ phrase }) => phrase.isSectionStart)
+        .map(({ idx }) => idx)
+    );
+  }
+
+  // Setter for backward compatibility during migration
+  set sectionStartsGrid(grid: number[][]) {
+    grid.forEach((sectionIndices, trackIdx) => {
+      if (this.phraseGrid[trackIdx]) {
+        this.phraseGrid[trackIdx].forEach((phrase, pIdx) => {
+          phrase.isSectionStart = sectionIndices.includes(pIdx);
+        });
+      }
+    });
   }
 
   get sectionStarts() {
@@ -1339,7 +1362,7 @@ class Piece {
       name: this.name,
       family_name: this.family_name,
       given_name: this.given_name,
-      sectionStarts: this.sectionStarts,
+      // sectionStarts: removed - now computed from phrase.isSectionStart
       instrumentation: this.instrumentation,
       trackTitles: this.trackTitles,
       meters: this.meters,
@@ -1349,7 +1372,7 @@ class Piece {
       soloInstrument: this.soloInstrument,
       phraseGrid: this.phraseGrid,
       durArrayGrid: this.durArrayGrid,
-      sectionStartsGrid: this.sectionStartsGrid,
+      // sectionStartsGrid: removed - now computed from phrase.isSectionStart
       sectionCatGrid: this.sectionCatGrid,
       excerptRange: this.excerptRange,
       adHocSectionCatGrid: this.adHocSectionCatGrid,
@@ -1371,6 +1394,19 @@ class Piece {
     obj.phraseGrid = (obj.phraseGrid || []).map((phrases: any[], instIdx: number) => {
       return phrases.map((p: any) => Phrase.fromJSON(p));
     });
+
+    // Migration: Convert old sectionStartsGrid format to phrase.isSectionStart
+    if (obj.sectionStartsGrid && Array.isArray(obj.sectionStartsGrid)) {
+      obj.phraseGrid.forEach((phrases: Phrase[], trackIdx: number) => {
+        const sectionIndices = obj.sectionStartsGrid[trackIdx] || [];
+        phrases.forEach((phrase: Phrase, pIdx: number) => {
+          // Only set isSectionStart if not already set (preserve new format)
+          if (phrase.isSectionStart === undefined) {
+            phrase.isSectionStart = sectionIndices.includes(pIdx);
+          }
+        });
+      });
+    }
 
     if (obj.meters) {
       obj.meters = obj.meters.map((m: any) => new Meter(m));
@@ -1416,7 +1452,7 @@ class Piece {
     });
 
     piece.durArrayFromPhrases();
-    piece.sectionStartsGrid = piece.sectionStartsGrid.map((arr) => [...new Set(arr)]);
+    // No need to deduplicate sectionStartsGrid - it's now computed from phrase properties
     // Ensure string synchronization for polyphonic instruments
     piece.ensureStringSynchronization();
     return piece;

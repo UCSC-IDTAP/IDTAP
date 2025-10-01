@@ -2869,11 +2869,16 @@ export default defineComponent({
       selectedPhraseDivUid.value = undefined;
       emit('unsavedChanges', true);
       emit('update:selPhraseDivUid', undefined);
-      if (props.piece.sectionStartsGrid[track].includes(phrase.pieceIdx!)) {
-        const sectionIdx = props.piece.sectionStartsGrid[track].indexOf(phrase.pieceIdx!);
-        props.piece.sectionStartsGrid[track].splice(sectionIdx, 1);
-        props.piece.sectionCatGrid[track].splice(sectionIdx, 1);
-        props.piece.adHocSectionCatGrid[track].splice(sectionIdx, 1);
+
+      // Clear section metadata if this phrase was a section start
+      if (phrase.isSectionStart) {
+        const ss = props.piece.sectionStartsGrid[track];
+        const sectionIdx = ss.indexOf(phrase.pieceIdx!);
+        if (sectionIdx !== -1) {
+          props.piece.sectionCatGrid[track].splice(sectionIdx, 1);
+          props.piece.adHocSectionCatGrid[track].splice(sectionIdx, 1);
+        }
+        phrase.isSectionStart = false;
       }
       emit('update:xAxisPhraseLabels')
     }
@@ -5348,13 +5353,16 @@ export default defineComponent({
       const phrases = props.piece.phraseGrid[track];
 
       // Check if this division is a section before we delete it, and preserve its metadata
-      const wasSection = props.piece.sectionStartsGrid[track].includes(pIdx);
+      const wasSection = phrase.isSectionStart === true;
       let sectionCat: any = null;
       let adHocSectionCat: string[] | null = null;
       if (wasSection) {
-        const sectionIdx = props.piece.sectionStartsGrid[track].indexOf(pIdx);
-        sectionCat = props.piece.sectionCatGrid[track][sectionIdx];
-        adHocSectionCat = props.piece.adHocSectionCatGrid[track][sectionIdx];
+        const ss = props.piece.sectionStartsGrid[track];
+        const sectionIdx = ss.indexOf(pIdx);
+        if (sectionIdx !== -1) {
+          sectionCat = props.piece.sectionCatGrid[track][sectionIdx];
+          adHocSectionCat = props.piece.adHocSectionCatGrid[track][sectionIdx];
+        }
       }
 
       // Preserve phrase categorizations before nudging
@@ -5387,12 +5395,15 @@ export default defineComponent({
         if (wasSection) {
           // The new phrase is now at oldPIdx (since we merged and re-split)
           const newPhraseIdx = oldPIdx;
-          props.piece.sectionStartsGrid[curTrack].push(newPhraseIdx);
-          props.piece.sectionStartsGrid[curTrack].sort((a, b) => a - b);
-          // Find the new position in the sorted array and insert categorization data
-          const newSectionIdx = props.piece.sectionStartsGrid[curTrack].indexOf(newPhraseIdx);
-          props.piece.sectionCatGrid[curTrack].splice(newSectionIdx, 0, sectionCat);
-          props.piece.adHocSectionCatGrid[curTrack].splice(newSectionIdx, 0, adHocSectionCat);
+          const newPhrase = props.piece.phraseGrid[curTrack][newPhraseIdx];
+          newPhrase.isSectionStart = true;
+          // Insert categorization data at the correct position
+          const ss = props.piece.sectionStartsGrid[curTrack];
+          const newSectionIdx = ss.indexOf(newPhraseIdx);
+          if (newSectionIdx !== -1) {
+            props.piece.sectionCatGrid[curTrack].splice(newSectionIdx, 0, sectionCat);
+            props.piece.adHocSectionCatGrid[curTrack].splice(newSectionIdx, 0, adHocSectionCat);
+          }
         }
 
         // Clear all trajectory SVG elements and rebuild everything
@@ -5429,12 +5440,15 @@ export default defineComponent({
         if (wasSection) {
           // The new phrase is now at oldPIdx (since we merged and re-split)
           const newPhraseIdx = oldPIdx;
-          props.piece.sectionStartsGrid[curTrack].push(newPhraseIdx);
-          props.piece.sectionStartsGrid[curTrack].sort((a, b) => a - b);
-          // Find the new position in the sorted array and insert categorization data
-          const newSectionIdx = props.piece.sectionStartsGrid[curTrack].indexOf(newPhraseIdx);
-          props.piece.sectionCatGrid[curTrack].splice(newSectionIdx, 0, sectionCat);
-          props.piece.adHocSectionCatGrid[curTrack].splice(newSectionIdx, 0, adHocSectionCat);
+          const newPhrase = props.piece.phraseGrid[curTrack][newPhraseIdx];
+          newPhrase.isSectionStart = true;
+          // Insert categorization data at the correct position
+          const ss = props.piece.sectionStartsGrid[curTrack];
+          const newSectionIdx = ss.indexOf(newPhraseIdx);
+          if (newSectionIdx !== -1) {
+            props.piece.sectionCatGrid[curTrack].splice(newSectionIdx, 0, sectionCat);
+            props.piece.adHocSectionCatGrid[curTrack].splice(newSectionIdx, 0, adHocSectionCat);
+          }
         }
 
         // Clear all trajectory SVG elements and rebuild everything
@@ -6926,14 +6940,17 @@ export default defineComponent({
       // Reset both phrases after all trajectory movements
       phrase_.reset();
       newPhrase.reset();
-      
-      // Ensure both phrases have proper polyphonic trajectory grids  
+
+      // New phrase divisions are regular phrase divisions by default (not section starts)
+      newPhrase.isSectionStart = false;
+
+      // Ensure both phrases have proper polyphonic trajectory grids
       props.piece.ensureStringSynchronization();
-      
+
       props.piece.durTotFromPhrases();
       props.piece.durArrayFromPhrases();
       props.piece.updateStartTimes();
-      
+
       // Force complete re-render of all trajectories after phrase division
       resetTranscription();
       const pd: PhraseDivDisplayType = {
