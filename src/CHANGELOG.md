@@ -1,6 +1,7 @@
 # Changelog
 
 
+* fix: sync section categorization arrays when toggling phrase div type [61001b0] (Jon Myers)
 * fix: correct section metadata cleanup timing in deletePhraseDiv [49feb0d] (Jon Myers)
 * fix: update phraseCategorizationPreservation test for new phrase-based system [89895bc] (Jon Myers)
 * feat: migrate to phrase-based section tracking with isSectionStart [057f8f0] (Jon Myers)
