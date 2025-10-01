@@ -300,9 +300,8 @@ describe('Section Categorization Preservation (Model for Phrase implementation)'
       const piece = createTestPiece();
       const track = 0;
 
-      // Add another section at position 1
-      piece.sectionStartsGrid[track].push(1);
-      piece.sectionStartsGrid[track].sort((a, b) => a - b);
+      // Add another section at position 1 using the new phrase-based system
+      piece.phraseGrid[track][1].isSectionStart = true;
 
       // Now we have sections at [0, 1, 2]
       expect(piece.sectionStartsGrid[track]).toEqual([0, 1, 2]);
@@ -311,14 +310,15 @@ describe('Section Categorization Preservation (Model for Phrase implementation)'
       const oldIdx = piece.sectionStartsGrid[track].indexOf(2);
       const sectionCat = piece.sectionCatGrid[track][oldIdx];
 
-      // Remove old position
-      piece.sectionStartsGrid[track].splice(oldIdx, 1);
+      // Remove old position by clearing isSectionStart
+      piece.phraseGrid[track][2].isSectionStart = false;
 
-      // Add at new position
-      piece.sectionStartsGrid[track].push(3);
-      piece.sectionStartsGrid[track].sort((a, b) => a - b);
+      // Add at new position (requires a phrase at position 3)
+      if (piece.phraseGrid[track][3]) {
+        piece.phraseGrid[track][3].isSectionStart = true;
+      }
 
-      // Find new index after sorting
+      // Verify the change
       const newIdx = piece.sectionStartsGrid[track].indexOf(3);
       expect(newIdx).toBeDefined();
     });
