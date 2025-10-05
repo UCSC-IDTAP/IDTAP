@@ -1,6 +1,11 @@
 # Changelog
 
 
+* fix: rebuild extract.js for phrase-based section tracking and add backup docs [df5d24a] (Jon Myers)
+### 2025-10-04
+
+## October 2025
+
 * chore: remove debug logging from updatePhraseDivType [c08540d] (Jon Myers)
 * fix: remove legacy sectionStartsGrid from database on save [1f21b2f] (Jon Myers)
 * fix: get section index at correct time when toggling phrase div type [71a9ccf] (Jon Myers)
