@@ -69434,6 +69434,7 @@ var Phrase = class _Phrase {
   categorizationGrid;
   adHocCategorizationGrid;
   uniqueId;
+  isSectionStart;
   constructor({
     trajectories = [],
     durTot = void 0,
@@ -69447,7 +69448,8 @@ var Phrase = class _Phrase {
     groupsGrid = void 0,
     categorizationGrid = void 0,
     uniqueId = void 0,
-    adHocCategorizationGrid = void 0
+    adHocCategorizationGrid = void 0,
+    isSectionStart = void 0
   } = {}) {
     if (uniqueId === void 0) {
       this.uniqueId = v4_default();
@@ -69521,6 +69523,7 @@ var Phrase = class _Phrase {
     } else {
       this.adHocCategorizationGrid = [];
     }
+    this.isSectionStart = isSectionStart;
   }
   updateFundamental(fundamental) {
     this.trajectories.forEach((traj) => traj.updateFundamental(fundamental));
@@ -69881,7 +69884,8 @@ var Phrase = class _Phrase {
       groupsGrid: this.groupsGrid,
       categorizationGrid: this.categorizationGrid,
       uniqueId: this.uniqueId,
-      adHocCategorizationGrid: this.adHocCategorizationGrid
+      adHocCategorizationGrid: this.adHocCategorizationGrid,
+      isSectionStart: this.isSectionStart
     };
   }
   static fromJSON(obj2) {
@@ -72248,7 +72252,8 @@ var Piece = class _Piece {
   soloInstrument;
   phraseGrid;
   durArrayGrid;
-  sectionStartsGrid;
+  _sectionStartsGrid;
+  // Legacy storage for migration
   sectionCatGrid;
   excerptRange;
   adHocSectionCatGrid;
@@ -72307,16 +72312,15 @@ var Piece = class _Piece {
     this.durArrayGrid.length = instrumentation.length;
     if (sectionStartsGrid !== void 0) {
       this.sectionStartsGrid = sectionStartsGrid;
+    } else if (sectionStarts !== void 0) {
+      this.sectionStartsGrid = [sectionStarts];
     } else {
-      this.sectionStartsGrid = sectionStarts === void 0 ? [[0]] : [sectionStarts];
+      this.phraseGrid.forEach((phrases2, trackIdx) => {
+        if (phrases2.length > 0 && phrases2[0]) {
+          phrases2[0].isSectionStart = true;
+        }
+      });
     }
-    for (let i = 1; i < instrumentation.length; i++) {
-      this.sectionStartsGrid.push([0]);
-    }
-    this.sectionStartsGrid.length = instrumentation.length;
-    this.sectionStartsGrid.forEach((ss, i) => {
-      ss.sort((a, b) => a - b);
-    });
     if (sectionCatGrid !== void 0) {
       this.sectionCatGrid = sectionCatGrid;
       if (this.sectionCatGrid.length === 0) {
@@ -72476,6 +72480,22 @@ var Piece = class _Piece {
   }
   set durArray(arr) {
     this.durArrayGrid[0] = arr;
+  }
+  // Computed property that derives section starts from phrase properties
+  get sectionStartsGrid() {
+    return this.phraseGrid.map(
+      (phrases) => phrases.map((p, idx) => ({ phrase: p, idx })).filter(({ phrase }) => phrase.isSectionStart).map(({ idx }) => idx)
+    );
+  }
+  // Setter for backward compatibility during migration
+  set sectionStartsGrid(grid) {
+    grid.forEach((sectionIndices, trackIdx) => {
+      if (this.phraseGrid[trackIdx]) {
+        this.phraseGrid[trackIdx].forEach((phrase, pIdx) => {
+          phrase.isSectionStart = sectionIndices.includes(pIdx);
+        });
+      }
+    });
   }
   get sectionStarts() {
     return this.sectionStartsGrid[0];
@@ -73268,8 +73288,9 @@ var Piece = class _Piece {
       name: this.name,
       family_name: this.family_name,
       given_name: this.given_name,
-      sectionStarts: this.sectionStarts,
+      // sectionStarts: removed - now computed from phrase.isSectionStart
       instrumentation: this.instrumentation,
+      trackTitles: this.trackTitles,
       meters: this.meters,
       sectionCategorization: this.sectionCategorization,
       explicitPermissions: this.explicitPermissions,
@@ -73277,7 +73298,7 @@ var Piece = class _Piece {
       soloInstrument: this.soloInstrument,
       phraseGrid: this.phraseGrid,
       durArrayGrid: this.durArrayGrid,
-      sectionStartsGrid: this.sectionStartsGrid,
+      // sectionStartsGrid: removed - now computed from phrase.isSectionStart
       sectionCatGrid: this.sectionCatGrid,
       excerptRange: this.excerptRange,
       adHocSectionCatGrid: this.adHocSectionCatGrid,
@@ -73296,6 +73317,16 @@ var Piece = class _Piece {
     obj2.phraseGrid = (obj2.phraseGrid || []).map((phrases, instIdx) => {
       return phrases.map((p) => Phrase.fromJSON(p));
     });
+    if (obj2.sectionStartsGrid && Array.isArray(obj2.sectionStartsGrid)) {
+      obj2.phraseGrid.forEach((phrases, trackIdx) => {
+        const sectionIndices = obj2.sectionStartsGrid[trackIdx] || [];
+        phrases.forEach((phrase, pIdx) => {
+          if (phrase.isSectionStart === void 0) {
+            phrase.isSectionStart = sectionIndices.includes(pIdx);
+          }
+        });
+      });
+    }
     if (obj2.meters) {
       obj2.meters = obj2.meters.map((m) => new Meter(m));
     }
@@ -73333,7 +73364,6 @@ var Piece = class _Piece {
       });
     });
     piece.durArrayFromPhrases();
-    piece.sectionStartsGrid = piece.sectionStartsGrid.map((arr) => [...new Set(arr)]);
     piece.ensureStringSynchronization();
     return piece;
   }

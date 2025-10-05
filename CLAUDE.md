@@ -368,4 +368,112 @@ pnpm deployShared       # Deploy shared TypeScript types (manual)
 - User-uploaded file management
 - Temporary file cleanup
 
-This architecture provides a sophisticated platform for musical transcription and analysis, balancing research-grade analytical capabilities with intuitive user interfaces for both academic and practical applications. The polyphonic individual instrumentality system enables detailed study of complex Indian classical music performances, while the Python API integration facilitates computational musicology research and institutional data access. The platform continues to evolve with automated development workflows and comprehensive security measures to support both individual musicians and academic research communities.
+## Database Backup and Restoration
+
+### Backup System
+IDTAP maintains daily MongoDB backups on the production server at `/root/backups/` with the following structure:
+```
+/root/backups/
+├── YYYY-M-D/           # Daily backup directories (e.g., 2023-9-15)
+│   └── swara/          # Database backup files
+│       ├── transcriptions.bson
+│       ├── transcriptions.metadata.json
+│       ├── audioFiles.bson
+│       ├── users.bson
+│       └── [other collections...]
+└── backup_mongo.py     # Automated backup script
+```
+
+**Backup Script**: `/root/backups/backup_mongo.py` runs daily to create MongoDB dumps using `mongodump`.
+
+### Restoration Process
+
+#### 1. **Exploring Backups**
+```bash
+# SSH into production server
+ssh root@137.184.90.119
+
+# List available backup dates
+ls /root/backups/ | grep YYYY
+
+# Check backup contents
+ls -la /root/backups/2023-9-15/swara/
+
+# Examine BSON files (search for specific documents)
+bsondump /root/backups/2023-9-15/swara/transcriptions.bson | grep "search_term"
+```
+
+#### 2. **Full Database Restoration**
+```bash
+# Restore entire backup to a test database (RECOMMENDED)
+mongorestore --uri 'mongodb+srv://export_robot:PASSWORD@swara.f5cuf.mongodb.net/test_restore_YYYY_MM_DD' \
+             --drop /root/backups/YYYY-M-D/swara/
+
+# Restore to production database (USE WITH CAUTION)
+mongorestore --uri 'mongodb+srv://export_robot:PASSWORD@swara.f5cuf.mongodb.net/swara' \
+             --drop /root/backups/YYYY-M-D/swara/
+```
+
+#### 3. **Single Document Recovery**
+```bash
+# Export specific document from backup
+mongoexport --uri 'mongodb+srv://export_robot:PASSWORD@swara.f5cuf.mongodb.net/test_restore_DB' \
+            --collection transcriptions \
+            --query '{"_id": {"$oid": "DOCUMENT_ID"}}' \
+            --out /root/specific_document.json
+
+# Import to live database
+mongoimport --uri 'mongodb+srv://export_robot:PASSWORD@swara.f5cuf.mongodb.net/swara' \
+            --collection transcriptions \
+            --file /root/specific_document.json \
+            --upsert
+```
+
+#### 4. **Finding Lost Data**
+**Search for documents across multiple backup dates:**
+```bash
+# Search for document ID across multiple backups
+for backup in /root/backups/2023-*/swara/; do
+    echo "Checking $backup"
+    bsondump "$backup/transcriptions.bson" 2>/dev/null | grep "DOCUMENT_ID" && echo "Found in $backup"
+done
+
+# Search by content (e.g., title, creator)
+bsondump /root/backups/2023-9-15/swara/transcriptions.bson | grep -E '"title".*"search_term"|"createdBy".*"Name"'
+```
+
+#### 5. **Permission Field Evolution**
+IDTAP's permission system has evolved:
+- **Legacy**: `"permissions": "Public"` (string field)
+- **Current**: `"explicitPermissions": {"edit":["userId"], "view":[], "publicView":true}` (object field)
+
+When restoring older transcriptions, you may need to migrate permissions:
+```javascript
+// Example permission migration
+{
+  "permissions": "Public"  // Old format
+}
+// becomes:
+{
+  "explicitPermissions": {
+    "edit": [],
+    "view": [],
+    "publicView": true
+  }
+}
+```
+
+### Best Practices
+1. **Always test with a separate database first**: Use `test_restore_YYYY_MM_DD` naming
+2. **Verify data in MongoDB Atlas web interface** before applying to production
+3. **Document the restoration**: Note which backup date was used and why
+4. **Check for schema changes**: Newer fields like `explicitPermissions` may not exist in older backups
+5. **Coordinate with team**: Ensure no one is actively editing during restoration
+
+### Backup Retention
+- **Daily backups**: Maintained automatically going back several years
+- **Storage**: Local server storage at `/root/backups/`
+- **Format**: MongoDB BSON dumps with metadata JSON files
+- **Collections**: All database collections backed up daily
+
+This backup system ensures data recovery capabilities and supports research workflows requiring access to historical transcription data.
