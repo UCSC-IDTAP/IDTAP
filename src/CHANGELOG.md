@@ -1,6 +1,12 @@
 # Changelog
 
 
+* fix: update vite override to match lockfile version [698da6d] (Jon Myers)
+* fix: upgrade vite to 7.2.1 to patch file system bypass vulnerability [8bfc008] (Jon Myers)
+### 2025-11-06
+
+## November 2025
+
 * fix: rebuild extract.js for phrase-based section tracking and add backup docs [df5d24a] (Jon Myers)
 ### 2025-10-04
 
