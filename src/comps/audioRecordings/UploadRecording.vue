@@ -716,19 +716,19 @@ export default defineComponent({
     },
 
     permissionToViewAE(audioEvent: AudioEventMetadataType) {
-      const ep = audioEvent.explicitPermissions!;
+      const ep = audioEvent.explicitPermissions;
       const id = this.$store.state.userID!;
-      const out = ep.publicView || 
-        ep.view.includes(id) || 
-        ep.edit.includes(id) ||
+      const out = (ep !== undefined && (ep.publicView ||
+        ep.view.includes(id) ||
+        ep.edit.includes(id))) ||
         audioEvent.userID === id;
       return out;
     },
 
     permissionToEditAE(audioEvent: AudioEventMetadataType) {
-      const ep = audioEvent.explicitPermissions!;
+      const ep = audioEvent.explicitPermissions;
       const id = this.$store.state.userID!;
-      const out = ep.edit.includes(id) || audioEvent.userID === id;
+      const out = (ep !== undefined && ep.edit.includes(id)) || audioEvent.userID === id;
       return out;
     },
 

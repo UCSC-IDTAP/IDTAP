@@ -152,7 +152,11 @@ cron.schedule('0 0 * * *', () => {
 });
 
 app.use(fileUpload({
-  createParentPath: true
+  createParentPath: true,
+  limits: { fileSize: 2 * 1024 * 1024 * 1024 }, // 2GB limit
+  useTempFiles: true,
+  tempFileDir: '/tmp/',
+  abortOnLimit: false
 }))
 app.use(history({
   htmlAcceptHeaders: ['text/html']
