@@ -12,6 +12,31 @@ IDTAP (Interactive Digital Transcription and Analysis Platform) is a sophisticat
 
 **Note:** This CLAUDE.md covers the web development aspects. For Python API development, see `/python/CLAUDE.md`.
 
+## **CRITICAL: Server Management Rules**
+
+**⚠️ NEVER RESTART THE PRODUCTION SERVER WITHOUT EXPLICIT PERMISSION ⚠️**
+
+The production Node.js server runs in a **tmux session** with **nodemon** for automatic reloading:
+- **NEVER** manually restart, kill, or interfere with the server process
+- **NEVER** run commands like `pm2 restart`, `pkill node`, or similar
+- **Nodemon handles restarts automatically** when files are deployed
+- If the server needs restarting, the user will handle it manually via tmux
+
+**Deployment workflow:**
+1. Deploy code changes with `pnpm deployTSServer` (safe)
+2. Nodemon detects file changes and restarts automatically
+3. DO NOT attempt any manual server restart
+
+**If the server is down:**
+- Inform the user immediately
+- DO NOT attempt to start it yourself
+- The user will reconnect to the tmux session and restart manually
+
+**Checking tmux sessions (safe):**
+```bash
+ssh root@137.184.90.119 "tmux ls"  # List sessions only
+```
+
 ## Technology Stack
 
 ### Frontend
