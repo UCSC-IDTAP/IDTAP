@@ -497,11 +497,8 @@ export default defineComponent({
       // Skip if chunk was recently unloaded (prevent thrashing)
       const lastUnload = recentlyUnloadedChunks.get(idx);
       if (lastUnload && Date.now() - lastUnload < RELOAD_COOLDOWN_MS) {
-        console.log(`[Skip] Chunk ${idx} (cooldown: ${Date.now() - lastUnload}ms ago)`);
         return false;
       }
-
-      console.log(`[Load] Chunk ${idx}`);
       const dur = chunkDur.value;
       for (let inst = 0; inst < props.piece.instrumentation.length; inst++) {
         const instrument = props.piece.instrumentation[inst];
@@ -595,7 +592,6 @@ export default defineComponent({
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         const idx = emptyDivIdxMap.get(entry.target as HTMLDivElement)!;
-        console.log(`[Observer] Chunk ${idx} isIntersecting=${entry.isIntersecting}`);
 
         if (entry.isIntersecting) {
           // Track as intersecting
@@ -687,7 +683,6 @@ export default defineComponent({
     };
 
     const unloadChunk = (chunkIdx: number) => {
-      console.log(`[Unload] Chunk ${chunkIdx}`);
       const dur = chunkDur.value;
 
       for (let inst = 0; inst < props.piece.instrumentation.length; inst++) {
@@ -821,7 +816,6 @@ export default defineComponent({
         // Preload 1 chunk per frame (more conservative than unloading)
         const chunkIdx = preloadQueue.shift();
         if (chunkIdx !== undefined) {
-          console.log(`[Preload Queue] Processing chunk ${chunkIdx} | Remaining in queue: ${preloadQueue.length}`);
           manuallyLoadChunk(chunkIdx);
           // Keep observing to detect when it enters/leaves viewport
 
@@ -860,8 +854,6 @@ export default defineComponent({
         }
       });
 
-      console.log(`[Stats] Active: ${active.start}-${active.end}, Keep: ${keepStart}-${keepEnd}, Rendered: ${renderedChunks.value.size}, ToUnload: ${toUnload.length}, Playback: ${playbackChunk}`);
-
       // Unload distant chunks to free memory
       toUnload.forEach(idx => {
         if (!unloadQueue.includes(idx)) {
@@ -874,7 +866,7 @@ export default defineComponent({
       }
 
       // Preload chunks based on active chunk index (not rootMargin)
-      const PRELOAD_COUNT = 4; // Load 4 chunks ahead and 4 behind to account for queue processing time
+      const PRELOAD_COUNT = 2; // Load 2 chunks ahead and 2 behind for smoother scrolling
 
       // Add chunks to preload queue instead of loading immediately
       const addedToQueue: number[] = [];
@@ -897,10 +889,6 @@ export default defineComponent({
           preloadQueue.push(preloadIdx);
           addedToQueue.push(preloadIdx);
         }
-      }
-
-      if (addedToQueue.length > 0) {
-        console.log(`[Preload Queue] Added chunks ${addedToQueue.join(', ')} | Queue length: ${preloadQueue.length} | Processing: ${isProcessingPreloadQueue}`);
       }
 
       // Start processing preload queue if there are chunks to load

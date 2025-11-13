@@ -64,7 +64,6 @@ export default defineComponent({
       entries.forEach((entry) => {
         const canvas = entry.target as HTMLCanvasElement;
         const idx = canvasIdxMap.get(canvas)!;
-        console.log(`[Canvas Observer] Canvas ${idx} isIntersecting=${entry.isIntersecting}`);
 
         if (entry.isIntersecting)  {
           // Track as intersecting (in viewport)
@@ -75,11 +74,8 @@ export default defineComponent({
             // Cooldown check to prevent thrashing
             const lastUnload = recentlyUnloadedCanvasChunks.get(idx);
             if (lastUnload && Date.now() - lastUnload < CANVAS_RELOAD_COOLDOWN_MS) {
-              console.log(`[Canvas Skip] Canvas ${idx} (cooldown: ${Date.now() - lastUnload}ms ago)`);
               return;
             }
-
-            console.log(`[Canvas Load] Canvas ${idx}`);
 
             const startX = maxCanvasWidth * idx;
             const width = Math.min(maxCanvasWidth, props.width - startX);
@@ -104,7 +100,7 @@ export default defineComponent({
       debouncedCanvasCheck();
     }, {
       root: null, // Use viewport as root (container.value is null at creation time)
-      rootMargin: '0px 3000px 0px 3000px', // Expand 3000px left/right for horizontal scrolling
+      rootMargin: '0px', // No expansion - use actual viewport (matches TranscriptionLayer)
       threshold: 0.0
     });
 
@@ -124,7 +120,6 @@ export default defineComponent({
 
     // Unload a distant canvas chunk
     const unloadCanvas = (chunkIdx: number) => {
-      console.log(`[Canvas Unload] Canvas ${chunkIdx}`);
       const canvas = canvases.value[chunkIdx];
       if (!canvas) return;
 
@@ -227,13 +222,11 @@ export default defineComponent({
         }
       });
 
-      console.log(`[Canvas Stats] Active: ${active.start}-${active.end}, Keep: ${keepStart}-${keepEnd}, Rendered: ${renderedCanvasChunks.value.size}, ToUnload: ${toUnload.length}`);
-
       // Unload distant canvases to free memory
       toUnload.forEach(idx => unloadCanvas(idx));
 
       // Preload spectrograms based on active chunk index (not rootMargin)
-      const PRELOAD_COUNT = 4;  // Load 4 chunks ahead and 4 behind to account for queue processing time
+      const PRELOAD_COUNT = 2;  // Load 2 chunks ahead and 2 behind for smoother scrolling
 
       // Add chunks to preload queue instead of loading immediately
       for (let i = 1; i <= PRELOAD_COUNT; i++) {
@@ -359,14 +352,11 @@ export default defineComponent({
         if (typeof e.data === 'string') {
           if (e.data === 'updateObserver') {
             resetObserver();
-          } else {
-            console.log(e.data)
           }
         } else if (e.data.msg === 'render') {
           const imgData = e.data.payload as ImageData;
           const canvasIdx = e.data.canvasIdx as number;
           const ctx = ctxs.value[canvasIdx];
-          // console.log('should be rendering image data')
           ctx.putImageData(imgData, 0, 0);
         }
       }
