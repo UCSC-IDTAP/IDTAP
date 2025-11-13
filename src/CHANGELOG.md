@@ -1,6 +1,14 @@
 # Changelog
 
 
+* chore: remove remaining debug console.log statements [70bea57] (Jon Myers)
+* refactor: simplify throttle/debounce in lazy loading [8637e90] (Jon Myers)
+* chore: clean up lazy loading implementation [04df599] (Jon Myers)
+### 2025-11-13
+
+* fix: implement viewport-based tracking for bidirectional lazy loading [290270b] (Jon Myers)
+### 2025-11-12
+
 * fix: update vite override to match lockfile version [698da6d] (Jon Myers)
 * fix: upgrade vite to 7.2.1 to patch file system bypass vulnerability [8bfc008] (Jon Myers)
 ### 2025-11-06
