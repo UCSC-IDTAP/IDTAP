@@ -3,7 +3,68 @@ const approxEqual = (v1: number, v2: number, epsilon = 0.001) => {
   return Math.abs(v1 - v2) <= epsilon
 };
 
-import { AffiliationType, MusicalTime } from '@shared/types'
+import { AffiliationType, MusicalTime, TalaDefinition } from '@shared/types'
+import { TalaName } from '@shared/enums'
+
+const talaPresets: Record<TalaName, TalaDefinition> = {
+  [TalaName.Tintal]: {
+    hierarchy: [[4, 4, 4, 4], 4],
+    vibhaga: ['X', 2, 'O', 3]
+  },
+  [TalaName.Tilwada]: {
+    hierarchy: [[4, 4, 4, 4], 4],
+    vibhaga: ['X', 2, 'O', 3]
+  },
+  [TalaName.Jhoomra]: {
+    hierarchy: [[3, 4, 3, 4], 4],
+    vibhaga: ['X', 2, 'O', 3]
+  },
+  [TalaName.AdaChautal]: {
+    hierarchy: [[2, 2, 2, 2, 3, 3], 4],
+    vibhaga: ['X', 2, 'O', 3, 4, 5]
+  },
+  [TalaName.Dhamar]: {
+    hierarchy: [[5, 2, 3, 4], 4],
+    vibhaga: ['X', 2, 'O', 3]
+  },
+  [TalaName.DeepchandiThumri]: {
+    hierarchy: [[3, 4, 3, 4], 4],
+    vibhaga: ['X', 'O', 2, 3]
+  },
+  [TalaName.DeepchandiDhrupad]: {
+    hierarchy: [[4, 2, 4, 2], 4],
+    vibhaga: ['X', 2, 'O', 3]
+  },
+  [TalaName.Ektal]: {
+    hierarchy: [[2, 2, 2, 2, 2, 2], 4],
+    vibhaga: ['X', 'O', 2, 'O', 3, 4]
+  },
+  [TalaName.Jhaptal]: {
+    hierarchy: [[2, 3, 2, 3], 4],
+    vibhaga: ['X', 2, 'O', 3]
+  },
+  [TalaName.SoolTaal]: {
+    hierarchy: [[2, 2, 2, 2, 2], 4],
+    vibhaga: ['X', 2, 'O', 3, 4]
+  },
+  [TalaName.Keherwa]: {
+    hierarchy: [4, 4],
+    vibhaga: ['X', 'O']
+  },
+  [TalaName.Rupak]: {
+    hierarchy: [3, 2, 2],
+    vibhaga: ['X', 2, 3]
+  },
+  [TalaName.Tivra]: {
+    hierarchy: [[3, 2, 2], 4],
+    vibhaga: ['X', 2, 3]
+  },
+  [TalaName.Dadra]: {
+    hierarchy: [[3, 3], 4],
+    vibhaga: ['X', 'O']
+  },
+}
+
 class Pulse {
   realTime: number;
   uniqueId: string;

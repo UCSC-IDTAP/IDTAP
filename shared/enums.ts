@@ -111,6 +111,23 @@ enum Color {
   Primary = '#1e241e'
 }
 
+enum TalaName {
+  Tintal = 'Tintal',
+  Tilwada = 'Tilwada',
+  Jhoomra = 'Jhoomra',
+  AdaChautal = 'Ada Chautal',
+  Dhamar = 'Dhamar',
+  DeepchandiThumri = 'Deepchandi (Thumri)',
+  DeepchandiDhrupad = 'Deepchandi (Dhrupad)',
+  Ektal = 'Ektal',
+  Jhaptal = 'Jhaptal',
+  SoolTaal = 'Sool Taal',
+  Keherwa = 'Keherwa',
+  Rupak = 'Rupak',
+  Tivra = 'Tivra',
+  Dadra = 'Dadra',
+}
+
 
 export {
   SortState,
@@ -126,5 +143,6 @@ export {
   PitchRepresentation,
   Segmentation,
   PitchInclusionMethod,
-  Color
+  Color,
+  TalaName,
 }

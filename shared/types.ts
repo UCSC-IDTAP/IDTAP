@@ -1209,6 +1209,14 @@ interface MusicalTime {
   fractionalBeat: number;
 }
 
+type VibhagaBeat = 'X' | 'O' | number;
+
+type TalaDefinition = {
+  hierarchy: (number | number[])[];
+  vibhaga: VibhagaBeat[];
+}
+
+
 export type { 
   CollectionType, 
   UserType, 
@@ -1319,6 +1327,7 @@ export type {
   Temporality,
   AssemblageDescriptor,
   AssemblageEditorType,
-  MusicalTime
+  MusicalTime,
+  TalaDefinition
 };
 
