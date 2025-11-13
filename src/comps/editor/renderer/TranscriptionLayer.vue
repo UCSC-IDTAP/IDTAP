@@ -3709,7 +3709,6 @@ export default defineComponent({
                 const yBottomPxl = props.yScale(maxLogFreq);
                 autoWindowY.value = yBottomPxl - 120;
               }
-              console.log(autoWindowY.value)
               contextMenuClosed.value = true;
             },
             enabled: props.editable
@@ -4112,7 +4111,6 @@ export default defineComponent({
       nextTick(() => {
         selectedPhraseDivUid.value = undefined;
         if (shifted.value && track !== props.editingInstIdx) {
-          console.log('getting cancelled out')
           return
         }
         emit('update:editingInstIdx', track);
@@ -5317,7 +5315,6 @@ export default defineComponent({
           e.stopPropagation();
           goToTimeModal.value = true;
           nextTick(() => {
-            console.log(hrInput.value)
             hrInput.value?.focus();
           })
         }
@@ -5326,7 +5323,6 @@ export default defineComponent({
       } else if (e.key === 'Backspace') {
         if (selectedChikari.value !== undefined) {
           const cd = selectedChikari.value;
-          console.log(cd)
           const phrase = props.piece.phraseGrid[cd.track][cd.phraseIdx];
           delete phrase.chikaris[cd.phraseTimeKey];
           clearChikari(cd);
@@ -5456,7 +5452,6 @@ export default defineComponent({
         e.preventDefault();
         horizontalMoveGraph(0.5);
       } else if (e.key === 'Meta' && props.browser.os!.includes('Mac OS')) {
-        console.log('mac meta')
         metad.value = true;
       } else if (e.key === 'Control' && props.browser.os!.includes('Windows')) {
         metad.value = true
