@@ -425,6 +425,19 @@ export default defineComponent({
     const annotatingTraj = ref<Trajectory | undefined>(undefined);
     const hrInput = ref<HTMLInputElement | null>(null);
 
+    // Bidirectional lazy loading tracking
+    const renderedChunks = ref<Set<number>>(new Set());
+    const recentlyUnloadedChunks = new Map<number, number>(); // chunkIdx -> timestamp
+    const UNLOAD_THRESHOLD = 10; // Number of chunks away from viewport center before unloading
+    const RELOAD_COOLDOWN_MS = 1000; // Prevent re-loading chunks unloaded within last 1 second
+
+    // Unloading queue to prevent blocking main thread
+    const unloadQueue: number[] = [];
+    let isProcessingUnloadQueue = false;
+
+    // Preloading queue to prevent blocking main thread
+    const preloadQueue: number[] = [];
+    let isProcessingPreloadQueue = false;
 
     let playheadLineIdx = 0;
     let justDeletedPhraseDiv = false;
@@ -475,98 +488,131 @@ export default defineComponent({
 
     const emptyDivIdxMap = new Map<HTMLDivElement, number>();
     const maxEmptyDivWidth = props.clientWidth;
+
+    // Manually load a chunk (used by both IntersectionObserver and preloading)
+    const manuallyLoadChunk = (idx: number) => {
+      // Skip if chunk already rendered
+      if (renderedChunks.value.has(idx)) return false;
+
+      // Skip if chunk was recently unloaded (prevent thrashing)
+      const lastUnload = recentlyUnloadedChunks.get(idx);
+      if (lastUnload && Date.now() - lastUnload < RELOAD_COOLDOWN_MS) {
+        return false;
+      }
+      const dur = chunkDur.value;
+      for (let inst = 0; inst < props.piece.instrumentation.length; inst++) {
+        const instrument = props.piece.instrumentation[inst];
+        const isPolyphonicInst = instrument === Instrument.Sitar || instrument === Instrument.Sarangi;
+
+        // Always show display elements from all strings (for polyphonic instruments, show both)
+        if (isPolyphonicInst) {
+          // Show sargam from both strings for polyphonic instruments
+          props.piece.chunkedDisplaySargam(inst, dur, 0)[idx].forEach(s => {
+            renderSargam(s);
+          });
+          props.piece.chunkedDisplaySargam(inst, dur, 1)[idx].forEach(s => {
+            renderSargam(s);
+          });
+        } else {
+          // Show sargam from main string for non-polyphonic instruments
+          props.piece.chunkedDisplaySargam(inst, dur, 0)[idx].forEach(s => {
+            renderSargam(s);
+          });
+        }
+
+        const insts = [Instrument.Vocal_M, Instrument.Vocal_F];
+        if (insts.includes(instrument as Instrument)) {
+          if (isPolyphonicInst) {
+            props.piece.chunkedDisplayVowels(inst, dur, 0)[idx].forEach(v => {
+              renderVowel(v);
+            });
+            props.piece.chunkedDisplayVowels(inst, dur, 1)[idx].forEach(v => {
+              renderVowel(v);
+            });
+            props.piece.chunkedDisplayConsonants(inst, dur, 0)[idx].forEach(c => {
+              renderEndingConsonant(c);
+            });
+            props.piece.chunkedDisplayConsonants(inst, dur, 1)[idx].forEach(c => {
+              renderEndingConsonant(c);
+            });
+          } else {
+            props.piece.chunkedDisplayVowels(inst, dur, 0)[idx].forEach(v => {
+              renderVowel(v);
+            });
+            props.piece.chunkedDisplayConsonants(inst, dur, 0)[idx].forEach(c => {
+              renderEndingConsonant(c);
+            });
+          }
+        } else if (instrument === Instrument.Sitar) {
+          props.piece.chunkedDisplayChikaris(inst, dur)[idx].forEach(cd => {
+            renderChikari(cd);
+          });
+          if (isPolyphonicInst) {
+            props.piece.chunkedDisplayBols(inst, dur, 0)[idx].forEach(b => {
+              renderBol(b);
+            });
+            props.piece.chunkedDisplayBols(inst, dur, 1)[idx].forEach(b => {
+              renderBol(b);
+            });
+          } else {
+            props.piece.chunkedDisplayBols(inst, dur, 0)[idx].forEach(b => {
+              renderBol(b);
+            });
+          }
+        }
+        // Always render trajectories from all strings (visualization should show everything)
+
+        // Always show main string trajectories
+        props.piece.chunkedTrajs(inst, dur, 0)[idx].forEach(traj => {
+          if (traj.id !== 12) renderTraj(traj);
+        });
+
+        // Also show second string trajectories for polyphonic instruments
+        if (isPolyphonicInst) {
+          const secondStringTrajs = props.piece.chunkedTrajs(inst, dur, 1)[idx];
+          secondStringTrajs.forEach(traj => {
+            if (traj.id !== 12) renderTraj(traj);
+          });
+        }
+        props.piece.chunkedPhraseDivs(inst, dur)[idx].forEach(pd => {
+          renderPhraseDiv(pd);
+        });
+      }
+      props.piece.chunkedMeters(dur)[idx].forEach(m => {
+        renderMeter(m);
+      })
+
+      // Track this chunk as rendered
+      renderedChunks.value.add(idx);
+      recentlyLoadedChunks.value.set(idx, Date.now()); // Track load time for active range detection
+
+      return true;
+    };
+
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         const idx = emptyDivIdxMap.get(entry.target as HTMLDivElement)!;
+
         if (entry.isIntersecting) {
-          const dur = chunkDur.value;
-          for (let inst = 0; inst < props.piece.instrumentation.length; inst++) {
-            const instrument = props.piece.instrumentation[inst];
-            const isPolyphonicInst = instrument === Instrument.Sitar || instrument === Instrument.Sarangi;
-            
-            // Always show display elements from all strings (for polyphonic instruments, show both)
-            if (isPolyphonicInst) {
-              // Show sargam from both strings for polyphonic instruments
-              props.piece.chunkedDisplaySargam(inst, dur, 0)[idx].forEach(s => {
-                renderSargam(s);
-              });
-              props.piece.chunkedDisplaySargam(inst, dur, 1)[idx].forEach(s => {
-                renderSargam(s);
-              });
-            } else {
-              // Show sargam from main string for non-polyphonic instruments
-              props.piece.chunkedDisplaySargam(inst, dur, 0)[idx].forEach(s => {
-                renderSargam(s);
-              });
-            }
-            
-            const insts = [Instrument.Vocal_M, Instrument.Vocal_F];
-            if (insts.includes(instrument as Instrument)) {
-              if (isPolyphonicInst) {
-                props.piece.chunkedDisplayVowels(inst, dur, 0)[idx].forEach(v => {
-                  renderVowel(v);
-                });
-                props.piece.chunkedDisplayVowels(inst, dur, 1)[idx].forEach(v => {
-                  renderVowel(v);
-                });
-                props.piece.chunkedDisplayConsonants(inst, dur, 0)[idx].forEach(c => {
-                  renderEndingConsonant(c);
-                });
-                props.piece.chunkedDisplayConsonants(inst, dur, 1)[idx].forEach(c => {
-                  renderEndingConsonant(c);
-                });
-              } else {
-                props.piece.chunkedDisplayVowels(inst, dur, 0)[idx].forEach(v => {
-                  renderVowel(v);
-                });
-                props.piece.chunkedDisplayConsonants(inst, dur, 0)[idx].forEach(c => {
-                  renderEndingConsonant(c);
-                });
-              }
-            } else if (instrument === Instrument.Sitar) {
-              props.piece.chunkedDisplayChikaris(inst, dur)[idx].forEach(cd => {
-                renderChikari(cd);
-              });
-              if (isPolyphonicInst) {
-                props.piece.chunkedDisplayBols(inst, dur, 0)[idx].forEach(b => {
-                  renderBol(b);
-                });
-                props.piece.chunkedDisplayBols(inst, dur, 1)[idx].forEach(b => {
-                  renderBol(b);
-                });
-              } else {
-                props.piece.chunkedDisplayBols(inst, dur, 0)[idx].forEach(b => {
-                  renderBol(b);
-                });
-              }
-            }
-            // Always render trajectories from all strings (visualization should show everything)
-            
-            // Always show main string trajectories
-            props.piece.chunkedTrajs(inst, dur, 0)[idx].forEach(traj => {
-              if (traj.id !== 12) renderTraj(traj);
-            });
-            
-            // Also show second string trajectories for polyphonic instruments
-            if (isPolyphonicInst) {
-              const secondStringTrajs = props.piece.chunkedTrajs(inst, dur, 1)[idx];
-              secondStringTrajs.forEach(traj => {
-                if (traj.id !== 12) renderTraj(traj);
-              });
-            }
-            props.piece.chunkedPhraseDivs(inst, dur)[idx].forEach(pd => {
-              renderPhraseDiv(pd);
-            });
+          // Track as intersecting
+          intersectingChunks.value.add(idx);
+
+          // Load if not already loaded
+          if (!renderedChunks.value.has(idx)) {
+            manuallyLoadChunk(idx);
           }
-          props.piece.chunkedMeters(dur)[idx].forEach(m => {
-            renderMeter(m);
-          })
-          observer.unobserve(entry.target);
+          // Keep observing to detect when it leaves viewport!
+        } else {
+          // Remove from intersecting when it leaves viewport
+          intersectingChunks.value.delete(idx);
         }
-      })
+      });
+
+      // Check for preloading after updating intersecting chunks
+      checkForDistantChunks();
     }, {
-      root: emptyOverlay.value,
-      rootMargin: '0px',
+      root: null,
+      rootMargin: '0px', // No expansion - use actual viewport
       threshold: 0.0
     });
 
@@ -612,6 +658,244 @@ export default defineComponent({
     };
 
     resetTrajRenderStatus();
+
+    // Bidirectional lazy loading helper functions
+    // Track which chunks are currently intersecting (in viewport)
+    const intersectingChunks = ref<Set<number>>(new Set());
+    const recentlyLoadedChunks = ref<Map<number, number>>(new Map()); // chunkIdx -> timestamp
+
+    const getActiveChunkRange = () => {
+      // Use chunks that are currently in viewport
+      if (intersectingChunks.value.size === 0) {
+        return { start: 0, end: 0 };
+      }
+
+      const chunks = Array.from(intersectingChunks.value);
+      return {
+        start: Math.min(...chunks),
+        end: Math.max(...chunks)
+      };
+    };
+
+    const getCurrentPlaybackChunk = () => {
+      if (!props.playing) return -1;
+      return Math.floor(props.currentTime / chunkDur.value);
+    };
+
+    const unloadChunk = (chunkIdx: number) => {
+      const dur = chunkDur.value;
+
+      for (let inst = 0; inst < props.piece.instrumentation.length; inst++) {
+        const instrument = props.piece.instrumentation[inst];
+        const isPolyphonic = instrument === Instrument.Sitar || instrument === Instrument.Sarangi;
+
+        // Unload trajectories and update renderStatus
+        const unloadTrajs = (stringIdx: number) => {
+          props.piece.chunkedTrajs(inst, dur, stringIdx)[chunkIdx]?.forEach(traj => {
+            const renderObj = trajRenderStatus.value[inst]?.find(obj =>
+              obj.uniqueId === traj.uniqueId
+            );
+            if (renderObj?.renderStatus && !renderObj.selectedStatus) {
+              d3.selectAll(`.uId${traj.uniqueId}`).remove();
+              renderObj.renderStatus = false;
+            }
+          });
+        };
+
+        unloadTrajs(0);
+        if (isPolyphonic) unloadTrajs(1);
+
+        // Unload sargam
+        const unloadSargam = (stringIdx: number) => {
+          props.piece.chunkedDisplaySargam(inst, dur, stringIdx)[chunkIdx]?.forEach(s => {
+            d3.selectAll(`.uId${s.uId}`).remove();
+          });
+        };
+
+        unloadSargam(0);
+        if (isPolyphonic) unloadSargam(1);
+
+        // Unload vowels/consonants for vocals
+        if (instrument === Instrument.Vocal_M || instrument === Instrument.Vocal_F) {
+          const unloadVowels = (stringIdx: number) => {
+            props.piece.chunkedDisplayVowels(inst, dur, stringIdx)[chunkIdx]?.forEach(v => {
+              d3.selectAll(`.uId${v.uId}`).remove();
+            });
+          };
+
+          const unloadConsonants = (stringIdx: number) => {
+            props.piece.chunkedDisplayConsonants(inst, dur, stringIdx)[chunkIdx]?.forEach(c => {
+              d3.selectAll(`.uId${c.uId}`).remove();
+            });
+          };
+
+          if (isPolyphonic) {
+            unloadVowels(0);
+            unloadVowels(1);
+            unloadConsonants(0);
+            unloadConsonants(1);
+          } else {
+            unloadVowels(0);
+            unloadConsonants(0);
+          }
+        } else if (instrument === Instrument.Sitar) {
+          // Unload chikaris
+          props.piece.chunkedDisplayChikaris(inst, dur)[chunkIdx]?.forEach(cd => {
+            d3.selectAll(`.uId${cd.uId}`).remove();
+          });
+
+          // Unload bols
+          const unloadBols = (stringIdx: number) => {
+            props.piece.chunkedDisplayBols(inst, dur, stringIdx)[chunkIdx]?.forEach(b => {
+              d3.selectAll(`.uId${b.uId}`).remove();
+            });
+          };
+
+          if (isPolyphonic) {
+            unloadBols(0);
+            unloadBols(1);
+          } else {
+            unloadBols(0);
+          }
+        }
+
+        // Unload phrase divs
+        props.piece.chunkedPhraseDivs(inst, dur)[chunkIdx]?.forEach(pd => {
+          d3.selectAll(`.uId${pd.uId}`).remove();
+        });
+      }
+
+      // Skip meters (as discussed)
+
+      renderedChunks.value.delete(chunkIdx);
+      recentlyUnloadedChunks.set(chunkIdx, Date.now()); // Track unload time
+      observer.observe(emptyDivs.value[chunkIdx]); // Re-enable observation
+    };
+
+    // Process unload queue over multiple frames to avoid blocking
+    const processUnloadQueue = () => {
+      if (isProcessingUnloadQueue || unloadQueue.length === 0) return;
+
+      isProcessingUnloadQueue = true;
+
+      const processChunk = () => {
+        if (unloadQueue.length === 0) {
+          isProcessingUnloadQueue = false;
+          return;
+        }
+
+        // Unload 2 chunks per frame (balance between speed and performance)
+        const chunk1 = unloadQueue.shift();
+        if (chunk1 !== undefined) unloadChunk(chunk1);
+
+        const chunk2 = unloadQueue.shift();
+        if (chunk2 !== undefined) unloadChunk(chunk2);
+
+        if (unloadQueue.length > 0) {
+          requestAnimationFrame(processChunk);
+        } else {
+          isProcessingUnloadQueue = false;
+        }
+      };
+
+      requestAnimationFrame(processChunk);
+    };
+
+    // Process preload queue over multiple frames to avoid blocking
+    const processPreloadQueue = () => {
+      if (isProcessingPreloadQueue || preloadQueue.length === 0) return;
+
+      isProcessingPreloadQueue = true;
+
+      const processChunk = () => {
+        if (preloadQueue.length === 0) {
+          isProcessingPreloadQueue = false;
+          return;
+        }
+
+        // Preload 1 chunk per frame (more conservative than unloading)
+        const chunkIdx = preloadQueue.shift();
+        if (chunkIdx !== undefined) {
+          manuallyLoadChunk(chunkIdx);
+          // Keep observing to detect when it enters/leaves viewport
+
+          // Only check for more chunks if queue is getting low
+          if (preloadQueue.length < 2) {
+            checkForDistantChunks();
+          }
+        }
+
+        if (preloadQueue.length > 0) {
+          requestAnimationFrame(processChunk);
+        } else {
+          isProcessingPreloadQueue = false;
+        }
+      };
+
+      requestAnimationFrame(processChunk);
+    };
+
+    const checkForDistantChunks = throttle(() => {
+      const active = getActiveChunkRange();
+      const playbackChunk = getCurrentPlaybackChunk();
+
+      // Calculate keep range: active chunks ± buffer
+      const keepStart = Math.max(0, active.start - UNLOAD_THRESHOLD);
+      const keepEnd = active.end + UNLOAD_THRESHOLD;
+
+      const toUnload: number[] = [];
+
+      renderedChunks.value.forEach(chunkIdx => {
+        const isInKeepRange = chunkIdx >= keepStart && chunkIdx <= keepEnd;
+        const isPlayback = chunkIdx === playbackChunk || chunkIdx === playbackChunk + 1;
+
+        if (!isInKeepRange && !isPlayback) {
+          toUnload.push(chunkIdx);
+        }
+      });
+
+      // Unload distant chunks to free memory
+      toUnload.forEach(idx => {
+        if (!unloadQueue.includes(idx)) {
+          unloadQueue.push(idx);
+        }
+      });
+
+      if (toUnload.length > 0) {
+        processUnloadQueue();
+      }
+
+      // Preload chunks based on active chunk index (not rootMargin)
+      const PRELOAD_COUNT = 2; // Load 2 chunks ahead and 2 behind for smoother scrolling
+
+      // Add chunks to preload queue instead of loading immediately
+      const addedToQueue: number[] = [];
+      for (let i = 1; i <= PRELOAD_COUNT; i++) {
+        const preloadIdx = active.end + i;
+        if (emptyDivs.value[preloadIdx] &&
+            !renderedChunks.value.has(preloadIdx) &&
+            !preloadQueue.includes(preloadIdx)) {
+          preloadQueue.push(preloadIdx);
+          addedToQueue.push(preloadIdx);
+        }
+      }
+
+      for (let i = 1; i <= PRELOAD_COUNT; i++) {
+        const preloadIdx = active.start - i;
+        if (preloadIdx >= 0 &&
+            emptyDivs.value[preloadIdx] &&
+            !renderedChunks.value.has(preloadIdx) &&
+            !preloadQueue.includes(preloadIdx)) {
+          preloadQueue.push(preloadIdx);
+          addedToQueue.push(preloadIdx);
+        }
+      }
+
+      // Start processing preload queue if there are chunks to load
+      if (preloadQueue.length > 0) {
+        processPreloadQueue();
+      }
+    }, 50);  // Throttle to balance responsiveness vs performance
 
     // computed values
     const trajStartTimes = computed(() => {
@@ -764,6 +1048,10 @@ export default defineComponent({
         updateSargamLineSpacing();
         resetTranscription();
       }
+    });
+    // Bidirectional lazy loading: trigger cleanup on scroll
+    watch(() => props.scrollX, () => {
+      checkForDistantChunks();
     });
     watch(() => props.width, () => {
       if (tranSvg.value) {
@@ -2763,6 +3051,11 @@ export default defineComponent({
 
     const resetTranscription = () => {
       clearTranscription();
+      renderedChunks.value.clear(); // Clear chunk tracking for bidirectional lazy loading
+      unloadQueue.length = 0; // Clear unload queue
+      isProcessingUnloadQueue = false; // Reset queue processing flag
+      preloadQueue.length = 0; // Clear preload queue
+      isProcessingPreloadQueue = false; // Reset preload queue processing flag
       const selectedTrajUIds = selectedTrajs.value.map(t => t.uniqueId!);
       resetTrajRenderStatus(selectedTrajUIds);
       resetEmptyObserverDivs();
@@ -3416,7 +3709,6 @@ export default defineComponent({
                 const yBottomPxl = props.yScale(maxLogFreq);
                 autoWindowY.value = yBottomPxl - 120;
               }
-              console.log(autoWindowY.value)
               contextMenuClosed.value = true;
             },
             enabled: props.editable
@@ -3819,7 +4111,6 @@ export default defineComponent({
       nextTick(() => {
         selectedPhraseDivUid.value = undefined;
         if (shifted.value && track !== props.editingInstIdx) {
-          console.log('getting cancelled out')
           return
         }
         emit('update:editingInstIdx', track);
@@ -5024,7 +5315,6 @@ export default defineComponent({
           e.stopPropagation();
           goToTimeModal.value = true;
           nextTick(() => {
-            console.log(hrInput.value)
             hrInput.value?.focus();
           })
         }
@@ -5033,7 +5323,6 @@ export default defineComponent({
       } else if (e.key === 'Backspace') {
         if (selectedChikari.value !== undefined) {
           const cd = selectedChikari.value;
-          console.log(cd)
           const phrase = props.piece.phraseGrid[cd.track][cd.phraseIdx];
           delete phrase.chikaris[cd.phraseTimeKey];
           clearChikari(cd);
@@ -5163,7 +5452,6 @@ export default defineComponent({
         e.preventDefault();
         horizontalMoveGraph(0.5);
       } else if (e.key === 'Meta' && props.browser.os!.includes('Mac OS')) {
-        console.log('mac meta')
         metad.value = true;
       } else if (e.key === 'Control' && props.browser.os!.includes('Windows')) {
         metad.value = true
