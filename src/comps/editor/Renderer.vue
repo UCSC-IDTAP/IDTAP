@@ -93,6 +93,7 @@
             :width='scaledWidth'
             :height='scaledHeight'
             :showSpectrogram='showSpectrogram'
+            :scrollX='scrollX'
             ref='spectrogramLayer'
             />
           <MelographLayer

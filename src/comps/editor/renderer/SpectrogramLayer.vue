@@ -15,6 +15,7 @@
 import { defineComponent, ref, onMounted, watch, computed } from 'vue';
 import { RenderCall } from '@shared/types';
 import { getWorker } from '@/ts/workers/workerManager.ts';
+import { throttle, debounce } from 'lodash';
 
 export default defineComponent({
   name: 'SpectrogramLayer',
@@ -30,6 +31,10 @@ export default defineComponent({
     showSpectrogram: {
       type: Boolean,
       required: true
+    },
+    scrollX: {
+      type: Number,
+      required: true
     }
   },
   setup(props) {
@@ -41,27 +46,233 @@ export default defineComponent({
     const canvasIdxMap = new Map<HTMLCanvasElement, number>();
     let worker: Worker | undefined = undefined
 
+    // Bidirectional lazy loading tracking
+    const renderedCanvasChunks = ref<Set<number>>(new Set());
+    const recentlyUnloadedCanvasChunks = new Map<number, number>(); // chunkIdx -> timestamp
+    const recentlyLoadedCanvasChunks = ref<Map<number, number>>(new Map()); // chunkIdx -> timestamp
+    const intersectingCanvases = ref<Set<number>>(new Set()); // Track which canvases are currently in viewport
+    const CANVAS_UNLOAD_THRESHOLD = 10; // Keep ±10 chunks from active range
+    const CANVAS_RELOAD_COOLDOWN_MS = 1000; // Prevent thrashing
+
+    // Preloading queue to prevent blocking main thread
+    const canvasPreloadQueue: number[] = [];
+    let isProcessingCanvasPreloadQueue = false;
+
     const opacity = computed(() => props.showSpectrogram ? 1 : 0);
     
     const observer = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         const canvas = entry.target as HTMLCanvasElement;
         const idx = canvasIdxMap.get(canvas)!;
+        console.log(`[Canvas Observer] Canvas ${idx} isIntersecting=${entry.isIntersecting}`);
+
         if (entry.isIntersecting)  {
-          const startX = maxCanvasWidth * idx;
+          // Track as intersecting (in viewport)
+          intersectingCanvases.value.add(idx);
+
+          // Load if not already rendered
+          if (!renderedCanvasChunks.value.has(idx)) {
+            // Cooldown check to prevent thrashing
+            const lastUnload = recentlyUnloadedCanvasChunks.get(idx);
+            if (lastUnload && Date.now() - lastUnload < CANVAS_RELOAD_COOLDOWN_MS) {
+              console.log(`[Canvas Skip] Canvas ${idx} (cooldown: ${Date.now() - lastUnload}ms ago)`);
+              return;
+            }
+
+            console.log(`[Canvas Load] Canvas ${idx}`);
+
+            const startX = maxCanvasWidth * idx;
+            const width = Math.min(maxCanvasWidth, props.width - startX);
+            const renderCall = { canvasIdx: idx, startX, width } as RenderCall;
+            worker!.postMessage({
+              msg: 'requestRenderData',
+              payload: renderCall
+            })
+
+            // Track as rendered and recently loaded
+            renderedCanvasChunks.value.add(idx);
+            recentlyLoadedCanvasChunks.value.set(idx, Date.now());
+          }
+          // Keep observing to detect when it leaves viewport!
+        } else {
+          // Remove from intersecting when it leaves viewport
+          intersectingCanvases.value.delete(idx);
+        }
+      });
+
+      // Check for preloading after updating intersecting canvases
+      debouncedCanvasCheck();
+    }, {
+      root: null, // Use viewport as root (container.value is null at creation time)
+      rootMargin: '0px 3000px 0px 3000px', // Expand 3000px left/right for horizontal scrolling
+      threshold: 0.0
+    });
+
+    // Helper: Get active canvas range based on viewport visibility
+    const getActiveCanvasRange = () => {
+      // Use canvases that are currently in viewport
+      if (intersectingCanvases.value.size === 0) {
+        return { start: 0, end: 0 };
+      }
+
+      const chunks = Array.from(intersectingCanvases.value);
+      return {
+        start: Math.min(...chunks),
+        end: Math.max(...chunks)
+      };
+    };
+
+    // Unload a distant canvas chunk
+    const unloadCanvas = (chunkIdx: number) => {
+      console.log(`[Canvas Unload] Canvas ${chunkIdx}`);
+      const canvas = canvases.value[chunkIdx];
+      if (!canvas) return;
+
+      // Clear canvas content
+      const ctx = ctxs.value[chunkIdx];
+      if (ctx) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+
+      // Reset canvas dimensions to free memory
+      const originalWidth = canvas.width;
+      const originalHeight = canvas.height;
+      canvas.width = 0;
+      canvas.height = 0;
+      // Restore dimensions for future re-rendering
+      canvas.width = originalWidth;
+      canvas.height = originalHeight;
+
+      // Remove from tracking
+      renderedCanvasChunks.value.delete(chunkIdx);
+      recentlyUnloadedCanvasChunks.set(chunkIdx, Date.now());
+
+      // Re-enable observation for this canvas
+      observer.observe(canvas);
+    };
+
+    // Process canvas preload queue over multiple frames to avoid blocking
+    const processCanvasPreloadQueue = () => {
+      if (isProcessingCanvasPreloadQueue || canvasPreloadQueue.length === 0) return;
+
+      isProcessingCanvasPreloadQueue = true;
+
+      const processChunk = () => {
+        if (canvasPreloadQueue.length === 0) {
+          isProcessingCanvasPreloadQueue = false;
+          return;
+        }
+
+        // Preload 2 canvases per frame (canvases are lighter than trajectories)
+        const idx1 = canvasPreloadQueue.shift();
+        if (idx1 !== undefined && canvases.value[idx1] && !renderedCanvasChunks.value.has(idx1)) {
+          const canvas = canvases.value[idx1];
+          const startX = maxCanvasWidth * idx1;
           const width = Math.min(maxCanvasWidth, props.width - startX);
-          const renderCall = { canvasIdx: idx, startX, width } as RenderCall;
+          const renderCall = { canvasIdx: idx1, startX, width } as RenderCall;
           worker!.postMessage({
             msg: 'requestRenderData',
             payload: renderCall
-          })
+          });
+          renderedCanvasChunks.value.add(idx1);
+          recentlyLoadedCanvasChunks.value.set(idx1, Date.now());
+          // Keep observing to detect when it enters/leaves viewport
+        }
+
+        const idx2 = canvasPreloadQueue.shift();
+        if (idx2 !== undefined && canvases.value[idx2] && !renderedCanvasChunks.value.has(idx2)) {
+          const canvas = canvases.value[idx2];
+          const startX = maxCanvasWidth * idx2;
+          const width = Math.min(maxCanvasWidth, props.width - startX);
+          const renderCall = { canvasIdx: idx2, startX, width } as RenderCall;
+          worker!.postMessage({
+            msg: 'requestRenderData',
+            payload: renderCall
+          });
+          renderedCanvasChunks.value.add(idx2);
+          recentlyLoadedCanvasChunks.value.set(idx2, Date.now());
+          // Keep observing to detect when it enters/leaves viewport
+        }
+
+        // Only check for more chunks if queue is getting low
+        if (canvasPreloadQueue.length < 2) {
+          debouncedCanvasCheck();
+        }
+
+        if (canvasPreloadQueue.length > 0) {
+          requestAnimationFrame(processChunk);
+        } else {
+          isProcessingCanvasPreloadQueue = false;
+        }
+      };
+
+      requestAnimationFrame(processChunk);
+    };
+
+    // Check for distant canvases and unload them, preload nearby ones
+    const checkForDistantCanvases = throttle(() => {
+      const active = getActiveCanvasRange();
+
+      const keepStart = Math.max(0, active.start - CANVAS_UNLOAD_THRESHOLD);
+      const keepEnd = active.end + CANVAS_UNLOAD_THRESHOLD;
+
+      const toUnload: number[] = [];
+
+      // Find distant canvases to unload
+      renderedCanvasChunks.value.forEach(chunkIdx => {
+        const isInKeepRange = chunkIdx >= keepStart && chunkIdx <= keepEnd;
+
+        if (!isInKeepRange) {
+          toUnload.push(chunkIdx);
         }
       });
-    }, {
-      root: container.value,
-      rootMargin: '0px',
-      threshold: 0.0
-    });
+
+      console.log(`[Canvas Stats] Active: ${active.start}-${active.end}, Keep: ${keepStart}-${keepEnd}, Rendered: ${renderedCanvasChunks.value.size}, ToUnload: ${toUnload.length}`);
+
+      // Unload distant canvases to free memory
+      toUnload.forEach(idx => unloadCanvas(idx));
+
+      // Preload spectrograms based on active chunk index (not rootMargin)
+      const PRELOAD_COUNT = 4;  // Load 4 chunks ahead and 4 behind to account for queue processing time
+
+      // Add chunks to preload queue instead of loading immediately
+      for (let i = 1; i <= PRELOAD_COUNT; i++) {
+        const preloadIdx = active.end + i;
+        if (canvases.value[preloadIdx] &&
+            !renderedCanvasChunks.value.has(preloadIdx) &&
+            !canvasPreloadQueue.includes(preloadIdx)) {
+          // Check cooldown
+          const lastUnload = recentlyUnloadedCanvasChunks.get(preloadIdx);
+          if (!lastUnload || Date.now() - lastUnload >= CANVAS_RELOAD_COOLDOWN_MS) {
+            canvasPreloadQueue.push(preloadIdx);
+          }
+        }
+      }
+
+      for (let i = 1; i <= PRELOAD_COUNT; i++) {
+        const preloadIdx = active.start - i;
+        if (preloadIdx >= 0 &&
+            canvases.value[preloadIdx] &&
+            !renderedCanvasChunks.value.has(preloadIdx) &&
+            !canvasPreloadQueue.includes(preloadIdx)) {
+          // Check cooldown
+          const lastUnload = recentlyUnloadedCanvasChunks.get(preloadIdx);
+          if (!lastUnload || Date.now() - lastUnload >= CANVAS_RELOAD_COOLDOWN_MS) {
+            canvasPreloadQueue.push(preloadIdx);
+          }
+        }
+      }
+
+      // Start processing preload queue if there are canvases to load
+      if (canvasPreloadQueue.length > 0) {
+        processCanvasPreloadQueue();
+      }
+    }, 50);  // Faster throttle for responsive preloading during playback
+
+    // Define debounced function outside watchers
+    const debouncedCanvasCheck = debounce(() => {
+      checkForDistantCanvases();
+    }, 30);  // Faster debounce for responsive preloading
 
     watch([() => props.height, () => props.width], () => {
       resetCanvases();
@@ -80,6 +291,10 @@ export default defineComponent({
       });
     });
 
+    // Watch scroll changes to trigger chunk cleanup
+    watch(() => props.scrollX, () => {
+      debouncedCanvasCheck();
+    });
 
     const resetCanvases = () => {
       observer.disconnect();
@@ -89,6 +304,15 @@ export default defineComponent({
       canvases.value = [];
       ctxs.value = [];
       canvasIdxMap.clear();
+
+      // Clear tracking structures
+      renderedCanvasChunks.value.clear();
+      recentlyUnloadedCanvasChunks.clear();
+      recentlyLoadedCanvasChunks.value.clear();
+      intersectingCanvases.value.clear();
+      canvasPreloadQueue.length = 0;
+      isProcessingCanvasPreloadQueue = false;
+
       const numCanvases = Math.ceil(props.width / maxCanvasWidth);
       for (let i = 0; i < numCanvases; i++) {
         const canvas = document.createElement('canvas');
