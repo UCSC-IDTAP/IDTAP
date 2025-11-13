@@ -15,7 +15,7 @@
 import { defineComponent, ref, onMounted, watch, computed } from 'vue';
 import { RenderCall } from '@shared/types';
 import { getWorker } from '@/ts/workers/workerManager.ts';
-import { throttle, debounce } from 'lodash';
+import { throttle } from 'lodash';
 
 export default defineComponent({
   name: 'SpectrogramLayer',
@@ -97,7 +97,7 @@ export default defineComponent({
       });
 
       // Check for preloading after updating intersecting canvases
-      debouncedCanvasCheck();
+      checkForDistantCanvases();
     }, {
       root: null, // Use viewport as root (container.value is null at creation time)
       rootMargin: '0px', // No expansion - use actual viewport (matches TranscriptionLayer)
@@ -191,7 +191,7 @@ export default defineComponent({
 
         // Only check for more chunks if queue is getting low
         if (canvasPreloadQueue.length < 2) {
-          debouncedCanvasCheck();
+          checkForDistantCanvases();
         }
 
         if (canvasPreloadQueue.length > 0) {
@@ -260,12 +260,7 @@ export default defineComponent({
       if (canvasPreloadQueue.length > 0) {
         processCanvasPreloadQueue();
       }
-    }, 50);  // Faster throttle for responsive preloading during playback
-
-    // Define debounced function outside watchers
-    const debouncedCanvasCheck = debounce(() => {
-      checkForDistantCanvases();
-    }, 30);  // Faster debounce for responsive preloading
+    }, 50);  // Throttle to balance responsiveness vs performance
 
     watch([() => props.height, () => props.width], () => {
       resetCanvases();
@@ -286,7 +281,7 @@ export default defineComponent({
 
     // Watch scroll changes to trigger chunk cleanup
     watch(() => props.scrollX, () => {
-      debouncedCanvasCheck();
+      checkForDistantCanvases();
     });
 
     const resetCanvases = () => {

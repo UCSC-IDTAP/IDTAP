@@ -609,7 +609,7 @@ export default defineComponent({
       });
 
       // Check for preloading after updating intersecting chunks
-      debouncedCheck();
+      checkForDistantChunks();
     }, {
       root: null,
       rootMargin: '0px', // No expansion - use actual viewport
@@ -821,7 +821,7 @@ export default defineComponent({
 
           // Only check for more chunks if queue is getting low
           if (preloadQueue.length < 2) {
-            debouncedCheck();
+            checkForDistantChunks();
           }
         }
 
@@ -895,12 +895,7 @@ export default defineComponent({
       if (preloadQueue.length > 0) {
         processPreloadQueue();
       }
-    }, 10);  // Very fast throttle to continuously maintain preload buffer
-
-    // Debounced version for triggering from multiple sources
-    const debouncedCheck = debounce(() => {
-      checkForDistantChunks();
-    }, 10);  // Very fast debounce to continuously maintain preload buffer
+    }, 50);  // Throttle to balance responsiveness vs performance
 
     // computed values
     const trajStartTimes = computed(() => {
@@ -1056,7 +1051,7 @@ export default defineComponent({
     });
     // Bidirectional lazy loading: trigger cleanup on scroll
     watch(() => props.scrollX, () => {
-      debouncedCheck();
+      checkForDistantChunks();
     });
     watch(() => props.width, () => {
       if (tranSvg.value) {
