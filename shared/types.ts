@@ -1328,6 +1328,7 @@ export type {
   AssemblageDescriptor,
   AssemblageEditorType,
   MusicalTime,
-  TalaDefinition
+  TalaDefinition,
+  VibhagaBeat,
 };
 

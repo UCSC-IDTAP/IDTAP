@@ -3,7 +3,12 @@ const approxEqual = (v1: number, v2: number, epsilon = 0.001) => {
   return Math.abs(v1 - v2) <= epsilon
 };
 
-import { AffiliationType, MusicalTime, TalaDefinition } from '@shared/types'
+import { 
+  AffiliationType, 
+  MusicalTime, 
+  TalaDefinition,
+  VibhagaBeat,
+ } from '@shared/types'
 import { TalaName } from '@shared/enums'
 
 const talaPresets: Record<TalaName, TalaDefinition> = {
@@ -463,6 +468,8 @@ class Meter {
   tempo: number;
   relCorpLims: number[]; // relative corporeal limits
   propCorpLims: number[]; // proportional corporeal limits
+  talaName: TalaName | undefined;
+  vibhaga: VibhagaBeat[];
 
   constructor({
     hierarchy = [4, 4],
@@ -473,6 +480,8 @@ class Meter {
     relCorpLims = undefined,
     propCorpLims = undefined,
     pulseStructures = undefined,
+    talaName = undefined,
+    vibhaga = undefined,
   }: {
     hierarchy?: (number | number[])[],
     startTime?: number,
@@ -482,6 +491,8 @@ class Meter {
     relCorpLims?: number[],
     propCorpLims?: number[],
     pulseStructures?: PulseStructure[][],
+    talaName?: TalaName,
+    vibhaga?: VibhagaBeat[],
   } = {}) {
     if (uniqueId === undefined) {
       this.uniqueId = uuidv4();
@@ -613,6 +624,35 @@ class Meter {
     const start = this.relCorpLims[0];
     const end = this.relCorpLims[1];
     this.limitRelTemporalCorporeality(start, end)
+    this.talaName = talaName;
+    if (vibhaga !== undefined) {
+      this.vibhaga = vibhaga;
+    } else {
+      const numSegments = Array.isArray(this.hierarchy[0]) ? 
+        this.hierarchy[0].length : 
+        this.hierarchy[0];
+      this.vibhaga = [
+        'X', 
+        ...Array.from({ length: numSegments - 1 }, (_, i) => i + 2)
+      ];
+    }
+  }
+
+  static fromTala(
+    name: TalaName,
+    startTime: number,
+    tempo: number,
+    repetitions: number,
+  ) {
+    const preset = talaPresets[name];
+    return new Meter({
+      hierarchy: preset.hierarchy,
+      startTime,
+      tempo,
+      repetitions,
+      talaName: name,
+      vibhaga: preset.vibhaga,
+    })
   }
 
   hidePulseAndPriors(pulse: Pulse) {
@@ -1973,7 +2013,9 @@ class Meter {
       repetitions: this.repetitions,
       pulseStructures: this.pulseStructures.map(psLayer => {
         return psLayer.map(ps => ps.toJSON())
-      })
+      }),
+      talaName: this.talaName,
+      vibhaga: this.vibhaga,
     }
   }
 }
