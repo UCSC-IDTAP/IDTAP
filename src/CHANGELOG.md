@@ -1,6 +1,9 @@
 # Changelog
 
 
+* fix: prevent Page Up/Down/Home/End keys from scrolling editor window [09c7897] (Jon Myers)
+### 2025-11-17
+
 * chore: remove remaining debug console.log statements [70bea57] (Jon Myers)
 * refactor: simplify throttle/debounce in lazy loading [8637e90] (Jon Myers)
 * chore: clean up lazy loading implementation [04df599] (Jon Myers)
