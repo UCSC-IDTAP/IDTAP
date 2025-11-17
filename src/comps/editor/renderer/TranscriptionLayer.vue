@@ -5267,6 +5267,7 @@ export default defineComponent({
     }
 
     const handleKeydown = (e: KeyboardEvent) => {
+    console.log(e.key)
       const inst = props.instTracks[props.editingInstIdx].inst;
       if (e.key === 'Escape') {
         if (selectedPulse.value) {
@@ -5462,6 +5463,9 @@ export default defineComponent({
         } else if (selectedDragDotIdx.value !== undefined) {
           deSelectDragDot();
         }
+      } else if (e.key === 'PageUp' || e.key === 'PageDown' || e.key === 'Home' || e.key === 'End') {
+        e.preventDefault();
+        // Prevent default browser scrolling behavior
       }
     }
 
