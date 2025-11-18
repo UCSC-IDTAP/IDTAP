@@ -353,6 +353,7 @@
       :excerptRange='excerptRange'
       :durTot='audioDBDoc ? audioDBDoc.duration : piece.durTot!'
       :showPhraseLabels='showPhraseLabels'
+      :showVibhagLabels='showVibhagLabels'
       @specCanvas='handleSpecCanvas'
       @update:backgroundColor='$emit("update:backgroundColor", $event)'
       @update:axisColor='$emit("update:axisColor", $event)'
@@ -380,6 +381,7 @@
       @update:showMeter='$emit("update:showMeter", $event)'
       @update:showPhonemes='$emit("update:showPhonemes", $event)'
       @update:showPhraseDivs='$emit("update:showPhraseDivs", $event)'
+      @update:showVibhagLabels='$emit("update:showVibhagLabels", $event)'
       />
       <Synths
         :key='synthsKey'
@@ -1078,6 +1080,10 @@ export default defineComponent({
       required: false
     },
     showPhraseLabels: {
+      type: Boolean,
+      required: true
+    },
+    showVibhagLabels: {
       type: Boolean,
       required: true
     },

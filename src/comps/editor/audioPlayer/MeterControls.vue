@@ -1,40 +1,68 @@
 <template>
 <div class='outer'>
   <div class='controlsBox'>
-    <div class='controlsRow'>
-      <label class='big'>Hierarchical Depth</label>
-      <select 
-        v-model.number='numLayers' 
-        @change='updateDepth'
-        :disabled='!editable'
-        >
-        <option value='1'>1</option>
-        <option value='2'>2</option>
-        <option value='3'>3</option>
-        <option value='4'>4</option>
-      </select>
+    <div class='titleBox'>
+      <input type='radio' id='tala-radio' value='tala' v-model='meterMode'/>
+      <label for='tala-radio'>Tala</label>
+      <input type='radio' id='custom-radio' value='custom' v-model='meterMode'/>
+      <label for='custom-radio'>Custom</label>
     </div>
-    <div class='controlsRow' v-for='(n, i) in Number(numLayers)' :key='n'>
-      <label>Layer {{ i }}</label>
-      <div class='buttonCol' v-if='i === 0'>
-        <button 
-          :disabled='layerCompounds[i] === 4 || !editable' 
-          @click='increaseCompounds(i)'
-          >+</button>
-        <button 
-          :disabled='layerCompounds[i] === 1 || !editable'
-          @click='decreaseCompounds(i)'
-          >-</button>
-      </div>
-      <div class='buttonCol' v-else></div>
-      <select 
-        v-for='k, kIdx in layerCompounds[i]' 
-        v-model.number='pulseDivisions[i][kIdx]'
-        @change='updatePulseDivs(i, kIdx)'
-        :disabled='!editable'
+    <div v-if='meterMode === "tala"'>
+      <div class='controlsRow'>
+        <label class='big'>Tala</label>
+        <select
+          v-model='selectedTala'
+          @change='onTalaSelected'
+          :disabled='!editable'
         >
-        <option v-for='j in 8'>{{ j+1 }}</option>
-      </select>
+          <option :value='undefined' disabled>Select Tala...</option>
+          <option
+            v-for='talaName in talaNameOptions'
+            :key='talaName'
+            :value='talaName'
+          >
+            {{ talaName }}
+          </option>
+        </select>
+      </div>
+    </div>
+    <div v-else-if='meterMode === "custom"'>
+      <div class='controlsRow'>
+        <label class='big'>Hierarchical Depth</label>
+        <select
+          v-model.number='numLayers'
+          @change='updateDepth'
+          :disabled='!editable'
+          >
+          <option value='1'>1</option>
+          <option value='2'>2</option>
+          <option value='3'>3</option>
+          <option value='4'>4</option>
+        </select>
+      </div>
+      <div class='controlsRow' v-for='(n, i) in Number(numLayers)' :key='n'>
+        <label>Layer {{ i }}</label>
+        <div class='buttonCol' v-if='i === 0'>
+          <button
+            :disabled='layerCompounds[i] === 4 || !editable'
+            @click='increaseCompounds(i)'
+            >+</button>
+          <button
+            :disabled='layerCompounds[i] === 1 || !editable'
+            @click='decreaseCompounds(i)'
+            >-</button>
+        </div>
+        <div class='buttonCol' v-else></div>
+        <select
+          v-for='k, kIdx in layerCompounds[i]'
+          v-model.number='pulseDivisions[i][kIdx]'
+          @change='updatePulseDivs(i, kIdx)'
+          :disabled='!editable'
+          :key='kIdx'
+          >
+          <option v-for='j in 8' :key='j+1'>{{ j+1 }}</option>
+        </select>
+      </div>
     </div>
   </div>
   <div class='controlsBox'>
@@ -151,7 +179,7 @@ import {
   select as d3Select,
  } from 'd3';
 import { defineComponent, PropType } from 'vue';
-import { EditorMode } from '@shared/enums';
+import { EditorMode, TalaName } from '@shared/enums';
  
 type MeterControlsDataType = {
   numLayers: number,
@@ -169,6 +197,9 @@ type MeterControlsDataType = {
   insertLayer: number,
   attachToPrevMeter: boolean,
   prevMeter: boolean,
+  meterMode: 'tala' | 'custom',
+  selectedTala: TalaName | undefined,
+  talaNameOptions: TalaName[],
 };
 
 export default defineComponent({
@@ -195,6 +226,9 @@ export default defineComponent({
       insertLayer: 0,
       attachToPrevMeter: false,
       prevMeter: false,
+      meterMode: 'custom',
+      selectedTala: undefined,
+      talaNameOptions: Object.values(TalaName),
     }
   },
   props: {
@@ -293,6 +327,31 @@ export default defineComponent({
   },
   
   methods: {
+
+    onTalaSelected() {
+      if (!this.selectedTala) return;
+
+      const preset = Meter.talaPresets[this.selectedTala];
+      const hierarchy = preset.hierarchy;
+
+      // Set number of layers from tala
+      this.numLayers = hierarchy.length;
+
+      // Populate custom controls from tala hierarchy
+      hierarchy.forEach((layer, i) => {
+        if (typeof layer === 'number') {
+          // Simple layer
+          this.layerCompounds[i] = 1;
+          this.pulseDivisions[i][0] = layer;
+        } else {
+          // Compound layer
+          this.layerCompounds[i] = layer.length;
+          layer.forEach((div, j) => {
+            this.pulseDivisions[i][j] = div;
+          });
+        }
+      });
+    },
 
     cycleGrowable() {
       if (this.meter === undefined) {
@@ -510,24 +569,39 @@ export default defineComponent({
     },
 
     insertMeter(_?: MouseEvent, startTime_?: number) {
-      const startTime = startTime_ !== undefined ? 
-                        startTime_ : 
+      const startTime = startTime_ !== undefined ?
+                        startTime_ :
                         this.currentTime;
-      const hierarchy: (number | number[])[] = [];
-      for (let i = 0; i < this.numLayers; i++) {
-        if (this.layerCompounds[i] === 1) {
-          hierarchy.push(this.pulseDivisions[i][0])
-        } else {
-          const layer = this.pulseDivisions[i].slice(0, this.layerCompounds[i]);
-          hierarchy.push(layer)
+
+      let meter: Meter;
+
+      if (this.meterMode === 'tala' && this.selectedTala) {
+        // Use fromTala static method for tala mode
+        meter = Meter.fromTala(
+          this.selectedTala,
+          startTime,
+          this.tempo,
+          this.cycles
+        );
+      } else {
+        // Use regular constructor for custom mode
+        const hierarchy: (number | number[])[] = [];
+        for (let i = 0; i < this.numLayers; i++) {
+          if (this.layerCompounds[i] === 1) {
+            hierarchy.push(this.pulseDivisions[i][0])
+          } else {
+            const layer = this.pulseDivisions[i].slice(0, this.layerCompounds[i]);
+            hierarchy.push(layer)
+          }
         }
+        meter = new Meter({
+          hierarchy,
+          startTime,
+          tempo: this.tempo,
+          repetitions: this.cycles,
+        });
       }
-      const meter = new Meter({
-        hierarchy,
-        startTime,
-        tempo: this.tempo,
-        repetitions: this.cycles,
-      });
+
       this.$emit('passthroughAddMeterEmit', meter);
       this.$emit('passthroughUnsavedChangesEmit', true)
       // this.$emit('passthroughAddMetricGridEmit', true);
@@ -709,6 +783,25 @@ select {
 .no-text-entry::-webkit-inner-spin-button,
 .no-text-entry::-webkit-outer-spin-button {
   pointer-events: auto; /* Enable spin buttons */
+}
+
+.titleBox {
+  height: 40px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid white;
+}
+
+.titleBox > input[type='radio'] {
+  margin-left: 15px;
+  margin-right: 5px;
+}
+
+.titleBox > label {
+  margin-right: 15px;
+  text-align: left;
 }
 
 </style>

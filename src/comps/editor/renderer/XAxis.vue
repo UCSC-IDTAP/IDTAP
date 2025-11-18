@@ -2,6 +2,7 @@
   <div class='xAxis' ref='xAxisContainer' :style='dynamicStyle'>
     <svg ref='axSvg'></svg>
     <svg ref='phraseSvg' v-if='showPhrases'></svg>
+    <svg ref='vibhagSvg' v-if='showVibhagLabels'></svg>
   </div>
 </template>
 
@@ -64,15 +65,20 @@ export default defineComponent({
       type: Object as PropType<ExcerptRange>,
       required: false
     },
+    showVibhagLabels: {
+      type: Boolean,
+      required: true
+    }
   },
   setup(props, { emit }) {
     const xAxisContainer = ref<HTMLDivElement | null>(null);
     const axSvg = ref<SVGSVGElement | null>(null);
     const regionStartPxl = ref<number | undefined>(undefined);
-    const regionEndPxl = ref<number | undefined>(undefined);  
+    const regionEndPxl = ref<number | undefined>(undefined);
     const phraseSvg = ref<SVGSVGElement | null>(null);
-    
-    
+    const vibhagSvg = ref<SVGSVGElement | null>(null);
+
+
     const textColor = computed(() => getContrastingTextColor(props.axisColor));
 
     watch(() => props.axisColor, newColor => {
@@ -87,8 +93,9 @@ export default defineComponent({
         svg
           .selectAll('.tick line')
           .attr('stroke', textColor.value)
-        
+
         drawPhrases();
+        drawVibhags();
       }
     })
     watch(() => props.instIdx, () => resetAxis())
@@ -179,6 +186,7 @@ export default defineComponent({
       nextTick(() => {
 
         drawPhrases();
+        drawVibhags();
       })
     }
 
@@ -192,6 +200,12 @@ export default defineComponent({
     watch(() => props.showPhrases, () => {
       resetAxis();
     })
+    watch(() => props.showVibhagLabels, () => {
+      resetAxis();
+    })
+    watch(() => props.piece.meters, () => {
+      resetAxis();
+    }, { deep: true })
 
     const dynamicStyle = computed(() => {
       return {
@@ -201,7 +215,8 @@ export default defineComponent({
     });
 
     const elementHeight = computed(() => {
-      return props.showPhrases ? props.height / 2 : props.height;
+      const activeLayers = 1 + (props.showPhrases ? 1 : 0) + (props.showVibhagLabels ? 1 : 0);
+      return props.height / activeLayers;
     });
 
     const handleMouseDown = (e: MouseEvent) => {
@@ -225,7 +240,17 @@ export default defineComponent({
           .append('line')
           .classed('region-line', true)
           .attr('x1', x).attr('x2', x)
-          .attr('y1', 0).attr('y2', props.height / 2)
+          .attr('y1', 0).attr('y2', elementHeight.value)
+          .attr('stroke', 'grey')
+          .attr('stroke-width', 1);
+      }
+      // Draw vertical line on vibhag svg
+      if (vibhagSvg.value) {
+        d3.select(vibhagSvg.value)
+          .append('line')
+          .classed('region-line', true)
+          .attr('x1', x).attr('x2', x)
+          .attr('y1', 0).attr('y2', elementHeight.value)
           .attr('stroke', 'grey')
           .attr('stroke-width', 1);
       }
@@ -260,7 +285,16 @@ export default defineComponent({
           .append('line')
           .classed('region-line', true)
           .attr('x1', x).attr('x2', x)
-          .attr('y1', 0).attr('y2', props.height / 2)
+          .attr('y1', 0).attr('y2', elementHeight.value)
+          .attr('stroke', 'grey')
+          .attr('stroke-width', 1);
+      }
+      if (vibhagSvg.value) {
+        d3.select(vibhagSvg.value)
+          .append('line')
+          .classed('region-line', true)
+          .attr('x1', x).attr('x2', x)
+          .attr('y1', 0).attr('y2', elementHeight.value)
           .attr('stroke', 'grey')
           .attr('stroke-width', 1);
       }
@@ -278,14 +312,14 @@ export default defineComponent({
       if (!phraseSvg.value) return;
       const svg = d3.select(phraseSvg.value)
         .attr('width', props.scaledWidth)
-        .attr('height', props.height/2)
+        .attr('height', elementHeight.value)
         .on('mousedown', handleMouseDown)
         .on('mouseup', handleMouseUp)
         .on('mouseout', handleMouseUp)
       svg.selectAll('*').remove();
       svg.append('rect')
         .attr('width', props.scaledWidth)
-        .attr('height', props.height / 2)
+        .attr('height', elementHeight.value)
         .attr('fill', props.axisColor)
         .attr('pointer-events', 'none')
       const divColor = props.instTracks[props.instIdx].color;
@@ -300,7 +334,7 @@ export default defineComponent({
             .attr('x1', xStart)
             .attr('y1', 0)
             .attr('x2', xStart)
-            .attr('y2', props.height / 2)
+            .attr('y2', elementHeight.value)
             .attr('stroke', divColor)
             .attr('stroke-width', 2);
         }
@@ -308,12 +342,74 @@ export default defineComponent({
         // Phrase number centered in the phrase
         svg.append('text')
           .attr('x', xStart + width / 2)
-          .attr('y', props.height / 4)
+          .attr('y', elementHeight.value / 2)
           .attr('text-anchor', 'middle')
           .attr('dominant-baseline', 'middle')
           .style('fill', '#333')
           .style('font-size', '14px')
           .text(`Phrase ${idx + 1}`);
+      });
+
+      // Add separator line at bottom of phrase row (if vibhag row exists)
+      if (props.showVibhagLabels) {
+        svg.append('line')
+          .attr('x1', 0)
+          .attr('y1', elementHeight.value)
+          .attr('x2', props.scaledWidth)
+          .attr('y2', elementHeight.value)
+          .attr('stroke', '#000')
+          .attr('stroke-width', 1);
+      }
+    };
+
+    const drawVibhags = () => {
+      if (!vibhagSvg.value) return;
+      const svg = d3.select(vibhagSvg.value)
+        .attr('width', props.scaledWidth)
+        .attr('height', elementHeight.value)
+        .on('mousedown', handleMouseDown)
+        .on('mouseup', handleMouseUp)
+        .on('mouseout', handleMouseUp)
+      svg.selectAll('*').remove();
+      svg.append('rect')
+        .attr('width', props.scaledWidth)
+        .attr('height', elementHeight.value)
+        .attr('fill', props.axisColor)
+        .attr('pointer-events', 'none')
+
+      // Draw vibhaga labels for all meters
+      props.piece.meters.forEach((meter) => {
+        if (!meter.vibhaga || meter.vibhaga.length === 0) return;
+
+        // Get the top-level (layer 0) pulse structures
+        const topLayerStructures = meter.pulseStructures[0];
+        const vibhagCount = meter.vibhaga.length;
+
+        // Repeat vibhaga labels for each cycle
+        for (let rep = 0; rep < meter.repetitions; rep++) {
+          const cycleStartTime = meter.startTime + (rep * meter.cycleDur);
+
+          // Draw labels for each vibhag in this cycle
+          for (let vibhagIdx = 0; vibhagIdx < vibhagCount; vibhagIdx++) {
+            const vibhagLabel = meter.vibhaga[vibhagIdx];
+            const ps = topLayerStructures[vibhagIdx];
+
+            // Calculate the time for this vibhag in this repetition
+            const vibhagTimeInCycle = ps.pulses[0].realTime - meter.startTime;
+            const pulseTime = cycleStartTime + vibhagTimeInCycle;
+            const xPos = props.scale(pulseTime);
+
+            // Vibhaga label positioned at the pulse time
+            svg.append('text')
+              .attr('x', xPos)
+              .attr('y', elementHeight.value / 2)
+              .attr('text-anchor', 'middle')
+              .attr('dominant-baseline', 'middle')
+              .style('fill', textColor.value)
+              .style('font-size', '10px')
+              .text(vibhagLabel);
+          }
+        }
       });
     };
 
@@ -340,7 +436,17 @@ export default defineComponent({
           .append('line')
           .classed('region-line', true)
           .attr('x1', x).attr('x2', x)
-          .attr('y1', 0).attr('y2', props.height / 2)
+          .attr('y1', 0).attr('y2', elementHeight.value)
+          .attr('stroke', 'grey')
+          .attr('stroke-width', 1);
+      }
+      // Draw vertical line on vibhag svg
+      if (vibhagSvg.value) {
+        d3.select(vibhagSvg.value)
+          .append('line')
+          .classed('region-line', true)
+          .attr('x1', x).attr('x2', x)
+          .attr('y1', 0).attr('y2', elementHeight.value)
           .attr('stroke', 'grey')
           .attr('stroke-width', 1);
       }
@@ -362,7 +468,16 @@ export default defineComponent({
           .append('line')
           .classed('region-line', true)
           .attr('x1', x).attr('x2', x)
-          .attr('y1', 0).attr('y2', props.height / 2)
+          .attr('y1', 0).attr('y2', elementHeight.value)
+          .attr('stroke', 'grey')
+          .attr('stroke-width', 1);
+      }
+      if (vibhagSvg.value) {
+        d3.select(vibhagSvg.value)
+          .append('line')
+          .classed('region-line', true)
+          .attr('x1', x).attr('x2', x)
+          .attr('y1', 0).attr('y2', elementHeight.value)
           .attr('stroke', 'grey')
           .attr('stroke-width', 1);
       }
@@ -389,9 +504,10 @@ export default defineComponent({
           .style('fill', textColor.value)
           .style('pointer-events', 'none')
         svg.selectAll('.tick line')
-          .attr('stroke', textColor.value)  
-        
+          .attr('stroke', textColor.value)
+
           drawPhrases();
+          drawVibhags();
       }
     })
 
@@ -403,6 +519,7 @@ export default defineComponent({
       regionStartPxl,
       regionEndPxl,
       phraseSvg,
+      vibhagSvg,
       resetAxis,
       clearRegionBorders,
       setRegionStartPxl,
