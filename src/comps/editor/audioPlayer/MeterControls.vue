@@ -68,22 +68,22 @@
   <div class='controlsBox'>
     <div class='controlsRow'>
       <label>Tempo</label>
-      <input 
-        type='number' 
-        min='20' 
-        max='300' 
-        step='1' 
-        v-model='tempo'
-        @input='updateTempo'
+      <input
+        type='number'
+        min='20'
+        max='300'
+        step='1'
+        v-model.number='tempo'
+        @change='updateTempoFromInput'
         :disabled='!editable'
         />
-      <input 
-        type='range' 
-        min='0' 
-        max='1' 
-        step='0.001' 
+      <input
+        type='range'
+        min='0'
+        max='1'
+        step='0.001'
         v-model='tempoSlider'
-        @input='updateTempo'
+        @input='updateTempoFromSlider'
         :disabled='!editable'
         />
     </div>
@@ -522,11 +522,34 @@ export default defineComponent({
       })
     },
 
-    updateTempo() {
+    updateTempoFromSlider() {
       const logMin = Math.log(this.minTempo);
       const logMax = Math.log(this.maxTempo);
       const logTempo = logMin + (logMax - logMin) * this.tempoSlider;
       this.tempo = Math.round(Math.exp(logTempo));
+      if (this.meter !== undefined) {
+        this.meter.adjustTempo(this.tempo);
+        this.$emit('passthroughResetZoomEmit')
+        this.$emit('pSelectMeterEmit', this.meter.allPulses[0].uniqueId)
+        this.$emit('passthroughUnsavedChangesEmit', true)
+        this.$emit('rerenderMeter', this.meter);
+      }
+    },
+
+    updateTempoFromInput() {
+      // Clamp tempo to valid range
+      if (this.tempo < this.minTempo) {
+        this.tempo = this.minTempo;
+      } else if (this.tempo > this.maxTempo) {
+        this.tempo = this.maxTempo;
+      }
+
+      // Calculate slider position from tempo (reverse of slider calculation)
+      const logMin = Math.log(this.minTempo);
+      const logMax = Math.log(this.maxTempo);
+      const logTempo = Math.log(this.tempo);
+      this.tempoSlider = (logTempo - logMin) / (logMax - logMin);
+
       if (this.meter !== undefined) {
         this.meter.adjustTempo(this.tempo);
         this.$emit('passthroughResetZoomEmit')
