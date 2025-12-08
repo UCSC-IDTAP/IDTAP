@@ -82,9 +82,14 @@ export default defineComponent({
   setup(props, { emit }) {
     const bursts: { [key: string]: AudioBufferSourceNode } = {};
     const now = () => props.ac.currentTime;
-    const mixNode = props.ac.createGain();
+    const mixNode = props.ac.createGain()
     mixNode.gain.setValueAtTime(props.gainVal, now());
     mixNode.connect(props.ac.destination);
+
+    // set up metronome gain
+    const metroGain = props.ac.createGain()
+    metroGain.connect(mixNode)
+    
     const synths: SynthType[] = [];
     const lagTime = 0.025;
     const firstEnvelopes: Float32Array[] = [];
@@ -148,6 +153,7 @@ export default defineComponent({
         delete bursts[uId];
       };
     };
+
     const cancelBursts = (when?: number) => {
       if (when === undefined) when = now();
       Object.values(bursts).forEach(burst => {
@@ -432,6 +438,7 @@ export default defineComponent({
         throw new Error('Error adding Sarangi module');
       }
     };
+
     const spawnKlatt = async (
       control: KlattSynthControl
     ): Promise<KlattSynthType> => {
@@ -596,6 +603,28 @@ export default defineComponent({
       }
     };
 
+    const scheduleMetronome = () => {
+      const realNow = now();
+      props.piece.meters.forEach(m => {
+        const timeObjs = m.realTimesWithLayer;
+        console.log(timeObjs);
+        timeObjs.forEach(tObj => {
+          if (tObj.realTime >= realNow - props.curPlayTime) {
+            const when = realNow + tObj.realTime - props.curPlayTime;
+            sendBurst({
+              when: when,
+              to: metroGain,
+              atk: 0.01,
+              amp: tObj.layer === 0 ? 0.15 : 0.075,
+              dur: 0.03
+            })
+          }
+        })
+
+        
+      })
+    };
+
 
     // play Trajectories
     const playAllTrajs = () => {
@@ -608,6 +637,7 @@ export default defineComponent({
           playKlattTrajs(synths[idx] as KlattSynthType);
         }
       })
+      scheduleMetronome();
     };
     const playSitarArticulations = (
         traj: Trajectory, 

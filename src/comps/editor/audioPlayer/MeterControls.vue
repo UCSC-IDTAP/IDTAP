@@ -67,13 +67,13 @@
   </div>
   <div class='controlsBox'>
     <div class='controlsRow'>
-      <label>Tempo</label>
+      <label>Tempo (matra)</label>
       <input
         type='number'
         min='20'
         max='300'
         step='1'
-        v-model.number='tempo'
+        v-model.number='displayTempo'
         @change='updateTempoFromInput'
         :disabled='!editable'
         />
@@ -185,7 +185,7 @@ type MeterControlsDataType = {
   numLayers: number,
   layerCompounds: number[],
   pulseDivisions: number[][],
-  tempo: number,
+  displayTempo: number,
   tempoSlider: number,
   minTempo: number,
   maxTempo: number,
@@ -214,7 +214,7 @@ export default defineComponent({
         [4, 2, 2, 2],
         [4, 2, 2, 2]
       ],
-      tempo: 60,
+      displayTempo: 60,
       tempoSlider: 0.5,
       minTempo: 20,
       maxTempo: 300,
@@ -504,9 +504,9 @@ export default defineComponent({
       }
       this.numLayers = this.meter.hierarchy.length;
       this.cycles = this.meter.repetitions;
-      this.tempo = this.meter.tempo;
+      this.displayTempo = this.meter.displayTempo;
       const logTempoDiff = Math.log(this.maxTempo) - Math.log(this.minTempo);
-      const logTempoOffset = Math.log(this.tempo) - Math.log(this.minTempo);
+      const logTempoOffset = Math.log(this.displayTempo) - Math.log(this.minTempo);
       this.tempoSlider = logTempoOffset / logTempoDiff;
 
       this.meter.hierarchy.map((layer, i) => {
@@ -526,9 +526,9 @@ export default defineComponent({
       const logMin = Math.log(this.minTempo);
       const logMax = Math.log(this.maxTempo);
       const logTempo = logMin + (logMax - logMin) * this.tempoSlider;
-      this.tempo = Math.round(Math.exp(logTempo));
+      this.displayTempo = Math.round(Math.exp(logTempo));
       if (this.meter !== undefined) {
-        this.meter.adjustTempo(this.tempo);
+        this.meter.displayTempo = this.displayTempo;
         this.$emit('passthroughResetZoomEmit')
         this.$emit('pSelectMeterEmit', this.meter.allPulses[0].uniqueId)
         this.$emit('passthroughUnsavedChangesEmit', true)
@@ -537,21 +537,21 @@ export default defineComponent({
     },
 
     updateTempoFromInput() {
-      // Clamp tempo to valid range
-      if (this.tempo < this.minTempo) {
-        this.tempo = this.minTempo;
-      } else if (this.tempo > this.maxTempo) {
-        this.tempo = this.maxTempo;
+      // Clamp displayTempo to valid range
+      if (this.displayTempo < this.minTempo) {
+        this.displayTempo = this.minTempo;
+      } else if (this.displayTempo > this.maxTempo) {
+        this.displayTempo = this.maxTempo;
       }
 
-      // Calculate slider position from tempo (reverse of slider calculation)
+      // Calculate slider position from displayTempo (reverse of slider calculation)
       const logMin = Math.log(this.minTempo);
       const logMax = Math.log(this.maxTempo);
-      const logTempo = Math.log(this.tempo);
+      const logTempo = Math.log(this.displayTempo);
       this.tempoSlider = (logTempo - logMin) / (logMax - logMin);
 
       if (this.meter !== undefined) {
-        this.meter.adjustTempo(this.tempo);
+        this.meter.displayTempo = this.displayTempo;
         this.$emit('passthroughResetZoomEmit')
         this.$emit('pSelectMeterEmit', this.meter.allPulses[0].uniqueId)
         this.$emit('passthroughUnsavedChangesEmit', true)
@@ -566,7 +566,7 @@ export default defineComponent({
     getDuration() {
       const relDivs = this.pulseDivisions[0].slice(0, this.layerCompounds[0]);
       const pulsesPer = this.sum(relDivs);
-      const dur = (this.cycles * (60 / this.tempo) * pulsesPer);
+      const dur = (this.cycles * (60 / this.displayTempo) * pulsesPer);
       return this.displayTime(dur)
     },
 
@@ -600,10 +600,16 @@ export default defineComponent({
 
       if (this.meterMode === 'tala' && this.selectedTala) {
         // Use fromTala static method for tala mode
+        // displayTempo is at matra level, need to convert to internal tempo
+        const preset = Meter.talaPresets[this.selectedTala];
+        const layer1 = preset.hierarchy[1];
+        const layer1Mult = typeof layer1 === 'number' ? layer1 :
+          (Array.isArray(layer1) ? layer1.reduce((a, b) => a + b, 0) : 1);
+        const internalTempo = this.displayTempo / layer1Mult;
         meter = Meter.fromTala(
           this.selectedTala,
           startTime,
-          this.tempo,
+          internalTempo,
           this.cycles
         );
       } else {
@@ -617,10 +623,18 @@ export default defineComponent({
             hierarchy.push(layer)
           }
         }
+        // Convert displayTempo to internal tempo based on layer 1
+        let internalTempo = this.displayTempo;
+        if (hierarchy.length >= 2) {
+          const layer1 = hierarchy[1];
+          const layer1Mult = typeof layer1 === 'number' ? layer1 :
+            (Array.isArray(layer1) ? layer1.reduce((a, b) => a + b, 0) : 1);
+          internalTempo = this.displayTempo / layer1Mult;
+        }
         meter = new Meter({
           hierarchy,
           startTime,
-          tempo: this.tempo,
+          tempo: internalTempo,
           repetitions: this.cycles,
         });
       }

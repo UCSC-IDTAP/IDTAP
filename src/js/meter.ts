@@ -1269,11 +1269,11 @@ class Meter {
     const _summed = typeof this.hierarchy[0] === 'number' ?
       this.hierarchy[0] as number :
       sum(this.hierarchy[0] as number[]);
-    const mults = this.hierarchy.map((h, i) => {
+    const mults = this.hierarchy.map((_, i) => {
       if (i === 0) {
         return _summed
       } else {
-        return h as number
+        return this.getHierarchyMult(i);
       }
     });
     const multed = mults.reduce((a, b) => a * b, 1);
@@ -1344,7 +1344,7 @@ class Meter {
           this.hierarchy[0] as number :
           sum(this.hierarchy[0] as number[]);
         const newTopTempo = 60 * summed / newCyDur;
-        const newLowTempo = newTopTempo * (this.hierarchy[1] as number);
+        const newLowTempo = newTopTempo * this.getHierarchyMult(1);
         const newTopDefaultTimes = this.pulseStructures[0].map((ps, i) => {
           const bit = newCyDur / summed;
           const topHIdx = bifurcated ? 
@@ -1386,7 +1386,7 @@ class Meter {
         })
         let ct = 0;
         const newLowDefaultTimes = this.pulseStructures[1].map(ps => {
-          const bit = newCyDur / (summed * (this.hierarchy[1] as number));
+          const bit = newCyDur / (summed * this.getHierarchyMult(1));
           return ps.pulses.map(() => {
             const out = bit * ct + this.startTime;
             ct += 1;
@@ -1416,14 +1416,14 @@ class Meter {
           this.hierarchy[0] as number :
           sum(this.hierarchy[0] as number[]);
         const newTopTempo = 60 * summed / newCyDur;
-        const newMidTempo = newTopTempo * (this.hierarchy[1] as number);
-        const newLowTempo = newMidTempo * (this.hierarchy[2] as number);
+        const newMidTempo = newTopTempo * this.getHierarchyMult(1);
+        const newLowTempo = newMidTempo * this.getHierarchyMult(2);
         const newTopDefaultTimes = this.pulseStructures[0].map((ps, i) => {
           const bit = newCyDur / summed;
-          const topHIdx = bifurcated ? 
+          const topHIdx = bifurcated ?
             i % (this.hierarchy[0] as number[]).length :
             0;
-          const cyNum = bifurcated ? 
+          const cyNum = bifurcated ?
             Math.floor(i / (this.hierarchy[0] as number[]).length) :
             i;
           return ps.pulses.map((_, idx) => {
@@ -1439,13 +1439,13 @@ class Meter {
           .map(ps => ps.pulses.map(p => p.realTime))
           .flat();
         const topLinOffsets = newTopDefaultTimes.map((times, i) => {
-          const topHIdx = bifurcated ? 
+          const topHIdx = bifurcated ?
             i % (this.hierarchy[0] as number[]).length :
             0;
-          const cyNum = bifurcated ? 
+          const cyNum = bifurcated ?
             Math.floor(i / (this.hierarchy[0] as number[]).length) :
             i;
-          const p = bifurcated ? 
+          const p = bifurcated ?
             sum((this.hierarchy[0] as number[]).slice(0, topHIdx)) :
             0;
           return times.map((t, tIdx) => {
@@ -1459,7 +1459,7 @@ class Meter {
         });
         let midCt = 0;
         const newMidDefaultTimes = this.pulseStructures[1].map(ps => {
-          const bit = newCyDur / (summed * (this.hierarchy[1] as number));
+          const bit = newCyDur / (summed * this.getHierarchyMult(1));
           return ps.pulses.map(() => {
             const out = bit * midCt + this.startTime;
             midCt += 1;
@@ -1478,8 +1478,8 @@ class Meter {
         });
         let lowCt = 0;
         const newLowDefaultTimes = this.pulseStructures[2].map(ps => {
-          const h1 = this.hierarchy[1] as number;
-          const h2 = this.hierarchy[2] as number;
+          const h1 = this.getHierarchyMult(1);
+          const h2 = this.getHierarchyMult(2);
           const bit = newCyDur / (summed * h1 * h2);
           return ps.pulses.map(() => {
             const out = bit * lowCt + this.startTime;
@@ -1510,9 +1510,9 @@ class Meter {
           this.hierarchy[0] as number :
           sum(this.hierarchy[0] as number[]);
         const newTopTempo = 60 * summed / newCyDur;
-        const newMidTempo = newTopTempo * (this.hierarchy[1] as number);
-        const newLowTempo = newMidTempo * (this.hierarchy[2] as number);
-        const newBotTempo = newLowTempo * (this.hierarchy[3] as number);
+        const newMidTempo = newTopTempo * this.getHierarchyMult(1);
+        const newLowTempo = newMidTempo * this.getHierarchyMult(2);
+        const newBotTempo = newLowTempo * this.getHierarchyMult(3);
         const newTopDefaultTimes = this.pulseStructures[0].map((ps, i) => {
           const bit = newCyDur / summed;
           const topHIdx = bifurcated ?
@@ -1554,7 +1554,7 @@ class Meter {
         });
         let midCt = 0;
         const newMidDefaultTimes = this.pulseStructures[1].map(ps => {
-          const bit = newCyDur / (summed * (this.hierarchy[1] as number));
+          const bit = newCyDur / (summed * this.getHierarchyMult(1));
           return ps.pulses.map(() => {
             const out = bit * midCt + this.startTime;
             midCt += 1;
@@ -1573,9 +1573,8 @@ class Meter {
         });
         let lowCt = 0;
         const newLowDefaultTimes = this.pulseStructures[2].map(ps => {
-          const h1 = this.hierarchy[1] as number;
-          const h2 = this.hierarchy[2] as number;
-
+          const h1 = this.getHierarchyMult(1);
+          const h2 = this.getHierarchyMult(2);
           const bit = newCyDur / (summed * h1 * h2);
           return ps.pulses.map(() => {
             const out = bit * lowCt + this.startTime;
@@ -1595,9 +1594,9 @@ class Meter {
         });
         let botCt = 0;
         const newBotDefaultTimes = this.pulseStructures[3].map(ps => {
-          const h1 = this.hierarchy[1] as number;
-          const h2 = this.hierarchy[2] as number;
-          const h3 = this.hierarchy[3] as number;
+          const h1 = this.getHierarchyMult(1);
+          const h2 = this.getHierarchyMult(2);
+          const h3 = this.getHierarchyMult(3);
           const bit = newCyDur / (summed * h1 * h2 * h3);
           return ps.pulses.map(() => {
             const out = bit * botCt + this.startTime;
@@ -1721,6 +1720,15 @@ class Meter {
     return this.allPulses.map(p => p.realTime)
   }
 
+  get realTimesWithLayer() {
+    return this.allPulses.map(p => {
+      return {
+        realTime: p.realTime,
+        layer: p.lowestLayer
+      }
+    })
+  }
+
   get realCorpTimes() {
     return this.allCorporealPulses.map(p => p.realTime)
   }
@@ -1732,6 +1740,39 @@ class Meter {
       const summed = sum(this.hierarchy[0]);
       return 60 * summed / this.tempo;
     }
+  }
+
+  /**
+   * Get the multiplier for a given hierarchy layer.
+   * Handles both simple numbers and complex arrays like [3, 2] -> 5
+   */
+  private getHierarchyMult(layer: number): number {
+    if (layer >= this.hierarchy.length) {
+      return 1;
+    }
+    const h = this.hierarchy[layer];
+    if (typeof h === 'number') {
+      return h;
+    } else {
+      return h.reduce((acc, val) => acc + val, 0);
+    }
+  }
+
+  get displayTempo(): number {
+    // If hierarchy has only 1 layer, display tempo equals internal tempo
+    if (this.hierarchy.length < 2) {
+      return this.tempo;
+    }
+    // Otherwise, multiply by layer 1 subdivision to get "matra tempo"
+    return this.tempo * this.getHierarchyMult(1);
+  }
+
+  set displayTempo(newTempo: number) {
+    if (this.hierarchy.length < 2) {
+      this.adjustTempo(newTempo);
+      return;
+    }
+    this.adjustTempo(newTempo / this.getHierarchyMult(1));
   }
 
   // Helper methods for musical time calculation
