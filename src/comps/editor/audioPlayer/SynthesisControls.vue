@@ -82,6 +82,7 @@
             v-model='metroOnProxy'
             @click='preventSpace'
             @change='$emit("toggleMetro")'
+            :disabled='loopingEnabled'
             />
           <input
             type='range'
@@ -90,7 +91,7 @@
             step='0.01'
             v-model='metroGainValProxy'
             orient='vertical'
-            :disabled='!metroOn'
+            :disabled='!metroOn || loopingEnabled'
             />
         </div>
       </div>
@@ -98,7 +99,7 @@
 </div>
 </template>
 <script lang='ts'>
-import { defineComponent, PropType, computed, ref, getCurrentInstance } from 'vue'
+import { defineComponent, PropType, computed, ref, watch } from 'vue'
 import { SynthControl, InstrumentTrackType, SynthType } from '@shared/types';
 import { Instrument } from '@shared/enums';
 import InstrumentControl from '@/comps/editor/audioPlayer/InstrumentControl.vue';
@@ -267,6 +268,21 @@ export default defineComponent({
       }
     });
 
+    const loopingEnabled = computed(() => props.shiftOn || props.regionSpeedOn);
+
+    // When looping is enabled, turn off metronome and set gain to 0
+    watch(loopingEnabled, (newVal) => {
+      if (newVal) {
+        if (props.metroOn) {
+          emit('update:metroOn', false);
+          emit('toggleMetro');
+        }
+        if (props.metroGainVal > 0) {
+          emit('update:metroGainVal', 0);
+        }
+      }
+    });
+
     const handleUpdateSonify = (idx: number, val: boolean) => {
       emit('update:sonify', {idx, val})
     };
@@ -302,7 +318,8 @@ export default defineComponent({
       metroGainValProxy,
       mixedGainSliderDisabled,
       instControl,
-      reemitAllInstrumentControlParams
+      reemitAllInstrumentControlParams,
+      loopingEnabled,
     }
 
   }
