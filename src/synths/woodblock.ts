@@ -83,5 +83,12 @@ export class WoodblockSynth {
     this.noiseFM(when, 0.015, 60); // tweak dur/depth
   }
 
+  cancelScheduled(when?: number) {
+    const t = when ?? this.ac.currentTime;
+    this.envNode.gain.cancelScheduledValues(t);
+    this.envNode.gain.setValueAtTime(0, t);
+    this.osc1.frequency.cancelScheduledValues(t);
+    this.osc2.frequency.cancelScheduledValues(t);
+  }
 
 }

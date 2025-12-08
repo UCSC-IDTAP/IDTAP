@@ -92,9 +92,7 @@ export default defineComponent({
     const metroToggle = props.ac.createGain()
     metroGain.connect(metroToggle).connect(mixNode)
 
-    // Two woodblock synths: one for downbeat (layer 0), one for subdivision (layer 1)
-    const woodblockDown = new WoodblockSynth(props.ac, metroGain);
-    const woodblockSub = new WoodblockSynth(props.ac, metroGain);
+    const woodblock = new WoodblockSynth(props.ac, metroGain);
     
     const synths: SynthType[] = [];
     const lagTime = 0.025;
@@ -629,14 +627,18 @@ export default defineComponent({
               const when = realNow + tObj.realTime - props.curPlayTime;
               if (tObj.layer === 0) {
                 // Lower, fuller click for downbeat
-                woodblockDown.scheduleAttack(when, 600, 0.15);
+                woodblock.scheduleAttack(when, 600, 0.15);
               } else {
                 // Higher, shorter click for subdivision
-                woodblockSub.scheduleAttack(when, 900, 0.1);
+                woodblock.scheduleAttack(when, 900, 0.1);
               }
             }
           })
       })
+    };
+
+    const cancelMetronome = () => {
+      woodblock.cancelScheduled();
     };
 
 
@@ -1338,11 +1340,12 @@ export default defineComponent({
       cancelBursts,
       playAllTrajs,
       firstEnvelopes,
-      cancelAllTrajs, 
+      cancelAllTrajs,
       recordAllSynths,
       stopRecordingSynths,
       metroToggle,
       metroGain,
+      cancelMetronome,
     }
   }
 })

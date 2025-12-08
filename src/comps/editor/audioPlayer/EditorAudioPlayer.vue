@@ -2193,6 +2193,7 @@ export default defineComponent({
           this.stopPlayCursorAnimation();
           const s = this.$refs.synths as InstanceType<typeof Synths>;
           s.cancelAllTrajs();
+          s.cancelMetronome();
           this.bufferSourceNodes = [];
         }
       }
