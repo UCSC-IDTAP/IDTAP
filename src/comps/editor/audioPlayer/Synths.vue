@@ -22,7 +22,8 @@ import {
   getEnds,
 } from '@/ts/utils'
 import { v4 as uuidv4 } from 'uuid';
-import { 
+import { WoodblockSynth } from '@/synths/woodblock';
+import {
   LoopSourceNode,
   ChikariNodeType,
   PluckNodeType,
@@ -86,10 +87,14 @@ export default defineComponent({
     mixNode.gain.setValueAtTime(props.gainVal, now());
     mixNode.connect(props.ac.destination);
 
-    // set up metronome gain
+    // set up metronome gain and woodblock synths
     const metroGain = props.ac.createGain()
     const metroToggle = props.ac.createGain()
     metroGain.connect(metroToggle).connect(mixNode)
+
+    // Two woodblock synths: one for downbeat (layer 0), one for subdivision (layer 1)
+    const woodblockDown = new WoodblockSynth(props.ac, metroGain);
+    const woodblockSub = new WoodblockSynth(props.ac, metroGain);
     
     const synths: SynthType[] = [];
     const lagTime = 0.025;
@@ -622,14 +627,13 @@ export default defineComponent({
           .forEach(tObj => {
             if (tObj.realTime >= realNow - props.curPlayTime) {
               const when = realNow + tObj.realTime - props.curPlayTime;
-              sendBurst({
-                when: when,
-                to: metroGain,
-                atk: 0.01,
-                amp: tObj.layer === 0 ? 0.1 : 0.08,
-                dur: tObj.layer === 0 ? 0.03 : 0.02,
-                highpassFreq: tObj.layer === 0 ? undefined : 1000
-              })
+              if (tObj.layer === 0) {
+                // Lower, fuller click for downbeat
+                woodblockDown.scheduleAttack(when, 600, 0.15);
+              } else {
+                // Higher, shorter click for subdivision
+                woodblockSub.scheduleAttack(when, 900, 0.1);
+              }
             }
           })
       })
