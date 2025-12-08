@@ -120,6 +120,7 @@ export default defineComponent({
       option.amp = option.amp ?? 1;
       option.dur = option.dur ?? 0.01;
       option.amp *= 2;
+
       const bufSize = sr * option.dur;
       const attackSize = sr * option.atk;
       const noiseBuf = props.ac.createBuffer(1, bufSize, sr);
@@ -146,7 +147,15 @@ export default defineComponent({
       const uId = uuidv4();
       bursts[uId] = bufferSourceNode;
       bufferSourceNode.buffer = noiseBuf;
-      bufferSourceNode.connect(option.to);
+      if (option.highpassFreq !== undefined) {
+        const hpNode = props.ac.createBiquadFilter();
+        hpNode.type = 'highpass';
+        hpNode.frequency.value = option.highpassFreq;
+        bufferSourceNode.connect(hpNode);
+        hpNode.connect(option.to);
+      } else {
+        bufferSourceNode.connect(option.to);
+      }
       bufferSourceNode.start(option.when);
       bufferSourceNode.onended = () => {
         bufferSourceNode.disconnect();
@@ -607,7 +616,6 @@ export default defineComponent({
       const realNow = now();
       props.piece.meters.forEach(m => {
         const timeObjs = m.realTimesWithLayer;
-        console.log(timeObjs);
         timeObjs.forEach(tObj => {
           if (tObj.realTime >= realNow - props.curPlayTime) {
             const when = realNow + tObj.realTime - props.curPlayTime;
@@ -615,13 +623,12 @@ export default defineComponent({
               when: when,
               to: metroGain,
               atk: 0.01,
-              amp: tObj.layer === 0 ? 0.15 : 0.075,
-              dur: 0.03
+              amp: tObj.layer === 0 ? 0.1 : 0.08,
+              dur: tObj.layer === 0 ? 0.03 : 0.02,
+              highpassFreq: tObj.layer === 0 ? undefined : 1000
             })
           }
         })
-
-        
       })
     };
 
