@@ -280,7 +280,7 @@ export default defineComponent({
       const start = this.currentTime;
       const relDivs = this.pulseDivisions[0].slice(0, this.layerCompounds[0]);
       const pulsesPer = this.sum(relDivs);
-      const dur = (this.cycles * (60 / this.tempo) * pulsesPer);
+      const dur = (this.cycles * (60 / this.displayTempo) * pulsesPer);
       const end = start + dur;
       const conflict = this.meters.some((meter) => {
         const mEndTime = meter.startTime + meter.cycleDur * meter.repetitions;
@@ -318,7 +318,7 @@ export default defineComponent({
           [4, 2, 2, 2],
           [4, 2, 2, 2]
         ];
-        this.tempo = 60;
+        this.displayTempo = 60;
         this.tempoSlider = 0.5;
         this.cycles = 1;
 

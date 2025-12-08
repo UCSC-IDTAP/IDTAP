@@ -88,7 +88,8 @@ export default defineComponent({
 
     // set up metronome gain
     const metroGain = props.ac.createGain()
-    metroGain.connect(mixNode)
+    const metroToggle = props.ac.createGain()
+    metroGain.connect(metroToggle).connect(mixNode)
     
     const synths: SynthType[] = [];
     const lagTime = 0.025;
@@ -616,19 +617,21 @@ export default defineComponent({
       const realNow = now();
       props.piece.meters.forEach(m => {
         const timeObjs = m.realTimesWithLayer;
-        timeObjs.forEach(tObj => {
-          if (tObj.realTime >= realNow - props.curPlayTime) {
-            const when = realNow + tObj.realTime - props.curPlayTime;
-            sendBurst({
-              when: when,
-              to: metroGain,
-              atk: 0.01,
-              amp: tObj.layer === 0 ? 0.1 : 0.08,
-              dur: tObj.layer === 0 ? 0.03 : 0.02,
-              highpassFreq: tObj.layer === 0 ? undefined : 1000
-            })
-          }
-        })
+        timeObjs
+          .filter(tObj => tObj.layer <= 1)
+          .forEach(tObj => {
+            if (tObj.realTime >= realNow - props.curPlayTime) {
+              const when = realNow + tObj.realTime - props.curPlayTime;
+              sendBurst({
+                when: when,
+                to: metroGain,
+                atk: 0.01,
+                amp: tObj.layer === 0 ? 0.1 : 0.08,
+                dur: tObj.layer === 0 ? 0.03 : 0.02,
+                highpassFreq: tObj.layer === 0 ? undefined : 1000
+              })
+            }
+          })
       })
     };
 
@@ -1334,6 +1337,8 @@ export default defineComponent({
       cancelAllTrajs, 
       recordAllSynths,
       stopRecordingSynths,
+      metroToggle,
+      metroGain,
     }
   }
 })
