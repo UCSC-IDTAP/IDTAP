@@ -214,6 +214,15 @@
             @click='preventSpaceToggle'
           />
         </div>
+        <div class='row'>
+          <label for='vibhagLabels'>Tala Vibhag</label>
+          <input 
+            id='vibhagLabels' 
+            type='checkbox'
+            v-model='vibhagLabelsToggleProxy'
+            @click='preventSpaceToggle'
+          />
+        </div>
       </div>
     </div>
 
@@ -565,7 +574,11 @@ export default defineComponent({
     showPhraseLabels: {
       type: Boolean,
       required: true
-    }
+    },
+    showVibhagLabels: {
+      type: Boolean,
+      required: true
+    },
   },
   emits: [
     'update:backgroundColor',
@@ -595,7 +608,8 @@ export default defineComponent({
     'update:showMeter',
     'update:showPhonemes',
     'update:showPhraseDivs',
-    'update:showPhraseLabels'
+    'update:showPhraseLabels',
+    'update:showVibhagLabels',
   ],
   setup(props, { emit }) {
 
@@ -782,6 +796,14 @@ export default defineComponent({
       },
       set(val) {
         emit('update:showPhraseLabels', val);
+      }
+    })
+    const vibhagLabelsToggleProxy = computed({
+      get() {
+        return props.showVibhagLabels;
+      },
+      set(val) {
+        emit('update:showVibhagLabels', val);
       }
     })
 
@@ -1309,6 +1331,7 @@ export default defineComponent({
       phonemesToggleProxy,
       phraseDivsToggleProxy,
       phraseLabelsToggleProxy,
+      vibhagLabelsToggleProxy,
     }
   }
 })

@@ -22,7 +22,8 @@ import {
   getEnds,
 } from '@/ts/utils'
 import { v4 as uuidv4 } from 'uuid';
-import { 
+import { WoodblockSynth } from '@/synths/woodblock';
+import {
   LoopSourceNode,
   ChikariNodeType,
   PluckNodeType,
@@ -82,9 +83,17 @@ export default defineComponent({
   setup(props, { emit }) {
     const bursts: { [key: string]: AudioBufferSourceNode } = {};
     const now = () => props.ac.currentTime;
-    const mixNode = props.ac.createGain();
+    const mixNode = props.ac.createGain()
     mixNode.gain.setValueAtTime(props.gainVal, now());
     mixNode.connect(props.ac.destination);
+
+    // set up metronome gain and woodblock synths
+    const metroGain = props.ac.createGain()
+    const metroToggle = props.ac.createGain()
+    metroGain.connect(metroToggle).connect(mixNode)
+
+    const woodblock = new WoodblockSynth(props.ac, metroGain);
+    
     const synths: SynthType[] = [];
     const lagTime = 0.025;
     const firstEnvelopes: Float32Array[] = [];
@@ -115,6 +124,7 @@ export default defineComponent({
       option.amp = option.amp ?? 1;
       option.dur = option.dur ?? 0.01;
       option.amp *= 2;
+
       const bufSize = sr * option.dur;
       const attackSize = sr * option.atk;
       const noiseBuf = props.ac.createBuffer(1, bufSize, sr);
@@ -141,13 +151,22 @@ export default defineComponent({
       const uId = uuidv4();
       bursts[uId] = bufferSourceNode;
       bufferSourceNode.buffer = noiseBuf;
-      bufferSourceNode.connect(option.to);
+      if (option.highpassFreq !== undefined) {
+        const hpNode = props.ac.createBiquadFilter();
+        hpNode.type = 'highpass';
+        hpNode.frequency.value = option.highpassFreq;
+        bufferSourceNode.connect(hpNode);
+        hpNode.connect(option.to);
+      } else {
+        bufferSourceNode.connect(option.to);
+      }
       bufferSourceNode.start(option.when);
       bufferSourceNode.onended = () => {
         bufferSourceNode.disconnect();
         delete bursts[uId];
       };
     };
+
     const cancelBursts = (when?: number) => {
       if (when === undefined) when = now();
       Object.values(bursts).forEach(burst => {
@@ -432,6 +451,7 @@ export default defineComponent({
         throw new Error('Error adding Sarangi module');
       }
     };
+
     const spawnKlatt = async (
       control: KlattSynthControl
     ): Promise<KlattSynthType> => {
@@ -596,6 +616,31 @@ export default defineComponent({
       }
     };
 
+    const scheduleMetronome = () => {
+      const realNow = now();
+      props.piece.meters.forEach(m => {
+        const timeObjs = m.realTimesWithLayer;
+        timeObjs
+          .filter(tObj => tObj.layer <= 1)
+          .forEach(tObj => {
+            if (tObj.realTime >= realNow - props.curPlayTime) {
+              const when = realNow + tObj.realTime - props.curPlayTime;
+              if (tObj.layer === 0) {
+                // Lower, fuller click for downbeat
+                woodblock.scheduleAttack(when, 600, 0.15);
+              } else {
+                // Higher, shorter click for subdivision
+                woodblock.scheduleAttack(when, 900, 0.1);
+              }
+            }
+          })
+      })
+    };
+
+    const cancelMetronome = () => {
+      woodblock.cancelScheduled();
+    };
+
 
     // play Trajectories
     const playAllTrajs = () => {
@@ -608,6 +653,7 @@ export default defineComponent({
           playKlattTrajs(synths[idx] as KlattSynthType);
         }
       })
+      scheduleMetronome();
     };
     const playSitarArticulations = (
         traj: Trajectory, 
@@ -1294,9 +1340,12 @@ export default defineComponent({
       cancelBursts,
       playAllTrajs,
       firstEnvelopes,
-      cancelAllTrajs, 
+      cancelAllTrajs,
       recordAllSynths,
       stopRecordingSynths,
+      metroToggle,
+      metroGain,
+      cancelMetronome,
     }
   }
 })

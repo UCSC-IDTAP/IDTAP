@@ -143,6 +143,9 @@
       :mixedGainVal='mixedGainVal'
       :recGainVal='recGain'
       :hasRecording='hasRecording'
+      :metroOn='metroOn'
+      :metroGainVal='metroGainVal'
+      :loop='loop'
       @update:transposition='transposition = Number($event)'
       @update:regionSpeed='regionSpeed = Number($event)'
       @update:regionSpeedOn='regionSpeedOn = $event'
@@ -155,6 +158,9 @@
       @update:gainNode='handleUpdateGainNode'
       @update:cutoff='handleUpdateCutoff'
       @update:sonify='handleUpdateSonify'
+      @update:metroOn='metroOn = $event'
+      @toggleMetro='toggleMetro'
+      @update:metroGainVal='updateMetroGainVal'
     />
     <div class='downloads' v-if='showDownloads'>
       <label>Data</label>
@@ -353,6 +359,7 @@
       :excerptRange='excerptRange'
       :durTot='audioDBDoc ? audioDBDoc.duration : piece.durTot!'
       :showPhraseLabels='showPhraseLabels'
+      :showVibhagLabels='showVibhagLabels'
       @specCanvas='handleSpecCanvas'
       @update:backgroundColor='$emit("update:backgroundColor", $event)'
       @update:axisColor='$emit("update:axisColor", $event)'
@@ -380,6 +387,7 @@
       @update:showMeter='$emit("update:showMeter", $event)'
       @update:showPhonemes='$emit("update:showPhonemes", $event)'
       @update:showPhraseDivs='$emit("update:showPhraseDivs", $event)'
+      @update:showVibhagLabels='$emit("update:showVibhagLabels", $event)'
       />
       <Synths
         :key='synthsKey'
@@ -607,6 +615,8 @@ type EditorAudioPlayerData = {
   tempMixedGainVal: number,
   startAtCurrentTime: boolean,
   synthsKey: number,
+  metroOn: boolean,
+  metroGainVal: number,
 }
 
 interface RubberBandNodeType extends AudioWorkletNode {
@@ -869,6 +879,8 @@ export default defineComponent({
       tempMixedGainVal: 1,
       startAtCurrentTime: false,
       synthsKey: 0,
+      metroOn: true,
+      metroGainVal: 0.5,
     };
   },
   props: {
@@ -1078,6 +1090,10 @@ export default defineComponent({
       required: false
     },
     showPhraseLabels: {
+      type: Boolean,
+      required: true
+    },
+    showVibhagLabels: {
       type: Boolean,
       required: true
     },
@@ -1305,10 +1321,16 @@ export default defineComponent({
 
     afterSynthsMounted(mounted: boolean) {
       if (mounted) {
-        const sc = this.$refs.synthControls as 
+        const sc = this.$refs.synthControls as
             InstanceType<typeof SynthesisControls>;
         if (sc && sc.reemitAllInstrumentControlParams) {
           sc.reemitAllInstrumentControlParams();
+        }
+        // Initialize metronome gain values
+        const s = this.$refs.synths as InstanceType<typeof Synths>;
+        if (s) {
+          s.metroGain.gain.setValueAtTime(this.metroGainVal, this.now());
+          s.metroToggle.gain.setValueAtTime(this.metroOn ? 1 : 0, this.now());
         }
       }
     },
@@ -1348,7 +1370,22 @@ export default defineComponent({
       const gain = this.gainNode!.gain;
       gain.setValueAtTime(curVal, this.now());
       gain.linearRampToValueAtTime(this.recGain, this.now() + this.lagTime);
+    },
 
+    toggleMetro() {
+      const s = this.$refs.synths as InstanceType<typeof Synths>;
+      const curVal = s.metroToggle.gain.value;
+      const targetVal = this.metroOn ? 1 : 0;
+      s.metroToggle.gain.setValueAtTime(curVal, this.now());
+      s.metroToggle.gain.linearRampToValueAtTime(targetVal, this.now() + 0.2);
+    },
+
+    updateMetroGainVal(val: string) {
+      this.metroGainVal = Number(val);
+      const s = this.$refs.synths as InstanceType<typeof Synths>;
+      const curVal = s.metroGain.gain.value;
+      s.metroGain.gain.setValueAtTime(curVal, this.now());
+      s.metroGain.gain.linearRampToValueAtTime(this.metroGainVal, this.now() + this.lagTime);
     },
 
     handleUpdateGainNode(slider: { 
@@ -2157,6 +2194,7 @@ export default defineComponent({
           this.stopPlayCursorAnimation();
           const s = this.$refs.synths as InstanceType<typeof Synths>;
           s.cancelAllTrajs();
+          s.cancelMetronome();
           this.bufferSourceNodes = [];
         }
       }

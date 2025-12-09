@@ -48,12 +48,13 @@
       :stretchedFactor='stretchedFactor'
       :hasRecording='hasRecording'
       :highlightTrajs='highlightTrajs'
+      :showVibhagLabels='showVibhagLabels'
       :playheadAnimation='playheadAnimation'
       :queryTime='queryTime'
       :editableCols='editableCols'
       :scaleSystem='scaleSystem'
       :timingDisplay='timingDisplay'
-      :audioPlayerRef='$refs.audioPlayer as APType'
+      :audioPlayerRef='($refs.audioPlayer as APType)'
       :showPhrases='showPhrases'
       :zoomXFactor='zoomXFactor'
       @zoomInY='zoomInY'
@@ -246,6 +247,7 @@
   :showPhraseDivs='viewPhrases'
   :excerptRange='excerptRange'
   :showPhraseLabels='showPhrases'
+  :showVibhagLabels='showVibhagLabels'
   @resizeHeightEmit='resizeHeight'
   @currentTimeEmit='setCurrentTime'
   @updateSargamLinesEmit='updateSargamLines'
@@ -294,6 +296,7 @@
   @update:showPhraseLabels='showPhrases = $event'
   @update:selectedMode='selectedMode = $event'
   @assemblageSelectPhrase='handleAssemblageSelectPhrase'
+  @update:showVibhagLabels='showVibhagLabels = $event'
   />
   <ContextMenu 
     :x='contextMenuX'
@@ -497,7 +500,7 @@ type EditorDataType = {
   backColor: string,
   axisColor: string,
   // yAxWidth: number,
-  xAxHeight: number,
+  baseXAxHeight: number,
   minDrawDur: number,
   initViewDur: number,
   initYScale: number,
@@ -659,6 +662,7 @@ type EditorDataType = {
   timingDisplay: TimingDisplay,
   excerptRange?: ExcerptRange,
   showPhrases: boolean,
+  showVibhagLabels: boolean,
 }
 
 export { findClosestStartTime }
@@ -672,7 +676,7 @@ export default defineComponent({
       backColor: '#f0f8ff', // aliceblue
       axisColor: '#c4b18b', // tan
       // yAxWidth: 30,
-      xAxHeight: 60,
+      baseXAxHeight: 25,
       minDrawDur: 0.01, //this could be smaller, potentially
       initViewDur: 20,
       initYScale: 2,
@@ -829,6 +833,7 @@ export default defineComponent({
       timingDisplay: TimingDisplay.ExcerptTime,
       excerptRange: undefined,
       showPhrases: true,
+      showVibhagLabels: false,
     }
   },
   setup() {
@@ -880,7 +885,6 @@ export default defineComponent({
   },
 
   async mounted() {
-    this.xAxHeight = this.showPhrases ? 60 : 30;
     window.addEventListener('beforeunload', this.beforeUnload);
     this.fullWidth = window.innerWidth;
     this.throttledAlterSlope = throttle(this.alterSlope, 16);
@@ -1044,10 +1048,6 @@ export default defineComponent({
 
   watch: {
 
-    showPhrases(newVal) {
-      this.xAxHeight = newVal ? 60 : 30;
-    },
-
     scaleSystem(ss) {
       if (ss === ScaleSystem.Sargam || ss === ScaleSystem.SargamCents) {
         this.sargamRepresentation = SargamRepresentation.Sargam;
@@ -1133,16 +1133,27 @@ export default defineComponent({
 
     yAxWidth() {
       const wides = [
-        ScaleSystem.Cents, 
+        ScaleSystem.Cents,
       ]
       const middles = [
-        ScaleSystem.SargamCents, 
+        ScaleSystem.SargamCents,
         ScaleSystem.SolfegeCents,
         ScaleSystem.PitchClassCents,
         ScaleSystem.MovableCCents
       ]
       return wides.includes(this.scaleSystem) ? 70 : middles.includes(this.scaleSystem) ? 55 : 30;
     },
+
+    xAxHeight(): number {
+      if (this.showPhrases && this.showVibhagLabels) {
+        return this.baseXAxHeight * 3;
+      } else if (this.showPhrases || this.showVibhagLabels) {
+        return this.baseXAxHeight * 2;
+      } else {
+        return this.baseXAxHeight;
+      }
+    },
+
     hasRecording() {
       return this.audioDBDoc !== undefined;
     },

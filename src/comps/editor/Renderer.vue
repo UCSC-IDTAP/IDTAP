@@ -53,6 +53,7 @@
           :piece='piece'
           :instIdx='editingInstIdx'
           :showPhrases='showPhrases'
+          :showVibhagLabels='showVibhagLabels'
           :instTracks='instTracks'
           :timingDisplay='timingDisplay'
           :excerptRange='piece.excerptRange'
@@ -474,6 +475,10 @@ export default defineComponent({
     },
     zoomXFactor: {
       type: Number,
+      required: true
+    },
+    showVibhagLabels: {
+      type: Boolean,
       required: true
     }
   },

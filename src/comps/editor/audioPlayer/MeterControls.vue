@@ -1,61 +1,89 @@
 <template>
 <div class='outer'>
   <div class='controlsBox'>
-    <div class='controlsRow'>
-      <label class='big'>Hierarchical Depth</label>
-      <select 
-        v-model.number='numLayers' 
-        @change='updateDepth'
-        :disabled='!editable'
-        >
-        <option value='1'>1</option>
-        <option value='2'>2</option>
-        <option value='3'>3</option>
-        <option value='4'>4</option>
-      </select>
+    <div class='titleBox'>
+      <input type='radio' id='tala-radio' value='tala' v-model='meterMode'/>
+      <label for='tala-radio'>Tala</label>
+      <input type='radio' id='custom-radio' value='custom' v-model='meterMode'/>
+      <label for='custom-radio'>Custom</label>
     </div>
-    <div class='controlsRow' v-for='(n, i) in Number(numLayers)' :key='n'>
-      <label>Layer {{ i }}</label>
-      <div class='buttonCol' v-if='i === 0'>
-        <button 
-          :disabled='layerCompounds[i] === 4 || !editable' 
-          @click='increaseCompounds(i)'
-          >+</button>
-        <button 
-          :disabled='layerCompounds[i] === 1 || !editable'
-          @click='decreaseCompounds(i)'
-          >-</button>
-      </div>
-      <div class='buttonCol' v-else></div>
-      <select 
-        v-for='k, kIdx in layerCompounds[i]' 
-        v-model.number='pulseDivisions[i][kIdx]'
-        @change='updatePulseDivs(i, kIdx)'
-        :disabled='!editable'
+    <div v-if='meterMode === "tala"'>
+      <div class='controlsRow'>
+        <label class='big'>Tala</label>
+        <select
+          v-model='selectedTala'
+          @change='onTalaSelected'
+          :disabled='!editable'
         >
-        <option v-for='j in 8'>{{ j+1 }}</option>
-      </select>
+          <option :value='undefined' disabled>Select Tala...</option>
+          <option
+            v-for='talaName in talaNameOptions'
+            :key='talaName'
+            :value='talaName'
+          >
+            {{ talaName }}
+          </option>
+        </select>
+      </div>
+    </div>
+    <div v-else-if='meterMode === "custom"'>
+      <div class='controlsRow'>
+        <label class='big'>Hierarchical Depth</label>
+        <select
+          v-model.number='numLayers'
+          @change='updateDepth'
+          :disabled='!editable'
+          >
+          <option value='1'>1</option>
+          <option value='2'>2</option>
+          <option value='3'>3</option>
+          <option value='4'>4</option>
+        </select>
+      </div>
+      <div class='controlsRow' v-for='(n, i) in Number(numLayers)' :key='n'>
+        <label>Layer {{ i }}</label>
+        <div class='buttonCol' v-if='i === 0'>
+          <button
+            :disabled='layerCompounds[i] === 4 || !editable'
+            @click='increaseCompounds(i)'
+            >+</button>
+          <button
+            :disabled='layerCompounds[i] === 1 || !editable'
+            @click='decreaseCompounds(i)'
+            >-</button>
+        </div>
+        <div class='buttonCol' v-else></div>
+        <select
+          v-for='k, kIdx in layerCompounds[i]'
+          v-model.number='pulseDivisions[i][kIdx]'
+          @change='updatePulseDivs(i, kIdx)'
+          :disabled='!editable'
+          :key='kIdx'
+          >
+          <option v-for='j in 8' :key='j+1'>{{ j+1 }}</option>
+        </select>
+      </div>
     </div>
   </div>
   <div class='controlsBox'>
     <div class='controlsRow'>
-      <label>Tempo</label>
-      <input 
-        type='number' 
-        min='20' 
-        max='300' 
-        step='1' 
-        v-model='tempo'
-        @input='updateTempo'
+      <label>Tempo (matra)</label>
+      <input
+        type='number'
+        min='20'
+        max='300'
+        step='1'
+        v-model.number='displayTempo'
+        @change='updateTempoFromInput'
         :disabled='!editable'
         />
-      <input 
-        type='range' 
-        min='0' 
-        max='1' 
-        step='0.001' 
+      <input
+        type='range'
+        min='0'
+        max='1'
+        step='0.001'
         v-model='tempoSlider'
-        @input='updateTempo'
+        @input='updateTempoFromSlider'
         :disabled='!editable'
         />
     </div>
@@ -151,13 +179,13 @@ import {
   select as d3Select,
  } from 'd3';
 import { defineComponent, PropType } from 'vue';
-import { EditorMode } from '@shared/enums';
+import { EditorMode, TalaName } from '@shared/enums';
  
 type MeterControlsDataType = {
   numLayers: number,
   layerCompounds: number[],
   pulseDivisions: number[][],
-  tempo: number,
+  displayTempo: number,
   tempoSlider: number,
   minTempo: number,
   maxTempo: number,
@@ -169,6 +197,9 @@ type MeterControlsDataType = {
   insertLayer: number,
   attachToPrevMeter: boolean,
   prevMeter: boolean,
+  meterMode: 'tala' | 'custom',
+  selectedTala: TalaName | undefined,
+  talaNameOptions: TalaName[],
 };
 
 export default defineComponent({
@@ -183,7 +214,7 @@ export default defineComponent({
         [4, 2, 2, 2],
         [4, 2, 2, 2]
       ],
-      tempo: 60,
+      displayTempo: 60,
       tempoSlider: 0.5,
       minTempo: 20,
       maxTempo: 300,
@@ -195,6 +226,9 @@ export default defineComponent({
       insertLayer: 0,
       attachToPrevMeter: false,
       prevMeter: false,
+      meterMode: 'custom',
+      selectedTala: undefined,
+      talaNameOptions: Object.values(TalaName),
     }
   },
   props: {
@@ -246,7 +280,7 @@ export default defineComponent({
       const start = this.currentTime;
       const relDivs = this.pulseDivisions[0].slice(0, this.layerCompounds[0]);
       const pulsesPer = this.sum(relDivs);
-      const dur = (this.cycles * (60 / this.tempo) * pulsesPer);
+      const dur = (this.cycles * (60 / this.displayTempo) * pulsesPer);
       const end = start + dur;
       const conflict = this.meters.some((meter) => {
         const mEndTime = meter.startTime + meter.cycleDur * meter.repetitions;
@@ -284,7 +318,7 @@ export default defineComponent({
           [4, 2, 2, 2],
           [4, 2, 2, 2]
         ];
-        this.tempo = 60;
+        this.displayTempo = 60;
         this.tempoSlider = 0.5;
         this.cycles = 1;
 
@@ -293,6 +327,31 @@ export default defineComponent({
   },
   
   methods: {
+
+    onTalaSelected() {
+      if (!this.selectedTala) return;
+
+      const preset = Meter.talaPresets[this.selectedTala];
+      const hierarchy = preset.hierarchy;
+
+      // Set number of layers from tala
+      this.numLayers = hierarchy.length;
+
+      // Populate custom controls from tala hierarchy
+      hierarchy.forEach((layer, i) => {
+        if (typeof layer === 'number') {
+          // Simple layer
+          this.layerCompounds[i] = 1;
+          this.pulseDivisions[i][0] = layer;
+        } else {
+          // Compound layer
+          this.layerCompounds[i] = layer.length;
+          layer.forEach((div, j) => {
+            this.pulseDivisions[i][j] = div;
+          });
+        }
+      });
+    },
 
     cycleGrowable() {
       if (this.meter === undefined) {
@@ -445,9 +504,9 @@ export default defineComponent({
       }
       this.numLayers = this.meter.hierarchy.length;
       this.cycles = this.meter.repetitions;
-      this.tempo = this.meter.tempo;
+      this.displayTempo = this.meter.displayTempo;
       const logTempoDiff = Math.log(this.maxTempo) - Math.log(this.minTempo);
-      const logTempoOffset = Math.log(this.tempo) - Math.log(this.minTempo);
+      const logTempoOffset = Math.log(this.displayTempo) - Math.log(this.minTempo);
       this.tempoSlider = logTempoOffset / logTempoDiff;
 
       this.meter.hierarchy.map((layer, i) => {
@@ -463,13 +522,36 @@ export default defineComponent({
       })
     },
 
-    updateTempo() {
+    updateTempoFromSlider() {
       const logMin = Math.log(this.minTempo);
       const logMax = Math.log(this.maxTempo);
       const logTempo = logMin + (logMax - logMin) * this.tempoSlider;
-      this.tempo = Math.round(Math.exp(logTempo));
+      this.displayTempo = Math.round(Math.exp(logTempo));
       if (this.meter !== undefined) {
-        this.meter.adjustTempo(this.tempo);
+        this.meter.displayTempo = this.displayTempo;
+        this.$emit('passthroughResetZoomEmit')
+        this.$emit('pSelectMeterEmit', this.meter.allPulses[0].uniqueId)
+        this.$emit('passthroughUnsavedChangesEmit', true)
+        this.$emit('rerenderMeter', this.meter);
+      }
+    },
+
+    updateTempoFromInput() {
+      // Clamp displayTempo to valid range
+      if (this.displayTempo < this.minTempo) {
+        this.displayTempo = this.minTempo;
+      } else if (this.displayTempo > this.maxTempo) {
+        this.displayTempo = this.maxTempo;
+      }
+
+      // Calculate slider position from displayTempo (reverse of slider calculation)
+      const logMin = Math.log(this.minTempo);
+      const logMax = Math.log(this.maxTempo);
+      const logTempo = Math.log(this.displayTempo);
+      this.tempoSlider = (logTempo - logMin) / (logMax - logMin);
+
+      if (this.meter !== undefined) {
+        this.meter.displayTempo = this.displayTempo;
         this.$emit('passthroughResetZoomEmit')
         this.$emit('pSelectMeterEmit', this.meter.allPulses[0].uniqueId)
         this.$emit('passthroughUnsavedChangesEmit', true)
@@ -484,7 +566,7 @@ export default defineComponent({
     getDuration() {
       const relDivs = this.pulseDivisions[0].slice(0, this.layerCompounds[0]);
       const pulsesPer = this.sum(relDivs);
-      const dur = (this.cycles * (60 / this.tempo) * pulsesPer);
+      const dur = (this.cycles * (60 / this.displayTempo) * pulsesPer);
       return this.displayTime(dur)
     },
 
@@ -510,24 +592,53 @@ export default defineComponent({
     },
 
     insertMeter(_?: MouseEvent, startTime_?: number) {
-      const startTime = startTime_ !== undefined ? 
-                        startTime_ : 
+      const startTime = startTime_ !== undefined ?
+                        startTime_ :
                         this.currentTime;
-      const hierarchy: (number | number[])[] = [];
-      for (let i = 0; i < this.numLayers; i++) {
-        if (this.layerCompounds[i] === 1) {
-          hierarchy.push(this.pulseDivisions[i][0])
-        } else {
-          const layer = this.pulseDivisions[i].slice(0, this.layerCompounds[i]);
-          hierarchy.push(layer)
+
+      let meter: Meter;
+
+      if (this.meterMode === 'tala' && this.selectedTala) {
+        // Use fromTala static method for tala mode
+        // displayTempo is at matra level, need to convert to internal tempo
+        const preset = Meter.talaPresets[this.selectedTala];
+        const layer1 = preset.hierarchy[1];
+        const layer1Mult = typeof layer1 === 'number' ? layer1 :
+          (Array.isArray(layer1) ? layer1.reduce((a, b) => a + b, 0) : 1);
+        const internalTempo = this.displayTempo / layer1Mult;
+        meter = Meter.fromTala(
+          this.selectedTala,
+          startTime,
+          internalTempo,
+          this.cycles
+        );
+      } else {
+        // Use regular constructor for custom mode
+        const hierarchy: (number | number[])[] = [];
+        for (let i = 0; i < this.numLayers; i++) {
+          if (this.layerCompounds[i] === 1) {
+            hierarchy.push(this.pulseDivisions[i][0])
+          } else {
+            const layer = this.pulseDivisions[i].slice(0, this.layerCompounds[i]);
+            hierarchy.push(layer)
+          }
         }
+        // Convert displayTempo to internal tempo based on layer 1
+        let internalTempo = this.displayTempo;
+        if (hierarchy.length >= 2) {
+          const layer1 = hierarchy[1];
+          const layer1Mult = typeof layer1 === 'number' ? layer1 :
+            (Array.isArray(layer1) ? layer1.reduce((a, b) => a + b, 0) : 1);
+          internalTempo = this.displayTempo / layer1Mult;
+        }
+        meter = new Meter({
+          hierarchy,
+          startTime,
+          tempo: internalTempo,
+          repetitions: this.cycles,
+        });
       }
-      const meter = new Meter({
-        hierarchy,
-        startTime,
-        tempo: this.tempo,
-        repetitions: this.cycles,
-      });
+
       this.$emit('passthroughAddMeterEmit', meter);
       this.$emit('passthroughUnsavedChangesEmit', true)
       // this.$emit('passthroughAddMetricGridEmit', true);
@@ -709,6 +820,25 @@ select {
 .no-text-entry::-webkit-inner-spin-button,
 .no-text-entry::-webkit-outer-spin-button {
   pointer-events: auto; /* Enable spin buttons */
+}
+
+.titleBox {
+  height: 40px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid white;
+}
+
+.titleBox > input[type='radio'] {
+  margin-left: 15px;
+  margin-right: 5px;
+}
+
+.titleBox > label {
+  margin-right: 15px;
+  text-align: left;
 }
 
 </style>

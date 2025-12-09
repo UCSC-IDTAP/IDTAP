@@ -57,30 +57,49 @@
         </div>
         <div class='sliderCol'>
           <label>Region Speed ({{ (2 ** regionSpeed).toFixed(2) }})</label>
-          <input 
-            type='checkbox' 
+          <input
+            type='checkbox'
             v-model='regionSpeedOnProxy'
             @click='preventSpace'
             @change='$emit("toggleRegionSpeed")'
             :disabled='playing || !stretchable'
             />
-            <input 
-              type='range' 
-              min='-1' 
-              max='1' 
-              step='0.01' 
+            <input
+              type='range'
+              min='-1'
+              max='1'
+              step='0.01'
               v-model='regionSpeedProxy'
               orient='vertical'
               :disabled='playing || !regionSpeedOn || !stretchable'
               @mouseup='$emit("regionSpeedChange")'
               />
         </div>
+        <div class='sliderCol'>
+          <label>Metronome</label>
+          <input
+            type='checkbox'
+            v-model='metroOnProxy'
+            @click='preventSpace'
+            @change='$emit("toggleMetro")'
+            :disabled='loopingEnabled'
+            />
+          <input
+            type='range'
+            min='0'
+            max='1'
+            step='0.01'
+            v-model='metroGainValProxy'
+            orient='vertical'
+            :disabled='!metroOn || loopingEnabled'
+            />
+        </div>
       </div>
     </div>
 </div>
 </template>
 <script lang='ts'>
-import { defineComponent, PropType, computed, ref, getCurrentInstance } from 'vue'
+import { defineComponent, PropType, computed, ref, watch } from 'vue'
 import { SynthControl, InstrumentTrackType, SynthType } from '@shared/types';
 import { Instrument } from '@shared/enums';
 import InstrumentControl from '@/comps/editor/audioPlayer/InstrumentControl.vue';
@@ -139,21 +158,36 @@ export default defineComponent({
     recGainVal: {
       type: Number,
       required: true
+    },
+    metroOn: {
+      type: Boolean,
+      required: true
+    },
+    metroGainVal: {
+      type: Number,
+      required: true
+    },
+    loop: {
+      type: Boolean,
+      required: true
     }
   },
   components: {
     InstrumentControl
   },
   emits: [
-    'update:transposition', 
-    'update:regionSpeed', 
-    'update:shiftOn', 
+    'update:transposition',
+    'update:regionSpeed',
+    'update:shiftOn',
     'toggleShift',
     'update:regionSpeedOn',
     'toggleRegionSpeed',
     'regionSpeedChange',
     'update:mixedGainVal',
     'update:gainNode',
+    'update:metroOn',
+    'toggleMetro',
+    'update:metroGainVal',
     'update:recGainVal',
     'update:cutoff',
     'update:sonify'
@@ -220,7 +254,33 @@ export default defineComponent({
       set(val) {
         emit('update:recGainVal', val)
       }
-    })
+    });
+    const metroOnProxy = computed({
+      get() {
+        return props.metroOn
+      },
+      set(val) {
+        emit('update:metroOn', val)
+      }
+    });
+    const metroGainValProxy = computed({
+      get() {
+        return props.metroGainVal
+      },
+      set(val) {
+        emit('update:metroGainVal', val)
+      }
+    });
+
+    const loopingEnabled = computed(() => props.loop || props.shiftOn || props.regionSpeedOn);
+
+    // When looping is enabled, turn off metronome
+    watch(loopingEnabled, (newVal) => {
+      if (newVal && props.metroOn) {
+        emit('update:metroOn', false);
+        emit('toggleMetro');
+      }
+    });
 
     const handleUpdateSonify = (idx: number, val: boolean) => {
       emit('update:sonify', {idx, val})
@@ -236,7 +296,7 @@ export default defineComponent({
       if (e && e.clientX === 0) e.preventDefault()
     };
     const otherControlsWidth = computed(() => {
-      let mult = 2;
+      let mult = 3; // Pitch Shift, Region Speed, Metronome
       if (props.instTracks.length > 1) mult += 1;
       if (props.hasRecording) mult += 1;
       return mult * 100;
@@ -250,12 +310,15 @@ export default defineComponent({
       regionSpeedProxy,
       shiftOnProxy,
       preventSpace,
-      regionSpeedOnProxy, 
+      regionSpeedOnProxy,
       mixedGainValProxy,
       recGainValProxy,
+      metroOnProxy,
+      metroGainValProxy,
       mixedGainSliderDisabled,
       instControl,
-      reemitAllInstrumentControlParams
+      reemitAllInstrumentControlParams,
+      loopingEnabled,
     }
 
   }

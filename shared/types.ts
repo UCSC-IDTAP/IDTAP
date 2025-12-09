@@ -1148,7 +1148,8 @@ type BurstOption = {
   dur?: number,
   to: AudioNode,
   atk?: number,
-  amp?: number
+  amp?: number,
+  highpassFreq?: number,
 }
 
 type ChikariStrum = {
