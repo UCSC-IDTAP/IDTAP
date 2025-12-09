@@ -1,6 +1,23 @@
 # Changelog
 
 
+* fix: don't change metronome volume when loop is toggled [057a6c5] (Jon Myers)
+* fix: disable metronome when loop is enabled [34ef8dc] (Jon Myers)
+* feat: disable metronome when pitch shift or region speed is enabled [5228d54] (Jon Myers)
+* refactor: consolidate woodblock to single instance and add cancel method [49656e2] (Jon Myers)
+* refactor: integrate WoodblockSynth class for metronome clicks [e9afc9a] (Jon Myers)
+* feat: add metronome UI controls and fix displayTempo references [68d35eb] (Jon Myers)
+* feat: add highpass filter option to metronome bursts [2e400f7] (Jon Myers)
+* feat: add displayTempo getter/setter and fix complex hierarchy handling [a348d2b] (Jon Myers)
+### 2025-12-08
+
+## December 2025
+
+* fix: prevent axis line from being covered by phrase/vibhag rows [96753d6] (Jon Myers)
+* fix: enable direct tempo input by splitting update methods [961905e] (Jon Myers)
+### 2025-11-19
+
+* feat: add vibhaga labels display to X-axis with cycle repetition support [4ff2f06] (Jon Myers)
 * fix: prevent Page Up/Down/Home/End keys from scrolling editor window [09c7897] (Jon Myers)
 ### 2025-11-17
 
