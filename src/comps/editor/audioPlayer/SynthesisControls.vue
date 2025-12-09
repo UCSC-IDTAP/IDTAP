@@ -274,16 +274,11 @@ export default defineComponent({
 
     const loopingEnabled = computed(() => props.loop || props.shiftOn || props.regionSpeedOn);
 
-    // When looping is enabled, turn off metronome and set gain to 0
+    // When looping is enabled, turn off metronome
     watch(loopingEnabled, (newVal) => {
-      if (newVal) {
-        if (props.metroOn) {
-          emit('update:metroOn', false);
-          emit('toggleMetro');
-        }
-        if (props.metroGainVal > 0) {
-          emit('update:metroGainVal', 0);
-        }
+      if (newVal && props.metroOn) {
+        emit('update:metroOn', false);
+        emit('toggleMetro');
       }
     });
 
