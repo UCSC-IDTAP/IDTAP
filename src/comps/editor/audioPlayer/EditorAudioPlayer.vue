@@ -145,6 +145,7 @@
       :hasRecording='hasRecording'
       :metroOn='metroOn'
       :metroGainVal='metroGainVal'
+      :loop='loop'
       @update:transposition='transposition = Number($event)'
       @update:regionSpeed='regionSpeed = Number($event)'
       @update:regionSpeedOn='regionSpeedOn = $event'
