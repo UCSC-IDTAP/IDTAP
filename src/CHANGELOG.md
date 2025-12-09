@@ -1,6 +1,7 @@
 # Changelog
 
 
+* fix: regenerate lockfile to match overrides configuration [80eb7da] (Jon Myers)
 * fix: don't change metronome volume when loop is toggled [057a6c5] (Jon Myers)
 * fix: disable metronome when loop is enabled [34ef8dc] (Jon Myers)
 * feat: disable metronome when pitch shift or region speed is enabled [5228d54] (Jon Myers)
