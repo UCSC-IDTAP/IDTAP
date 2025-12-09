@@ -70857,6 +70857,64 @@ var PulseStructure = class _PulseStructure {
 };
 var sum = (arr) => arr.reduce((a, b) => a + b, 0);
 var Meter = class _Meter {
+  static talaPresets = {
+    ["Tintal" /* Tintal */]: {
+      hierarchy: [[4, 4, 4, 4], 4],
+      vibhaga: ["X", 2, "O", 3]
+    },
+    ["Tilwada" /* Tilwada */]: {
+      hierarchy: [[4, 4, 4, 4], 4],
+      vibhaga: ["X", 2, "O", 3]
+    },
+    ["Jhoomra" /* Jhoomra */]: {
+      hierarchy: [[3, 4, 3, 4], 4],
+      vibhaga: ["X", 2, "O", 3]
+    },
+    ["Ada Chautal" /* AdaChautal */]: {
+      hierarchy: [[2, 2, 2, 2, 3, 3], 4],
+      vibhaga: ["X", 2, "O", 3, 4, 5]
+    },
+    ["Dhamar" /* Dhamar */]: {
+      hierarchy: [[5, 2, 3, 4], 4],
+      vibhaga: ["X", 2, "O", 3]
+    },
+    ["Deepchandi (Thumri)" /* DeepchandiThumri */]: {
+      hierarchy: [[3, 4, 3, 4], 4],
+      vibhaga: ["X", "O", 2, 3]
+    },
+    ["Deepchandi (Dhrupad)" /* DeepchandiDhrupad */]: {
+      hierarchy: [[4, 2, 4, 2], 4],
+      vibhaga: ["X", 2, "O", 3]
+    },
+    ["Ektal" /* Ektal */]: {
+      hierarchy: [[2, 2, 2, 2, 2, 2], 4],
+      vibhaga: ["X", "O", 2, "O", 3, 4]
+    },
+    ["Jhaptal" /* Jhaptal */]: {
+      hierarchy: [[2, 3, 2, 3], 4],
+      vibhaga: ["X", 2, "O", 3]
+    },
+    ["Sool Taal" /* SoolTaal */]: {
+      hierarchy: [[2, 2, 2, 2, 2], 4],
+      vibhaga: ["X", 2, "O", 3, 4]
+    },
+    ["Keherwa" /* Keherwa */]: {
+      hierarchy: [4, 4],
+      vibhaga: ["X", "O"]
+    },
+    ["Rupak" /* Rupak */]: {
+      hierarchy: [3, 2, 2],
+      vibhaga: ["X", 2, 3]
+    },
+    ["Tivra" /* Tivra */]: {
+      hierarchy: [[3, 2, 2], 4],
+      vibhaga: ["X", 2, 3]
+    },
+    ["Dadra" /* Dadra */]: {
+      hierarchy: [[3, 3], 4],
+      vibhaga: ["X", "O"]
+    }
+  };
   hierarchy;
   pulseStructures;
   startTime;
@@ -70867,6 +70925,8 @@ var Meter = class _Meter {
   // relative corporeal limits
   propCorpLims;
   // proportional corporeal limits
+  talaName;
+  vibhaga;
   constructor({
     hierarchy = [4, 4],
     startTime = 0,
@@ -70876,7 +70936,9 @@ var Meter = class _Meter {
     repetitions = 1,
     relCorpLims = void 0,
     propCorpLims = void 0,
-    pulseStructures = void 0
+    pulseStructures = void 0,
+    talaName = void 0,
+    vibhaga = void 0
   } = {}) {
     if (uniqueId === void 0) {
       this.uniqueId = v4_default();
@@ -71004,6 +71066,27 @@ var Meter = class _Meter {
     const start = this.relCorpLims[0];
     const end = this.relCorpLims[1];
     this.limitRelTemporalCorporeality(start, end);
+    this.talaName = talaName;
+    if (vibhaga !== void 0) {
+      this.vibhaga = vibhaga;
+    } else {
+      const numSegments = Array.isArray(this.hierarchy[0]) ? this.hierarchy[0].length : this.hierarchy[0];
+      this.vibhaga = [
+        "X",
+        ...Array.from({ length: numSegments - 1 }, (_2, i) => i + 2)
+      ];
+    }
+  }
+  static fromTala(name, startTime, tempo, repetitions) {
+    const preset = _Meter.talaPresets[name];
+    return new _Meter({
+      hierarchy: preset.hierarchy,
+      startTime,
+      tempo,
+      repetitions,
+      talaName: name,
+      vibhaga: preset.vibhaga
+    });
   }
   hidePulseAndPriors(pulse) {
     const prop = Number.EPSILON + pulse.realTime / this.durTot;
@@ -71548,11 +71631,11 @@ var Meter = class _Meter {
   resetTempo() {
     const curLPTime = this.allPulses[this.allPulses.length - 1].realTime;
     const _summed = typeof this.hierarchy[0] === "number" ? this.hierarchy[0] : sum(this.hierarchy[0]);
-    const mults = this.hierarchy.map((h, i) => {
+    const mults = this.hierarchy.map((_2, i) => {
       if (i === 0) {
         return _summed;
       } else {
-        return h;
+        return this.getHierarchyMult(i);
       }
     });
     const multed = mults.reduce((a, b) => a * b, 1);
@@ -71607,7 +71690,7 @@ var Meter = class _Meter {
         const bifurcated2 = typeof this.hierarchy[0] !== "number";
         const summed = !bifurcated2 ? this.hierarchy[0] : sum(this.hierarchy[0]);
         const newTopTempo = 60 * summed / newCyDur;
-        const newLowTempo = newTopTempo * this.hierarchy[1];
+        const newLowTempo = newTopTempo * this.getHierarchyMult(1);
         const newTopDefaultTimes = this.pulseStructures[0].map((ps, i) => {
           const bit = newCyDur / summed;
           const topHIdx = bifurcated2 ? i % this.hierarchy[0].length : 0;
@@ -71637,7 +71720,7 @@ var Meter = class _Meter {
         });
         let ct = 0;
         const newLowDefaultTimes = this.pulseStructures[1].map((ps) => {
-          const bit = newCyDur / (summed * this.hierarchy[1]);
+          const bit = newCyDur / (summed * this.getHierarchyMult(1));
           return ps.pulses.map(() => {
             const out = bit * ct + this.startTime;
             ct += 1;
@@ -71664,8 +71747,8 @@ var Meter = class _Meter {
         const bifurcated2 = typeof this.hierarchy[0] !== "number";
         const summed = !bifurcated2 ? this.hierarchy[0] : sum(this.hierarchy[0]);
         const newTopTempo = 60 * summed / newCyDur;
-        const newMidTempo = newTopTempo * this.hierarchy[1];
-        const newLowTempo = newMidTempo * this.hierarchy[2];
+        const newMidTempo = newTopTempo * this.getHierarchyMult(1);
+        const newLowTempo = newMidTempo * this.getHierarchyMult(2);
         const newTopDefaultTimes = this.pulseStructures[0].map((ps, i) => {
           const bit = newCyDur / summed;
           const topHIdx = bifurcated2 ? i % this.hierarchy[0].length : 0;
@@ -71695,7 +71778,7 @@ var Meter = class _Meter {
         });
         let midCt = 0;
         const newMidDefaultTimes = this.pulseStructures[1].map((ps) => {
-          const bit = newCyDur / (summed * this.hierarchy[1]);
+          const bit = newCyDur / (summed * this.getHierarchyMult(1));
           return ps.pulses.map(() => {
             const out = bit * midCt + this.startTime;
             midCt += 1;
@@ -71713,8 +71796,8 @@ var Meter = class _Meter {
         });
         let lowCt = 0;
         const newLowDefaultTimes = this.pulseStructures[2].map((ps) => {
-          const h1 = this.hierarchy[1];
-          const h2 = this.hierarchy[2];
+          const h1 = this.getHierarchyMult(1);
+          const h2 = this.getHierarchyMult(2);
           const bit = newCyDur / (summed * h1 * h2);
           return ps.pulses.map(() => {
             const out = bit * lowCt + this.startTime;
@@ -71742,9 +71825,9 @@ var Meter = class _Meter {
         const bifurcated2 = typeof this.hierarchy[0] !== "number";
         const summed = !bifurcated2 ? this.hierarchy[0] : sum(this.hierarchy[0]);
         const newTopTempo = 60 * summed / newCyDur;
-        const newMidTempo = newTopTempo * this.hierarchy[1];
-        const newLowTempo = newMidTempo * this.hierarchy[2];
-        const newBotTempo = newLowTempo * this.hierarchy[3];
+        const newMidTempo = newTopTempo * this.getHierarchyMult(1);
+        const newLowTempo = newMidTempo * this.getHierarchyMult(2);
+        const newBotTempo = newLowTempo * this.getHierarchyMult(3);
         const newTopDefaultTimes = this.pulseStructures[0].map((ps, i) => {
           const bit = newCyDur / summed;
           const topHIdx = bifurcated2 ? i % this.hierarchy[0].length : 0;
@@ -71774,7 +71857,7 @@ var Meter = class _Meter {
         });
         let midCt = 0;
         const newMidDefaultTimes = this.pulseStructures[1].map((ps) => {
-          const bit = newCyDur / (summed * this.hierarchy[1]);
+          const bit = newCyDur / (summed * this.getHierarchyMult(1));
           return ps.pulses.map(() => {
             const out = bit * midCt + this.startTime;
             midCt += 1;
@@ -71792,8 +71875,8 @@ var Meter = class _Meter {
         });
         let lowCt = 0;
         const newLowDefaultTimes = this.pulseStructures[2].map((ps) => {
-          const h1 = this.hierarchy[1];
-          const h2 = this.hierarchy[2];
+          const h1 = this.getHierarchyMult(1);
+          const h2 = this.getHierarchyMult(2);
           const bit = newCyDur / (summed * h1 * h2);
           return ps.pulses.map(() => {
             const out = bit * lowCt + this.startTime;
@@ -71812,9 +71895,9 @@ var Meter = class _Meter {
         });
         let botCt = 0;
         const newBotDefaultTimes = this.pulseStructures[3].map((ps) => {
-          const h1 = this.hierarchy[1];
-          const h2 = this.hierarchy[2];
-          const h3 = this.hierarchy[3];
+          const h1 = this.getHierarchyMult(1);
+          const h2 = this.getHierarchyMult(2);
+          const h3 = this.getHierarchyMult(3);
           const bit = newCyDur / (summed * h1 * h2 * h3);
           return ps.pulses.map(() => {
             const out = bit * botCt + this.startTime;
@@ -71921,6 +72004,14 @@ var Meter = class _Meter {
   get realTimes() {
     return this.allPulses.map((p) => p.realTime);
   }
+  get realTimesWithLayer() {
+    return this.allPulses.map((p) => {
+      return {
+        realTime: p.realTime,
+        layer: p.lowestLayer
+      };
+    });
+  }
   get realCorpTimes() {
     return this.allCorporealPulses.map((p) => p.realTime);
   }
@@ -71931,6 +72022,34 @@ var Meter = class _Meter {
       const summed = sum(this.hierarchy[0]);
       return 60 * summed / this.tempo;
     }
+  }
+  /**
+   * Get the multiplier for a given hierarchy layer.
+   * Handles both simple numbers and complex arrays like [3, 2] -> 5
+   */
+  getHierarchyMult(layer) {
+    if (layer >= this.hierarchy.length) {
+      return 1;
+    }
+    const h = this.hierarchy[layer];
+    if (typeof h === "number") {
+      return h;
+    } else {
+      return h.reduce((acc, val) => acc + val, 0);
+    }
+  }
+  get displayTempo() {
+    if (this.hierarchy.length < 2) {
+      return this.tempo;
+    }
+    return this.tempo * this.getHierarchyMult(1);
+  }
+  set displayTempo(newTempo) {
+    if (this.hierarchy.length < 2) {
+      this.adjustTempo(newTempo);
+      return;
+    }
+    this.adjustTempo(newTempo / this.getHierarchyMult(1));
   }
   // Helper methods for musical time calculation
   getPulsesPerCycle() {
@@ -72127,7 +72246,9 @@ var Meter = class _Meter {
       repetitions: this.repetitions,
       pulseStructures: this.pulseStructures.map((psLayer) => {
         return psLayer.map((ps) => ps.toJSON());
-      })
+      }),
+      talaName: this.talaName,
+      vibhaga: this.vibhaga
     };
   }
 };
