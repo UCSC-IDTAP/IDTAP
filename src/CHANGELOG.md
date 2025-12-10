@@ -1,6 +1,11 @@
 # Changelog
 
 
+* docs: add comment explaining query param precedence (pIdx > t) [726ff2b] (Jon Myers)
+* refactor: use explicit undefined checks for bounds validation [079086a] (Jon Myers)
+* chore: remove unused queryTime prop from TranscriptionLayer [fbd9a32] (Jon Myers)
+* feat: add pIdx and inst query params for phrase-based navigation [d4f1c00] (Jon Myers)
+* fix: scroll to correct position when opening editor with ?t= query param [14b55d7] (Jon Myers)
 * fix: update deployTSServer to deploy files to correct location [ded7ff5] (Jon Myers)
 ### 2025-12-10
 
