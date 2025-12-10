@@ -538,7 +538,7 @@ export default defineComponent({
     const contextMenuChoices = ref<ContextMenuOptionType[]>([]);
     const showEditInstrumentation = ref(false);
     const preZoomPlayheadPxl = ref(0);
-    const preZoomMiddleTime = ref(0);
+    const preZoomMiddleTime = ref(props.queryTime);
 
     const store = useStore();
 
@@ -901,7 +901,9 @@ export default defineComponent({
         .range([0, props.scaledHeight]);
       resetYScroll();
       if (props.queryTime !== 0) {
-        moveToX(xScale.value(props.queryTime));
+        nextTick(() => {
+          moveToX(xScale.value(props.queryTime));
+        });
       }
     });
 
