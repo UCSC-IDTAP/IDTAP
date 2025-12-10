@@ -946,7 +946,10 @@ export default defineComponent({
       this.initXScale = this.durTot / this.initViewDur;
       await this.getPieceFromJson(piece);
 
-      // If pIdx provided, convert to time position (overrides t param)
+      // Query param precedence: pIdx > t
+      // If both ?pIdx and ?t are provided, pIdx takes precedence because it's
+      // more specific (phrase-based navigation). The phrase's startTime will
+      // overwrite any value from the t param.
       if (queryPIdx !== undefined) {
         const phraseGrid = this.piece.phraseGrid;
         if (phraseGrid[queryInst] !== undefined &&
