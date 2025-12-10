@@ -949,7 +949,8 @@ export default defineComponent({
       // If pIdx provided, convert to time position (overrides t param)
       if (queryPIdx !== undefined) {
         const phraseGrid = this.piece.phraseGrid;
-        if (phraseGrid[queryInst] && phraseGrid[queryInst][queryPIdx]) {
+        if (phraseGrid[queryInst] !== undefined &&
+            phraseGrid[queryInst][queryPIdx] !== undefined) {
           const phrase = phraseGrid[queryInst][queryPIdx];
           this.queryTime = phrase.startTime ?? 0;
         }
