@@ -199,11 +199,17 @@
       <button @click='handleDownload'>Download</button>
     </div>
     <div class='share' v-if='showShare'>
-      <label>Share</label>
-      <label>
-        Start at current time
-        <input type="checkbox" v-model="startAtCurrentTime" />
-      </label>
+      <div class='shareHeader'>Share</div>
+      <div class='shareOptions'>
+        <label class='shareOption'>
+          <span class='shareOptionLabel'>Start at current time</span>
+          <input type="checkbox" v-model="startAtCurrentTime" @change="onStartAtTimeChange" />
+        </label>
+        <label class='shareOption'>
+          <span class='shareOptionLabel'>Start at current phrase</span>
+          <input type="checkbox" v-model="startAtCurrentPhrase" @change="onStartAtPhraseChange" />
+        </label>
+      </div>
       <div class='shareRow'>
         <input 
           type='text' 
@@ -878,6 +884,7 @@ export default defineComponent({
       mixedGainVal: 1,
       tempMixedGainVal: 1,
       startAtCurrentTime: false,
+      startAtCurrentPhrase: false,
       synthsKey: 0,
       metroOn: true,
       metroGainVal: 0.5,
@@ -1280,10 +1287,17 @@ export default defineComponent({
     shareLink() {
       let link = `https://swara.studio/editor?id=${this.piece._id}`;
       if (this.startAtCurrentTime) {
-        let rounded = Math.round(this.getCurTime());
+        const rounded = Math.round(this.getCurTime());
         link += `&t=${rounded}`;
+      } else if (this.startAtCurrentPhrase) {
+        const time = this.getCurTime();
+        const pIdx = this.piece.phraseIdxFromTime(time, this.editingInstIdx);
+        link += `&pIdx=${pIdx}`;
+        if (this.editingInstIdx !== 0) {
+          link += `&inst=${this.editingInstIdx}`;
+        }
       }
-      return link
+      return link;
     },
 
     tuningDisplayLabels() {
@@ -1349,6 +1363,18 @@ export default defineComponent({
 
     copyShareLink() {
       navigator.clipboard.writeText(this.shareLink);
+    },
+
+    onStartAtTimeChange() {
+      if (this.startAtCurrentTime) {
+        this.startAtCurrentPhrase = false;
+      }
+    },
+
+    onStartAtPhraseChange() {
+      if (this.startAtCurrentPhrase) {
+        this.startAtCurrentTime = false;
+      }
     },
 
     handleUpdateSonify(val: boolean) {
@@ -2755,13 +2781,38 @@ export default defineComponent({
   bottom: v-bind(playerHeight + 'px');
   background-color: #202621;
   width: 300px;
-  height: v-bind(controlsHeight + 'px');;
+  height: v-bind(controlsHeight + 'px');
   border-bottom: 1px solid black;
   color: white;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: space-evenly;
+}
+
+.shareHeader {
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.shareOptions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.shareOption {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.shareOptionLabel {
+  display: inline-block;
+  width: 180px;
+  text-align: right;
 }
 
 .shareRow > input {

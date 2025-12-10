@@ -538,7 +538,7 @@ export default defineComponent({
     const contextMenuChoices = ref<ContextMenuOptionType[]>([]);
     const showEditInstrumentation = ref(false);
     const preZoomPlayheadPxl = ref(0);
-    const preZoomMiddleTime = ref(0);
+    const preZoomMiddleTime = ref(props.queryTime);
 
     const store = useStore();
 
@@ -690,11 +690,21 @@ export default defineComponent({
         yScale.value.range([0, props.scaledHeight]);
       }
     });
+    const queryTimeScrollDone = ref(false);
     watch(() => props.scaledWidth, () => {
       if (xScale.value) {
         xScale.value = d3.scaleLinear()
           .domain([0, props.piece.durTot!])
           .range([0, props.scaledWidth]);
+
+        // After scale is updated, scroll to queryTime if not done yet
+        if (props.queryTime !== 0 && !queryTimeScrollDone.value) {
+          queryTimeScrollDone.value = true;
+          nextTick(() => {
+            moveToX(xScale.value(props.queryTime));
+            preZoomMiddleTime.value = curMiddleTime();
+          });
+        }
       }
     });
     watch([() => props.lowOctOffset, () => props.highOctOffset], () => {
@@ -900,9 +910,8 @@ export default defineComponent({
         .domain([logMax, logMin])
         .range([0, props.scaledHeight]);
       resetYScroll();
-      if (props.queryTime !== 0) {
-        moveToX(xScale.value(props.queryTime));
-      }
+      // queryTime scroll is now handled in the scaledWidth watcher
+      // after the zoom scale is finalized
     });
 
     onBeforeUnmount(() => {
