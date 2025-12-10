@@ -159,7 +159,6 @@
               :playheadAnimation='playheadAnimation'
               :preZoomPlayheadPxl='preZoomPlayheadPxl'
               :preZoomMiddleTime='preZoomMiddleTime'
-              :queryTime='queryTime'
               :editableCols='editableCols'
               :audioPlayerRef='audioPlayerRef'
               :zoomXFactor='zoomXFactor'
