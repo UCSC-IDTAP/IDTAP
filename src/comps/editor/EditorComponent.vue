@@ -905,6 +905,8 @@ export default defineComponent({
       let piece, pieceDoesExist;
       const queryId = this.route.query.id! as string;
       this.queryTime = this.route.query.t ? Number(this.route.query.t) : 0;
+      const queryPIdx = this.route.query.pIdx !== undefined ? Number(this.route.query.pIdx) : undefined;
+      const queryInst = this.route.query.inst ? Number(this.route.query.inst) : 0;
       if (queryId) {
         pieceDoesExist = await pieceExists(queryId);
         if (pieceDoesExist) {
@@ -943,6 +945,20 @@ export default defineComponent({
       }
       this.initXScale = this.durTot / this.initViewDur;
       await this.getPieceFromJson(piece);
+
+      // If pIdx provided, convert to time position (overrides t param)
+      if (queryPIdx !== undefined) {
+        const phraseGrid = this.piece.phraseGrid;
+        if (phraseGrid[queryInst] && phraseGrid[queryInst][queryPIdx]) {
+          const phrase = phraseGrid[queryInst][queryPIdx];
+          this.queryTime = phrase.startTime ?? 0;
+        }
+        // Switch to the specified instrument
+        if (queryInst !== 0 && queryInst < this.piece.instrumentation.length) {
+          this.editingInstIdx = queryInst;
+        }
+      }
+
       useTitle(this.piece.title);
       this.editable = this.permissionToEdit(this.piece); // necessary
       if (!this.permissionToView(this.piece)) {
@@ -978,10 +994,18 @@ export default defineComponent({
       const q = this.route.query;
       const routerObj: {
         id: string,
-        t?: number
+        t?: number,
+        pIdx?: number,
+        inst?: number
       } = { id: String(q.id) };
       if (q.t) {
         routerObj['t'] = Number(q.t);
+      }
+      if (q.pIdx !== undefined) {
+        routerObj['pIdx'] = Number(q.pIdx);
+      }
+      if (q.inst) {
+        routerObj['inst'] = Number(q.inst);
       }
       this.router.push({ query: routerObj });
       

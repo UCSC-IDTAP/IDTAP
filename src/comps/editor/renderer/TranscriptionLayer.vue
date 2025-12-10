@@ -310,6 +310,10 @@ export default defineComponent({
       type: Number,
       required: true
     },
+    queryTime: {
+      type: Number,
+      required: true
+    },
     editableCols: {
       type: Object as PropType<CollectionType[]>,
       required: true
