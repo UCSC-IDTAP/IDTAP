@@ -2608,8 +2608,8 @@ export default defineComponent({
 
     const renderBol = (b: BolDisplayType) => {
       // Skip rendering if logFreq is invalid (NaN, undefined, or Infinity)
+      // This is a safety guard - invalid logFreqs should be filtered out in allDisplayBols
       if (!isFinite(b.logFreq) || b.logFreq === undefined || b.logFreq === null) {
-        console.warn(`Skipping bol rendering: invalid logFreq ${b.logFreq} for trajectory ${b.uId}`);
         return;
       }
 
@@ -5267,7 +5267,6 @@ export default defineComponent({
     }
 
     const handleKeydown = (e: KeyboardEvent) => {
-    console.log(e.key)
       const inst = props.instTracks[props.editingInstIdx].inst;
       if (e.key === 'Escape') {
         if (selectedPulse.value) {

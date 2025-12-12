@@ -886,7 +886,7 @@ export default defineComponent({
       startAtCurrentTime: false,
       startAtCurrentPhrase: false,
       synthsKey: 0,
-      metroOn: true,
+      metroOn: false,
       metroGainVal: 0.5,
     };
   },
@@ -1171,7 +1171,6 @@ export default defineComponent({
       this.updateFormattedTimeLeft();
     },
     transposition(cents) {
-      console.log('getting triggered?')
       const newVal = 2 ** (cents / 1200);
       this.rubberBandNode!.setPitch(newVal);
       const raga = this.piece.raga;
@@ -1536,7 +1535,7 @@ export default defineComponent({
     },
 
     onSoundTouchInit() {
-      console.log('soundtouch initialized')
+      // SoundTouch initialized
     },
 
     addDragger() {
@@ -1554,7 +1553,6 @@ export default defineComponent({
     },
 
     dragStart(e: DragEvent) {
-      console.log('drag start');
       this.dragStartX = e.x;
     },
 
@@ -1653,7 +1651,6 @@ export default defineComponent({
     },
 
     passthroughSelectMeter(pulseUniqueId: string, turnMMOn: boolean = false) {
-      console.log(pulseUniqueId)
       this.$emit('selectMeterEmit', pulseUniqueId) //turn metermode on
     },
 
@@ -1762,7 +1759,6 @@ export default defineComponent({
     },
 
     toggleRegionSpeed() {
-      console.log('toggling region speed')
       if (this.regionSpeedOn) {
         this.stretch(2 ** this.regionSpeed);
         const time = this.regionStartTime!;
@@ -1772,8 +1768,6 @@ export default defineComponent({
           this.updateProgress();
           this.updateFormattedCurrentTime();
           this.updateFormattedTimeLeft();
-        } else {
-          console.log('this should not happen')
         }
         this.$emit('movePlayheadsEmit');
         const s = this.$refs.synths as InstanceType<typeof Synths>;
@@ -1981,7 +1975,6 @@ export default defineComponent({
       this.playing = true;
       this.$emit('startPlayingTransition')
       const offset = (this.parentCurrentTime - this.regionStartTime!);
-      console.log('playing stretched, offset: ', offset)
       const scaledOffset = offset / (2 ** this.regionSpeed);
       this.sourceNode = this.ac!.createBufferSource();
       this.sourceNode.connect(this.gainNode!);
@@ -1989,7 +1982,6 @@ export default defineComponent({
       this.sourceNode.loop = this.loop;
       this.sourceNode.start(this.now(), scaledOffset);
       this.sourceNode.addEventListener('ended', () => {
-        console.log('stretched ended')
         this.pauseStretched(this.playing); // this is a fancy way of saying that 
         // if the sourceNode has ended naturally (without the user pausing it),
         // then it should return to the beginning, otehrwise, stay where it is.
@@ -2005,7 +1997,6 @@ export default defineComponent({
     },
 
     pauseStretched(returnToStart=false) {
-      console.log('pausing stretched')
       if (this.regionEndTime === undefined) {
         throw new Error('regionEndTime is undefined')
       }

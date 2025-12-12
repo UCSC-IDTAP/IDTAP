@@ -959,11 +959,12 @@ class Piece {
     const idxs: number[] = [];
     const bols: BolDisplayType[] = trajs
       .filter((t, tIdx) => {
-        const c = t.articulations['0.00'] && t.articulations['0.00'].name === 'pluck';
-        if (c) {
+        const hasPluck = t.articulations['0.00'] && t.articulations['0.00'].name === 'pluck';
+        const hasValidLogFreq = t.logFreqs.length > 0 && isFinite(t.logFreqs[0]);
+        if (hasPluck && hasValidLogFreq) {
           idxs.push(tIdx)
         }
-        return c
+        return hasPluck && hasValidLogFreq
       })
       .map((t, tIdx) => {
         const time = starts[idxs[tIdx]];

@@ -90,6 +90,9 @@ export default defineComponent({
     // set up metronome gain and woodblock synths
     const metroGain = props.ac.createGain()
     const metroToggle = props.ac.createGain()
+    // Initialize gains explicitly (default is 1, but be explicit for clarity)
+    metroGain.gain.setValueAtTime(0.5, props.ac.currentTime);
+    metroToggle.gain.setValueAtTime(1, props.ac.currentTime);
     metroGain.connect(metroToggle).connect(mixNode)
 
     const woodblock = new WoodblockSynth(props.ac, metroGain);
@@ -623,14 +626,14 @@ export default defineComponent({
         timeObjs
           .filter(tObj => tObj.layer <= 1)
           .forEach(tObj => {
-            if (tObj.realTime >= realNow - props.curPlayTime) {
+            if (tObj.realTime >= props.curPlayTime) {
               const when = realNow + tObj.realTime - props.curPlayTime;
               if (tObj.layer === 0) {
                 // Lower, fuller click for downbeat
-                woodblock.scheduleAttack(when, 600, 0.15);
+                woodblock.scheduleAttack(when, 600, 0.6);
               } else {
                 // Higher, shorter click for subdivision
-                woodblock.scheduleAttack(when, 900, 0.1);
+                woodblock.scheduleAttack(when, 900, 0.4);
               }
             }
           })
