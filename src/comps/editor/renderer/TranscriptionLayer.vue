@@ -5267,7 +5267,6 @@ export default defineComponent({
     }
 
     const handleKeydown = (e: KeyboardEvent) => {
-    console.log(e.key)
       const inst = props.instTracks[props.editingInstIdx].inst;
       if (e.key === 'Escape') {
         if (selectedPulse.value) {
