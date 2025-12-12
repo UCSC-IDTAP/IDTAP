@@ -158,14 +158,28 @@
     <div class='titleRow'>Layer Visibility</div>
     <div class='controlsRow'>
       <label>max: {{ maxLayer }}</label>
-      <input 
-        type='range' 
-        min='-1' 
-        max='3' 
-        step='1' 
-        v-model.number='maxLayer' 
+      <input
+        type='range'
+        min='-1'
+        max='3'
+        step='1'
+        v-model.number='maxLayer'
         @input='updateVisibility'
         />
+    </div>
+  </div>
+  <div class='controlsBox'>
+    <div class='titleRow'>Pulse Tap Recording</div>
+    <div class='controlsRow centered'>
+      <span class='tapInstruction'>Press the "=" key to tap</span>
+    </div>
+    <div class='controlsRow centered'>
+      <button
+        @click='tapRecording = !tapRecording'
+        :disabled='playing && !tapRecording'
+      >
+        {{ tapRecording ? 'Stop Recording Pulse Taps' : 'Start Recording Pulse Taps' }}
+      </button>
     </div>
   </div>
 </div>
@@ -200,6 +214,7 @@ type MeterControlsDataType = {
   meterMode: 'tala' | 'custom',
   selectedTala: TalaName | undefined,
   talaNameOptions: TalaName[],
+  tapRecordingInternal: boolean,
 };
 
 export default defineComponent({
@@ -229,6 +244,7 @@ export default defineComponent({
       meterMode: 'custom',
       selectedTala: undefined,
       talaNameOptions: Object.values(TalaName),
+      tapRecordingInternal: false,
     }
   },
   props: {
@@ -262,6 +278,10 @@ export default defineComponent({
     },
     meters: {
       type: Array as PropType<Meter[]>,
+      required: true,
+    },
+    playing: {
+      type: Boolean,
       required: true,
     },
   },
@@ -300,6 +320,16 @@ export default defineComponent({
 
     meterFromPulseInsertable() {
       return this.insertPulses.length > 1;
+    },
+
+    tapRecording: {
+      get(): boolean {
+        return this.tapRecordingInternal;
+      },
+      set(val: boolean) {
+        this.tapRecordingInternal = val;
+        this.$emit('tapRecordingChange', val);
+      }
     },
   },
 
@@ -839,6 +869,25 @@ select {
 .titleBox > label {
   margin-right: 15px;
   text-align: left;
+}
+
+.titleRow {
+  height: 40px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid white;
+  width: 100%;
+}
+
+.centered {
+  justify-content: center;
+}
+
+.tapInstruction {
+  font-size: 12px;
+  color: #aaa;
 }
 
 </style>
