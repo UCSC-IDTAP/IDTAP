@@ -626,7 +626,7 @@ export default defineComponent({
         timeObjs
           .filter(tObj => tObj.layer <= 1)
           .forEach(tObj => {
-            if (tObj.realTime >= realNow - props.curPlayTime) {
+            if (tObj.realTime >= props.curPlayTime) {
               const when = realNow + tObj.realTime - props.curPlayTime;
               if (tObj.layer === 0) {
                 // Lower, fuller click for downbeat
