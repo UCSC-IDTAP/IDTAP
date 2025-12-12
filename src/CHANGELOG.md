@@ -1,6 +1,14 @@
 # Changelog
 
 
+* chore: default metronome checkbox to off [ec66aa2] (Jon Myers)
+* fix: correct metronome scheduling filter condition [960a0a2] (Jon Myers)
+* fix: increase metronome woodblock amplitude [9477989] (Jon Myers)
+* fix: initialize metronome gain nodes explicitly on Synths setup [7eaf2e5] (Jon Myers)
+* fix: filter out trajectories with invalid logFreqs in allDisplayBols [bdbcbf1] (Jon Myers)
+* chore: remove debug console.log statements [49ce9d2] (Jon Myers)
+### 2025-12-12
+
 * docs: add comment explaining query param precedence (pIdx > t) [726ff2b] (Jon Myers)
 * refactor: use explicit undefined checks for bounds validation [079086a] (Jon Myers)
 * chore: remove unused queryTime prop from TranscriptionLayer [fbd9a32] (Jon Myers)
