@@ -886,7 +886,7 @@ export default defineComponent({
       startAtCurrentTime: false,
       startAtCurrentPhrase: false,
       synthsKey: 0,
-      metroOn: true,
+      metroOn: false,
       metroGainVal: 0.5,
     };
   },
