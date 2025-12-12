@@ -90,6 +90,9 @@ export default defineComponent({
     // set up metronome gain and woodblock synths
     const metroGain = props.ac.createGain()
     const metroToggle = props.ac.createGain()
+    // Initialize gains explicitly (default is 1, but be explicit for clarity)
+    metroGain.gain.setValueAtTime(0.5, props.ac.currentTime);
+    metroToggle.gain.setValueAtTime(1, props.ac.currentTime);
     metroGain.connect(metroToggle).connect(mixNode)
 
     const woodblock = new WoodblockSynth(props.ac, metroGain);
