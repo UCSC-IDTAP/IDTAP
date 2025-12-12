@@ -630,10 +630,10 @@ export default defineComponent({
               const when = realNow + tObj.realTime - props.curPlayTime;
               if (tObj.layer === 0) {
                 // Lower, fuller click for downbeat
-                woodblock.scheduleAttack(when, 600, 0.15);
+                woodblock.scheduleAttack(when, 600, 0.6);
               } else {
                 // Higher, shorter click for subdivision
-                woodblock.scheduleAttack(when, 900, 0.1);
+                woodblock.scheduleAttack(when, 900, 0.4);
               }
             }
           })
