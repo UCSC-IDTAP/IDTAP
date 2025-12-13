@@ -6598,7 +6598,11 @@ export default defineComponent({
       } else if (props.selectedMode === EditorMode.Series) {
         insertNewTrajDot(time, logFreq, track, pIdx);
       } else if (props.selectedMode === EditorMode.Meter) {
-        // need to implement this stuff
+        // Check if click was on a pulse overlay (handled by handleClickMeter)
+        const target = e.target as Element;
+        if (target.classList.contains('overlay') && target.classList.contains('metricGrid')) {
+          return; // Let the pulse click handler deal with it
+        }
         if (selectedMeter.value) {
           handleEscape();
         }

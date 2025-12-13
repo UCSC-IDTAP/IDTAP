@@ -1646,9 +1646,9 @@ export default defineComponent({
       this.selectedMode = EditorMode.Meter;
       const r = this.$refs.renderer as RendererType;
       const tLayer = r.$refs.transcriptionLayer as TLayerType;
+      tLayer.selectedMeter = meter;
       tLayer.renderMeter(meter);
       tLayer.clearInsertPulses();
-      tLayer.selectedMeter = meter;
     },
 
     timeWithinMeter(time: number): boolean {
