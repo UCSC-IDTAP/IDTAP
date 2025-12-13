@@ -1334,9 +1334,21 @@ export default defineComponent({
   methods: {
 
     tapRecordingChange(tapRecording: boolean) {
-      this.tapRecordingStartPlayTime = this.curPlayTime;
       this.tapRecording = tapRecording;
-      this.togglePlay();
+      if (tapRecording) {
+        // Starting recording: capture start time and begin playback
+        this.tapRecordingStartPlayTime = this.curPlayTime;
+        if (!this.playing) {
+          this.togglePlay();
+        }
+      } else {
+        // Stopping recording: pause playback if still playing
+        if (this.playing) {
+          this.togglePlay();
+        }
+        // Enter meter mode via mitt (bypasses normal mode change handling to preserve pulses)
+        this.emitter.emit('enterMeterModeWithPulses');
+      }
     },
 
     async resetAudio() {

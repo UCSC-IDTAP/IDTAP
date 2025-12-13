@@ -2,11 +2,10 @@
 </template>
 <script lang='ts'>
 
-import { defineComponent, PropType, watch, onUnmounted, ref } from 'vue';
+import { defineComponent, PropType, watch, onUnmounted, ref, getCurrentInstance } from 'vue';
 
 export default defineComponent({
 	name: 'PulseTapDetect',
-	emits: ['tap'],
 	props: {
 		ac: {
 			type: Object as PropType<AudioContext>,
@@ -21,8 +20,9 @@ export default defineComponent({
 			required: true
 		}
 	},
-  setup(props, { emit }) {
-    const tapTimes = ref<number[]>([]);
+  setup(props) {
+    const instance = getCurrentInstance();
+    const emitter = instance?.appContext.config.globalProperties.emitter;
     const acTimeAtStart = ref(0);
 
     const handleKeydown = (e: KeyboardEvent) => {
@@ -31,14 +31,12 @@ export default defineComponent({
         // startPlayTime is where we were in the recording when tracking started
         // (ac.currentTime - acTimeAtStart) is how much real time has elapsed since then
         const tapTime = props.startPlayTime + (props.ac.currentTime - acTimeAtStart.value);
-        tapTimes.value.push(tapTime);
-        emit('tap', tapTime);
+        emitter?.emit('pulseTap', tapTime);
       }
     };
 
     watch(() => props.tapTracking, (active) => {
       if (active) {
-        tapTimes.value = [];
         acTimeAtStart.value = props.ac.currentTime;
         window.addEventListener('keydown', handleKeydown);
       } else {
@@ -50,9 +48,7 @@ export default defineComponent({
       window.removeEventListener('keydown', handleKeydown);
     });
 
-    return {
-      tapTimes
-    }
+    return {}
   }
 })
-</script>	
+</script>

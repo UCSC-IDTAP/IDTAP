@@ -140,10 +140,10 @@
         >
         Insert Meter at Playhead
       </button>
-      <button 
-        v-if='insertPulseMode && !attachToPrevMeter && meterFromPulseInsertable' 
+      <button
+        v-if='insertPulseMode && !attachToPrevMeter'
         @click='insertMeterFromPulses'
-        :disabled='!editable'>
+        :disabled='!editable || !meterFromPulseInsertable'>
         Insert Meter from Pulses
       </button>
       <button
@@ -352,6 +352,12 @@ export default defineComponent({
         this.tempoSlider = 0.5;
         this.cycles = 1;
 
+      }
+    },
+    playing(newVal, oldVal) {
+      // Stop tap recording when playback stops
+      if (oldVal === true && newVal === false && this.tapRecording) {
+        this.tapRecording = false;
       }
     }
   },
