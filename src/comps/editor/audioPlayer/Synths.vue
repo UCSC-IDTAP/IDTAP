@@ -650,18 +650,6 @@ export default defineComponent({
           matrasPerCycle = cumSum;
         }
 
-        // Debug: log meter info
-        console.log('Meter debug:', {
-          talaName: m.talaName,
-          hierarchy: m.hierarchy,
-          vibhagStructure,
-          vibhagIndices: [...vibhagIndices],
-          matrasPerCycle,
-          allPulsesCount: m.allPulses.length,
-          layer0Count: m.allPulses.filter(p => p.lowestLayer === 0).length,
-          layer1Count: m.allPulses.filter(p => p.lowestLayer === 1).length,
-        });
-
         // Filter to matra-level pulses only (lowestLayer === 0)
         // and track their index within the cycle
         let matraIdx = 0;

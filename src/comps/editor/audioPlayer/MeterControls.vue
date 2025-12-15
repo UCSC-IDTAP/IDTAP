@@ -635,12 +635,6 @@ export default defineComponent({
 
       let meter: Meter;
 
-      console.log('insertMeter debug:', {
-        meterMode: this.meterMode,
-        selectedTala: this.selectedTala,
-        willUseTala: this.meterMode === 'tala' && this.selectedTala,
-      });
-
       if (this.meterMode === 'tala' && this.selectedTala) {
         // Use fromTala static method for tala mode
         // displayTempo is the matra rate (beats per minute)
