@@ -622,20 +622,52 @@ export default defineComponent({
     const scheduleMetronome = () => {
       const realNow = now();
       props.piece.meters.forEach(m => {
-        const timeObjs = m.realTimesWithLayer;
-        timeObjs
-          .filter(tObj => tObj.layer <= 1)
-          .forEach(tObj => {
-            if (tObj.realTime >= props.curPlayTime) {
-              const when = realNow + tObj.realTime - props.curPlayTime;
-              if (tObj.layer === 0) {
-                // Lower, fuller click for downbeat
+        // Calculate vibhag beat indices from hierarchy
+        // For Tintal [[4,4,4,4], 4]: vibhag at 0, 4, 8, 12
+        // For Jhoomra [[3,4,3,4], 4]: vibhag at 0, 3, 7, 10
+        const vibhagIndices = new Set<number>();
+        let matrasPerCycle = 0;
+
+        // Get the vibhag structure - either from hierarchy[0] if it's an array,
+        // or from the tala preset if this is a tala meter
+        let vibhagStructure: number[] | null = null;
+        if (Array.isArray(m.hierarchy[0])) {
+          vibhagStructure = m.hierarchy[0] as number[];
+        } else if (m.talaName && Meter.talaPresets[m.talaName]) {
+          const preset = Meter.talaPresets[m.talaName];
+          if (Array.isArray(preset.hierarchy[0])) {
+            vibhagStructure = preset.hierarchy[0] as number[];
+          }
+        }
+
+        if (vibhagStructure) {
+          let cumSum = 0;
+          vibhagIndices.add(0);
+          for (const v of vibhagStructure) {
+            cumSum += v;
+            vibhagIndices.add(cumSum);
+          }
+          matrasPerCycle = cumSum;
+        }
+
+        // Filter to matra-level pulses only (lowestLayer === 0)
+        // and track their index within the cycle
+        let matraIdx = 0;
+        m.allPulses
+          .filter(p => p.lowestLayer === 0)
+          .forEach(pulse => {
+            if (pulse.realTime >= props.curPlayTime) {
+              const when = realNow + pulse.realTime - props.curPlayTime;
+              const indexInCycle = matrasPerCycle > 0 ? matraIdx % matrasPerCycle : 0;
+              if (vibhagIndices.has(indexInCycle)) {
+                // Lower, fuller click for vibhag
                 woodblock.scheduleAttack(when, 600, 0.6);
               } else {
-                // Higher, shorter click for subdivision
+                // Higher, shorter click for matra
                 woodblock.scheduleAttack(when, 900, 0.4);
               }
             }
+            matraIdx++;
           })
       })
     };

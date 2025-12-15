@@ -118,16 +118,16 @@
     </div>
     <div class='controlsRow' v-if='insertPulseMode'>
       <div v-if='numLayers === 1' class='row'>
-        <label>Layer {{ 0 }}</label>
+        <label>Vibhag</label>
         <input type='radio' v-model.number='insertLayer' value='0' />
       </div>
       <div v-else class='row'>
         <div class='row'>
-          <label>Layer {{ 0 }}</label>
+          <label>Vibhag</label>
           <input type='radio' v-model.number='insertLayer' value='0' />
         </div>
         <div class='row'>
-          <label>Layer {{ 1 }}</label>
+          <label>Matra</label>
           <input type='radio' v-model.number='insertLayer' value='1' />
         </div>
       </div> 
@@ -140,10 +140,10 @@
         >
         Insert Meter at Playhead
       </button>
-      <button 
-        v-if='insertPulseMode && !attachToPrevMeter && meterFromPulseInsertable' 
+      <button
+        v-if='insertPulseMode && !attachToPrevMeter'
         @click='insertMeterFromPulses'
-        :disabled='!editable'>
+        :disabled='!editable || !meterFromPulseInsertable'>
         Insert Meter from Pulses
       </button>
       <button
@@ -158,14 +158,28 @@
     <div class='titleRow'>Layer Visibility</div>
     <div class='controlsRow'>
       <label>max: {{ maxLayer }}</label>
-      <input 
-        type='range' 
-        min='-1' 
-        max='3' 
-        step='1' 
-        v-model.number='maxLayer' 
+      <input
+        type='range'
+        min='-1'
+        max='3'
+        step='1'
+        v-model.number='maxLayer'
         @input='updateVisibility'
         />
+    </div>
+  </div>
+  <div class='controlsBox'>
+    <div class='titleRow'>Pulse Tap Recording</div>
+    <div class='controlsRow centered'>
+      <span class='tapInstruction'>Press the "=" key to tap</span>
+    </div>
+    <div class='controlsRow centered'>
+      <button
+        @click='tapRecording = !tapRecording'
+        :disabled='playing && !tapRecording'
+      >
+        {{ tapRecording ? 'Stop Recording Pulse Taps' : 'Start Recording Pulse Taps' }}
+      </button>
     </div>
   </div>
 </div>
@@ -200,6 +214,7 @@ type MeterControlsDataType = {
   meterMode: 'tala' | 'custom',
   selectedTala: TalaName | undefined,
   talaNameOptions: TalaName[],
+  tapRecordingInternal: boolean,
 };
 
 export default defineComponent({
@@ -221,14 +236,15 @@ export default defineComponent({
       cycles: 1,
       meter: undefined,
       meterSelected: false,
-      maxLayer: 3,
+      maxLayer: 0,
       // insertPulseMode: false,
       insertLayer: 0,
       attachToPrevMeter: false,
       prevMeter: false,
-      meterMode: 'custom',
-      selectedTala: undefined,
+      meterMode: 'tala',
+      selectedTala: TalaName.Tintal,
       talaNameOptions: Object.values(TalaName),
+      tapRecordingInternal: false,
     }
   },
   props: {
@@ -264,10 +280,15 @@ export default defineComponent({
       type: Array as PropType<Meter[]>,
       required: true,
     },
+    playing: {
+      type: Boolean,
+      required: true,
+    },
   },
 
   mounted() {
     this.$emit('maxLayerEmit', this.maxLayer);
+    this.onTalaSelected(); // Initialize controls with default tala (Tintal)
   },
 
   computed: {
@@ -301,6 +322,16 @@ export default defineComponent({
     meterFromPulseInsertable() {
       return this.insertPulses.length > 1;
     },
+
+    tapRecording: {
+      get(): boolean {
+        return this.tapRecordingInternal;
+      },
+      set(val: boolean) {
+        this.tapRecordingInternal = val;
+        this.$emit('tapRecordingChange', val);
+      }
+    },
   },
 
   watch: {
@@ -322,6 +353,12 @@ export default defineComponent({
         this.tempoSlider = 0.5;
         this.cycles = 1;
 
+      }
+    },
+    playing(newVal, oldVal) {
+      // Stop tap recording when playback stops
+      if (oldVal === true && newVal === false && this.tapRecording) {
+        this.tapRecording = false;
       }
     }
   },
@@ -504,7 +541,7 @@ export default defineComponent({
       }
       this.numLayers = this.meter.hierarchy.length;
       this.cycles = this.meter.repetitions;
-      this.displayTempo = this.meter.displayTempo;
+      this.displayTempo = this.meter.tempo;
       const logTempoDiff = Math.log(this.maxTempo) - Math.log(this.minTempo);
       const logTempoOffset = Math.log(this.displayTempo) - Math.log(this.minTempo);
       this.tempoSlider = logTempoOffset / logTempoDiff;
@@ -528,7 +565,7 @@ export default defineComponent({
       const logTempo = logMin + (logMax - logMin) * this.tempoSlider;
       this.displayTempo = Math.round(Math.exp(logTempo));
       if (this.meter !== undefined) {
-        this.meter.displayTempo = this.displayTempo;
+        this.meter.adjustTempo(this.displayTempo);
         this.$emit('passthroughResetZoomEmit')
         this.$emit('pSelectMeterEmit', this.meter.allPulses[0].uniqueId)
         this.$emit('passthroughUnsavedChangesEmit', true)
@@ -551,7 +588,7 @@ export default defineComponent({
       this.tempoSlider = (logTempo - logMin) / (logMax - logMin);
 
       if (this.meter !== undefined) {
-        this.meter.displayTempo = this.displayTempo;
+        this.meter.adjustTempo(this.displayTempo);
         this.$emit('passthroughResetZoomEmit')
         this.$emit('pSelectMeterEmit', this.meter.allPulses[0].uniqueId)
         this.$emit('passthroughUnsavedChangesEmit', true)
@@ -600,16 +637,11 @@ export default defineComponent({
 
       if (this.meterMode === 'tala' && this.selectedTala) {
         // Use fromTala static method for tala mode
-        // displayTempo is at matra level, need to convert to internal tempo
-        const preset = Meter.talaPresets[this.selectedTala];
-        const layer1 = preset.hierarchy[1];
-        const layer1Mult = typeof layer1 === 'number' ? layer1 :
-          (Array.isArray(layer1) ? layer1.reduce((a, b) => a + b, 0) : 1);
-        const internalTempo = this.displayTempo / layer1Mult;
+        // displayTempo is the matra rate (beats per minute)
         meter = Meter.fromTala(
           this.selectedTala,
           startTime,
-          internalTempo,
+          this.displayTempo,
           this.cycles
         );
       } else {
@@ -623,18 +655,11 @@ export default defineComponent({
             hierarchy.push(layer)
           }
         }
-        // Convert displayTempo to internal tempo based on layer 1
-        let internalTempo = this.displayTempo;
-        if (hierarchy.length >= 2) {
-          const layer1 = hierarchy[1];
-          const layer1Mult = typeof layer1 === 'number' ? layer1 :
-            (Array.isArray(layer1) ? layer1.reduce((a, b) => a + b, 0) : 1);
-          internalTempo = this.displayTempo / layer1Mult;
-        }
+        // displayTempo is the matra rate (beats per minute)
         meter = new Meter({
           hierarchy,
           startTime,
-          tempo: internalTempo,
+          tempo: this.displayTempo,
           repetitions: this.cycles,
         });
       }
@@ -651,21 +676,35 @@ export default defineComponent({
 
     insertMeterFromPulses() {
       const timePoints = this.insertPulses;
-      const hierarchy: (number | number[])[] = [];
-      for (let i = 0; i < this.numLayers; i++) {
-        if (this.layerCompounds[i] === 1) {
-          hierarchy.push(this.pulseDivisions[i][0])
-        } else {
-          const layer = this.pulseDivisions[i].slice(0, this.layerCompounds[i]);
-          hierarchy.push(layer)
+      timePoints.sort((a: number, b: number) => a - b);
+
+      let hierarchy: (number | number[])[];
+      let talaName: TalaName | undefined;
+
+      if (this.meterMode === 'tala' && this.selectedTala) {
+        // Use tala preset hierarchy
+        const preset = Meter.talaPresets[this.selectedTala];
+        hierarchy = preset.hierarchy;
+        talaName = this.selectedTala;
+      } else {
+        // Build custom hierarchy
+        hierarchy = [];
+        for (let i = 0; i < this.numLayers; i++) {
+          if (this.layerCompounds[i] === 1) {
+            hierarchy.push(this.pulseDivisions[i][0])
+          } else {
+            const layer = this.pulseDivisions[i].slice(0, this.layerCompounds[i]);
+            hierarchy.push(layer)
+          }
         }
       }
-      timePoints.sort((a: number, b: number) => a - b);
-      const meter = Meter.fromTimePoints( {
+
+      const meter = Meter.fromTimePoints({
         timePoints,
         hierarchy,
         repetitions: this.cycles,
         layer: Number(this.insertLayer),
+        talaName,
       });
       this.$emit('passthroughAddMeterEmit', meter);
       // this.$emit('passthroughAddMetricGridEmit', true);
@@ -839,6 +878,25 @@ select {
 .titleBox > label {
   margin-right: 15px;
   text-align: left;
+}
+
+.titleRow {
+  height: 40px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid white;
+  width: 100%;
+}
+
+.centered {
+  justify-content: center;
+}
+
+.tapInstruction {
+  font-size: 12px;
+  color: #aaa;
 }
 
 </style>

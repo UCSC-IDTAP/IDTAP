@@ -280,6 +280,7 @@
       :editorMode='editorMode'
       :selectedMeter='selectedMeter'
       :meters='piece.meters'
+      :playing='playing'
       ref='meterControls'
       @passthroughResetZoomEmit='passthroughResetZoom'
       @pSelectMeterEmit='passthroughSelectMeter'
@@ -291,6 +292,7 @@
       @maxLayerEmit='$emit("maxLayerEmit", $event)'
       @renderMeter='$emit("renderMeter", $event)'
       @rerenderMeter='$emit("rerenderMeter", $event)'
+      @tapRecordingChange='tapRecordingChange'
       />
     <LabelEditor
       v-if='showLabelControls'
@@ -409,6 +411,12 @@
         :uniformVowel='uniformVowel'
         @synthsMounted='afterSynthsMounted'
       />
+      <PulseTapDetect
+        v-if='ac'
+        :ac='ac'
+        :tapTracking='tapRecording'
+        :startPlayTime='tapRecordingStartPlayTime'
+        />
   </div>
 </template>
 <script lang='ts'>
@@ -425,6 +433,7 @@ import Synths from '@/comps/editor/audioPlayer/Synths.vue';
 import InstrumentControl from '@/comps/editor/audioPlayer/InstrumentControl.vue';
 import SynthesisControls from '@/comps/editor/audioPlayer/SynthesisControls.vue';
 import AssemblageEditor from '@/comps/editor/AssemblageEditor.vue';
+import PulseTapDetect from '@/comps/editor/audioPlayer/PulseTapDetect.vue';
 // Icons
 import beginningIcon from '@/assets/icons/beginning.svg';
 import endIcon from '@/assets/icons/end.svg';
@@ -623,6 +632,9 @@ type EditorAudioPlayerData = {
   synthsKey: number,
   metroOn: boolean,
   metroGainVal: number,
+  tapRecording: boolean,
+  tapRecordingStartPlayTime: number,
+  startAtCurrentPhrase: boolean,
 }
 
 interface RubberBandNodeType extends AudioWorkletNode {
@@ -888,6 +900,8 @@ export default defineComponent({
       synthsKey: 0,
       metroOn: false,
       metroGainVal: 0.5,
+      tapRecording: false,
+      tapRecordingStartPlayTime: 0,
     };
   },
   props: {
@@ -1114,6 +1128,7 @@ export default defineComponent({
     InstrumentControl,
     SynthesisControls,
     AssemblageEditor,
+    PulseTapDetect
   },
 
   async mounted() {
@@ -1317,6 +1332,24 @@ export default defineComponent({
     }
   },
   methods: {
+
+    tapRecordingChange(tapRecording: boolean) {
+      this.tapRecording = tapRecording;
+      if (tapRecording) {
+        // Starting recording: capture start time and begin playback
+        this.tapRecordingStartPlayTime = this.curPlayTime;
+        if (!this.playing) {
+          this.togglePlay();
+        }
+      } else {
+        // Stopping recording: pause playback if still playing
+        if (this.playing) {
+          this.togglePlay();
+        }
+        // Enter meter mode via mitt (bypasses normal mode change handling to preserve pulses)
+        this.emitter.emit('enterMeterModeWithPulses');
+      }
+    },
 
     async resetAudio() {
       this.playing = false;

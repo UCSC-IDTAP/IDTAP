@@ -72,15 +72,16 @@
 <script lang='ts'>
 import { 
   defineComponent, 
-  ref, 
+  ref,
   onMounted,
-  onBeforeUnmount, 
-  watch, 
+  onBeforeUnmount,
+  watch,
   computed,
   PropType,
   nextTick,
   reactive,
-  toRef
+  toRef,
+  getCurrentInstance
 } from 'vue';
 import * as d3 from 'd3';
 import { 
@@ -362,6 +363,9 @@ export default defineComponent({
     'selectAssemblagePhrase',
   ],
   setup(props, { emit }) {
+    const instance = getCurrentInstance();
+    const emitter = instance?.appContext.config.globalProperties.emitter;
+
     const tranContainer = ref<HTMLDivElement | null>(null);
     const tranSvg = ref<SVGSVGElement | null>(null);
     const tracks: d3.Selection<SVGGElement, unknown, null, undefined>[] = [];
@@ -382,6 +386,7 @@ export default defineComponent({
     const selectedMeter = ref<Meter | undefined>(undefined);
     const selectedPulse = ref<Pulse | undefined>(undefined);
     const insertPulses = ref<number[]>([]);
+    const skipNextModeEscape = ref(false);
     const contextMenuX = ref<number>(0);
     const contextMenuY = ref<number>(0);
     const contextMenuClosed = ref<boolean>(true);
@@ -1316,10 +1321,12 @@ export default defineComponent({
       }
     });
     watch(() => props.selectedMode, (mode, oldMode) => {
-      if (oldMode === EditorMode.None && mode === EditorMode.Meter) {
+      if (skipNextModeEscape.value) {
+        // Skip handleEscape when entering meter mode from tap recording
+        skipNextModeEscape.value = false;
+      } else if (oldMode === EditorMode.None && mode === EditorMode.Meter) {
         handleEscape({ includeMode: false, meterPersist: true });
-      }
-      else {
+      } else {
         handleEscape({ includeMode: false });
       }
       if (mode === EditorMode.None) {
@@ -1564,7 +1571,7 @@ export default defineComponent({
     });
     watch(insertPulses, newVal => {
       emit('update:insertPulses', newVal);
-    });
+    }, { deep: true });
     watch(regionStartPxl, newVal => {
       if (newVal === undefined) {
         regionStartX.value = undefined;
@@ -2988,7 +2995,7 @@ export default defineComponent({
       if (c1) {
         e.preventDefault();
         e.stopPropagation();
-        if (meter === selectedMeter.value) {
+        if (selectedMeter.value && meter.uniqueId === selectedMeter.value.uniqueId) {
           // Select the clicked pulse
           selectedPulse.value = pulse;
         } else {
@@ -6451,8 +6458,7 @@ export default defineComponent({
       return out;
     }
 
-    const insertPulse = (e: MouseEvent) => {
-      const time = props.xScale.invert(e.offsetX);
+    const insertPulse = (time: number) => {
       let inserted = false;
       if (!timeWithinMeter(time)) {
         if (insertPulses.value.length > 0) {
@@ -6596,7 +6602,8 @@ export default defineComponent({
         if (selectedMeter.value) {
           handleEscape();
         }
-        insertPulse(e);
+        const clickTime = props.xScale.invert(e.offsetX);
+        insertPulse(clickTime);
 
       } else if (props.selectedMode === EditorMode.None) {
         const target = e.target! as HTMLElement;
@@ -7582,20 +7589,34 @@ export default defineComponent({
       emit('unsavedChanges', true);
     };
 
+    // Store callback reference for proper cleanup
+    const enterMeterModeWithPulsesCallback = () => {
+      skipNextModeEscape.value = true;
+      emit('update:selectedMode', EditorMode.Meter);
+    };
+
     onMounted(() => {
       if (tranSvg.value) {
         setUpSvg();
         resetTranscription();
         window.addEventListener('keydown', handleKeydown);
         window.addEventListener('keyup', handleKeyup);
-      };
+      }
 
+      // Listen for pulse taps from PulseTapDetect
+      emitter?.on('pulseTap', insertPulse);
+      // Listen for entering meter mode with pulses preserved (from tap recording)
+      emitter?.on('enterMeterModeWithPulses', enterMeterModeWithPulsesCallback);
     });
 
     onBeforeUnmount(() => {
       window.removeEventListener('keydown', handleKeydown);
       window.removeEventListener('keyup', handleKeyup);
-      
+
+      // Clean up mitt listeners
+      emitter?.off('pulseTap', insertPulse);
+      emitter?.off('enterMeterModeWithPulses', enterMeterModeWithPulsesCallback);
+
       // Clean up dotted line animation
       if (dottedLineAnimationId.value !== undefined) {
         cancelAnimationFrame(dottedLineAnimationId.value);

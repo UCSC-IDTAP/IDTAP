@@ -415,8 +415,8 @@ class Meter {
       vibhaga: ['X', 2, 'O', 3]
     },
     [TalaName.AdaChautal]: {
-      hierarchy: [[2, 2, 2, 2, 3, 3], 4],
-      vibhaga: ['X', 2, 'O', 3, 4, 5]
+      hierarchy: [[2, 2, 2, 2, 2, 2, 2], 4],
+      vibhaga: ['X', 'O', 2, 'O', 3,  4, 'O']
     },
     [TalaName.Dhamar]: {
       hierarchy: [[5, 2, 3, 4], 4],
@@ -961,12 +961,14 @@ class Meter {
     timePoints = undefined,
     hierarchy = undefined,
     repetitions = 1,
-    layer = 0
+    layer = 0,
+    talaName = undefined
   }: {
     timePoints?: number[],
     hierarchy?: (number | number[])[],
     repetitions?: number,
-    layer?: number
+    layer?: number,
+    talaName?: TalaName
   } = {}) {
     
     // assume timepoints are top layer, with no skips, they start at beginning
@@ -987,13 +989,48 @@ class Meter {
       const layer0Size = hierarchy[0] instanceof Array ?
         sum(hierarchy[0] as number[]) :
         hierarchy[0] as number;
-      const avgDiff = (timePoints[timePoints.length - 1] - timePoints[0]) / 
+      const avgDiff = (timePoints[timePoints.length - 1] - timePoints[0]) /
         (timePoints.length - 1);
       while (timePoints.length < layer0Size + 1) {
         timePoints.push(timePoints[timePoints.length - 1] + avgDiff)
       }
     }
-    
+
+    // Handle vibhag-level input: expand vibhag boundaries to matra timepoints
+    // For Tintal with hierarchy [[4,4,4,4], 4], if user taps 4 vibhag points,
+    // we need to interpolate to get 16 matra points
+    if (layer === 0 && Array.isArray(hierarchy[0])) {
+      const vibhagDivisions = hierarchy[0] as number[];
+      const numVibhags = vibhagDivisions.length;
+
+      // User should have tapped numVibhags pulses (or numVibhags + 1 including end)
+      // We need to expand to sum(vibhagDivisions) matra pulses
+      if (timePoints.length <= numVibhags + 1) {
+        // Extend timepoints to have numVibhags + 1 boundaries if needed
+        const avgDiff = (timePoints[timePoints.length - 1] - timePoints[0]) /
+          (timePoints.length - 1);
+        while (timePoints.length < numVibhags + 1) {
+          timePoints.push(timePoints[timePoints.length - 1] + avgDiff);
+        }
+
+        // Now interpolate matra timepoints within each vibhag
+        const matraTimepoints: number[] = [];
+        for (let v = 0; v < numVibhags; v++) {
+          const vibhagStart = timePoints[v];
+          const vibhagEnd = timePoints[v + 1];
+          const matrasInVibhag = vibhagDivisions[v];
+          const matraDur = (vibhagEnd - vibhagStart) / matrasInVibhag;
+
+          for (let m = 0; m < matrasInVibhag; m++) {
+            matraTimepoints.push(vibhagStart + m * matraDur);
+          }
+        }
+        // Add the final timepoint (end of last matra)
+        matraTimepoints.push(timePoints[numVibhags]);
+        timePoints = matraTimepoints;
+      }
+    }
+
     let diffs = timePoints.slice(0, timePoints.length - 1).map((tp, i) => {
       return timePoints![i+1] - tp;
     })
@@ -1032,12 +1069,15 @@ class Meter {
       }
       timePoints = timePoints.filter((_, i) => i % sum === 0)
     }
+    // Calculate how many repetitions are needed based on the number of pulses
+    // timePoints.length - 1 gives us the number of pulses (not counting the end boundary)
+    const numPulses = timePoints.length - 1;
     if (typeof hierarchy[0] === 'number') {
-      while (hierarchy[0] * repetitions < timePoints.length) {
+      while (hierarchy[0] * repetitions < numPulses) {
         repetitions += 1;
       }
     } else {
-      while (sum(hierarchy[0]) * repetitions < timePoints.length) {
+      while (sum(hierarchy[0]) * repetitions < numPulses) {
         repetitions += 1;
       }
     }
@@ -1048,22 +1088,30 @@ class Meter {
     
     const tempo = 60 / pulseDur;
     const startTime = timePoints[0];
+
+    // Get vibhaga from tala preset if available
+    const vibhaga = talaName && Meter.talaPresets[talaName]
+      ? Meter.talaPresets[talaName].vibhaga
+      : undefined;
+
     const meter = new Meter({
       hierarchy,
       startTime,
       tempo,
-      repetitions
+      repetitions,
+      talaName,
+      vibhaga
     })
     const metricPulses = meter.allPulses
       .filter(p => p.lowestLayer === 0)
     const metricTimes = metricPulses
       .map(p => p.realTime);
-    timePoints.forEach((tp, i) => {
-      if (i > 0) {
-        const diff = tp - metricTimes[i];
-        meter.offsetPulse(metricPulses[i], diff)
-      }
-    })
+    // Only iterate over actual pulses, not the end boundary timepoint
+    const numPulsesToAdjust = Math.min(timePoints.length, metricPulses.length);
+    for (let i = 1; i < numPulsesToAdjust; i++) {
+      const diff = timePoints[i] - metricTimes[i];
+      meter.offsetPulse(metricPulses[i], diff);
+    }
     if (layer === 1) {
       let otpCt = 0;
       meter.pulseStructures[1].forEach(ps => {
@@ -1207,10 +1255,25 @@ class Meter {
     })
   }
 
-  offsetPulse(pulse: Pulse, offset: number, override: boolean = false) { 
+  offsetPulse(pulse: Pulse, offset: number, override: boolean = false) {
     // adjust the start time of one
-    // of the pulses in the pulse structure by a given amount, and adjust the 
+    // of the pulses in the pulse structure by a given amount, and adjust the
     // relevent higher-layer pulses accordingly.
+
+    // For tala meters, check if this is a segment (vibhag) boundary pulse
+    // If so, use segment-aware offset to proportionally adjust matras within the segment
+    if (this.offsetSegmentBoundary(pulse, offset)) {
+      return; // Segment-aware offset was applied
+    }
+
+    this._offsetPulseDirect(pulse, offset, override);
+  }
+
+  /**
+   * Direct pulse offset without segment-aware logic.
+   * Used internally by offsetSegmentBoundary to avoid recursion.
+   */
+  private _offsetPulseDirect(pulse: Pulse, offset: number, override: boolean = false) {
     const psID = pulse.getLowestPSID();
     const layer = pulse.lowestLayer;
     const pulseStructure = this.getPSFromId(psID);
@@ -1758,23 +1821,6 @@ class Meter {
     }
   }
 
-  get displayTempo(): number {
-    // If hierarchy has only 1 layer, display tempo equals internal tempo
-    if (this.hierarchy.length < 2) {
-      return this.tempo;
-    }
-    // Otherwise, multiply by layer 1 subdivision to get "matra tempo"
-    return this.tempo * this.getHierarchyMult(1);
-  }
-
-  set displayTempo(newTempo: number) {
-    if (this.hierarchy.length < 2) {
-      this.adjustTempo(newTempo);
-      return;
-    }
-    this.adjustTempo(newTempo / this.getHierarchyMult(1));
-  }
-
   // Helper methods for musical time calculation
   
   getPulsesPerCycle(): number {
@@ -2043,6 +2089,208 @@ class Meter {
       hierarchicalPosition: finalPositions,
       fractionalBeat: fractionalBeat
     };
+  }
+
+  // ============================================
+  // Segment-aware offset methods for tala meters
+  // ============================================
+
+  /**
+   * Get the indices of matra pulses that are at segment (vibhag) boundaries.
+   * For Tintal [[4,4,4,4], 4]: returns [0, 4, 8, 12] per cycle
+   * For Jhoomra [[3,4,3,4], 4]: returns [0, 3, 7, 10] per cycle
+   * Returns empty array if hierarchy[0] is not compound.
+   */
+  getSegmentBoundaryIndices(): number[] {
+    // Only applies to tala-style meters with:
+    // 1. A compound first layer (vibhag structure)
+    // 2. At least a second layer (matras within vibhags)
+    // For a hierarchy like [[2,2,3]], there's no matra subdivision, so no segment boundaries
+    // For a hierarchy like [[4,4,4,4], 4], the 4 means each vibhag has 4 matras
+    if (!Array.isArray(this.hierarchy[0]) || this.hierarchy.length < 2) {
+      return [];
+    }
+
+    const segmentSizes = this.hierarchy[0] as number[];
+    const matrasPerCycle = sum(segmentSizes);
+    const allBoundaries: number[] = [];
+
+    for (let cycle = 0; cycle < this.repetitions; cycle++) {
+      let cumSum = 0;
+      for (let seg = 0; seg < segmentSizes.length; seg++) {
+        allBoundaries.push(cycle * matrasPerCycle + cumSum);
+        cumSum += segmentSizes[seg];
+      }
+    }
+
+    return allBoundaries;
+  }
+
+  /**
+   * Get only the matra-level pulses (pulses with lowestLayer === 0).
+   * These are the pulses that correspond to beats in the tala structure.
+   */
+  getMatraPulses(): Pulse[] {
+    return this.allPulses.filter(p => p.lowestLayer === 0);
+  }
+
+  /**
+   * Check if a pulse is at a segment (vibhag) boundary.
+   */
+  isSegmentBoundary(pulse: Pulse): boolean {
+    const matraPulses = this.getMatraPulses();
+    const idx = matraPulses.findIndex(p => p.uniqueId === pulse.uniqueId);
+    if (idx === -1) return false;
+    return this.getSegmentBoundaryIndices().includes(idx);
+  }
+
+  /**
+   * Get the segment range (start and end matra indices) for a given matra index.
+   * Returns null if the hierarchy doesn't have compound first layer.
+   */
+  getSegmentForMatraIndex(matraIdx: number): { start: number; end: number } | null {
+    if (!Array.isArray(this.hierarchy[0])) {
+      return null;
+    }
+
+    const boundaries = this.getSegmentBoundaryIndices();
+    const matrasPerCycle = sum(this.hierarchy[0] as number[]);
+    const totalMatras = matrasPerCycle * this.repetitions;
+
+    // Add the final boundary (end of last segment)
+    const allBoundaries = [...boundaries, totalMatras];
+
+    for (let i = 0; i < allBoundaries.length - 1; i++) {
+      if (matraIdx >= allBoundaries[i] && matraIdx < allBoundaries[i + 1]) {
+        return { start: allBoundaries[i], end: allBoundaries[i + 1] };
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Offset a segment boundary pulse and proportionally adjust all matra pulses
+   * within that segment. This makes nudging a vibhag boundary move all the
+   * matras within that vibhag proportionally.
+   *
+   * @param pulse - The pulse to offset (must be at a segment boundary)
+   * @param offset - The time offset in seconds
+   * @returns true if segment-aware offset was applied, false if regular offset should be used
+   */
+  offsetSegmentBoundary(pulse: Pulse, offset: number): boolean {
+    const matraPulses = this.getMatraPulses();
+    const pulseIdx = matraPulses.findIndex(p => p.uniqueId === pulse.uniqueId);
+
+    if (pulseIdx === -1) {
+      return false; // Not a matra pulse
+    }
+
+    const boundaries = this.getSegmentBoundaryIndices();
+    const boundaryIdx = boundaries.indexOf(pulseIdx);
+
+    if (boundaryIdx === -1) {
+      return false; // Not at a segment boundary
+    }
+
+    // Can't adjust segment before the first boundary (index 0)
+    if (boundaryIdx === 0) {
+      return false;
+    }
+
+    // Get the PREVIOUS segment (the one that ends at this boundary)
+    // For example, if nudging matra 4 in Tintal, adjust matras 0-3
+    const prevBoundaryIdx = boundaries[boundaryIdx - 1];
+    const currentBoundaryIdx = pulseIdx;
+
+    // Get the pulses in the previous segment (from prev boundary to current boundary, exclusive)
+    const prevSegmentPulses = matraPulses.slice(prevBoundaryIdx, currentBoundaryIdx);
+
+    if (prevSegmentPulses.length < 1) {
+      return false;
+    }
+
+    // Calculate original previous segment duration
+    const prevSegmentStartTime = prevSegmentPulses[0].realTime;
+    const prevSegmentEndTime = pulse.realTime;
+    const originalPrevSegmentDur = prevSegmentEndTime - prevSegmentStartTime;
+
+    if (originalPrevSegmentDur <= 0) {
+      return false;
+    }
+
+    // Calculate new previous segment duration (expands/shrinks based on boundary movement)
+    const newPrevSegmentDur = originalPrevSegmentDur + offset;
+
+    if (newPrevSegmentDur <= 0) {
+      return false; // Would create invalid timing
+    }
+
+    // Get the NEXT segment (the one that starts at this boundary)
+    // For example, if nudging matra 4 in Tintal, adjust matras 5, 6, 7
+    const nextBoundaryIdx = boundaries[boundaryIdx + 1];
+    const hasNextSegment = nextBoundaryIdx !== undefined;
+
+    let nextSegmentPulses: Pulse[] = [];
+    let originalNextSegmentDur = 0;
+    let newNextSegmentDur = 0;
+    let nextSegmentEndTime = 0;
+    // Save original times for next segment pulses BEFORE any modifications
+    let originalNextPulseTimes: number[] = [];
+    const originalBoundaryTime = pulse.realTime;
+
+    if (hasNextSegment) {
+      // Get pulses from current boundary (exclusive) to next boundary (exclusive)
+      nextSegmentPulses = matraPulses.slice(currentBoundaryIdx + 1, nextBoundaryIdx);
+      originalNextPulseTimes = nextSegmentPulses.map(p => p.realTime);
+      nextSegmentEndTime = matraPulses[nextBoundaryIdx].realTime;
+      originalNextSegmentDur = nextSegmentEndTime - pulse.realTime;
+      // Next segment shrinks/expands opposite to the offset
+      newNextSegmentDur = originalNextSegmentDur - offset;
+
+      if (newNextSegmentDur <= 0) {
+        return false; // Would create invalid timing
+      }
+    }
+
+    // Offset the boundary pulse itself first (use direct method to avoid recursion)
+    this._offsetPulseDirect(pulse, offset);
+
+    // Reset and evenly space all pulses in the PREVIOUS segment (except the first one)
+    // This removes any previous manual adjustments and creates clean even spacing
+    const numPrevPulses = prevSegmentPulses.length; // includes the boundary at start
+    for (let i = 1; i < prevSegmentPulses.length; i++) {
+      const p = prevSegmentPulses[i];
+      // Calculate the default evenly-spaced position in the NEW segment duration
+      const defaultRelativePos = i / numPrevPulses;
+      const newRelativeTime = prevSegmentStartTime + defaultRelativePos * newPrevSegmentDur;
+      const pulseOffset = newRelativeTime - p.realTime;
+
+      if (Math.abs(pulseOffset) > 0.0001) {
+        this._offsetPulseDirect(p, pulseOffset);
+      }
+    }
+
+    // Reset and evenly space all pulses in the NEXT segment
+    // This removes any previous manual adjustments and creates clean even spacing
+    if (hasNextSegment && nextSegmentPulses.length > 0) {
+      const newBoundaryTime = originalBoundaryTime + offset; // Where the boundary moved to
+      const numNextPulses = nextSegmentPulses.length + 1; // +1 because segment includes boundary at start
+      for (let i = 0; i < nextSegmentPulses.length; i++) {
+        const p = nextSegmentPulses[i];
+        // Calculate the default evenly-spaced position in the NEW segment duration
+        // i+1 because the nudged boundary is at position 0
+        const defaultRelativePos = (i + 1) / numNextPulses;
+        const newRelativeTime = newBoundaryTime + defaultRelativePos * newNextSegmentDur;
+        const pulseOffset = newRelativeTime - p.realTime;
+
+        if (Math.abs(pulseOffset) > 0.0001) {
+          this._offsetPulseDirect(p, pulseOffset);
+        }
+      }
+    }
+
+    return true;
   }
 
   toJSON() {
