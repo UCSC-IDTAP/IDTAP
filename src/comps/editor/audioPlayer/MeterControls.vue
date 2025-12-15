@@ -118,16 +118,16 @@
     </div>
     <div class='controlsRow' v-if='insertPulseMode'>
       <div v-if='numLayers === 1' class='row'>
-        <label>Layer {{ 0 }}</label>
+        <label>Vibhag</label>
         <input type='radio' v-model.number='insertLayer' value='0' />
       </div>
       <div v-else class='row'>
         <div class='row'>
-          <label>Layer {{ 0 }}</label>
+          <label>Vibhag</label>
           <input type='radio' v-model.number='insertLayer' value='0' />
         </div>
         <div class='row'>
-          <label>Layer {{ 1 }}</label>
+          <label>Matra</label>
           <input type='radio' v-model.number='insertLayer' value='1' />
         </div>
       </div> 
