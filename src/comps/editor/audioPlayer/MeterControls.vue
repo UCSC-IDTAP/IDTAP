@@ -188,7 +188,8 @@
 <script lang='ts'>
 
 import { Meter } from '@/js/meter.ts';
-import { 
+import { findClosestStartTime } from '@/ts/utils';
+import {
   selectAll as d3SelectAll,
   select as d3Select,
  } from 'd3';
@@ -713,8 +714,17 @@ export default defineComponent({
     },
 
     addTimePointsToPrevMeter() {
-      if (!this.meter) {
-        console.error('No meter selected for addTimePointsToPrevMeter');
+      // Find the previous meter directly from the meters array
+      // instead of relying on this.meter being set via event chain
+      let meter = this.meter;
+      if (!meter && this.meters.length > 0 && this.insertPulses.length > 0) {
+        const mtrStarts = this.meters.map(m => m.startTime);
+        const mIdx = findClosestStartTime(mtrStarts, this.insertPulses[0]);
+        meter = this.meters[mIdx];
+      }
+
+      if (!meter) {
+        console.error('No meter found for addTimePointsToPrevMeter');
         return;
       }
 
@@ -724,8 +734,8 @@ export default defineComponent({
       // Handle vibhag-level input for tala meters: expand to matra timepoints
       // Similar to fromTimePoints logic
       const layer = Number(this.insertLayer);
-      if (layer === 0 && Array.isArray(this.meter.hierarchy[0])) {
-        const vibhagDivisions = this.meter.hierarchy[0] as number[];
+      if (layer === 0 && Array.isArray(meter.hierarchy[0])) {
+        const vibhagDivisions = meter.hierarchy[0] as number[];
         const numVibhags = vibhagDivisions.length;
 
         // If user tapped vibhag-level pulses, expand to matra pulses
@@ -755,12 +765,12 @@ export default defineComponent({
         }
       }
 
-      this.meter.addTimePoints(timePoints, layer);
+      meter.addTimePoints(timePoints, layer);
       // this.$emit('passthroughAddMetricGridEmit', true);
       this.meterSelected = true;
-      this.$emit('pSelectMeterEmit', this.meter.allPulses[0].uniqueId, true)
+      this.$emit('pSelectMeterEmit', meter.allPulses[0].uniqueId, true)
       this.$emit('passthroughUnsavedChangesEmit', true);
-      this.$emit('renderMeter', this.meter);
+      this.$emit('renderMeter', meter);
       // d3SelectAll('.insertPulse').remove();
       // this.insertPulseMode = false;
     },
