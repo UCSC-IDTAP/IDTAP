@@ -2995,7 +2995,7 @@ export default defineComponent({
       if (c1) {
         e.preventDefault();
         e.stopPropagation();
-        if (meter === selectedMeter.value) {
+        if (selectedMeter.value && meter.uniqueId === selectedMeter.value.uniqueId) {
           // Select the clicked pulse
           selectedPulse.value = pulse;
         } else {
