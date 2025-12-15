@@ -242,7 +242,7 @@ export default defineComponent({
       attachToPrevMeter: false,
       prevMeter: false,
       meterMode: 'tala',
-      selectedTala: undefined,
+      selectedTala: TalaName.Tintal,
       talaNameOptions: Object.values(TalaName),
       tapRecordingInternal: false,
     }
@@ -288,6 +288,7 @@ export default defineComponent({
 
   mounted() {
     this.$emit('maxLayerEmit', this.maxLayer);
+    this.onTalaSelected(); // Initialize controls with default tala (Tintal)
   },
 
   computed: {
