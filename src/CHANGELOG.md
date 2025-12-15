@@ -1,6 +1,24 @@
 # Changelog
 
 
+* fix: memory leak in enterMeterModeWithPulses event listener cleanup [252e213] (Jon Myers)
+* feat: segment-aware nudging for tala vibhag boundaries [f0b3ae9] (Jon Myers)
+* fix: expand vibhag taps to matra timepoints for tala meters [117dac6] (Jon Myers)
+* fix: use tala preset when inserting meter from pulses [0c81e01] (Jon Myers)
+* feat: default layer visibility to 0 (vibhag level) [cbf069e] (Jon Myers)
+* feat: distinguish vibhag beats in metronome with different sound [2c074eb] (Jon Myers)
+* refactor: remove redundant displayTempo getter/setter from Meter [d8fada8] (Jon Myers)
+* fix: tempo now correctly represents matra rate [0183293] (Jon Myers)
+* feat: default to Tintal when tala mode is selected [aea23fb] (Jon Myers)
+* fix: compensate for audio output latency in pulse tap detection [4cc470d] (Jon Myers)
+* feat: rename layer radio buttons to Vibhag and Matra [468577a] (Jon Myers)
+* feat: default meter mode to tala instead of custom [af15346] (Jon Myers)
+* fix: compare meters by uniqueId instead of object identity [8187f90] (Jon Myers)
+### 2025-12-15
+
+* fix: prevent debounced click handler from clearing pulse selection [0834bb5] (Jon Myers)
+* feat: integrate pulse tap recording with meter insertion [9b0e76d] (Jon Myers)
+* feat: add pulse tap recording UI and capture time tracking [dc9dfde] (Jon Myers)
 * chore: default metronome checkbox to off [ec66aa2] (Jon Myers)
 * fix: correct metronome scheduling filter condition [960a0a2] (Jon Myers)
 * fix: increase metronome woodblock amplitude [9477989] (Jon Myers)
