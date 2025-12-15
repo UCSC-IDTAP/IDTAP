@@ -7589,6 +7589,12 @@ export default defineComponent({
       emit('unsavedChanges', true);
     };
 
+    // Store callback reference for proper cleanup
+    const enterMeterModeWithPulsesCallback = () => {
+      skipNextModeEscape.value = true;
+      emit('update:selectedMode', EditorMode.Meter);
+    };
+
     onMounted(() => {
       if (tranSvg.value) {
         setUpSvg();
@@ -7600,10 +7606,7 @@ export default defineComponent({
       // Listen for pulse taps from PulseTapDetect
       emitter?.on('pulseTap', insertPulse);
       // Listen for entering meter mode with pulses preserved (from tap recording)
-      emitter?.on('enterMeterModeWithPulses', () => {
-        skipNextModeEscape.value = true;
-        emit('update:selectedMode', EditorMode.Meter);
-      });
+      emitter?.on('enterMeterModeWithPulses', enterMeterModeWithPulsesCallback);
     });
 
     onBeforeUnmount(() => {
@@ -7612,7 +7615,7 @@ export default defineComponent({
 
       // Clean up mitt listeners
       emitter?.off('pulseTap', insertPulse);
-      emitter?.off('enterMeterModeWithPulses');
+      emitter?.off('enterMeterModeWithPulses', enterMeterModeWithPulsesCallback);
 
       // Clean up dotted line animation
       if (dottedLineAnimationId.value !== undefined) {
