@@ -989,13 +989,48 @@ class Meter {
       const layer0Size = hierarchy[0] instanceof Array ?
         sum(hierarchy[0] as number[]) :
         hierarchy[0] as number;
-      const avgDiff = (timePoints[timePoints.length - 1] - timePoints[0]) / 
+      const avgDiff = (timePoints[timePoints.length - 1] - timePoints[0]) /
         (timePoints.length - 1);
       while (timePoints.length < layer0Size + 1) {
         timePoints.push(timePoints[timePoints.length - 1] + avgDiff)
       }
     }
-    
+
+    // Handle vibhag-level input: expand vibhag boundaries to matra timepoints
+    // For Tintal with hierarchy [[4,4,4,4], 4], if user taps 4 vibhag points,
+    // we need to interpolate to get 16 matra points
+    if (layer === 0 && Array.isArray(hierarchy[0])) {
+      const vibhagDivisions = hierarchy[0] as number[];
+      const numVibhags = vibhagDivisions.length;
+
+      // User should have tapped numVibhags pulses (or numVibhags + 1 including end)
+      // We need to expand to sum(vibhagDivisions) matra pulses
+      if (timePoints.length <= numVibhags + 1) {
+        // Extend timepoints to have numVibhags + 1 boundaries if needed
+        const avgDiff = (timePoints[timePoints.length - 1] - timePoints[0]) /
+          (timePoints.length - 1);
+        while (timePoints.length < numVibhags + 1) {
+          timePoints.push(timePoints[timePoints.length - 1] + avgDiff);
+        }
+
+        // Now interpolate matra timepoints within each vibhag
+        const matraTimepoints: number[] = [];
+        for (let v = 0; v < numVibhags; v++) {
+          const vibhagStart = timePoints[v];
+          const vibhagEnd = timePoints[v + 1];
+          const matrasInVibhag = vibhagDivisions[v];
+          const matraDur = (vibhagEnd - vibhagStart) / matrasInVibhag;
+
+          for (let m = 0; m < matrasInVibhag; m++) {
+            matraTimepoints.push(vibhagStart + m * matraDur);
+          }
+        }
+        // Add the final timepoint (end of last matra)
+        matraTimepoints.push(timePoints[numVibhags]);
+        timePoints = matraTimepoints;
+      }
+    }
+
     let diffs = timePoints.slice(0, timePoints.length - 1).map((tp, i) => {
       return timePoints![i+1] - tp;
     })
