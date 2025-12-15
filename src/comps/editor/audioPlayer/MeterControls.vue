@@ -236,7 +236,7 @@ export default defineComponent({
       cycles: 1,
       meter: undefined,
       meterSelected: false,
-      maxLayer: 3,
+      maxLayer: 0,
       // insertPulseMode: false,
       insertLayer: 0,
       attachToPrevMeter: false,
