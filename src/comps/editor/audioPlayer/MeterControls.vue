@@ -635,6 +635,12 @@ export default defineComponent({
 
       let meter: Meter;
 
+      console.log('insertMeter debug:', {
+        meterMode: this.meterMode,
+        selectedTala: this.selectedTala,
+        willUseTala: this.meterMode === 'tala' && this.selectedTala,
+      });
+
       if (this.meterMode === 'tala' && this.selectedTala) {
         // Use fromTala static method for tala mode
         // displayTempo is the matra rate (beats per minute)
@@ -676,21 +682,35 @@ export default defineComponent({
 
     insertMeterFromPulses() {
       const timePoints = this.insertPulses;
-      const hierarchy: (number | number[])[] = [];
-      for (let i = 0; i < this.numLayers; i++) {
-        if (this.layerCompounds[i] === 1) {
-          hierarchy.push(this.pulseDivisions[i][0])
-        } else {
-          const layer = this.pulseDivisions[i].slice(0, this.layerCompounds[i]);
-          hierarchy.push(layer)
+      timePoints.sort((a: number, b: number) => a - b);
+
+      let hierarchy: (number | number[])[];
+      let talaName: TalaName | undefined;
+
+      if (this.meterMode === 'tala' && this.selectedTala) {
+        // Use tala preset hierarchy
+        const preset = Meter.talaPresets[this.selectedTala];
+        hierarchy = preset.hierarchy;
+        talaName = this.selectedTala;
+      } else {
+        // Build custom hierarchy
+        hierarchy = [];
+        for (let i = 0; i < this.numLayers; i++) {
+          if (this.layerCompounds[i] === 1) {
+            hierarchy.push(this.pulseDivisions[i][0])
+          } else {
+            const layer = this.pulseDivisions[i].slice(0, this.layerCompounds[i]);
+            hierarchy.push(layer)
+          }
         }
       }
-      timePoints.sort((a: number, b: number) => a - b);
-      const meter = Meter.fromTimePoints( {
+
+      const meter = Meter.fromTimePoints({
         timePoints,
         hierarchy,
         repetitions: this.cycles,
         layer: Number(this.insertLayer),
+        talaName,
       });
       this.$emit('passthroughAddMeterEmit', meter);
       // this.$emit('passthroughAddMetricGridEmit', true);

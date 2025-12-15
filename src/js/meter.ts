@@ -961,12 +961,14 @@ class Meter {
     timePoints = undefined,
     hierarchy = undefined,
     repetitions = 1,
-    layer = 0
+    layer = 0,
+    talaName = undefined
   }: {
     timePoints?: number[],
     hierarchy?: (number | number[])[],
     repetitions?: number,
-    layer?: number
+    layer?: number,
+    talaName?: TalaName
   } = {}) {
     
     // assume timepoints are top layer, with no skips, they start at beginning
@@ -1048,11 +1050,19 @@ class Meter {
     
     const tempo = 60 / pulseDur;
     const startTime = timePoints[0];
+
+    // Get vibhaga from tala preset if available
+    const vibhaga = talaName && Meter.talaPresets[talaName]
+      ? Meter.talaPresets[talaName].vibhaga
+      : undefined;
+
     const meter = new Meter({
       hierarchy,
       startTime,
       tempo,
-      repetitions
+      repetitions,
+      talaName,
+      vibhaga
     })
     const metricPulses = meter.allPulses
       .filter(p => p.lowestLayer === 0)
