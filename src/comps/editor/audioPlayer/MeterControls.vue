@@ -541,7 +541,7 @@ export default defineComponent({
       }
       this.numLayers = this.meter.hierarchy.length;
       this.cycles = this.meter.repetitions;
-      this.displayTempo = this.meter.displayTempo;
+      this.displayTempo = this.meter.tempo;
       const logTempoDiff = Math.log(this.maxTempo) - Math.log(this.minTempo);
       const logTempoOffset = Math.log(this.displayTempo) - Math.log(this.minTempo);
       this.tempoSlider = logTempoOffset / logTempoDiff;
@@ -565,7 +565,7 @@ export default defineComponent({
       const logTempo = logMin + (logMax - logMin) * this.tempoSlider;
       this.displayTempo = Math.round(Math.exp(logTempo));
       if (this.meter !== undefined) {
-        this.meter.displayTempo = this.displayTempo;
+        this.meter.adjustTempo(this.displayTempo);
         this.$emit('passthroughResetZoomEmit')
         this.$emit('pSelectMeterEmit', this.meter.allPulses[0].uniqueId)
         this.$emit('passthroughUnsavedChangesEmit', true)
@@ -588,7 +588,7 @@ export default defineComponent({
       this.tempoSlider = (logTempo - logMin) / (logMax - logMin);
 
       if (this.meter !== undefined) {
-        this.meter.displayTempo = this.displayTempo;
+        this.meter.adjustTempo(this.displayTempo);
         this.$emit('passthroughResetZoomEmit')
         this.$emit('pSelectMeterEmit', this.meter.allPulses[0].uniqueId)
         this.$emit('passthroughUnsavedChangesEmit', true)

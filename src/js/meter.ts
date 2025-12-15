@@ -1758,15 +1758,6 @@ class Meter {
     }
   }
 
-  get displayTempo(): number {
-    // Internal tempo already represents matra rate (layer 0 pulse rate)
-    return this.tempo;
-  }
-
-  set displayTempo(newTempo: number) {
-    this.adjustTempo(newTempo);
-  }
-
   // Helper methods for musical time calculation
   
   getPulsesPerCycle(): number {
