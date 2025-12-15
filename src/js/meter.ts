@@ -955,6 +955,11 @@ class Meter {
         }
       })
     }
+
+    // Recalculate tempo based on actual pulse positions
+    // This preserves all pulse times but adjusts the underlying tempo
+    // so future growCycles will use the new tempo
+    this.resetTempo();
   }
 
   static fromTimePoints({
