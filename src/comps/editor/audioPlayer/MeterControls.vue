@@ -241,7 +241,7 @@ export default defineComponent({
       insertLayer: 0,
       attachToPrevMeter: false,
       prevMeter: false,
-      meterMode: 'custom',
+      meterMode: 'tala',
       selectedTala: undefined,
       talaNameOptions: Object.values(TalaName),
       tapRecordingInternal: false,
