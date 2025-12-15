@@ -713,12 +713,52 @@ export default defineComponent({
     },
 
     addTimePointsToPrevMeter() {
-      const timePoints = this.insertPulses;
+      if (!this.meter) {
+        console.error('No meter selected for addTimePointsToPrevMeter');
+        return;
+      }
+
+      let timePoints = [...this.insertPulses];
       timePoints.sort((a: number, b: number) => a - b);
-      this.meter!.addTimePoints(timePoints, this.insertLayer);
+
+      // Handle vibhag-level input for tala meters: expand to matra timepoints
+      // Similar to fromTimePoints logic
+      const layer = Number(this.insertLayer);
+      if (layer === 0 && Array.isArray(this.meter.hierarchy[0])) {
+        const vibhagDivisions = this.meter.hierarchy[0] as number[];
+        const numVibhags = vibhagDivisions.length;
+
+        // If user tapped vibhag-level pulses, expand to matra pulses
+        if (timePoints.length <= numVibhags + 1) {
+          // Extend timepoints to have numVibhags + 1 boundaries if needed
+          const avgDiff = (timePoints[timePoints.length - 1] - timePoints[0]) /
+            (timePoints.length - 1);
+          while (timePoints.length < numVibhags + 1) {
+            timePoints.push(timePoints[timePoints.length - 1] + avgDiff);
+          }
+
+          // Interpolate matra timepoints within each vibhag
+          const matraTimepoints: number[] = [];
+          for (let v = 0; v < numVibhags; v++) {
+            const vibhagStart = timePoints[v];
+            const vibhagEnd = timePoints[v + 1];
+            const matrasInVibhag = vibhagDivisions[v];
+            const matraDur = (vibhagEnd - vibhagStart) / matrasInVibhag;
+
+            for (let m = 0; m < matrasInVibhag; m++) {
+              matraTimepoints.push(vibhagStart + m * matraDur);
+            }
+          }
+          // Add the final timepoint (end of last matra)
+          matraTimepoints.push(timePoints[numVibhags]);
+          timePoints = matraTimepoints;
+        }
+      }
+
+      this.meter.addTimePoints(timePoints, layer);
       // this.$emit('passthroughAddMetricGridEmit', true);
       this.meterSelected = true;
-      this.$emit('pSelectMeterEmit', this.meter!.allPulses[0].uniqueId, true)
+      this.$emit('pSelectMeterEmit', this.meter.allPulses[0].uniqueId, true)
       this.$emit('passthroughUnsavedChangesEmit', true);
       this.$emit('renderMeter', this.meter);
       // d3SelectAll('.insertPulse').remove();
