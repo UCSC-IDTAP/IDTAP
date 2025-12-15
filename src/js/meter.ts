@@ -922,8 +922,8 @@ class Meter {
       throw new Error('timePoints must be greater than last realTime')
     }
     const curEndTime = this.durTot + this.startTime;
-    let summed = this.hierarchy[0] instanceof Array ? 
-      sum(this.hierarchy[0] as number[]) : 
+    let summed = this.hierarchy[0] instanceof Array ?
+      sum(this.hierarchy[0] as number[]) :
       this.hierarchy[0] as number;
     if (layer > 0) {
       const hierarchySlice = this.hierarchy.slice(1, layer + 1) as number[]
@@ -932,34 +932,48 @@ class Meter {
     }
     const beatDur = this.cycleDur / summed;
     const predictedTimes: number[] = [];
-    let cTime = curEndTime; 
+    let cTime = curEndTime;
     while (cTime < timePoints[timePoints.length-1] + beatDur) {
       predictedTimes.push(cTime);
       cTime += beatDur
     }
     const idxs = findClosestIdxs(timePoints, predictedTimes);
-    const cycleNums = idxs.map(idx => {
+
+    // Check if the last timepoint falls exactly on a cycle boundary
+    // If so, it's just an end marker and shouldn't trigger growing an extra cycle
+    const lastIdx = idxs[idxs.length - 1];
+    const isLastOnCycleBoundary = lastIdx > 0 && lastIdx % summed === 0;
+    const cycleCalcIdxs = isLastOnCycleBoundary ? idxs.slice(0, -1) : idxs;
+
+    const cycleNums = cycleCalcIdxs.map(idx => {
       return Math.floor(idx / summed)
     });
     const prevPLen = this.pulseStructures[layer]
       .map(ps => ps.pulses).flat().length;
     this.growCycles(Math.max(...cycleNums) + 1);
+
+    // Position pulses - exclude the last timepoint if it's on a cycle boundary
+    // Use _offsetPulseDirect to bypass segment-aware logic - that's only for manual user nudging,
+    // not for initial placement which already has correctly spaced timepoints
+    // Pass override=true to allow larger offsets during initial placement (tempo may differ)
+    const pulseIdxs = isLastOnCycleBoundary ? idxs.slice(0, -1) : idxs;
     for (let l = 0; l <= layer; l++) {
-      idxs.forEach((idx, i) => {
+      pulseIdxs.forEach((idx, i) => {
         const layerPulses = this.pulseStructures[layer]
           .map(ps => ps.pulses).flat();
         const pulse = layerPulses[prevPLen + idx];
         const offset = timePoints[i] - pulse.realTime;
         if (l === pulse.lowestLayer) {
-          this.offsetPulse(pulse, offset)
+          this._offsetPulseDirect(pulse, offset, true)
         }
       })
     }
 
+    // TODO: resetTempo is causing choppy matra distribution - disabled for now
     // Recalculate tempo based on actual pulse positions
     // This preserves all pulse times but adjusts the underlying tempo
     // so future growCycles will use the new tempo
-    this.resetTempo();
+    // this.resetTempo();
   }
 
   static fromTimePoints({
@@ -1112,10 +1126,11 @@ class Meter {
     const metricTimes = metricPulses
       .map(p => p.realTime);
     // Only iterate over actual pulses, not the end boundary timepoint
+    // Use _offsetPulseDirect to bypass segment-aware logic during initial placement
     const numPulsesToAdjust = Math.min(timePoints.length, metricPulses.length);
     for (let i = 1; i < numPulsesToAdjust; i++) {
       const diff = timePoints[i] - metricTimes[i];
-      meter.offsetPulse(metricPulses[i], diff);
+      meter._offsetPulseDirect(metricPulses[i], diff);
     }
     if (layer === 1) {
       let otpCt = 0;
@@ -1128,7 +1143,7 @@ class Meter {
             if (tp !== undefined) {
               const pulse = psMetricPulses[i];
               const diff = tp - mt;
-              meter.offsetPulse(pulse, diff);
+              meter._offsetPulseDirect(pulse, diff);
             }
           }
         })
@@ -2234,7 +2249,7 @@ class Meter {
     // Get the NEXT segment (the one that starts at this boundary)
     // For example, if nudging matra 4 in Tintal, adjust matras 5, 6, 7
     const nextBoundaryIdx = boundaries[boundaryIdx + 1];
-    const hasNextSegment = nextBoundaryIdx !== undefined;
+    const hasNextBoundary = nextBoundaryIdx !== undefined;
 
     let nextSegmentPulses: Pulse[] = [];
     let originalNextSegmentDur = 0;
@@ -2244,7 +2259,7 @@ class Meter {
     let originalNextPulseTimes: number[] = [];
     const originalBoundaryTime = pulse.realTime;
 
-    if (hasNextSegment) {
+    if (hasNextBoundary) {
       // Get pulses from current boundary (exclusive) to next boundary (exclusive)
       nextSegmentPulses = matraPulses.slice(currentBoundaryIdx + 1, nextBoundaryIdx);
       originalNextPulseTimes = nextSegmentPulses.map(p => p.realTime);
@@ -2256,7 +2271,26 @@ class Meter {
       if (newNextSegmentDur <= 0) {
         return false; // Would create invalid timing
       }
+    } else {
+      // Last segment of the meter - no next boundary, but there are still pulses after
+      // Get all remaining pulses after the current boundary
+      nextSegmentPulses = matraPulses.slice(currentBoundaryIdx + 1);
+      if (nextSegmentPulses.length > 0) {
+        originalNextPulseTimes = nextSegmentPulses.map(p => p.realTime);
+        // Use the last pulse's time + estimated duration as the segment end
+        const lastPulse = nextSegmentPulses[nextSegmentPulses.length - 1];
+        const avgPulseDur = (lastPulse.realTime - pulse.realTime) / nextSegmentPulses.length;
+        nextSegmentEndTime = lastPulse.realTime + avgPulseDur;
+        originalNextSegmentDur = nextSegmentEndTime - pulse.realTime;
+        newNextSegmentDur = originalNextSegmentDur - offset;
+
+        if (newNextSegmentDur <= 0) {
+          return false; // Would create invalid timing
+        }
+      }
     }
+
+    const hasNextSegment = nextSegmentPulses.length > 0;
 
     // Offset the boundary pulse itself first (use direct method to avoid recursion)
     this._offsetPulseDirect(pulse, offset);

@@ -737,22 +737,33 @@ export default defineComponent({
       if (layer === 0 && Array.isArray(meter.hierarchy[0])) {
         const vibhagDivisions = meter.hierarchy[0] as number[];
         const numVibhags = vibhagDivisions.length;
+        const matrasPerCycle = vibhagDivisions.reduce((a, b) => a + b, 0);
 
-        // If user tapped vibhag-level pulses, expand to matra pulses
-        if (timePoints.length <= numVibhags + 1) {
-          // Extend timepoints to have numVibhags + 1 boundaries if needed
+        // Detect if this looks like vibhag-level input (for one or multiple cycles)
+        // Vibhag-level: N points where N is roughly a multiple of numVibhags
+        // Matra-level: N points where N is roughly a multiple of matrasPerCycle
+        const numCyclesFromVibhags = Math.round(timePoints.length / numVibhags);
+        const expectedVibhagPoints = numCyclesFromVibhags * numVibhags;
+        const isVibhagLevel = Math.abs(timePoints.length - expectedVibhagPoints) <= 1 &&
+                              timePoints.length < matrasPerCycle;
+
+        if (isVibhagLevel && numCyclesFromVibhags > 0) {
+          // Extend timepoints to have exact multiple of numVibhags + 1 for end boundary
+          const targetLength = numCyclesFromVibhags * numVibhags + 1;
           const avgDiff = (timePoints[timePoints.length - 1] - timePoints[0]) /
             (timePoints.length - 1);
-          while (timePoints.length < numVibhags + 1) {
+          while (timePoints.length < targetLength) {
             timePoints.push(timePoints[timePoints.length - 1] + avgDiff);
           }
 
-          // Interpolate matra timepoints within each vibhag
+          // Interpolate matra timepoints within each vibhag across all cycles
           const matraTimepoints: number[] = [];
-          for (let v = 0; v < numVibhags; v++) {
+          const totalVibhags = numCyclesFromVibhags * numVibhags;
+          for (let v = 0; v < totalVibhags; v++) {
             const vibhagStart = timePoints[v];
             const vibhagEnd = timePoints[v + 1];
-            const matrasInVibhag = vibhagDivisions[v];
+            const vibhagIdx = v % numVibhags;
+            const matrasInVibhag = vibhagDivisions[vibhagIdx];
             const matraDur = (vibhagEnd - vibhagStart) / matrasInVibhag;
 
             for (let m = 0; m < matrasInVibhag; m++) {
@@ -760,7 +771,7 @@ export default defineComponent({
             }
           }
           // Add the final timepoint (end of last matra)
-          matraTimepoints.push(timePoints[numVibhags]);
+          matraTimepoints.push(timePoints[totalVibhags]);
           timePoints = matraTimepoints;
         }
       }
@@ -771,6 +782,10 @@ export default defineComponent({
       this.$emit('pSelectMeterEmit', meter.allPulses[0].uniqueId, true)
       this.$emit('passthroughUnsavedChangesEmit', true);
       this.$emit('renderMeter', meter);
+
+      // Update this.meter reference and refresh the UI with new meter data
+      this.meter = meter;
+      this.assignData();
       // d3SelectAll('.insertPulse').remove();
       // this.insertPulseMode = false;
     },
