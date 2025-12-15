@@ -415,8 +415,8 @@ class Meter {
       vibhaga: ['X', 2, 'O', 3]
     },
     [TalaName.AdaChautal]: {
-      hierarchy: [[2, 2, 2, 2, 3, 3], 4],
-      vibhaga: ['X', 2, 'O', 3, 4, 5]
+      hierarchy: [[2, 2, 2, 2, 2, 2, 2], 4],
+      vibhaga: ['X', 'O', 2, 'O', 3,  4, 'O']
     },
     [TalaName.Dhamar]: {
       hierarchy: [[5, 2, 3, 4], 4],
@@ -1759,20 +1759,12 @@ class Meter {
   }
 
   get displayTempo(): number {
-    // If hierarchy has only 1 layer, display tempo equals internal tempo
-    if (this.hierarchy.length < 2) {
-      return this.tempo;
-    }
-    // Otherwise, multiply by layer 1 subdivision to get "matra tempo"
-    return this.tempo * this.getHierarchyMult(1);
+    // Internal tempo already represents matra rate (layer 0 pulse rate)
+    return this.tempo;
   }
 
   set displayTempo(newTempo: number) {
-    if (this.hierarchy.length < 2) {
-      this.adjustTempo(newTempo);
-      return;
-    }
-    this.adjustTempo(newTempo / this.getHierarchyMult(1));
+    this.adjustTempo(newTempo);
   }
 
   // Helper methods for musical time calculation

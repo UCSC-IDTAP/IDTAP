@@ -637,16 +637,11 @@ export default defineComponent({
 
       if (this.meterMode === 'tala' && this.selectedTala) {
         // Use fromTala static method for tala mode
-        // displayTempo is at matra level, need to convert to internal tempo
-        const preset = Meter.talaPresets[this.selectedTala];
-        const layer1 = preset.hierarchy[1];
-        const layer1Mult = typeof layer1 === 'number' ? layer1 :
-          (Array.isArray(layer1) ? layer1.reduce((a, b) => a + b, 0) : 1);
-        const internalTempo = this.displayTempo / layer1Mult;
+        // displayTempo is the matra rate (beats per minute)
         meter = Meter.fromTala(
           this.selectedTala,
           startTime,
-          internalTempo,
+          this.displayTempo,
           this.cycles
         );
       } else {
@@ -660,18 +655,11 @@ export default defineComponent({
             hierarchy.push(layer)
           }
         }
-        // Convert displayTempo to internal tempo based on layer 1
-        let internalTempo = this.displayTempo;
-        if (hierarchy.length >= 2) {
-          const layer1 = hierarchy[1];
-          const layer1Mult = typeof layer1 === 'number' ? layer1 :
-            (Array.isArray(layer1) ? layer1.reduce((a, b) => a + b, 0) : 1);
-          internalTempo = this.displayTempo / layer1Mult;
-        }
+        // displayTempo is the matra rate (beats per minute)
         meter = new Meter({
           hierarchy,
           startTime,
-          tempo: internalTempo,
+          tempo: this.displayTempo,
           repetitions: this.cycles,
         });
       }
