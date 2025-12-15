@@ -627,15 +627,40 @@ export default defineComponent({
         // For Jhoomra [[3,4,3,4], 4]: vibhag at 0, 3, 7, 10
         const vibhagIndices = new Set<number>();
         let matrasPerCycle = 0;
-        if (m.hierarchy.length >= 2 && Array.isArray(m.hierarchy[0])) {
+
+        // Get the vibhag structure - either from hierarchy[0] if it's an array,
+        // or from the tala preset if this is a tala meter
+        let vibhagStructure: number[] | null = null;
+        if (Array.isArray(m.hierarchy[0])) {
+          vibhagStructure = m.hierarchy[0] as number[];
+        } else if (m.talaName && Meter.talaPresets[m.talaName]) {
+          const preset = Meter.talaPresets[m.talaName];
+          if (Array.isArray(preset.hierarchy[0])) {
+            vibhagStructure = preset.hierarchy[0] as number[];
+          }
+        }
+
+        if (vibhagStructure) {
           let cumSum = 0;
           vibhagIndices.add(0);
-          for (const v of m.hierarchy[0] as number[]) {
+          for (const v of vibhagStructure) {
             cumSum += v;
             vibhagIndices.add(cumSum);
           }
           matrasPerCycle = cumSum;
         }
+
+        // Debug: log meter info
+        console.log('Meter debug:', {
+          talaName: m.talaName,
+          hierarchy: m.hierarchy,
+          vibhagStructure,
+          vibhagIndices: [...vibhagIndices],
+          matrasPerCycle,
+          allPulsesCount: m.allPulses.length,
+          layer0Count: m.allPulses.filter(p => p.lowestLayer === 0).length,
+          layer1Count: m.allPulses.filter(p => p.lowestLayer === 1).length,
+        });
 
         // Filter to matra-level pulses only (lowestLayer === 0)
         // and track their index within the cycle
