@@ -30,7 +30,9 @@ export default defineComponent({
         // Calculate tap time in recording coordinates:
         // startPlayTime is where we were in the recording when tracking started
         // (ac.currentTime - acTimeAtStart) is how much real time has elapsed since then
-        const tapTime = props.startPlayTime + (props.ac.currentTime - acTimeAtStart.value);
+        // Subtract outputLatency to compensate for audio hardware delay (e.g. Bluetooth headphones)
+        const outputLatency = props.ac.outputLatency ?? 0;
+        const tapTime = props.startPlayTime + (props.ac.currentTime - acTimeAtStart.value) - outputLatency;
         emitter?.emit('pulseTap', tapTime);
       }
     };
