@@ -501,3 +501,70 @@ describe('Meter serialization through Piece', () => {
     });
   });
 });
+
+describe('addTimePoints functionality', () => {
+  test('addTimePoints works with multi-cycle input', () => {
+    // Create a 1-cycle Tintal meter
+    const meter = Meter.fromTala(TalaName.Tintal, 0, 60, 1);
+    const initialPulseCount = meter.getMatraPulses().length;
+    expect(initialPulseCount).toBe(16); // 1 cycle = 16 matras
+
+    // Add 2 more cycles worth of time points (32 matras + end marker = 33 points)
+    // Starting at the end of the first cycle (time 16)
+    const newTimePoints: number[] = [];
+    for (let i = 0; i <= 32; i++) {
+      newTimePoints.push(16 + i); // Times 16, 17, 18, ..., 48
+    }
+
+    meter.addTimePoints(newTimePoints, 0);
+
+    // Should now have 3 cycles = 48 matras
+    const finalPulseCount = meter.getMatraPulses().length;
+    expect(finalPulseCount).toBe(48);
+  });
+
+  test('addTimePoints redistributes last segment matras based on first new time point', () => {
+    // Create a 1-cycle Tintal meter at 60 BPM
+    const meter = Meter.fromTala(TalaName.Tintal, 0, 60, 1);
+    const matraPulses = meter.getMatraPulses();
+
+    // Initial state: matras at 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
+    // Last vibhag boundary is at index 12 (time 12)
+    // Matras 13, 14, 15 are in the last segment
+    expect(matraPulses[12].realTime).toBeCloseTo(12, 3);
+    expect(matraPulses[13].realTime).toBeCloseTo(13, 3);
+    expect(matraPulses[14].realTime).toBeCloseTo(14, 3);
+    expect(matraPulses[15].realTime).toBeCloseTo(15, 3);
+
+    // Add a new time point at 17 (instead of 16)
+    // This means the last segment is now 5 seconds (12 to 17) instead of 4
+    // Matras 13, 14, 15 should be redistributed to fit evenly: 12 + 1.25, 12 + 2.5, 12 + 3.75
+    meter.addTimePoints([17], 0);
+
+    const updatedPulses = meter.getMatraPulses();
+    // Matra 12 (boundary) stays at 12
+    expect(updatedPulses[12].realTime).toBeCloseTo(12, 3);
+    // Matras 13, 14, 15 are redistributed in 5s segment with 4 divisions
+    // Positions: 12 + 5/4*1 = 13.25, 12 + 5/4*2 = 14.5, 12 + 5/4*3 = 15.75
+    expect(updatedPulses[13].realTime).toBeCloseTo(13.25, 3);
+    expect(updatedPulses[14].realTime).toBeCloseTo(14.5, 3);
+    expect(updatedPulses[15].realTime).toBeCloseTo(15.75, 3);
+  });
+
+  test('addTimePoints with multiple new time points redistributes last segment', () => {
+    // Create a 1-cycle Tintal meter at 60 BPM
+    const meter = Meter.fromTala(TalaName.Tintal, 0, 60, 1);
+
+    // Add time points for another cycle, but with first at 17.5 (slower than default 16)
+    // Last segment (matra 12 to first new point) is 5.5 seconds instead of 4
+    const newTimePoints = [17.5, 18.5, 19.5, 20.5, 21.5];
+    meter.addTimePoints(newTimePoints, 0);
+
+    const updatedPulses = meter.getMatraPulses();
+    // Matras 13, 14, 15 redistributed in 5.5s segment with 4 divisions
+    // Positions: 12 + 5.5/4*1 = 13.375, 12 + 5.5/4*2 = 14.75, 12 + 5.5/4*3 = 16.125
+    expect(updatedPulses[13].realTime).toBeCloseTo(13.375, 2);
+    expect(updatedPulses[14].realTime).toBeCloseTo(14.75, 2);
+    expect(updatedPulses[15].realTime).toBeCloseTo(16.125, 2);
+  });
+});
