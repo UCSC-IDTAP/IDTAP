@@ -921,6 +921,46 @@ class Meter {
     if (timePoints[0] < lastRealTime) {
       throw new Error('timePoints must be greater than last realTime')
     }
+
+    // For tala meters, redistribute matras in the last segment based on first new time point
+    // The first new time point defines the new vibhag boundary
+    if (Array.isArray(this.hierarchy[0])) {
+      const matraPulses = this.getMatraPulses();
+      const boundaries = this.getSegmentBoundaryIndices();
+
+      if (boundaries.length > 0 && matraPulses.length > 0) {
+        // Find the last vibhag boundary
+        const lastBoundaryIdx = boundaries[boundaries.length - 1];
+        const lastBoundaryPulse = matraPulses[lastBoundaryIdx];
+
+        if (lastBoundaryPulse) {
+          const segmentStartTime = lastBoundaryPulse.realTime;
+          const newSegmentEndTime = timePoints[0];
+          const newSegmentDur = newSegmentEndTime - segmentStartTime;
+
+          // Get matras in the last segment (after the boundary)
+          const matrasInLastSegment = matraPulses.slice(lastBoundaryIdx + 1);
+
+          if (matrasInLastSegment.length > 0 && newSegmentDur > 0) {
+            // Redistribute matras evenly in the new segment duration
+            // +1 because the segment includes the boundary at start
+            const numPulses = matrasInLastSegment.length + 1;
+
+            for (let i = 0; i < matrasInLastSegment.length; i++) {
+              const p = matrasInLastSegment[i];
+              const relativePos = (i + 1) / numPulses;
+              const newTime = segmentStartTime + relativePos * newSegmentDur;
+              const offset = newTime - p.realTime;
+
+              if (Math.abs(offset) > 0.0001) {
+                this._offsetPulseDirect(p, offset, true);
+              }
+            }
+          }
+        }
+      }
+    }
+
     const curEndTime = this.durTot + this.startTime;
     let summed = this.hierarchy[0] instanceof Array ?
       sum(this.hierarchy[0] as number[]) :
