@@ -2513,7 +2513,8 @@ class Meter {
     const hasNextSegment = nextSegmentPulses.length > 0;
 
     // Offset the boundary pulse itself first (use direct method to avoid recursion)
-    this._offsetPulseDirect(pulse, offset);
+    // Use override=true because segment redistribution can move pulses beyond normal limits
+    this._offsetPulseDirect(pulse, offset, true);
 
     // Reset and evenly space all pulses in the PREVIOUS segment (except the first one)
     // This removes any previous manual adjustments and creates clean even spacing
@@ -2526,7 +2527,7 @@ class Meter {
       const pulseOffset = newRelativeTime - p.realTime;
 
       if (Math.abs(pulseOffset) > 0.0001) {
-        this._offsetPulseDirect(p, pulseOffset);
+        this._offsetPulseDirect(p, pulseOffset, true);
       }
     }
 
@@ -2544,7 +2545,7 @@ class Meter {
         const pulseOffset = newRelativeTime - p.realTime;
 
         if (Math.abs(pulseOffset) > 0.0001) {
-          this._offsetPulseDirect(p, pulseOffset);
+          this._offsetPulseDirect(p, pulseOffset, true);
         }
       }
     }
