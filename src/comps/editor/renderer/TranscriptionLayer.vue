@@ -5816,36 +5816,33 @@ export default defineComponent({
         return p.uniqueId === selectedPulse.value!.uniqueId
       })!;
       const amt = 0.01;
-      const aff = pulse.affiliations[0];
-      const psId = aff.psId;
-      const ps = selectedMeter.value!.getPSFromId(psId);
+
+      // Calculate min/max time based on ACTUAL neighboring pulse positions
+      // This ensures nudging works correctly after segment redistribution
+      const allPulses = selectedMeter.value!.allCorporealPulses;
+      const pulseIdx = allPulses.findIndex(p => p.uniqueId === pulse.uniqueId);
+
       let minTime, maxTime, newX;
-      if (aff.idx === 0 && aff.segmentedMeterIdx === 0 && aff.layer === 0) {
-        const psIdx = selectedMeter.value!.pulseStructures[0].indexOf(ps);
-        let cycleNum, subdivs;
-        const hierarchy = selectedMeter.value!.hierarchy[0];
-        if (typeof hierarchy === 'number') {
-          cycleNum = psIdx
-          subdivs = hierarchy
-        } else {
-          cycleNum = Math.floor(psIdx / hierarchy.length);
-          subdivs = sum(hierarchy);
-        }
-        const st = selectedMeter.value!.startTime;
-        const center = st + selectedMeter.value!.cycleDur * cycleNum;
-        const subDur = selectedMeter.value!.cycleDur / subdivs;
-        const maxOff = subDur / 2;
-        maxTime = center + maxOff;
-        minTime = center - maxOff;
+      if (pulseIdx <= 0) {
+        // First pulse - shouldn't be nudgeable (handled above), but just in case
+        minTime = pulse.realTime;
+        maxTime = pulse.realTime;
       } else {
-        const maxOff = ps.pulseDur / 2;
-        const pulseIdx = ps.pulses.map(p => p.uniqueId).indexOf(pulse.uniqueId);
-        if (pulseIdx === -1) {
-          throw new Error('Pulse not found in pulse structure');
+        // Use actual neighboring pulse positions
+        const prevPulse = allPulses[pulseIdx - 1];
+        const nextPulse = pulseIdx < allPulses.length - 1 ? allPulses[pulseIdx + 1] : null;
+
+        // Min time: halfway between previous pulse and current
+        minTime = (prevPulse.realTime + pulse.realTime) / 2;
+
+        // Max time: halfway to next pulse, or allow extension if last pulse
+        if (nextPulse) {
+          maxTime = (pulse.realTime + nextPulse.realTime) / 2;
+        } else {
+          // Last pulse - allow some extension based on average spacing
+          const avgSpacing = (pulse.realTime - prevPulse.realTime);
+          maxTime = pulse.realTime + avgSpacing / 2;
         }
-        const center = ps.startTime + ps.pulseDur * pulseIdx;
-        maxTime = center + maxOff;
-        minTime = center - maxOff;
       }
       if (dir === 'left') {
         newX = props.xScale(pulse.realTime - amt);
