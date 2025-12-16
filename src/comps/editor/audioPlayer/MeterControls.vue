@@ -182,6 +182,26 @@
       </button>
     </div>
   </div>
+  <div class='controlsBox' v-if='meterSelected'>
+    <div class='titleRow'>Meter End</div>
+    <div class='controlsRow'>
+      <div class='row'>
+        <label>Vibhag</label>
+        <input type='radio' v-model='trimAnchor' value='vibhag' />
+      </div>
+      <div class='row'>
+        <label>Matra</label>
+        <input type='radio' v-model='trimAnchor' value='matra' />
+      </div>
+    </div>
+    <div class='controlsRow centered'>
+      <button
+        @click='trimMeterEnd'
+        :disabled='!editable'>
+        Re-interpolate Meter End
+      </button>
+    </div>
+  </div>
 </div>
 </template>
 
@@ -216,6 +236,7 @@ type MeterControlsDataType = {
   selectedTala: TalaName | undefined,
   talaNameOptions: TalaName[],
   tapRecordingInternal: boolean,
+  trimAnchor: 'vibhag' | 'matra',
 };
 
 export default defineComponent({
@@ -246,6 +267,7 @@ export default defineComponent({
       selectedTala: TalaName.Tintal,
       talaNameOptions: Object.values(TalaName),
       tapRecordingInternal: false,
+      trimAnchor: 'vibhag',
     }
   },
   props: {
@@ -339,9 +361,11 @@ export default defineComponent({
     selectedMeter(newVal, oldVal) {
       if (newVal !== undefined) {
         this.meter = newVal;
+        this.meterSelected = true;
         this.assignData();
       } else {
         this.meter = undefined;
+        this.meterSelected = false;
         this.numLayers = 2;
         this.layerCompounds = [1, 1, 1, 1];
         this.pulseDivisions = [
@@ -786,6 +810,10 @@ export default defineComponent({
       // Update this.meter reference and refresh the UI with new meter data
       this.meter = meter;
       this.assignData();
+
+      // Automatically re-interpolate the meter end based on matra timing
+      meter.trimEndTime('matra');
+      this.$emit('rerenderMeter', meter);
       // d3SelectAll('.insertPulse').remove();
       // this.insertPulseMode = false;
     },
@@ -808,6 +836,17 @@ export default defineComponent({
           this.pulseDivisions[hIdx + 1][0] = h;
         })
       }
+    },
+
+    trimMeterEnd() {
+      if (!this.meter) {
+        return;
+      }
+      this.meter.trimEndTime(this.trimAnchor);
+      this.assignData();
+      this.$emit('pSelectMeterEmit', this.meter.allPulses[0].uniqueId);
+      this.$emit('passthroughUnsavedChangesEmit', true);
+      this.$emit('rerenderMeter', this.meter);
     }
   },
 })
