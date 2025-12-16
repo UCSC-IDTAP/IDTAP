@@ -1,6 +1,15 @@
 # Changelog
 
 
+* fix: pass override=true in offsetSegmentBoundary redistribution calls [af50693] (Jon Myers)
+### 2025-12-16
+
+* feat: add trimEndTime method for meter end re-interpolation [638df74] (Jon Myers)
+* fix: improve tap-to-pulse meter creation and cycle addition [c344595] (Jon Myers)
+* feat: call resetTempo after addTimePoints [0f20661] (Jon Myers)
+* fix: find previous meter directly in addTimePointsToPrevMeter [68b0f25] (Jon Myers)
+* fix: add tolerance to meter overlap check [bba1382] (Jon Myers)
+* fix: guard against undefined meter and add vibhag expansion in addTimePointsToPrevMeter [b3f9aac] (Jon Myers)
 * fix: memory leak in enterMeterModeWithPulses event listener cleanup [252e213] (Jon Myers)
 * feat: segment-aware nudging for tala vibhag boundaries [f0b3ae9] (Jon Myers)
 * fix: expand vibhag taps to matra timepoints for tala meters [117dac6] (Jon Myers)
