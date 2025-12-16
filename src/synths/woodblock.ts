@@ -4,7 +4,10 @@ export class WoodblockSynth {
 	osc2: OscillatorNode;
 	mixNode: GainNode;
 	envNode: GainNode;
-	
+	// Track scheduled noise nodes for cleanup
+	private scheduledNoiseSources: AudioBufferSourceNode[] = [];
+	private scheduledNoiseGains: GainNode[] = [];
+
 	constructor(ac: AudioContext, destination: AudioNode) {
 		this.ac = ac;
 		// create nodes
@@ -61,6 +64,10 @@ export class WoodblockSynth {
 
     noiseSrc.start(when);
     noiseSrc.stop(when + dur + 0.01);
+
+    // Track for cleanup
+    this.scheduledNoiseSources.push(noiseSrc);
+    this.scheduledNoiseGains.push(depth);
   }
 
 	scheduleAttack(when: number, freq: number, amp: number) {
@@ -89,6 +96,25 @@ export class WoodblockSynth {
     this.envNode.gain.setValueAtTime(0, t);
     this.osc1.frequency.cancelScheduledValues(t);
     this.osc2.frequency.cancelScheduledValues(t);
+
+    // Clean up all scheduled noise nodes
+    for (const src of this.scheduledNoiseSources) {
+      try {
+        src.stop();
+        src.disconnect();
+      } catch (e) {
+        // Ignore errors from already-stopped sources
+      }
+    }
+    for (const gain of this.scheduledNoiseGains) {
+      try {
+        gain.disconnect();
+      } catch (e) {
+        // Ignore errors from already-disconnected nodes
+      }
+    }
+    this.scheduledNoiseSources = [];
+    this.scheduledNoiseGains = [];
   }
 
 }
