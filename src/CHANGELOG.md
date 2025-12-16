@@ -1,6 +1,8 @@
 # Changelog
 
 
+* fix: ensure enough predicted times for multi-cycle addTimePoints [ae1262c] (Jon Myers)
+* fix: correct filter in findClosestIdxs to use stored item index [c7df1c0] (Jon Myers)
 * fix: pass override=true in offsetSegmentBoundary redistribution calls [af50693] (Jon Myers)
 ### 2025-12-16
 
