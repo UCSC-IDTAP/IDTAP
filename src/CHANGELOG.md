@@ -1,6 +1,9 @@
 # Changelog
 
 
+* fix: improve vibhag vs matra level detection for multi-cycle input [d3659c6] (Jon Myers)
+* fix: calculate nudge bounds from actual pulse positions, not theoretical [fabd61e] (Jon Myers)
+* feat: redistribute last segment matras when adding time points [daae4aa] (Jon Myers)
 * fix: ensure enough predicted times for multi-cycle addTimePoints [ae1262c] (Jon Myers)
 * fix: correct filter in findClosestIdxs to use stored item index [c7df1c0] (Jon Myers)
 * fix: pass override=true in offsetSegmentBoundary redistribution calls [af50693] (Jon Myers)
