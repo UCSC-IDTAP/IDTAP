@@ -1,6 +1,7 @@
 # Changelog
 
 
+* fix: clean up metronome audio nodes to prevent audio engine overflow [45b2f66] (Jon Myers)
 * fix: improve vibhag vs matra level detection for multi-cycle input [d3659c6] (Jon Myers)
 * fix: calculate nudge bounds from actual pulse positions, not theoretical [fabd61e] (Jon Myers)
 * feat: redistribute last segment matras when adding time points [daae4aa] (Jon Myers)
