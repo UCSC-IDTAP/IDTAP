@@ -767,9 +767,27 @@ export default defineComponent({
         // Vibhag-level: N points where N is roughly a multiple of numVibhags
         // Matra-level: N points where N is roughly a multiple of matrasPerCycle
         const numCyclesFromVibhags = Math.round(timePoints.length / numVibhags);
+        const numCyclesFromMatras = Math.round(timePoints.length / matrasPerCycle);
         const expectedVibhagPoints = numCyclesFromVibhags * numVibhags;
-        const isVibhagLevel = Math.abs(timePoints.length - expectedVibhagPoints) <= 1 &&
-                              timePoints.length < matrasPerCycle;
+        const expectedMatraPoints = numCyclesFromMatras * matrasPerCycle;
+
+        // Check which interpretation fits better
+        const vibhagFit = Math.abs(timePoints.length - expectedVibhagPoints);
+        const matraFit = Math.abs(timePoints.length - expectedMatraPoints);
+
+        // Use timing to disambiguate when both fit equally well
+        // Vibhag intervals should be ~4x longer than matra intervals
+        let isVibhagLevel = vibhagFit <= 1;
+        if (isVibhagLevel && matraFit <= 1 && timePoints.length > 1) {
+          // Both fit - check actual timing intervals against meter's expected durations
+          const avgInterval = (timePoints[timePoints.length - 1] - timePoints[0]) / (timePoints.length - 1);
+          const expectedMatraDur = meter.cycleDur / matrasPerCycle;
+          const expectedVibhagDur = meter.cycleDur / numVibhags;
+          // If interval is closer to vibhag duration, treat as vibhag level
+          const matraDiff = Math.abs(avgInterval - expectedMatraDur);
+          const vibhagDiff = Math.abs(avgInterval - expectedVibhagDur);
+          isVibhagLevel = vibhagDiff < matraDiff;
+        }
 
         if (isVibhagLevel && numCyclesFromVibhags > 0) {
           // Extend timepoints to have exact multiple of numVibhags + 1 for end boundary
