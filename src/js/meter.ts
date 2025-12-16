@@ -933,7 +933,10 @@ class Meter {
     const beatDur = this.cycleDur / summed;
     const predictedTimes: number[] = [];
     let cTime = curEndTime;
-    while (cTime < timePoints[timePoints.length-1] + beatDur) {
+    // Generate enough predicted times to cover all timepoints
+    // Need at least as many predictions as timepoints since each must match uniquely
+    while (cTime < timePoints[timePoints.length-1] + beatDur ||
+           predictedTimes.length < timePoints.length) {
       predictedTimes.push(cTime);
       cTime += beatDur
     }
