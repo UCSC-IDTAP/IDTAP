@@ -2570,10 +2570,10 @@ class Meter {
 }
 
 const findClosestIdxs = (trials: number[], items: number[]) => {
-  const usedIndexes = new Set();
+  const usedIndexes = new Set<number>();
   return trials.map(trial => {
     let diffs = items.map((item, index) => [Math.abs(trial - item), index]);
-    diffs = diffs.filter((_, index) => !usedIndexes.has(index));
+    diffs = diffs.filter(d => !usedIndexes.has(d[1]));
     diffs.sort((a, b) => a[0] - b[0]);
     usedIndexes.add(diffs[0][1]);
     return diffs[0][1];
