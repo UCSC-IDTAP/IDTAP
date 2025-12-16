@@ -1329,6 +1329,7 @@ class Meter {
       return; // Segment-aware offset was applied
     }
 
+    console.log('offsetPulse: falling through to _offsetPulseDirect, offset=', offset, 'override=', override);
     this._offsetPulseDirect(pulse, offset, override);
   }
 
@@ -2466,6 +2467,7 @@ class Meter {
     const pulseIdx = matraPulses.findIndex(p => p.uniqueId === pulse.uniqueId);
 
     if (pulseIdx === -1) {
+      console.log('offsetSegmentBoundary: not a matra pulse');
       return false; // Not a matra pulse
     }
 
@@ -2473,11 +2475,13 @@ class Meter {
     const boundaryIdx = boundaries.indexOf(pulseIdx);
 
     if (boundaryIdx === -1) {
+      console.log('offsetSegmentBoundary: not at segment boundary, pulseIdx=', pulseIdx, 'boundaries=', boundaries);
       return false; // Not at a segment boundary
     }
 
     // Can't adjust segment before the first boundary (index 0)
     if (boundaryIdx === 0) {
+      console.log('offsetSegmentBoundary: first boundary, cannot adjust');
       return false;
     }
 
@@ -2499,6 +2503,7 @@ class Meter {
     const originalPrevSegmentDur = prevSegmentEndTime - prevSegmentStartTime;
 
     if (originalPrevSegmentDur <= 0) {
+      console.log('offsetSegmentBoundary: originalPrevSegmentDur <= 0', originalPrevSegmentDur);
       return false;
     }
 
@@ -2506,6 +2511,7 @@ class Meter {
     const newPrevSegmentDur = originalPrevSegmentDur + offset;
 
     if (newPrevSegmentDur <= 0) {
+      console.log('offsetSegmentBoundary: newPrevSegmentDur would be <= 0', newPrevSegmentDur, 'offset=', offset);
       return false; // Would create invalid timing
     }
 
@@ -2532,6 +2538,7 @@ class Meter {
       newNextSegmentDur = originalNextSegmentDur - offset;
 
       if (newNextSegmentDur <= 0) {
+        console.log('offsetSegmentBoundary: newNextSegmentDur would be <= 0', newNextSegmentDur, 'offset=', offset);
         return false; // Would create invalid timing
       }
     } else {
@@ -2548,12 +2555,17 @@ class Meter {
         newNextSegmentDur = originalNextSegmentDur - offset;
 
         if (newNextSegmentDur <= 0) {
+          console.log('offsetSegmentBoundary: newNextSegmentDur (last segment) would be <= 0', newNextSegmentDur, 'offset=', offset);
           return false; // Would create invalid timing
         }
       }
     }
 
     const hasNextSegment = nextSegmentPulses.length > 0;
+
+    console.log('offsetSegmentBoundary: applying offset', offset,
+      'prevSegmentDur:', originalPrevSegmentDur, '->', newPrevSegmentDur,
+      'nextSegmentDur:', originalNextSegmentDur, '->', newNextSegmentDur);
 
     // Offset the boundary pulse itself first (use direct method to avoid recursion)
     // Use override=true because segment redistribution can move pulses beyond normal limits
