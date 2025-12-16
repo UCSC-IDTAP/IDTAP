@@ -577,10 +577,20 @@ class Piece {
     } else {
       const start = meter.startTime;
       const end = start + meter.durTot;
+      // Small tolerance for near-overlaps (e.g., user tapped slightly before previous meter ended)
+      const tolerance = 0.1; // 100ms tolerance
+
       this.meters.forEach(m => {
-        const c1 = m.startTime <= start && m.startTime + m.durTot >= start;
-        const c2 = m.startTime < end && m.startTime + m.durTot > end;
-        const c3 = m.startTime > start && m.startTime + m.durTot < end;
+        const mEnd = m.startTime + m.durTot;
+
+        // Check overlap with tolerance - allow small overlaps within tolerance
+        // c1: new meter starts inside existing meter (with tolerance)
+        const c1 = m.startTime <= start && mEnd - tolerance > start;
+        // c2: new meter ends inside existing meter
+        const c2 = m.startTime < end && mEnd > end;
+        // c3: new meter completely contains existing meter
+        const c3 = m.startTime > start && mEnd < end;
+
         if (c1 || c2 || c3) {
           throw new Error('meters overlap')
         }

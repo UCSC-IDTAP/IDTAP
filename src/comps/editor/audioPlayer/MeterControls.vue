@@ -182,13 +182,34 @@
       </button>
     </div>
   </div>
+  <div class='controlsBox' v-if='meterSelected'>
+    <div class='titleRow'>Meter End</div>
+    <div class='controlsRow'>
+      <div class='row'>
+        <label>Vibhag</label>
+        <input type='radio' v-model='trimAnchor' value='vibhag' />
+      </div>
+      <div class='row'>
+        <label>Matra</label>
+        <input type='radio' v-model='trimAnchor' value='matra' />
+      </div>
+    </div>
+    <div class='controlsRow centered'>
+      <button
+        @click='trimMeterEnd'
+        :disabled='!editable'>
+        Re-interpolate Meter End
+      </button>
+    </div>
+  </div>
 </div>
 </template>
 
 <script lang='ts'>
 
 import { Meter } from '@/js/meter.ts';
-import { 
+import { findClosestStartTime } from '@/ts/utils';
+import {
   selectAll as d3SelectAll,
   select as d3Select,
  } from 'd3';
@@ -215,6 +236,7 @@ type MeterControlsDataType = {
   selectedTala: TalaName | undefined,
   talaNameOptions: TalaName[],
   tapRecordingInternal: boolean,
+  trimAnchor: 'vibhag' | 'matra',
 };
 
 export default defineComponent({
@@ -245,6 +267,7 @@ export default defineComponent({
       selectedTala: TalaName.Tintal,
       talaNameOptions: Object.values(TalaName),
       tapRecordingInternal: false,
+      trimAnchor: 'vibhag',
     }
   },
   props: {
@@ -338,9 +361,11 @@ export default defineComponent({
     selectedMeter(newVal, oldVal) {
       if (newVal !== undefined) {
         this.meter = newVal;
+        this.meterSelected = true;
         this.assignData();
       } else {
         this.meter = undefined;
+        this.meterSelected = false;
         this.numLayers = 2;
         this.layerCompounds = [1, 1, 1, 1];
         this.pulseDivisions = [
@@ -713,14 +738,82 @@ export default defineComponent({
     },
 
     addTimePointsToPrevMeter() {
-      const timePoints = this.insertPulses;
+      // Find the previous meter directly from the meters array
+      // instead of relying on this.meter being set via event chain
+      let meter = this.meter;
+      if (!meter && this.meters.length > 0 && this.insertPulses.length > 0) {
+        const mtrStarts = this.meters.map(m => m.startTime);
+        const mIdx = findClosestStartTime(mtrStarts, this.insertPulses[0]);
+        meter = this.meters[mIdx];
+      }
+
+      if (!meter) {
+        console.error('No meter found for addTimePointsToPrevMeter');
+        return;
+      }
+
+      let timePoints = [...this.insertPulses];
       timePoints.sort((a: number, b: number) => a - b);
-      this.meter!.addTimePoints(timePoints, this.insertLayer);
+
+      // Handle vibhag-level input for tala meters: expand to matra timepoints
+      // Similar to fromTimePoints logic
+      const layer = Number(this.insertLayer);
+      if (layer === 0 && Array.isArray(meter.hierarchy[0])) {
+        const vibhagDivisions = meter.hierarchy[0] as number[];
+        const numVibhags = vibhagDivisions.length;
+        const matrasPerCycle = vibhagDivisions.reduce((a, b) => a + b, 0);
+
+        // Detect if this looks like vibhag-level input (for one or multiple cycles)
+        // Vibhag-level: N points where N is roughly a multiple of numVibhags
+        // Matra-level: N points where N is roughly a multiple of matrasPerCycle
+        const numCyclesFromVibhags = Math.round(timePoints.length / numVibhags);
+        const expectedVibhagPoints = numCyclesFromVibhags * numVibhags;
+        const isVibhagLevel = Math.abs(timePoints.length - expectedVibhagPoints) <= 1 &&
+                              timePoints.length < matrasPerCycle;
+
+        if (isVibhagLevel && numCyclesFromVibhags > 0) {
+          // Extend timepoints to have exact multiple of numVibhags + 1 for end boundary
+          const targetLength = numCyclesFromVibhags * numVibhags + 1;
+          const avgDiff = (timePoints[timePoints.length - 1] - timePoints[0]) /
+            (timePoints.length - 1);
+          while (timePoints.length < targetLength) {
+            timePoints.push(timePoints[timePoints.length - 1] + avgDiff);
+          }
+
+          // Interpolate matra timepoints within each vibhag across all cycles
+          const matraTimepoints: number[] = [];
+          const totalVibhags = numCyclesFromVibhags * numVibhags;
+          for (let v = 0; v < totalVibhags; v++) {
+            const vibhagStart = timePoints[v];
+            const vibhagEnd = timePoints[v + 1];
+            const vibhagIdx = v % numVibhags;
+            const matrasInVibhag = vibhagDivisions[vibhagIdx];
+            const matraDur = (vibhagEnd - vibhagStart) / matrasInVibhag;
+
+            for (let m = 0; m < matrasInVibhag; m++) {
+              matraTimepoints.push(vibhagStart + m * matraDur);
+            }
+          }
+          // Add the final timepoint (end of last matra)
+          matraTimepoints.push(timePoints[totalVibhags]);
+          timePoints = matraTimepoints;
+        }
+      }
+
+      meter.addTimePoints(timePoints, layer);
       // this.$emit('passthroughAddMetricGridEmit', true);
       this.meterSelected = true;
-      this.$emit('pSelectMeterEmit', this.meter!.allPulses[0].uniqueId, true)
+      this.$emit('pSelectMeterEmit', meter.allPulses[0].uniqueId, true)
       this.$emit('passthroughUnsavedChangesEmit', true);
-      this.$emit('renderMeter', this.meter);
+      this.$emit('renderMeter', meter);
+
+      // Update this.meter reference and refresh the UI with new meter data
+      this.meter = meter;
+      this.assignData();
+
+      // Automatically re-interpolate the meter end based on matra timing
+      meter.trimEndTime('matra');
+      this.$emit('rerenderMeter', meter);
       // d3SelectAll('.insertPulse').remove();
       // this.insertPulseMode = false;
     },
@@ -743,6 +836,17 @@ export default defineComponent({
           this.pulseDivisions[hIdx + 1][0] = h;
         })
       }
+    },
+
+    trimMeterEnd() {
+      if (!this.meter) {
+        return;
+      }
+      this.meter.trimEndTime(this.trimAnchor);
+      this.assignData();
+      this.$emit('pSelectMeterEmit', this.meter.allPulses[0].uniqueId);
+      this.$emit('passthroughUnsavedChangesEmit', true);
+      this.$emit('rerenderMeter', this.meter);
     }
   },
 })

@@ -922,8 +922,8 @@ class Meter {
       throw new Error('timePoints must be greater than last realTime')
     }
     const curEndTime = this.durTot + this.startTime;
-    let summed = this.hierarchy[0] instanceof Array ? 
-      sum(this.hierarchy[0] as number[]) : 
+    let summed = this.hierarchy[0] instanceof Array ?
+      sum(this.hierarchy[0] as number[]) :
       this.hierarchy[0] as number;
     if (layer > 0) {
       const hierarchySlice = this.hierarchy.slice(1, layer + 1) as number[]
@@ -932,29 +932,48 @@ class Meter {
     }
     const beatDur = this.cycleDur / summed;
     const predictedTimes: number[] = [];
-    let cTime = curEndTime; 
+    let cTime = curEndTime;
     while (cTime < timePoints[timePoints.length-1] + beatDur) {
       predictedTimes.push(cTime);
       cTime += beatDur
     }
     const idxs = findClosestIdxs(timePoints, predictedTimes);
-    const cycleNums = idxs.map(idx => {
+
+    // Check if the last timepoint falls exactly on a cycle boundary
+    // If so, it's just an end marker and shouldn't trigger growing an extra cycle
+    const lastIdx = idxs[idxs.length - 1];
+    const isLastOnCycleBoundary = lastIdx > 0 && lastIdx % summed === 0;
+    const cycleCalcIdxs = isLastOnCycleBoundary ? idxs.slice(0, -1) : idxs;
+
+    const cycleNums = cycleCalcIdxs.map(idx => {
       return Math.floor(idx / summed)
     });
     const prevPLen = this.pulseStructures[layer]
       .map(ps => ps.pulses).flat().length;
     this.growCycles(Math.max(...cycleNums) + 1);
+
+    // Position pulses - exclude the last timepoint if it's on a cycle boundary
+    // Use _offsetPulseDirect to bypass segment-aware logic - that's only for manual user nudging,
+    // not for initial placement which already has correctly spaced timepoints
+    // Pass override=true to allow larger offsets during initial placement (tempo may differ)
+    const pulseIdxs = isLastOnCycleBoundary ? idxs.slice(0, -1) : idxs;
     for (let l = 0; l <= layer; l++) {
-      idxs.forEach((idx, i) => {
+      pulseIdxs.forEach((idx, i) => {
         const layerPulses = this.pulseStructures[layer]
           .map(ps => ps.pulses).flat();
         const pulse = layerPulses[prevPLen + idx];
         const offset = timePoints[i] - pulse.realTime;
         if (l === pulse.lowestLayer) {
-          this.offsetPulse(pulse, offset)
+          this._offsetPulseDirect(pulse, offset, true)
         }
       })
     }
+
+    // TODO: resetTempo is causing choppy matra distribution - disabled for now
+    // Recalculate tempo based on actual pulse positions
+    // This preserves all pulse times but adjusts the underlying tempo
+    // so future growCycles will use the new tempo
+    // this.resetTempo();
   }
 
   static fromTimePoints({
@@ -1107,10 +1126,11 @@ class Meter {
     const metricTimes = metricPulses
       .map(p => p.realTime);
     // Only iterate over actual pulses, not the end boundary timepoint
+    // Use _offsetPulseDirect to bypass segment-aware logic during initial placement
     const numPulsesToAdjust = Math.min(timePoints.length, metricPulses.length);
     for (let i = 1; i < numPulsesToAdjust; i++) {
       const diff = timePoints[i] - metricTimes[i];
-      meter.offsetPulse(metricPulses[i], diff);
+      meter._offsetPulseDirect(metricPulses[i], diff);
     }
     if (layer === 1) {
       let otpCt = 0;
@@ -1123,7 +1143,7 @@ class Meter {
             if (tp !== undefined) {
               const pulse = psMetricPulses[i];
               const diff = tp - mt;
-              meter.offsetPulse(pulse, diff);
+              meter._offsetPulseDirect(pulse, diff);
             }
           }
         })
@@ -1806,6 +1826,226 @@ class Meter {
   }
 
   /**
+   * Trim the meter's end time by re-interpolating from the last visible pulse.
+   * This adjusts the tempo so the meter ends at the last pulse + one pulse duration.
+   *
+   * @param anchor - 'vibhag' to use last vibhag boundary, 'matra' to use last matra pulse
+   */
+  trimEndTime(anchor: 'vibhag' | 'matra' = 'vibhag') {
+    const corpPulses = this.allCorporealPulses;
+    if (corpPulses.length < 2) {
+      return; // Need at least 2 pulses to interpolate
+    }
+
+    // Get matra-level pulses (lowestLayer === 0)
+    const matraPulses = corpPulses.filter(p => p.lowestLayer === 0);
+    if (matraPulses.length < 2) {
+      return;
+    }
+
+    let anchorPulses: Pulse[];
+    if (anchor === 'vibhag' && Array.isArray(this.hierarchy[0])) {
+      // Get vibhag boundary pulses
+      const boundaries = this.getSegmentBoundaryIndices();
+      const allMatraPulses = this.allPulses.filter(p => p.lowestLayer === 0);
+      anchorPulses = boundaries
+        .map(idx => allMatraPulses[idx])
+        .filter(p => p !== undefined && this.allCorporealPulses.includes(p));
+
+      // Fall back to matra if not enough vibhag boundaries
+      if (anchorPulses.length < 2) {
+        anchorPulses = matraPulses;
+      }
+    } else {
+      anchorPulses = matraPulses;
+    }
+
+    if (anchorPulses.length < 2) {
+      return;
+    }
+
+    // Use only the LAST CYCLE's worth of anchor pulses for interpolation
+    // This gives a more accurate end time based on recent timing
+    const pulsesPerCycle = anchor === 'vibhag' && Array.isArray(this.hierarchy[0])
+      ? (this.hierarchy[0] as number[]).length  // number of vibhags per cycle
+      : (typeof this.hierarchy[0] === 'number' ? this.hierarchy[0] : sum(this.hierarchy[0] as number[]));
+
+    // Get the last cycle's worth of pulses (excluding any end time pulse)
+    // For 4 vibhags per cycle, we want exactly 4 pulses to get 3 intervals
+    const lastCyclePulses = anchorPulses.length > pulsesPerCycle
+      ? anchorPulses.slice(-pulsesPerCycle)  // Only the vibhag boundaries IN the last cycle
+      : anchorPulses;
+
+    // Calculate average duration between anchor pulses in the last cycle
+    const times = lastCyclePulses.map(p => p.realTime);
+    const diffs: number[] = [];
+    for (let i = 1; i < times.length; i++) {
+      diffs.push(times[i] - times[i - 1]);
+    }
+    const avgDur = diffs.reduce((a, b) => a + b, 0) / diffs.length;
+
+    // Calculate where the meter should end
+    const lastAnchorPulseTime = times[times.length - 1];
+    const targetEndTime = lastAnchorPulseTime + avgDur;
+
+    // For vibhag anchor: redistribute the matras in the LAST segment to fit the new end time
+    // Keep all pulses before the last anchor as-is
+    if (anchor === 'vibhag' && Array.isArray(this.hierarchy[0])) {
+      const allMatraPulses = this.allPulses.filter(p => p.lowestLayer === 0);
+      const lastAnchorPulse = lastCyclePulses[lastCyclePulses.length - 1];
+      const lastAnchorIdx = allMatraPulses.findIndex(p => p.uniqueId === lastAnchorPulse.uniqueId);
+
+      // Get the matras AFTER the last anchor (in the last segment)
+      const lastSegmentMatras = allMatraPulses.slice(lastAnchorIdx + 1);
+
+      if (lastSegmentMatras.length > 0) {
+        // Calculate even spacing for the last segment
+        const segmentDur = targetEndTime - lastAnchorPulseTime;
+        const matraDur = segmentDur / (lastSegmentMatras.length + 1); // +1 because last anchor is at position 0
+
+        // Reposition the matras in the last segment
+        lastSegmentMatras.forEach((p, i) => {
+          const newTime = lastAnchorPulseTime + (i + 1) * matraDur;
+          const offset = newTime - p.realTime;
+          if (Math.abs(offset) > 0.0001) {
+            this._offsetPulseDirect(p, offset, true);
+          }
+        });
+
+        // Also redistribute subdivisions within the last segment
+        // Filter by TIME to get only subdivisions actually in the last segment
+        const allPulses = this.allPulses;
+        const lastSegmentSubdivisions = allPulses.filter(p =>
+          p.lowestLayer > 0 &&
+          p.realTime > lastAnchorPulseTime &&
+          p.realTime < targetEndTime + 0.5  // Add small buffer for pulses near end
+        );
+
+        if (lastSegmentSubdivisions.length > 0) {
+          // Get subdivisions per matra from hierarchy
+          const subdivsPerMatra = this.hierarchy.length > 1
+            ? (typeof this.hierarchy[1] === 'number' ? this.hierarchy[1] : 1)
+            : 1;
+
+          const numMatrasInSegment = lastSegmentMatras.length;
+
+          // Sort subdivisions by their current time
+          const sortedSubdivs = [...lastSegmentSubdivisions].sort((a, b) => a.realTime - b.realTime);
+
+          // Redistribute: for each matra segment, place subdivisions evenly
+          let subdivIdx = 0;
+          for (let seg = 0; seg <= numMatrasInSegment; seg++) {
+            const segStart = seg === 0
+              ? lastAnchorPulseTime
+              : lastAnchorPulseTime + seg * matraDur;
+            const segEnd = seg === numMatrasInSegment
+              ? targetEndTime
+              : lastAnchorPulseTime + (seg + 1) * matraDur;
+            const segDur = segEnd - segStart;
+            const subdivDur = segDur / subdivsPerMatra;
+
+            // Place subdivsPerMatra - 1 subdivisions in this segment
+            for (let i = 0; i < subdivsPerMatra - 1 && subdivIdx < sortedSubdivs.length; i++) {
+              const subdiv = sortedSubdivs[subdivIdx];
+              const newTime = segStart + (i + 1) * subdivDur;
+              const offset = newTime - subdiv.realTime;
+              if (Math.abs(offset) > 0.0001) {
+                this._offsetPulseDirect(subdiv, offset, true);
+              }
+              subdivIdx++;
+            }
+          }
+        }
+      }
+    }
+
+    // For matra anchor: redistribute the subdivisions in the LAST matra segment to fit the new end time
+    if (anchor === 'matra') {
+      const lastMatraPulse = lastCyclePulses[lastCyclePulses.length - 1];
+
+      // Get all pulses (including subdivisions)
+      const allPulses = this.allPulses;
+
+      // Find the index of the last matra in the full pulse array
+      const lastMatraFullIdx = allPulses.findIndex(p => p.uniqueId === lastMatraPulse.uniqueId);
+
+      // Get subdivision pulses AFTER the last matra
+      const lastSegmentSubdivisions = allPulses.slice(lastMatraFullIdx + 1).filter(p => p.lowestLayer > 0);
+
+      if (lastSegmentSubdivisions.length > 0) {
+        // Calculate even spacing for the subdivisions in the last matra segment
+        const segmentDur = targetEndTime - lastAnchorPulseTime;
+        const subdivDur = segmentDur / (lastSegmentSubdivisions.length + 1);
+
+        // Reposition the subdivisions in the last segment
+        lastSegmentSubdivisions.forEach((p, i) => {
+          const newTime = lastAnchorPulseTime + (i + 1) * subdivDur;
+          const offset = newTime - p.realTime;
+          if (Math.abs(offset) > 0.0001) {
+            this._offsetPulseDirect(p, offset, true);
+          }
+        });
+      }
+    }
+
+    // Now update the tempo to match the new total duration
+    const targetDurTot = targetEndTime - this.startTime;
+    const matrasPerCycle = typeof this.hierarchy[0] === 'number'
+      ? this.hierarchy[0]
+      : sum(this.hierarchy[0] as number[]);
+    const newTempo = 60 * matrasPerCycle * this.repetitions / targetDurTot;
+
+    // Store current real times before changing tempo using uniqueId for reliable lookup
+    const currentRealTimeMap = new Map<string, number>();
+    this.allPulses.forEach(p => {
+      currentRealTimeMap.set(p.uniqueId, p.realTime);
+    });
+
+    // Update the tempo
+    this.tempo = newTempo;
+
+    // Now recalculate the pulse structure tempos and offsets to preserve real times
+    const newCycleDur = this.cycleDur;
+    const bifurcated = Array.isArray(this.hierarchy[0]);
+
+    // Update ALL pulse structure layers, not just layer 0
+    this.pulseStructures.forEach((psLayer, layerIdx) => {
+      psLayer.forEach((ps, psIdx) => {
+        // Calculate new tempo for this PS (same for all layers)
+        const newPSTempo = 60 * matrasPerCycle / newCycleDur;
+        const newPulseDur = 60 / newPSTempo / (layerIdx === 0 ? 1 : this.hierarchy[layerIdx] as number);
+
+        // Calculate what the default start time would be at the new tempo
+        const defaultStartTime = bifurcated
+          ? this.startTime +
+            (Math.floor(psIdx / (this.hierarchy[0] as number[]).length)) * newCycleDur +
+            newCycleDur * sum((this.hierarchy[0] as number[]).slice(0, psIdx % (this.hierarchy[0] as number[]).length)) / matrasPerCycle
+          : this.startTime + psIdx * newCycleDur;
+
+        // Calculate offsets to preserve actual times using uniqueId lookup
+        const newOffsets = ps.pulses.map((pulse) => {
+          const actualTime = currentRealTimeMap.get(pulse.uniqueId);
+          if (actualTime === undefined) {
+            return 0;
+          }
+          const pulseIdx = ps.pulses.indexOf(pulse);
+          const defaultTime = defaultStartTime + pulseIdx * newPulseDur;
+          return actualTime - defaultTime;
+        });
+
+        ps.tempo = newPSTempo;
+        ps.pulseDur = newPulseDur;
+        ps.startTime = defaultStartTime;
+        ps.linearOffsets = newOffsets;
+        ps.proportionalOffsets = newOffsets.map(o => o / newPulseDur);
+      });
+    });
+
+    // Update corporeal limits to match new durTot
+    this.relCorpLims = this.propCorpLims.map(p => p * this.durTot);
+  }
+
+  /**
    * Get the multiplier for a given hierarchy layer.
    * Handles both simple numbers and complex arrays like [3, 2] -> 5
    */
@@ -2229,7 +2469,7 @@ class Meter {
     // Get the NEXT segment (the one that starts at this boundary)
     // For example, if nudging matra 4 in Tintal, adjust matras 5, 6, 7
     const nextBoundaryIdx = boundaries[boundaryIdx + 1];
-    const hasNextSegment = nextBoundaryIdx !== undefined;
+    const hasNextBoundary = nextBoundaryIdx !== undefined;
 
     let nextSegmentPulses: Pulse[] = [];
     let originalNextSegmentDur = 0;
@@ -2239,7 +2479,7 @@ class Meter {
     let originalNextPulseTimes: number[] = [];
     const originalBoundaryTime = pulse.realTime;
 
-    if (hasNextSegment) {
+    if (hasNextBoundary) {
       // Get pulses from current boundary (exclusive) to next boundary (exclusive)
       nextSegmentPulses = matraPulses.slice(currentBoundaryIdx + 1, nextBoundaryIdx);
       originalNextPulseTimes = nextSegmentPulses.map(p => p.realTime);
@@ -2251,10 +2491,30 @@ class Meter {
       if (newNextSegmentDur <= 0) {
         return false; // Would create invalid timing
       }
+    } else {
+      // Last segment of the meter - no next boundary, but there are still pulses after
+      // Get all remaining pulses after the current boundary
+      nextSegmentPulses = matraPulses.slice(currentBoundaryIdx + 1);
+      if (nextSegmentPulses.length > 0) {
+        originalNextPulseTimes = nextSegmentPulses.map(p => p.realTime);
+        // Use the last pulse's time + estimated duration as the segment end
+        const lastPulse = nextSegmentPulses[nextSegmentPulses.length - 1];
+        const avgPulseDur = (lastPulse.realTime - pulse.realTime) / nextSegmentPulses.length;
+        nextSegmentEndTime = lastPulse.realTime + avgPulseDur;
+        originalNextSegmentDur = nextSegmentEndTime - pulse.realTime;
+        newNextSegmentDur = originalNextSegmentDur - offset;
+
+        if (newNextSegmentDur <= 0) {
+          return false; // Would create invalid timing
+        }
+      }
     }
 
+    const hasNextSegment = nextSegmentPulses.length > 0;
+
     // Offset the boundary pulse itself first (use direct method to avoid recursion)
-    this._offsetPulseDirect(pulse, offset);
+    // Use override=true because segment redistribution can move pulses beyond normal limits
+    this._offsetPulseDirect(pulse, offset, true);
 
     // Reset and evenly space all pulses in the PREVIOUS segment (except the first one)
     // This removes any previous manual adjustments and creates clean even spacing
@@ -2267,7 +2527,7 @@ class Meter {
       const pulseOffset = newRelativeTime - p.realTime;
 
       if (Math.abs(pulseOffset) > 0.0001) {
-        this._offsetPulseDirect(p, pulseOffset);
+        this._offsetPulseDirect(p, pulseOffset, true);
       }
     }
 
@@ -2285,7 +2545,7 @@ class Meter {
         const pulseOffset = newRelativeTime - p.realTime;
 
         if (Math.abs(pulseOffset) > 0.0001) {
-          this._offsetPulseDirect(p, pulseOffset);
+          this._offsetPulseDirect(p, pulseOffset, true);
         }
       }
     }
