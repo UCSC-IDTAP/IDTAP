@@ -917,9 +917,6 @@ class Meter {
 
   addTimePoints(timePoints: number[], layer: number = 1) {
     timePoints = timePoints.sort((a, b) => a - b);
-    console.log('addTimePoints: input timePoints count=', timePoints.length, 'layer=', layer);
-    console.log('addTimePoints: timePoints=', timePoints.slice(0, 10), timePoints.length > 10 ? '...' : '');
-
     const lastRealTime = this.realTimes[this.realTimes.length - 1];
     if (timePoints[0] < lastRealTime) {
       throw new Error('timePoints must be greater than last realTime')
@@ -974,8 +971,6 @@ class Meter {
       summed = summed * mult;
     }
     const beatDur = this.cycleDur / summed;
-    console.log('addTimePoints: curEndTime=', curEndTime, 'summed=', summed, 'beatDur=', beatDur, 'cycleDur=', this.cycleDur);
-
     const predictedTimes: number[] = [];
     let cTime = curEndTime;
     // Generate enough predicted times to cover all timepoints
@@ -985,25 +980,19 @@ class Meter {
       predictedTimes.push(cTime);
       cTime += beatDur
     }
-    console.log('addTimePoints: predictedTimes count=', predictedTimes.length);
-    console.log('addTimePoints: predictedTimes=', predictedTimes.slice(0, 10), predictedTimes.length > 10 ? '...' : '');
-
     const idxs = findClosestIdxs(timePoints, predictedTimes);
-    console.log('addTimePoints: matched idxs=', idxs.slice(0, 10), idxs.length > 10 ? '...' : '');
 
     // Check if the last timepoint falls exactly on a cycle boundary
     // If so, it's just an end marker and shouldn't trigger growing an extra cycle
     const lastIdx = idxs[idxs.length - 1];
     const isLastOnCycleBoundary = lastIdx > 0 && lastIdx % summed === 0;
     const cycleCalcIdxs = isLastOnCycleBoundary ? idxs.slice(0, -1) : idxs;
-    console.log('addTimePoints: lastIdx=', lastIdx, 'isLastOnCycleBoundary=', isLastOnCycleBoundary);
 
     const cycleNums = cycleCalcIdxs.map(idx => {
       return Math.floor(idx / summed)
     });
     const prevPLen = this.pulseStructures[layer]
       .map(ps => ps.pulses).flat().length;
-    console.log('addTimePoints: growing cycles by', Math.max(...cycleNums) + 1, 'prevPLen=', prevPLen);
     this.growCycles(Math.max(...cycleNums) + 1);
 
     // Position pulses - exclude the last timepoint if it's on a cycle boundary
@@ -1011,26 +1000,20 @@ class Meter {
     // not for initial placement which already has correctly spaced timepoints
     // Pass override=true to allow larger offsets during initial placement (tempo may differ)
     const pulseIdxs = isLastOnCycleBoundary ? idxs.slice(0, -1) : idxs;
-    console.log('addTimePoints: positioning pulses, pulseIdxs count=', pulseIdxs.length);
     for (let l = 0; l <= layer; l++) {
       pulseIdxs.forEach((idx, i) => {
         const layerPulses = this.pulseStructures[layer]
           .map(ps => ps.pulses).flat();
         const pulse = layerPulses[prevPLen + idx];
         if (!pulse) {
-          console.log('addTimePoints: WARNING pulse not found at prevPLen+idx=', prevPLen + idx, 'layerPulses.length=', layerPulses.length);
           return;
         }
         const offset = timePoints[i] - pulse.realTime;
         if (l === pulse.lowestLayer) {
-          if (i < 5 || i === pulseIdxs.length - 1) {
-            console.log('addTimePoints: positioning pulse', i, 'idx=', idx, 'timePoint=', timePoints[i], 'pulseRealTime=', pulse.realTime, 'offset=', offset);
-          }
           this._offsetPulseDirect(pulse, offset, true)
         }
       })
     }
-    console.log('addTimePoints: done, final pulse count=', this.getMatraPulses().length);
 
     // TODO: resetTempo is causing choppy matra distribution - disabled for now
     // Recalculate tempo based on actual pulse positions
