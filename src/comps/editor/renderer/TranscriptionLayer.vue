@@ -6493,8 +6493,13 @@ export default defineComponent({
         } else {
           regionEndPxl.value = e.x;
         }
-        // Apply meter magnetization to end position before drawing
+        // Apply meter magnetization to both positions before drawing
         if (props.meterMagnetMode) {
+          const startTime = props.xScale.invert(regionStartPxl.value);
+          const snappedStartTime = meterMagnetize(startTime);
+          if (snappedStartTime !== startTime) {
+            regionStartPxl.value = props.xScale(snappedStartTime);
+          }
           const endTime = props.xScale.invert(regionEndPxl.value);
           const snappedEndTime = meterMagnetize(endTime);
           if (snappedEndTime !== endTime) {
@@ -6508,9 +6513,10 @@ export default defineComponent({
           regionEndPxl.value = undefined;
         } else {
           setUpRegion();
+          emit('update:regionStartPxl', regionStartPxl.value)
           emit('update:regionEndPxl', regionEndPxl.value)
         }
-        
+
       } else {
         const c = selBoxStartX === e.x && selBoxStartY === e.y;
         if (selBoxStartX !== undefined && selBoxStartY !== undefined && !c) {
