@@ -387,16 +387,14 @@ export default defineComponent({
 
         // Repeat vibhaga labels for each cycle
         for (let rep = 0; rep < meter.repetitions; rep++) {
-          const cycleStartTime = meter.startTime + (rep * meter.cycleDur);
-
           // Draw labels for each vibhag in this cycle
           for (let vibhagIdx = 0; vibhagIdx < vibhagCount; vibhagIdx++) {
             const vibhagLabel = meter.vibhaga[vibhagIdx];
-            const ps = topLayerStructures[vibhagIdx];
+            // Index into topLayerStructures accounts for cycle number
+            const ps = topLayerStructures[rep * vibhagCount + vibhagIdx];
 
-            // Calculate the time for this vibhag in this repetition
-            const vibhagTimeInCycle = ps.pulses[0].realTime - meter.startTime;
-            const pulseTime = cycleStartTime + vibhagTimeInCycle;
+            // Use the pulse's absolute time directly
+            const pulseTime = ps.pulses[0].realTime;
             const xPos = props.scale(pulseTime);
 
             // Vibhaga label positioned at the pulse time
