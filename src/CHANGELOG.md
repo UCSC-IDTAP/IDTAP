@@ -1,6 +1,7 @@
 # Changelog
 
 
+* fix: serial mode boundary detection and add Quantize to Meter option [31f7652] (Jon Myers)
 * fix: add phrase/vibhag labels to display settings and fix vibhag drift [84bc899] (Jon Myers)
 ### 2025-12-18
 
