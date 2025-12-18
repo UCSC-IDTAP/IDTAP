@@ -1576,18 +1576,47 @@ export default defineComponent({
     watch(insertPulses, newVal => {
       emit('update:insertPulses', newVal);
     }, { deep: true });
+    let isSnappingRegion = false;
     watch(regionStartPxl, newVal => {
+      if (isSnappingRegion) return;
       if (newVal === undefined) {
         regionStartX.value = undefined;
       } else {
-        regionStartX.value = props.xScale.invert(newVal);
+        let time = props.xScale.invert(newVal);
+        // Apply meter magnetization if enabled
+        if (props.meterMagnetMode) {
+          const snappedTime = meterMagnetize(time);
+          if (snappedTime !== time) {
+            isSnappingRegion = true;
+            time = snappedTime;
+            regionStartPxl.value = props.xScale(time);
+            // Update XAxis display with snapped position
+            emit('update:regionStartPxl', regionStartPxl.value);
+            isSnappingRegion = false;
+          }
+        }
+        regionStartX.value = time;
       }
     });
     watch(regionEndPxl, newVal => {
+      if (isSnappingRegion) return;
       if (newVal === undefined) {
         regionEndX.value = undefined;
       } else {
-        regionEndX.value = props.xScale.invert(newVal);
+        let time = props.xScale.invert(newVal);
+        // Apply meter magnetization if enabled
+        if (props.meterMagnetMode) {
+          const snappedTime = meterMagnetize(time);
+          if (snappedTime !== time) {
+            isSnappingRegion = true;
+            time = snappedTime;
+            regionEndPxl.value = props.xScale(time);
+            // Update XAxis display with snapped position
+            emit('update:regionEndPxl', regionEndPxl.value);
+            isSnappingRegion = false;
+          }
+        }
+        regionEndX.value = time;
       }
     });
     watch(regionStartX, newVal => {
@@ -6464,16 +6493,30 @@ export default defineComponent({
         } else {
           regionEndPxl.value = e.x;
         }
-        const timeDiff = Math.abs(props.xScale.invert(regionStartPxl.value) - 
+        // Apply meter magnetization to both positions before drawing
+        if (props.meterMagnetMode) {
+          const startTime = props.xScale.invert(regionStartPxl.value);
+          const snappedStartTime = meterMagnetize(startTime);
+          if (snappedStartTime !== startTime) {
+            regionStartPxl.value = props.xScale(snappedStartTime);
+          }
+          const endTime = props.xScale.invert(regionEndPxl.value);
+          const snappedEndTime = meterMagnetize(endTime);
+          if (snappedEndTime !== endTime) {
+            regionEndPxl.value = props.xScale(snappedEndTime);
+          }
+        }
+        const timeDiff = Math.abs(props.xScale.invert(regionStartPxl.value) -
           props.xScale.invert(regionEndPxl.value));
         if (timeDiff < 0.01) {
           regionStartPxl.value = undefined;
           regionEndPxl.value = undefined;
         } else {
           setUpRegion();
-          emit('update:regionEndPxl', e.x)
+          emit('update:regionStartPxl', regionStartPxl.value)
+          emit('update:regionEndPxl', regionEndPxl.value)
         }
-        
+
       } else {
         const c = selBoxStartX === e.x && selBoxStartY === e.y;
         if (selBoxStartX !== undefined && selBoxStartY !== undefined && !c) {
