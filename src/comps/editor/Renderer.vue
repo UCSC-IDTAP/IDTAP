@@ -171,7 +171,7 @@
               @moveToX='moveToX'
               @horizontalMoveGraph='horizontalMoveGraph'
               @update:editingInstIdx='$emit("update:editingInstIdx", $event)'
-              @update:currentStringIdx='currentStringIdx = $event'
+              @update:currentStringIdx='$emit("update:currentStringIdx", $event)'
               @update:trajTimePts='$emit("update:trajTimePts", $event)'
               @update:currentTime='$emit("update:currentTime", $event)'
               @update:insertPulses='$emit("update:insertPulses", $event)'

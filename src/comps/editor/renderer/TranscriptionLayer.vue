@@ -2272,7 +2272,7 @@ export default defineComponent({
           .style('opacity', '0')
           .on('mouseover', () => handleTrajMouseOver(traj, track))
           .on('mouseout', () => handleTrajMouseOut(traj, track))
-          .on('click', () => handleClickTraj(traj, track))
+          .on('click', (e: MouseEvent) => handleClickTraj(traj, track, e))
           .on('contextmenu', (e: MouseEvent) => handleTrajContextMenu(traj, track, e))
     };
 
@@ -2308,7 +2308,7 @@ export default defineComponent({
           .attr('transform', `translate(${scaledX}, ${scaledY})`)
           .on('mouseover', () => handleTrajMouseOver(traj, track))
           .on('mouseout', () => handleTrajMouseOut(traj, track))
-          .on('click', () => handleClickTraj(traj, track))
+          .on('click', (e: MouseEvent) => handleClickTraj(traj, track, e))
       }
       if (c2) {
         const x = phrase.startTime! + traj.startTime! + traj.durTot;
@@ -2324,7 +2324,7 @@ export default defineComponent({
           .attr('transform', `translate(${scaledX}, ${scaledY})`)
           .on('mouseover', () => handleTrajMouseOver(traj, track))
           .on('mouseout', () => handleTrajMouseOut(traj, track))
-          .on('click', () => handleClickTraj(traj, track))
+          .on('click', (e: MouseEvent) => handleClickTraj(traj, track, e))
       }
 
     };
@@ -2373,7 +2373,7 @@ export default defineComponent({
           .classed(`pluckShadow uId${traj.uniqueId!}`, true)
           .on('mouseover', () => handleTrajMouseOver(traj, track))
           .on('mouseout', () => handleTrajMouseOut(traj, track))
-          .on('click', () => handleClickTraj(traj, track))
+          .on('click', (e: MouseEvent) => handleClickTraj(traj, track, e))
       }
     };
     const renderDampener = (traj: Trajectory, track: number, isSecondString = false) => {
@@ -2420,7 +2420,7 @@ export default defineComponent({
           .classed(`dampenShadow uId${traj.uniqueId!}`, true)
           .on('mouseover', () => handleTrajMouseOver(traj, track))
           .on('mouseout', () => handleTrajMouseOut(traj, track))
-          .on('click', () => handleClickTraj(traj, track))
+          .on('click', (e: MouseEvent) => handleClickTraj(traj, track, e))
       })
     };
     const renderKrintin = (traj: Trajectory, track: number, isSecondString = false) => {
@@ -4110,10 +4110,20 @@ export default defineComponent({
 
     
 
-    const handleClickTraj = (traj: Trajectory, track: number) => {
+    const handleClickTraj = (traj: Trajectory, track: number, e?: MouseEvent) => {
       if (props.selectedMode === EditorMode.Meter) return;
       if (props.selectedMode === EditorMode.Trajectory) return;
-      if (props.selectedMode === EditorMode.Series) return;
+      if (props.selectedMode === EditorMode.Series) {
+        // In serial mode, process the click for trajectory insertion
+        if (e) {
+          e.stopPropagation(); // Prevent SVG click handler from also processing
+          const time = props.xScale.invert(e.offsetX);
+          const logFreq = props.yScale.invert(e.offsetY);
+          const pIdx = props.piece.phraseIdxFromTime(time, props.editingInstIdx);
+          insertNewTrajDot(time, logFreq, props.editingInstIdx, pIdx);
+        }
+        return;
+      }
       emit('update:selectedMode', EditorMode.None);
       nextTick(() => {
         selectedPhraseDivUid.value = undefined;
@@ -4978,7 +4988,91 @@ export default defineComponent({
           const closest = getClosest(logSargamVals.value, logFreq);
           return closest !== logFreq;
         })()
-      })
+      });
+
+      // Quantize to Meter option
+      contextMenuChoices.value.push({
+        text: 'Quantize to Meter',
+        action: () => {
+          const track = props.piece.trackFromTraj(traj);
+          const phrase = props.piece.phraseGrid[track][traj.phraseIdx!];
+          const isSecondString = checkIfSecondString(traj, track);
+          const stringIdx = isSecondString ? 1 : 0;
+
+          // Calculate current time of this drag dot
+          let times = [0, ...traj.durArray!.map(cumsum())];
+          const startTime = phrase.startTime! + traj.startTime!;
+          times = times.map(t => t * traj.durTot + startTime);
+          const currentTime = times[idx];
+
+          // Get magnetized time
+          const newTime = meterMagnetize(currentTime);
+          if (newTime === currentTime) return; // Already on pulse
+
+          // Calculate time delta
+          const delta = newTime - currentTime;
+
+          // Track affected trajectories for refresh
+          const affectedTrajs: Trajectory[] = [traj];
+
+          // Handle boundary cases (first/last drag dot)
+          if (idx === 0) {
+            // Moving start of trajectory - affects previous trajectory's end
+            const trajectories = getTrajectoryArrayForString(phrase, track, stringIdx);
+            const trajIndexInString = trajectories.findIndex(t => t.uniqueId === traj.uniqueId);
+            if (trajIndexInString > 0) {
+              const prevTraj = trajectories[trajIndexInString - 1];
+              prevTraj.durTot += delta; // Extend/shrink previous traj
+              affectedTrajs.push(prevTraj);
+            }
+            // Adjust this trajectory
+            traj.startTime! += delta;
+            traj.durTot -= delta;
+          } else if (idx === traj.durArray!.length) {
+            // Moving end of trajectory - affects next trajectory's start
+            const trajectories = getTrajectoryArrayForString(phrase, track, stringIdx);
+            const trajIndexInString = trajectories.findIndex(t => t.uniqueId === traj.uniqueId);
+            if (trajIndexInString < trajectories.length - 1) {
+              const nextTraj = trajectories[trajIndexInString + 1];
+              nextTraj.startTime! += delta;
+              nextTraj.durTot -= delta;
+              affectedTrajs.push(nextTraj);
+            }
+            // Adjust this trajectory
+            traj.durTot += delta;
+          } else {
+            // Moving internal point - only affects durArray
+            const newDurArray = calculateNewDurArray(phrase, traj, idx, newTime);
+            traj.durArray = newDurArray;
+          }
+
+          // Update drag dot position
+          const x = props.xScale(newTime);
+          d3.select(`#dragDot${traj.uniqueId}_${idx}`)
+            .attr('cx', x);
+
+          // Refresh affected trajectories
+          phrase.reset();
+          affectedTrajs.forEach(t => {
+            refreshTraj(t);
+          });
+
+          emit('unsavedChanges', true);
+          contextMenuClosed.value = true;
+        },
+        enabled: (() => {
+          // Get current time of drag dot
+          const track = props.piece.trackFromTraj(traj);
+          const phrase = props.piece.phraseGrid[track][traj.phraseIdx!];
+          let times = [0, ...traj.durArray!.map(cumsum())];
+          const startTime = phrase.startTime! + traj.startTime!;
+          times = times.map(t => t * traj.durTot + startTime);
+          const currentTime = times[idx];
+
+          // Enable if: within meter AND not already on a pulse
+          return timeWithinMeter(currentTime) && !isOnMeterPulse(currentTime);
+        })()
+      });
     };
 
     const handleTrajMouseOver = (traj: Trajectory, track: number) => {
@@ -6455,6 +6549,18 @@ export default defineComponent({
       return out;
     }
 
+    const isOnMeterPulse = (time: number): boolean => {
+      const epsilon = 1e-6;
+      let onPulse = false;
+      props.piece.meters.forEach(meter => {
+        const corpTimes = meter.realCorpTimes;
+        if (corpTimes.some(t => Math.abs(t - time) < epsilon)) {
+          onPulse = true;
+        }
+      });
+      return onPulse;
+    };
+
     const insertPulse = (time: number) => {
       let inserted = false;
       if (!timeWithinMeter(time)) {
@@ -6578,11 +6684,21 @@ export default defineComponent({
     }
  
     const handleClick = (e: MouseEvent) => {
+      // In serial mode, skip if click was on a trajectory element (handled by handleClickTraj)
+      const target = e.target as Element;
+      if (props.selectedMode === EditorMode.Series) {
+        const isTrajElement = target.classList.contains('trajShadow') ||
+          target.classList.contains('traj') ||
+          target.classList.contains('pluckShadow') ||
+          target.classList.contains('dampenShadow');
+        if (isTrajElement) return;
+      }
+
       let time = props.xScale.invert(e.offsetX);
       const logFreq = props.yScale.invert(e.offsetY);
       const track = props.editingInstIdx;
       const pIdx = props.piece.phraseIdxFromTime(time, track);
-      
+
       if (props.selectedMode === EditorMode.Chikari) {
         insertNewChikari(time, track, pIdx);
       } else if (props.selectedMode === EditorMode.PhraseDiv) {
@@ -6711,7 +6827,32 @@ export default defineComponent({
         tIdx = phrase.trajIdxFromTime(time, stringIdx)!;
       }
       let traj = phrase.trajectoryGrid[stringIdx][tIdx];
-      if (traj.id === 12) {
+
+      // In serial mode, if clicking at a trajectory boundary (start or end),
+      // allow placing a point there (for continuing from trajectory endpoints)
+      const epsilon = 1e-6; // Larger epsilon to handle meter magnet precision
+      const phraseTime = time - phrase.startTime!;
+      const atTrajStart = Math.abs(phraseTime - traj.startTime!) < epsilon;
+
+      // Check if we're at the end of the CURRENT trajectory
+      // (handles case where floating point drift causes trajIdxFromTime to return
+      // the melodic trajectory whose endpoint we're clicking on)
+      const trajEnd = traj.startTime! + traj.durTot;
+      const atTrajEnd = Math.abs(phraseTime - trajEnd) < epsilon;
+
+      // Also check if we're at the end of the previous trajectory
+      let atPrevTrajEnd = false;
+      if (tIdx > 0) {
+        const prevTraj = phrase.trajectoryGrid[stringIdx][tIdx - 1];
+        const prevTrajEnd = prevTraj.startTime! + prevTraj.durTot;
+        atPrevTrajEnd = Math.abs(phraseTime - prevTrajEnd) < epsilon;
+      }
+
+      const isSerialModeStart = props.selectedMode === EditorMode.Series &&
+                                 trajTimePts.value.length === 0;
+      const atBoundary = atTrajStart || atTrajEnd || atPrevTrajEnd;
+
+      if (traj.id === 12 || (isSerialModeStart && atBoundary && traj.id !== 12)) {
         // if close, attach to prev traj
         if (tIdx > 0) {
           const prevTraj = phrase.trajectoryGrid[stringIdx][tIdx - 1];
@@ -6746,12 +6887,13 @@ export default defineComponent({
           if (!(c1 && c2 && c3)) {
             setIt = false;
           }
+          // Also check minimum time difference from existing points
+          const diffs = trajTimePts.value.map(ttp => {
+            return Math.abs(ttp.time - time)
+          });
+          const minDiff = Math.min(...diffs);
+          setIt = setIt && minDiff > minTrajDur;
         }
-        const diffs = trajTimePts.value.map(ttp => {
-          return Math.abs(ttp.time - time)
-        });
-        const minDiff = Math.min(...diffs);
-        setIt = minDiff > minTrajDur;
         if (setIt) {
           const startTime = phrase.startTime! + traj.startTime!;
           if (time - startTime < minAttachTrajDur.value) {
