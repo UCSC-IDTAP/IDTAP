@@ -6493,7 +6493,15 @@ export default defineComponent({
         } else {
           regionEndPxl.value = e.x;
         }
-        const timeDiff = Math.abs(props.xScale.invert(regionStartPxl.value) - 
+        // Apply meter magnetization to end position before drawing
+        if (props.meterMagnetMode) {
+          const endTime = props.xScale.invert(regionEndPxl.value);
+          const snappedEndTime = meterMagnetize(endTime);
+          if (snappedEndTime !== endTime) {
+            regionEndPxl.value = props.xScale(snappedEndTime);
+          }
+        }
+        const timeDiff = Math.abs(props.xScale.invert(regionStartPxl.value) -
           props.xScale.invert(regionEndPxl.value));
         if (timeDiff < 0.01) {
           regionStartPxl.value = undefined;
