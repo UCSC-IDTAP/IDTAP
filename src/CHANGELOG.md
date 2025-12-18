@@ -1,6 +1,11 @@
 # Changelog
 
 
+* fix: snap both region start and end in Option+drag [8b0093f] (Jon Myers)
+* fix: apply meter snap inline in dragEnd before drawing region [8591c29] (Jon Myers)
+* fix: emit snapped regionEndPxl value in Option+drag [e95ba82] (Jon Myers)
+* fix: emit snapped region values to update XAxis display [25fb3d9] (Jon Myers)
+* feat: snap region selection to meter pulses when meter magnet is on [bc22d1f] (Jon Myers)
 * fix: only exit serial mode when next trajectory is melodic [5db8574] (Jon Myers)
 * fix: improve meter boundary click detection and serial mode exit [2f13004] (Jon Myers)
 * fix: disable pointer-events on meter elements when not in meter mode [b08396a] (Jon Myers)
