@@ -653,6 +653,19 @@ export default defineComponent({
       "uniqueId": "ffa38001-f592-4778-a91e-c4ef5c99b081",
       "scaleSystem": ScaleSystem.Sargam,
       "timingDisplay": TimingDisplay.ExcerptTime,
+      "visibility": {
+        "spectrogram": true,
+        "melograph": true,
+        "sargam": true,
+        "sargamLines": true,
+        "bols": true,
+        "transcription": true,
+        "meter": true,
+        "phonemes": true,
+        "phraseDivs": true,
+        "phraseLabels": true,
+        "vibhagLabels": false,
+      },
     } as DisplaySettings;
 
     const intensityPower = ref(1);
@@ -1119,7 +1132,9 @@ export default defineComponent({
         transcription: transcriptionToggleProxy.value,
         meter: meterToggleProxy.value,
         phonemes: phonemesToggleProxy.value,
-        phraseDivs: phraseDivsToggleProxy.value
+        phraseDivs: phraseDivsToggleProxy.value,
+        phraseLabels: phraseLabelsToggleProxy.value,
+        vibhagLabels: vibhagLabelsToggleProxy.value,
       }
       const uId = id ? id : uuidv4();
       return {
@@ -1212,6 +1227,12 @@ export default defineComponent({
         meterToggleProxy.value = s.visibility.meter;
         phonemesToggleProxy.value = s.visibility.phonemes;
         phraseDivsToggleProxy.value = s.visibility.phraseDivs;
+        if (s.visibility.phraseLabels !== undefined) {
+          phraseLabelsToggleProxy.value = s.visibility.phraseLabels;
+        }
+        if (s.visibility.vibhagLabels !== undefined) {
+          vibhagLabelsToggleProxy.value = s.visibility.vibhagLabels;
+        }
       }
       updateIntensityAndColorMap();
 

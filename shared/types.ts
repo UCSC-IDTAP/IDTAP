@@ -942,6 +942,8 @@ type DisplaySettings = {
     meter: boolean,
     phonemes: boolean,
     phraseDivs: boolean,
+    phraseLabels: boolean,
+    vibhagLabels: boolean,
   }
 }
 
