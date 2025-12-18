@@ -1332,6 +1332,8 @@ export default defineComponent({
       if (mode === EditorMode.None) {
         const svg = d3.select(tranSvg.value);
         svg.attr('cursor', 'default');
+        // Disable pointer events on meter elements so clicks pass through to drag dots etc.
+        d3.selectAll('.metricGrid').style('pointer-events', 'none');
         if (meterHovering !== undefined) {
           d3.selectAll(`.metricGrid.meterId${meterHovering.uniqueId}`)
             .attr('cursor', 'default')
@@ -1347,6 +1349,8 @@ export default defineComponent({
         d3.select(tranSvg.value).attr('cursor', 'crosshair');
       } else if (mode === EditorMode.Meter) {
         d3.select(tranSvg.value).attr('cursor', 's-resize');
+        // Re-enable pointer events on meter elements for meter mode interaction
+        d3.selectAll('.metricGrid').style('pointer-events', 'auto');
         if (meterHovering !== undefined) {
           d3.selectAll(`.metricGrid.meterId${meterHovering.uniqueId}`)
             .attr('cursor', 'pointer')
@@ -2786,6 +2790,9 @@ export default defineComponent({
           [0, props.yScale(logMax.value)]
         ])
         const g = d3.select('.meterG');
+        // Disable pointer events on meter elements when not in meter mode
+        // so clicks pass through to underlying elements (drag dots, etc.)
+        const pointerEvents = props.selectedMode === EditorMode.Meter ? 'auto' : 'none';
         const p = g.append('path')
           .classed('metricGrid', true)
           .classed(`layer${pulse.lowestLayer}`, true)
@@ -2796,6 +2803,7 @@ export default defineComponent({
           .attr('d', line)
           .attr('opacity', opacity)
           .attr('transform', `translate(${x},0)`)
+          .style('pointer-events', pointerEvents)
           
         const pOverlay = g.append('path')
           .classed('metricGrid', true)
@@ -2808,6 +2816,7 @@ export default defineComponent({
           .attr('stroke-width', '6px')
           .attr('d', line)
           .attr('transform', `translate(${x},0)`)
+          .style('pointer-events', pointerEvents)
           .on('mouseover', () => {
             if (props.selectedMode === EditorMode.Meter) {
               handleMouseOverMeter(meter, pulse)
@@ -6721,19 +6730,16 @@ export default defineComponent({
       } else if (props.selectedMode === EditorMode.None) {
         const target = e.target! as HTMLElement;
         // Background/non-interactive elements that should trigger deselection
+        // Note: metricGrid/overlay have pointer-events: none when not in meter mode,
+        // so clicks pass through them and won't reach this check
         const backgroundClasses = [
           'tranSvg',
           'sargamLine',
           'sargamLabel',
           'vowelLabel',
-          'consonantLabel',
-          // Meter line elements
-          'metricGrid',
-          'overlay'
+          'consonantLabel'
         ];
-        // Check for background classes or track groups (track0, track1, etc.)
-        const isBackground = backgroundClasses.some(c => target.classList.contains(c)) ||
-                             Array.from(target.classList).some(c => c.startsWith('track'));
+        const isBackground = backgroundClasses.some(c => target.classList.contains(c));
         if (isBackground && !shifted.value) {
           handleEscape({ includeRegion: false });
         }
