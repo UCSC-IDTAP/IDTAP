@@ -6500,7 +6500,7 @@ export default defineComponent({
           regionEndPxl.value = undefined;
         } else {
           setUpRegion();
-          emit('update:regionEndPxl', e.x)
+          emit('update:regionEndPxl', regionEndPxl.value)
         }
         
       } else {
