@@ -1,6 +1,9 @@
 # Changelog
 
 
+* fix: improve background click deselection in EditorMode.None [5c040ae] (Jon Myers)
+* fix: allow trajectory mode to start at melodic boundaries with meter magnet [dd2c989] (Jon Myers)
+* fix: serial mode trajectory insertion across multiple silence regions [a900ac4] (Jon Myers)
 * fix: serial mode boundary detection and add Quantize to Meter option [31f7652] (Jon Myers)
 * fix: add phrase/vibhag labels to display settings and fix vibhag drift [84bc899] (Jon Myers)
 ### 2025-12-18
