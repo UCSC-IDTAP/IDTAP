@@ -1854,8 +1854,9 @@ export default defineComponent({
       const trajs = phrase.trajectoryGrid[stringIdx];
       const silentTraj = phrase.trajectoryGrid[stringIdx][tIdx];
       const st = phrase.startTime! + silentTraj.startTime!
-      const startsEqual = times[0] === st;
-      const endsEqual = times[times.length - 1] === st + silentTraj.durTot;
+      const epsilon = 1e-10; // Tolerance for floating point comparison
+      const startsEqual = Math.abs(times[0] - st) < epsilon;
+      const endsEqual = Math.abs(times[times.length - 1] - (st + silentTraj.durTot)) < epsilon;
       
       // Prevent negative durations by validating bounds
       if (durTot > silentTraj.durTot) {
@@ -1887,7 +1888,7 @@ export default defineComponent({
       } else { // if replaces internal portion of silent traj
         const firstDur = times[0] - st;
         const lastDur = (st + silentTraj.durTot) - times[times.length - 1];
-        
+
         // Validate that splitting doesn't create negative durations
         if (firstDur < 0) {
           console.error(`Would create negative firstDur: ${firstDur}`);
@@ -1897,7 +1898,7 @@ export default defineComponent({
           console.error(`Would create negative lastDur: ${lastDur}`);
           return;
         }
-        
+
         silentTraj.durTot = firstDur;
         const lstObj: {
           id: number,
