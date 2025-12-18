@@ -6031,7 +6031,17 @@ export default defineComponent({
       let newLogFreq = traj.logFreqs.length > idx ? traj.logFreqs[idx] : 
         traj.logFreqs[idx - 1];
       if (dir === 'left') {
-        newTime = constrainTime(curTime - amt, idx);
+        // If meter magnet mode is on, move to previous pulse instead of fixed amount
+        if (props.meterMagnetMode) {
+          const prevPulse = getAdjacentMeterPulse(curTime, 'left');
+          if (prevPulse !== undefined) {
+            newTime = constrainTime(prevPulse, idx);
+          } else {
+            newTime = constrainTime(curTime - amt, idx);
+          }
+        } else {
+          newTime = constrainTime(curTime - amt, idx);
+        }
         const x = props.xScale(newTime);
         d3.select(`#dragDot${traj.uniqueId}_${idx}`)
           .attr('cx', x);
@@ -6063,7 +6073,17 @@ export default defineComponent({
           }
         }
       } else if (dir === 'right') {
-        newTime = constrainTime(curTime + amt, idx);
+        // If meter magnet mode is on, move to next pulse instead of fixed amount
+        if (props.meterMagnetMode) {
+          const nextPulse = getAdjacentMeterPulse(curTime, 'right');
+          if (nextPulse !== undefined) {
+            newTime = constrainTime(nextPulse, idx);
+          } else {
+            newTime = constrainTime(curTime + amt, idx);
+          }
+        } else {
+          newTime = constrainTime(curTime + amt, idx);
+        }
         const x = props.xScale(newTime);
         d3.select(`#dragDot${traj.uniqueId}_${idx}`)
           .attr('cx', x);
@@ -6844,6 +6864,36 @@ export default defineComponent({
         outTime = time
       }
       return outTime
+    };
+
+    // Find the next or previous meter pulse from the given time
+    const getAdjacentMeterPulse = (time: number, direction: 'left' | 'right'): number | undefined => {
+      let result: number | undefined = undefined;
+      const epsilon = 1e-6; // Small tolerance for "at pulse" detection
+      props.piece.meters.forEach(meter => {
+        const corpTimes = meter.realCorpTimes;
+        const start = corpTimes[0];
+        const end = corpTimes[corpTimes.length - 1];
+        if (time >= start - epsilon && time <= end + epsilon) {
+          if (direction === 'right') {
+            // Find first pulse strictly greater than current time
+            const nextPulse = corpTimes.find(t => t > time + epsilon);
+            if (nextPulse !== undefined && (result === undefined || nextPulse < result)) {
+              result = nextPulse;
+            }
+          } else {
+            // Find last pulse strictly less than current time
+            const prevPulses = corpTimes.filter(t => t < time - epsilon);
+            if (prevPulses.length > 0) {
+              const prevPulse = prevPulses[prevPulses.length - 1];
+              if (result === undefined || prevPulse > result) {
+                result = prevPulse;
+              }
+            }
+          }
+        }
+      });
+      return result;
     };
 
     const insertNewTrajDot = (
