@@ -6792,10 +6792,10 @@ export default defineComponent({
     };
 
     const insertNewTrajDot = (
-      time: number, 
-      logFreq: number, 
-      track: number, 
-      pIdx: number, 
+      time: number,
+      logFreq: number,
+      track: number,
+      pIdx: number,
       atPhraseDiv: boolean = false
     ) => {
       if (props.meterMagnetMode) {
@@ -6881,7 +6881,10 @@ export default defineComponent({
         }
         let setIt = true;
         if (trajTimePts.value.length > 0) {
-          const c1 = trajTimePts.value[0].tIdx === tIdx;
+          // For serial mode on silence, allow spanning multiple silence trajectories
+          // (tIdx check only matters for adding to existing melodic trajectories)
+          const isSerialOnSilence = props.selectedMode === EditorMode.Series && traj.id === 12;
+          const c1 = isSerialOnSilence || trajTimePts.value[0].tIdx === tIdx;
           const c2 = trajTimePts.value[0].pIdx === pIdx;
           const c3 = trajTimePts.value[0].track === track;
           if (!(c1 && c2 && c3)) {
@@ -6901,11 +6904,17 @@ export default defineComponent({
           } else if (startTime + traj.durTot - time < minAttachTrajDur.value) {
             time = startTime + traj.durTot
           }
+          // If starting serial mode at the END of a melodic trajectory,
+          // use the next trajectory index (should be silence) for insertion
+          let recordTIdx = tIdx;
+          if (isSerialModeStart && atTrajEnd && traj.id !== 12) {
+            recordTIdx = tIdx + 1;
+          }
           const tpObj = {
             time,
-            logFreq, 
+            logFreq,
             pIdx,
-            tIdx,
+            tIdx: recordTIdx,
             track,
             stringIdx
           };

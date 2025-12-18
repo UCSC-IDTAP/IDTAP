@@ -413,3 +413,128 @@ test('constructor fills missing Bol Alap categorization', () => {
   expect(phrase.categorizationGrid[0].Elaboration['Bol Alap']).toBe(false);
 });
 
+/* ------------------------------------------------------------------
+   Serial Mode Trajectory Insertion Tests
+   These test edge cases for trajIdxFromTime when inserting new
+   trajectories at boundaries between melodic and silence regions
+------------------------------------------------------------------ */
+
+test('trajIdxFromTime returns correct index at melodic-silence boundary', () => {
+  // Setup: melodic trajectory followed by silence
+  const melodic = new Trajectory({
+    id: 1,
+    durTot: 1.0,
+    pitches: [new Pitch()]
+  });
+  const silence = new Trajectory({
+    id: 12,
+    durTot: 1.0,
+    pitches: []
+  });
+  const phrase = new Phrase({
+    trajectories: [melodic, silence],
+    startTime: 0
+  });
+  phrase.reset();
+
+  // Time at exact boundary (end of melodic = start of silence)
+  // Should return the silence trajectory (index 1) since it's exclusive at end
+  const idxAtBoundary = phrase.trajIdxFromTime(1.0);
+  expect(idxAtBoundary).toBe(1);
+
+  // Time just before boundary should return melodic
+  const idxBeforeBoundary = phrase.trajIdxFromTime(0.999);
+  expect(idxBeforeBoundary).toBe(0);
+
+  // Time in middle of silence should return silence
+  const idxInSilence = phrase.trajIdxFromTime(1.5);
+  expect(idxInSilence).toBe(1);
+});
+
+test('trajIdxFromTime handles multiple adjacent silence trajectories', () => {
+  // Setup: melodic followed by two silence trajectories
+  const melodic = new Trajectory({
+    id: 1,
+    durTot: 1.0,
+    pitches: [new Pitch()]
+  });
+  const silence1 = new Trajectory({
+    id: 12,
+    durTot: 0.5,
+    pitches: []
+  });
+  const silence2 = new Trajectory({
+    id: 12,
+    durTot: 0.5,
+    pitches: []
+  });
+  const phrase = new Phrase({
+    trajectories: [melodic, silence1, silence2],
+    startTime: 0
+  });
+  phrase.reset();
+
+  // Time in first silence
+  expect(phrase.trajIdxFromTime(1.2)).toBe(1);
+
+  // Time at boundary between silences
+  expect(phrase.trajIdxFromTime(1.5)).toBe(2);
+
+  // Time in second silence
+  expect(phrase.trajIdxFromTime(1.7)).toBe(2);
+});
+
+test('trajIdxFromTime with stringIdx for polyphonic instruments', () => {
+  // Setup phrase with trajectoryGrid
+  const melodic = new Trajectory({
+    id: 1,
+    durTot: 1.0,
+    pitches: [new Pitch()]
+  });
+  const silence = new Trajectory({
+    id: 12,
+    durTot: 1.0,
+    pitches: []
+  });
+  const phrase = new Phrase({
+    trajectories: [melodic, silence],
+    startTime: 0
+  });
+  phrase.reset();
+
+  // Ensure trajectoryGrid[0] has the trajectories
+  expect(phrase.trajectoryGrid[0].length).toBe(2);
+
+  // Should work with explicit stringIdx
+  expect(phrase.trajIdxFromTime(0.5, 0)).toBe(0);
+  expect(phrase.trajIdxFromTime(1.5, 0)).toBe(1);
+});
+
+test('trajectory boundary detection with floating point precision', () => {
+  // Setup: test boundary detection handles floating point imprecision
+  const melodic = new Trajectory({
+    id: 1,
+    durTot: 0.09641738752159412, // Realistic meter-magnetized duration
+    pitches: [new Pitch()]
+  });
+  const silence = new Trajectory({
+    id: 12,
+    durTot: 1.0,
+    pitches: []
+  });
+  const phrase = new Phrase({
+    trajectories: [melodic, silence],
+    startTime: 30.556379681832524
+  });
+  phrase.reset();
+
+  // Time with slight floating point offset should still find correct trajectory
+  const melodicEnd = 30.556379681832524 + 0.09641738752159412;
+  const idxAtEnd = phrase.trajIdxFromTime(melodicEnd);
+  expect(idxAtEnd).toBe(1); // Should return silence, not throw
+
+  // Slightly before end
+  const idxBeforeEnd = phrase.trajIdxFromTime(melodicEnd - 1e-9);
+  expect(idxBeforeEnd).toBe(0);
+});
+

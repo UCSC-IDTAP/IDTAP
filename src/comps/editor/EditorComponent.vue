@@ -1836,7 +1836,6 @@ export default defineComponent({
         endConsonant: tsp.endConsonant,
       };
       const pIdx = this.trajTimePts[0].pIdx;
-      const tIdx = this.trajTimePts[0].tIdx;
       const track = this.trajTimePts[0].track;
       const stringIdx = this.trajTimePts[0].stringIdx ?? 0;
       const phrase = this.piece.phraseGrid[track][pIdx];
@@ -1845,79 +1844,130 @@ export default defineComponent({
         trajObj.instrumentation = this.piece.instrumentation[track];
       }
       const newTraj = new Trajectory(trajObj);
-      
+
       // Ensure trajectoryGrid exists for this string
       if (!phrase.trajectoryGrid[stringIdx]) {
         phrase.trajectoryGrid[stringIdx] = [];
       }
-      
+
       const trajs = phrase.trajectoryGrid[stringIdx];
-      const silentTraj = phrase.trajectoryGrid[stringIdx][tIdx];
-      const st = phrase.startTime! + silentTraj.startTime!
-      const epsilon = 1e-10; // Tolerance for floating point comparison
-      const startsEqual = Math.abs(times[0] - st) < epsilon;
-      const endsEqual = Math.abs(times[times.length - 1] - (st + silentTraj.durTot)) < epsilon;
-      
-      // Prevent negative durations by validating bounds
-      if (durTot > silentTraj.durTot) {
-        console.error(`Cannot insert trajectory with duration ${durTot} into silent trajectory with duration ${silentTraj.durTot}`);
+
+      // Recalculate tIdx from start time (stored tIdx may be stale due to previous insertions)
+      const startTime = times[0];
+      let tIdx: number;
+      try {
+        tIdx = phrase.trajIdxFromTime(startTime, stringIdx);
+      } catch (e) {
+        console.error('Could not find trajectory at start time:', startTime);
         return;
       }
-      
-      if (startsEqual && endsEqual) { // if replaces entire silent traj
-        trajs[tIdx] = newTraj;
-        phrase.reset();
-      } else if (startsEqual) { // if replaces left side of silent traj
-        const remainingDur = silentTraj.durTot - durTot;
-        if (remainingDur < 0) {
-          console.error(`Would create negative duration: ${remainingDur}`);
-          return;
-        }
-        silentTraj.durTot = remainingDur;
-        trajs.splice(tIdx, 0, newTraj);
-        phrase.reset();
-      } else if (endsEqual) { // if replaces right side of silent traj
-        const remainingDur = silentTraj.durTot - durTot;
-        if (remainingDur < 0) {
-          console.error(`Would create negative duration: ${remainingDur}`);
-          return;
-        }
-        silentTraj.durTot = remainingDur;
-        phrase.trajectoryGrid[stringIdx].splice(tIdx + 1, 0, newTraj);
-        phrase.reset();
-      } else { // if replaces internal portion of silent traj
-        const firstDur = times[0] - st;
-        const lastDur = (st + silentTraj.durTot) - times[times.length - 1];
 
-        // Validate that splitting doesn't create negative durations
-        if (firstDur < 0) {
-          console.error(`Would create negative firstDur: ${firstDur}`);
+      // If we landed on a melodic trajectory, check if we're at its end boundary
+      // and should use the next trajectory (silence) instead
+      const boundaryEpsilon = 1e-6;
+      let startTraj = trajs[tIdx];
+      if (startTraj.id !== 12) {
+        const trajEnd = phrase.startTime! + startTraj.startTime! + startTraj.durTot;
+        if (Math.abs(startTime - trajEnd) < boundaryEpsilon) {
+          // We're at the end of a melodic trajectory, use the next one
+          tIdx = tIdx + 1;
+          if (tIdx >= trajs.length || trajs[tIdx].id !== 12) {
+            console.error('No silence trajectory after melodic trajectory at boundary');
+            return;
+          }
+        } else {
+          console.error('Start time falls inside melodic trajectory, not at boundary');
           return;
         }
-        if (lastDur < 0) {
-          console.error(`Would create negative lastDur: ${lastDur}`);
-          return;
-        }
-
-        silentTraj.durTot = firstDur;
-        const lstObj: {
-          id: number,
-          pitches: Pitch[],
-          durTot: number,
-          fundID12: number,
-          instrumentation?: Instrument
-        } = {
-          id: 12,
-          pitches: [],
-          durTot: lastDur,
-          fundID12: this.piece.raga.fundamental
-        };
-        lstObj.instrumentation = this.piece.instrumentation[track];
-        const lastSilentTraj = new Trajectory(lstObj);
-        phrase.trajectoryGrid[stringIdx].splice(tIdx + 1, 0, newTraj);
-        phrase.trajectoryGrid[stringIdx].splice(tIdx + 2, 0, lastSilentTraj);
-        phrase.reset();
       }
+
+      const startSilentTraj = phrase.trajectoryGrid[stringIdx][tIdx];
+      const st = phrase.startTime! + startSilentTraj.startTime!;
+      const epsilon = 1e-10; // Tolerance for floating point comparison
+
+      // Find the end trajectory index - the trajectory containing the end time
+      const endTime = times[times.length - 1];
+      const endPhraseTime = endTime - phrase.startTime!;
+      let endTIdx = tIdx;
+      for (let i = tIdx; i < trajs.length; i++) {
+        const t = trajs[i];
+        const tEnd = t.startTime! + t.durTot;
+        if (endPhraseTime <= tEnd + epsilon) {
+          endTIdx = i;
+          break;
+        }
+      }
+
+      const endSilentTraj = trajs[endTIdx];
+      const endSt = phrase.startTime! + endSilentTraj.startTime!;
+
+      // Check boundaries against start and end trajectories
+      const startsEqual = Math.abs(times[0] - st) < epsilon;
+      const endsEqual = Math.abs(endTime - (endSt + endSilentTraj.durTot)) < epsilon;
+
+      // Verify all trajectories between start and end are silence
+      for (let i = tIdx; i <= endTIdx; i++) {
+        if (trajs[i].id !== 12) {
+          console.error(`Cannot insert trajectory: non-silence trajectory at index ${i}`);
+          return;
+        }
+      }
+
+      // Calculate durations for the silence portions to keep
+      const firstDur = times[0] - st;
+      const lastDur = (endSt + endSilentTraj.durTot) - endTime;
+
+      // Validate durations
+      if (firstDur < -epsilon) {
+        console.error(`Would create negative firstDur: ${firstDur}`);
+        return;
+      }
+      if (lastDur < -epsilon) {
+        console.error(`Would create negative lastDur: ${lastDur}`);
+        return;
+      }
+
+      // Clamp small negative values to 0
+      const clampedFirstDur = Math.max(0, firstDur);
+      const clampedLastDur = Math.max(0, lastDur);
+
+      // Remove all trajectories from tIdx to endTIdx (inclusive)
+      const numToRemove = endTIdx - tIdx + 1;
+      trajs.splice(tIdx, numToRemove);
+
+      // Build list of trajectories to insert
+      const toInsert: Trajectory[] = [];
+
+      // Add leading silence if needed
+      if (clampedFirstDur > epsilon) {
+        const firstSilentObj = {
+          id: 12,
+          pitches: [] as Pitch[],
+          durTot: clampedFirstDur,
+          fundID12: this.piece.raga.fundamental,
+          instrumentation: this.piece.instrumentation[track]
+        };
+        toInsert.push(new Trajectory(firstSilentObj));
+      }
+
+      // Add the new melodic trajectory
+      toInsert.push(newTraj);
+
+      // Add trailing silence if needed
+      if (clampedLastDur > epsilon) {
+        const lastSilentObj = {
+          id: 12,
+          pitches: [] as Pitch[],
+          durTot: clampedLastDur,
+          fundID12: this.piece.raga.fundamental,
+          instrumentation: this.piece.instrumentation[track]
+        };
+        toInsert.push(new Trajectory(lastSilentObj));
+      }
+
+      // Insert all trajectories at once
+      trajs.splice(tIdx, 0, ...toInsert);
+      phrase.reset();
       
       const r = this.$refs.renderer as RendererType;
       const tLayer = r.transcriptionLayer as TLayerType;
