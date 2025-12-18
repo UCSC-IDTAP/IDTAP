@@ -1,6 +1,7 @@
 # Changelog
 
 
+* feat: snap drag dot arrow key nudge to meter pulses [d55645f] (Jon Myers)
 * fix: snap both region start and end in Option+drag [8b0093f] (Jon Myers)
 * fix: apply meter snap inline in dragEnd before drawing region [8591c29] (Jon Myers)
 * fix: emit snapped regionEndPxl value in Option+drag [e95ba82] (Jon Myers)
