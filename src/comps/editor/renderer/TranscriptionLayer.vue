@@ -1576,18 +1576,43 @@ export default defineComponent({
     watch(insertPulses, newVal => {
       emit('update:insertPulses', newVal);
     }, { deep: true });
+    let isSnappingRegion = false;
     watch(regionStartPxl, newVal => {
+      if (isSnappingRegion) return;
       if (newVal === undefined) {
         regionStartX.value = undefined;
       } else {
-        regionStartX.value = props.xScale.invert(newVal);
+        let time = props.xScale.invert(newVal);
+        // Apply meter magnetization if enabled
+        if (props.meterMagnetMode) {
+          const snappedTime = meterMagnetize(time);
+          if (snappedTime !== time) {
+            isSnappingRegion = true;
+            time = snappedTime;
+            regionStartPxl.value = props.xScale(time);
+            isSnappingRegion = false;
+          }
+        }
+        regionStartX.value = time;
       }
     });
     watch(regionEndPxl, newVal => {
+      if (isSnappingRegion) return;
       if (newVal === undefined) {
         regionEndX.value = undefined;
       } else {
-        regionEndX.value = props.xScale.invert(newVal);
+        let time = props.xScale.invert(newVal);
+        // Apply meter magnetization if enabled
+        if (props.meterMagnetMode) {
+          const snappedTime = meterMagnetize(time);
+          if (snappedTime !== time) {
+            isSnappingRegion = true;
+            time = snappedTime;
+            regionEndPxl.value = props.xScale(time);
+            isSnappingRegion = false;
+          }
+        }
+        regionEndX.value = time;
       }
     });
     watch(regionStartX, newVal => {
