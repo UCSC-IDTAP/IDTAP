@@ -1590,6 +1590,8 @@ export default defineComponent({
             isSnappingRegion = true;
             time = snappedTime;
             regionStartPxl.value = props.xScale(time);
+            // Update XAxis display with snapped position
+            emit('update:regionStartPxl', regionStartPxl.value);
             isSnappingRegion = false;
           }
         }
@@ -1609,6 +1611,8 @@ export default defineComponent({
             isSnappingRegion = true;
             time = snappedTime;
             regionEndPxl.value = props.xScale(time);
+            // Update XAxis display with snapped position
+            emit('update:regionEndPxl', regionEndPxl.value);
             isSnappingRegion = false;
           }
         }
