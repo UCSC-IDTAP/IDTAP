@@ -6720,15 +6720,21 @@ export default defineComponent({
 
       } else if (props.selectedMode === EditorMode.None) {
         const target = e.target! as HTMLElement;
-        const classes = [
-          'tranSvg', 
-          'sargamLine', 
-          'sargamLabel', 
+        // Background/non-interactive elements that should trigger deselection
+        const backgroundClasses = [
+          'tranSvg',
+          'sargamLine',
+          'sargamLabel',
           'vowelLabel',
-          'consonantLabel'
+          'consonantLabel',
+          // Meter line elements
+          'metricGrid',
+          'overlay'
         ];
-        const f = classes.some(c => target.classList.contains(c));
-        if (f && !shifted.value) {
+        // Check for background classes or track groups (track0, track1, etc.)
+        const isBackground = backgroundClasses.some(c => target.classList.contains(c)) ||
+                             Array.from(target.classList).some(c => c.startsWith('track'));
+        if (isBackground && !shifted.value) {
           handleEscape({ includeRegion: false });
         }
       } else if (props.selectedMode === EditorMode.Region) {
