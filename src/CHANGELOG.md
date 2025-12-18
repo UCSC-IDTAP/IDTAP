@@ -1,6 +1,7 @@
 # Changelog
 
 
+* fix: only exit serial mode when next trajectory is melodic [5db8574] (Jon Myers)
 * fix: improve meter boundary click detection and serial mode exit [2f13004] (Jon Myers)
 * fix: disable pointer-events on meter elements when not in meter mode [b08396a] (Jon Myers)
 * fix: improve background click deselection in EditorMode.None [5c040ae] (Jon Myers)
