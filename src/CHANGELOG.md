@@ -1,6 +1,9 @@
 # Changelog
 
 
+* fix: add phrase/vibhag labels to display settings and fix vibhag drift [84bc899] (Jon Myers)
+### 2025-12-18
+
 * fix: clean up metronome audio nodes to prevent audio engine overflow [45b2f66] (Jon Myers)
 * fix: improve vibhag vs matra level detection for multi-cycle input [d3659c6] (Jon Myers)
 * fix: calculate nudge bounds from actual pulse positions, not theoretical [fabd61e] (Jon Myers)
