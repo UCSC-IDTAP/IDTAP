@@ -6850,9 +6850,16 @@ export default defineComponent({
 
       const isSerialModeStart = props.selectedMode === EditorMode.Series &&
                                  trajTimePts.value.length === 0;
+      const isTrajectoryModeStart = props.selectedMode === EditorMode.Trajectory &&
+                                    trajTimePts.value.length === 0;
       const atBoundary = atTrajStart || atTrajEnd || atPrevTrajEnd;
 
-      if (traj.id === 12 || (isSerialModeStart && atBoundary && traj.id !== 12)) {
+      // Allow clicks on:
+      // 1. Silence trajectories (traj.id === 12)
+      // 2. Boundaries of melodic trajectories when starting serial or trajectory mode
+      const isModeStartAtBoundary = (isSerialModeStart || isTrajectoryModeStart) &&
+                                     atBoundary && traj.id !== 12;
+      if (traj.id === 12 || isModeStartAtBoundary) {
         // if close, attach to prev traj
         if (tIdx > 0) {
           const prevTraj = phrase.trajectoryGrid[stringIdx][tIdx - 1];
@@ -6881,10 +6888,11 @@ export default defineComponent({
         }
         let setIt = true;
         if (trajTimePts.value.length > 0) {
-          // For serial mode on silence, allow spanning multiple silence trajectories
+          // For serial/trajectory mode on silence, allow spanning multiple silence trajectories
           // (tIdx check only matters for adding to existing melodic trajectories)
-          const isSerialOnSilence = props.selectedMode === EditorMode.Series && traj.id === 12;
-          const c1 = isSerialOnSilence || trajTimePts.value[0].tIdx === tIdx;
+          const isOnSilence = (props.selectedMode === EditorMode.Series ||
+                               props.selectedMode === EditorMode.Trajectory) && traj.id === 12;
+          const c1 = isOnSilence || trajTimePts.value[0].tIdx === tIdx;
           const c2 = trajTimePts.value[0].pIdx === pIdx;
           const c3 = trajTimePts.value[0].track === track;
           if (!(c1 && c2 && c3)) {
@@ -6904,10 +6912,10 @@ export default defineComponent({
           } else if (startTime + traj.durTot - time < minAttachTrajDur.value) {
             time = startTime + traj.durTot
           }
-          // If starting serial mode at the END of a melodic trajectory,
+          // If starting serial/trajectory mode at the END of a melodic trajectory,
           // use the next trajectory index (should be silence) for insertion
           let recordTIdx = tIdx;
-          if (isSerialModeStart && atTrajEnd && traj.id !== 12) {
+          if ((isSerialModeStart || isTrajectoryModeStart) && atTrajEnd && traj.id !== 12) {
             recordTIdx = tIdx + 1;
           }
           const tpObj = {
