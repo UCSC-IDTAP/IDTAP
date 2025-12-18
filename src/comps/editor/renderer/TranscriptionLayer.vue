@@ -6720,15 +6720,21 @@ export default defineComponent({
 
       } else if (props.selectedMode === EditorMode.None) {
         const target = e.target! as HTMLElement;
-        const classes = [
-          'tranSvg', 
-          'sargamLine', 
-          'sargamLabel', 
+        // Background/non-interactive elements that should trigger deselection
+        const backgroundClasses = [
+          'tranSvg',
+          'sargamLine',
+          'sargamLabel',
           'vowelLabel',
-          'consonantLabel'
+          'consonantLabel',
+          // Meter line elements
+          'metricGrid',
+          'overlay'
         ];
-        const f = classes.some(c => target.classList.contains(c));
-        if (f && !shifted.value) {
+        // Check for background classes or track groups (track0, track1, etc.)
+        const isBackground = backgroundClasses.some(c => target.classList.contains(c)) ||
+                             Array.from(target.classList).some(c => c.startsWith('track'));
+        if (isBackground && !shifted.value) {
           handleEscape({ includeRegion: false });
         }
       } else if (props.selectedMode === EditorMode.Region) {
@@ -6792,10 +6798,10 @@ export default defineComponent({
     };
 
     const insertNewTrajDot = (
-      time: number, 
-      logFreq: number, 
-      track: number, 
-      pIdx: number, 
+      time: number,
+      logFreq: number,
+      track: number,
+      pIdx: number,
       atPhraseDiv: boolean = false
     ) => {
       if (props.meterMagnetMode) {
@@ -6850,9 +6856,16 @@ export default defineComponent({
 
       const isSerialModeStart = props.selectedMode === EditorMode.Series &&
                                  trajTimePts.value.length === 0;
+      const isTrajectoryModeStart = props.selectedMode === EditorMode.Trajectory &&
+                                    trajTimePts.value.length === 0;
       const atBoundary = atTrajStart || atTrajEnd || atPrevTrajEnd;
 
-      if (traj.id === 12 || (isSerialModeStart && atBoundary && traj.id !== 12)) {
+      // Allow clicks on:
+      // 1. Silence trajectories (traj.id === 12)
+      // 2. Boundaries of melodic trajectories when starting serial or trajectory mode
+      const isModeStartAtBoundary = (isSerialModeStart || isTrajectoryModeStart) &&
+                                     atBoundary && traj.id !== 12;
+      if (traj.id === 12 || isModeStartAtBoundary) {
         // if close, attach to prev traj
         if (tIdx > 0) {
           const prevTraj = phrase.trajectoryGrid[stringIdx][tIdx - 1];
@@ -6881,7 +6894,11 @@ export default defineComponent({
         }
         let setIt = true;
         if (trajTimePts.value.length > 0) {
-          const c1 = trajTimePts.value[0].tIdx === tIdx;
+          // For serial/trajectory mode on silence, allow spanning multiple silence trajectories
+          // (tIdx check only matters for adding to existing melodic trajectories)
+          const isOnSilence = (props.selectedMode === EditorMode.Series ||
+                               props.selectedMode === EditorMode.Trajectory) && traj.id === 12;
+          const c1 = isOnSilence || trajTimePts.value[0].tIdx === tIdx;
           const c2 = trajTimePts.value[0].pIdx === pIdx;
           const c3 = trajTimePts.value[0].track === track;
           if (!(c1 && c2 && c3)) {
@@ -6901,11 +6918,17 @@ export default defineComponent({
           } else if (startTime + traj.durTot - time < minAttachTrajDur.value) {
             time = startTime + traj.durTot
           }
+          // If starting serial/trajectory mode at the END of a melodic trajectory,
+          // use the next trajectory index (should be silence) for insertion
+          let recordTIdx = tIdx;
+          if ((isSerialModeStart || isTrajectoryModeStart) && atTrajEnd && traj.id !== 12) {
+            recordTIdx = tIdx + 1;
+          }
           const tpObj = {
             time,
-            logFreq, 
+            logFreq,
             pIdx,
-            tIdx,
+            tIdx: recordTIdx,
             track,
             stringIdx
           };
