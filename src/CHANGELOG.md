@@ -1,6 +1,7 @@
 # Changelog
 
 
+* fix: disable pointer-events on meter elements when not in meter mode [b08396a] (Jon Myers)
 * fix: improve background click deselection in EditorMode.None [5c040ae] (Jon Myers)
 * fix: allow trajectory mode to start at melodic boundaries with meter magnet [dd2c989] (Jon Myers)
 * fix: serial mode trajectory insertion across multiple silence regions [a900ac4] (Jon Myers)
