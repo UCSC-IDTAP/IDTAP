@@ -6842,7 +6842,9 @@ export default defineComponent({
 
       // In serial mode, if clicking at a trajectory boundary (start or end),
       // allow placing a point there (for continuing from trajectory endpoints)
-      const epsilon = 1e-6; // Larger epsilon to handle meter magnet precision
+      // Use larger epsilon when meter magnet is on, since magnetized time may not
+      // perfectly align with trajectory boundaries
+      const epsilon = props.meterMagnetMode ? 0.02 : 1e-6;
       const phraseTime = time - phrase.startTime!;
       const atTrajStart = Math.abs(phraseTime - traj.startTime!) < epsilon;
 
@@ -6868,10 +6870,13 @@ export default defineComponent({
 
       // Allow clicks on:
       // 1. Silence trajectories (traj.id === 12)
-      // 2. Boundaries of melodic trajectories when starting serial or trajectory mode
-      const isModeStartAtBoundary = (isSerialModeStart || isTrajectoryModeStart) &&
-                                     atBoundary && traj.id !== 12;
-      if (traj.id === 12 || isModeStartAtBoundary) {
+      // 2. Boundaries of melodic trajectories when in serial or trajectory mode
+      //    (not just when starting - second click at boundary should also work)
+      const isInTrajOrSerialMode = props.selectedMode === EditorMode.Series ||
+                                   props.selectedMode === EditorMode.Trajectory;
+      const isAtMelodicBoundary = isInTrajOrSerialMode && atBoundary && traj.id !== 12;
+
+      if (traj.id === 12 || isAtMelodicBoundary) {
         // if close, attach to prev traj
         if (tIdx > 0) {
           const prevTraj = phrase.trajectoryGrid[stringIdx][tIdx - 1];
@@ -6900,11 +6905,10 @@ export default defineComponent({
         }
         let setIt = true;
         if (trajTimePts.value.length > 0) {
-          // For serial/trajectory mode on silence, allow spanning multiple silence trajectories
+          // For serial/trajectory mode on silence or at melodic boundary, allow spanning
           // (tIdx check only matters for adding to existing melodic trajectories)
-          const isOnSilence = (props.selectedMode === EditorMode.Series ||
-                               props.selectedMode === EditorMode.Trajectory) && traj.id === 12;
-          const c1 = isOnSilence || trajTimePts.value[0].tIdx === tIdx;
+          const isOnSilenceOrBoundary = isInTrajOrSerialMode && (traj.id === 12 || isAtMelodicBoundary);
+          const c1 = isOnSilenceOrBoundary || trajTimePts.value[0].tIdx === tIdx;
           const c2 = trajTimePts.value[0].pIdx === pIdx;
           const c3 = trajTimePts.value[0].track === track;
           if (!(c1 && c2 && c3)) {

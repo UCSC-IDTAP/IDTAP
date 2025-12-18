@@ -2025,9 +2025,21 @@ export default defineComponent({
         if (tIdx === undefined) {
           throw new Error('Trajectory index not found')
         }
-        this.trajTimePts[0].tIdx = tIdx;
-        tLayer.refreshTimePts();
-        this.heldLogFreq = undefined;
+
+        // Check if continuation point is on a melodic trajectory (not silence)
+        const continuationTraj = phrase.trajectoryGrid[stringIdx][tIdx];
+        if (continuationTraj && continuationTraj.id !== 12) {
+          // Exit serial mode - no continuation into melodic trajectory
+          this.selectedMode = EditorMode.None;
+          this.trajTimePts = [];
+          tLayer.trajTimePts = [];
+          tLayer.refreshDragDots();
+          this.heldLogFreq = undefined;
+        } else {
+          this.trajTimePts[0].tIdx = tIdx;
+          tLayer.refreshTimePts();
+          this.heldLogFreq = undefined;
+        }
       }
       if (!this.audioDBDoc) this.extendDurTot();
     },
