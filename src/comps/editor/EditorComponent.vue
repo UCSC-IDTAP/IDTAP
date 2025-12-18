@@ -2026,9 +2026,35 @@ export default defineComponent({
           throw new Error('Trajectory index not found')
         }
 
-        // Check if continuation point is on a melodic trajectory (not silence)
+        // Check if continuation point leads into a melodic trajectory (not silence)
         const continuationTraj = phrase.trajectoryGrid[stringIdx][tIdx];
+        const continuationTime = this.trajTimePts[0].time;
+        const phraseTime = continuationTime - phrase.startTime!;
+
+        let shouldExitSerialMode = false;
+
         if (continuationTraj && continuationTraj.id !== 12) {
+          // We landed on a melodic trajectory. Check if we're at its end boundary
+          // (meaning we're actually at the start of the next trajectory)
+          const trajEnd = continuationTraj.startTime! + continuationTraj.durTot;
+          const epsilon = 0.02;
+          const atMelodicEnd = Math.abs(phraseTime - trajEnd) < epsilon;
+
+          if (atMelodicEnd) {
+            // At end of melodic - check if next trajectory is silence
+            if (tIdx + 1 < phrase.trajectoryGrid[stringIdx].length) {
+              const nextTraj = phrase.trajectoryGrid[stringIdx][tIdx + 1];
+              shouldExitSerialMode = nextTraj.id !== 12; // Exit only if next is also melodic
+            } else {
+              shouldExitSerialMode = true; // No more trajectories
+            }
+          } else {
+            // In middle of melodic trajectory (shouldn't happen normally)
+            shouldExitSerialMode = true;
+          }
+        }
+
+        if (shouldExitSerialMode) {
           // Exit serial mode - no continuation into melodic trajectory
           this.selectedMode = EditorMode.None;
           this.trajTimePts = [];
