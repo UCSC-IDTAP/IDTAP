@@ -85,6 +85,7 @@
       @update:selectedMeter='selectMeter($event)'
       @deleteMeter='removeMeter($event)'
       @toggle:sargamMagnet='sargamMagnetMode = !sargamMagnetMode'
+      @toggle:meterMagnet='meterMagnetMode = !meterMagnetMode'
       @clearTSP='clearTSP'
       @open:addToCollection='showAddToCollection = true'
       @open:removeFromCollection='showRemoveFromCollection = true'

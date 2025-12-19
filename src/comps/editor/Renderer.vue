@@ -186,6 +186,7 @@
               @update:selectedMeter='$emit("update:selectedMeter", $event)'
               @deleteMeter='$emit("deleteMeter", $event)'
               @toggle:sargamMagnet='$emit("toggle:sargamMagnet")'
+              @toggle:meterMagnet='$emit("toggle:meterMagnet")'
               @clearTSP='$emit("clearTSP")'
               @open:addToCollection='$emit("open:addToCollection")'
               @open:removeFromCollection='$emit("open:removeFromCollection")'
@@ -510,6 +511,7 @@ export default defineComponent({
     'update:selectedMeter',
     'deleteMeter',
     'toggle:sargamMagnet',
+    'toggle:meterMagnet',
     'clearTSP',
     'open:addToCollection',
     'open:removeFromCollection',

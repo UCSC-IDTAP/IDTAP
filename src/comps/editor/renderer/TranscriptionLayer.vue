@@ -352,6 +352,7 @@ export default defineComponent({
     'update:selectedMeter',
     'deleteMeter',
     'toggle:sargamMagnet',
+    'toggle:meterMagnet',
     'clearTSP',
     'open:addToCollection',
     'open:removeFromCollection',
@@ -5435,7 +5436,11 @@ export default defineComponent({
           pasteTrajs();
         }
       } else if (e.key === 'm') {
-        emit('update:selectedMode', EditorMode.Meter);
+        if (alted.value) {
+          emit('toggle:meterMagnet');
+        } else {
+          emit('update:selectedMode', EditorMode.Meter);
+        }
       } else if (e.key === 'd') {
         if (selectedTraj.value !== undefined && inst === Instrument.Sitar) {
           emit('update:toggleDampen')
