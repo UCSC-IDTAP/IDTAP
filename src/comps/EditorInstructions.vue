@@ -236,7 +236,13 @@
       <ul>
         <li><strong>Loop</strong>: Enable region looping during playback</li>
         <li><strong>Playhead Return</strong>: Return playhead to start when stopping</li>
-        <li><strong>Meter Magnet</strong>: Snap trajectory points to meter grid</li>
+        <li><strong>Meter Magnet</strong>: Snap to meter grid (<kbd>Alt/Option + M</kbd> to toggle). When enabled:
+          <ul>
+            <li>Orientation dot arrow key nudges snap to meter pulses</li>
+            <li>Region selection (Option+drag) snaps to meter pulses</li>
+            <li>Double-click to move playhead snaps to meter pulses</li>
+          </ul>
+        </li>
         <li><strong>Sargam Magnet</strong>: Snap trajectory points to sargam pitches</li>
         <li><strong>Save Button</strong>: Save transcription progress</li>
         <li><strong>Phoneme Script</strong>: Choose text script for vocal tracks (Devanagari/IPA/Latin)</li>
@@ -312,6 +318,7 @@
         <li><strong>Color Scheme</strong>: Customize colors for background, axes, melograph, sargam lines, meter, and playhead</li>
         <li><strong>Track Colors</strong>: Individual trajectory colors per instrument track</li>
         <li><strong>Animation Style</strong>: Choose playhead animation (Animated, Block, DottedLine, None)</li>
+        <li><strong>Label Visibility</strong>: Toggle display of phrase labels and vibhag labels on the X-axis</li>
       </ul>
 
       <p><strong>Display Presets:</strong></p>
@@ -375,10 +382,17 @@
 
       <h3 id="meter-controls">3.5 Meter Controls</h3>
       <p>
-        Access via the meter icon. Create and edit hierarchical rhythmic structures:
+        Access via the meter icon. Create and edit hierarchical rhythmic structures.
+        The meter system defaults to <strong>Tala mode</strong> with <strong>Tintal</strong> as the default tala.
       </p>
 
-      <p><strong>Pulse Selection and Editing (NEW):</strong></p>
+      <p><strong>Meter Mode Selection:</strong></p>
+      <ul>
+        <li><strong>Tala Mode</strong>: Use predefined Indian classical tala patterns (default)</li>
+        <li><strong>Custom Mode</strong>: Create custom meter hierarchies</li>
+      </ul>
+
+      <p><strong>Pulse Selection and Editing:</strong></p>
       <ul>
         <li><strong>Click on pulse</strong>: Select pulse for editing (shows purple highlight)</li>
         <li><strong>Drag selected pulse</strong>: Move pulse position (must select first to prevent accidental moves)</li>
@@ -392,14 +406,34 @@
       <ul>
         <li><strong>Depth Selector</strong>: Choose 1-4 hierarchical layers</li>
         <li><strong>Layer Controls</strong>: Configure subdivisions for each layer</li>
+        <li><strong>Vibhag/Matra Layers</strong>: Layer radio buttons labeled as Vibhag (primary beats) and Matra (subdivisions)</li>
         <li><strong>Compound Patterns</strong>: Create complex rhythmic cycles</li>
       </ul>
 
       <p><strong>Tempo and Timing:</strong></p>
       <ul>
-        <li><strong>Tempo Control</strong>: Set BPM (20-300)</li>
+        <li><strong>Tempo Control</strong>: Set BPM based on matra rate (20-300)</li>
         <li><strong>Cycles</strong>: Number of pattern repetitions</li>
         <li><strong>Duration Display</strong>: Shows calculated meter duration</li>
+      </ul>
+
+      <p><strong>Metronome:</strong></p>
+      <ul>
+        <li><strong>Metronome Toggle</strong>: Enable/disable metronome playback during audio</li>
+        <li><strong>Distinct Beat Sounds</strong>: Vibhag beats have a different sound than matra beats</li>
+        <li><strong>Note</strong>: Metronome is automatically disabled when pitch shift or region speed is enabled</li>
+      </ul>
+
+      <p><strong>Tap-to-Pulse Recording:</strong></p>
+      <p>
+        Record pulse timing by tapping along with audio playback:
+      </p>
+      <ul>
+        <li><strong>Start Recording</strong>: Enter Meter Mode (M) and use the tap recording interface</li>
+        <li><strong>Tap Along</strong>: Tap in time with the audio to capture pulse positions</li>
+        <li><strong>Audio Latency Compensation</strong>: System automatically compensates for audio output latency</li>
+        <li><strong>Vibhag Expansion</strong>: Vibhag-level taps are automatically expanded to matra timepoints for tala meters</li>
+        <li><strong>Multi-Cycle Support</strong>: Continue tapping across multiple tala cycles</li>
       </ul>
 
       <p><strong>Insert Pulse Mode:</strong></p>
@@ -409,7 +443,7 @@
       </p>
       <ul>
         <li><strong>Pulse Placement</strong>: Click to place timing pulses (minimum 2 required for meter creation)</li>
-        <li><strong>Layer Selection</strong>: Choose Layer 0 (primary beats) or Layer 1 (subdivisions) via radio buttons</li>
+        <li><strong>Layer Selection</strong>: Choose Vibhag (primary beats) or Matra (subdivisions) via radio buttons</li>
         <li><strong>Insert Meter from Pulses</strong>: Create new meter using placed pulse timing (available when 2+ pulses placed)</li>
         <li><strong>Attach to Previous Meter</strong>: Extend existing meter by adding pulse points to specified layer (checkbox appears when previous meter detected)</li>
         <li><strong>Validation</strong>: System prevents overlapping meters and guides valid pulse placement areas</li>
@@ -417,6 +451,7 @@
 
       <p><strong>Workflow Options:</strong></p>
       <ul>
+        <li><strong>Tap Recording</strong>: Play audio → tap along → insert meter from recorded pulses</li>
         <li><strong>New Meter Creation</strong>: Place pulses → select layer → click "Insert Meter from Pulses"</li>
         <li><strong>Meter Extension</strong>: Place pulses after existing meter → check "Attach to Prev Meter" → add time points</li>
         <li><strong>Manual Insertion</strong>: Position playhead → configure parameters → click "Insert Meter at Playhead"</li>
@@ -642,6 +677,7 @@
         <li><strong>Stroke Options</strong>: Set stroke annotations (da, di, d, ra, ri, r) for pluck articulations</li>
         <li><strong>Annotate Trajectory</strong>: Open trajectory annotation window</li>
         <li><strong>Adjust Orientation Dots</strong>: Switch to trajectory mode for editing control points</li>
+        <li><strong>Quantize to Meter</strong>: Snap trajectory timing to nearest meter pulses (when meter exists)</li>
       </ul>
 
       <p><strong>Orientation Dot Navigation (when trajectory is selected):</strong></p>
@@ -650,7 +686,7 @@
         <li><strong>Shift + Left</strong>: Select different orientation dot (leftmost if none selected, or move to previous dot)</li>
         <li><strong>Shift + Right</strong>: Select different orientation dot (rightmost if none selected, or move to next dot)</li>
         <li><strong>Arrow Keys</strong>: Move selected orientation dot in small increments</li>
-        <li><strong>Option/Alt + Arrow Keys (NEW)</strong>: Move selected orientation dot 5x faster for rapid adjustments</li>
+        <li><strong>Option/Alt + Arrow Keys</strong>: Move selected orientation dot 5x faster for rapid adjustments</li>
         <li><strong>Shift + Up/Down</strong>: Move selected orientation dot in larger increments</li>
       </ul>
 
@@ -749,6 +785,7 @@
         <li><kbd>M</kbd> - Meter Mode</li>
         <li><kbd>C</kbd> - Chikari Mode (Sitar only)</li>
         <li><kbd>R</kbd> - Region Selection Mode</li>
+        <li><kbd>Alt/Option + M</kbd> - Toggle Meter Magnet mode</li>
         <li><kbd>Escape</kbd> - Exit current mode</li>
       </ul>
 
@@ -850,7 +887,7 @@
       </ul>
 
       <p><em>
-        This user guide covers the complete IDTAP Editor functionality as of September 2025.
+        This user guide covers the complete IDTAP Editor functionality as of December 2025.
         The editor continues to evolve with new features for advanced musical transcription and analysis.
       </em></p>
 
