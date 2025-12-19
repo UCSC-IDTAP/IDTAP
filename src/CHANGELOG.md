@@ -1,6 +1,7 @@
 # Changelog
 
 
+* feat: snap playhead double-click to meter pulse [bb2a5ff] (Jon Myers)
 * feat: snap drag dot arrow key nudge to meter pulses [d55645f] (Jon Myers)
 * fix: snap both region start and end in Option+drag [8b0093f] (Jon Myers)
 * fix: apply meter snap inline in dragEnd before drawing region [8591c29] (Jon Myers)
