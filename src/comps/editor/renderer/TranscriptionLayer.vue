@@ -5435,7 +5435,7 @@ export default defineComponent({
         if (metad.value) {
           pasteTrajs();
         }
-      } else if (e.key === 'm') {
+      } else if (e.code === 'KeyM') {
         if (alted.value) {
           emit('toggle:meterMagnet');
         } else {
