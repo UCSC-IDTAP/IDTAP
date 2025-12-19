@@ -122,6 +122,7 @@
           <ul>
             <li><strong>Double-click</strong>: Move playhead to clicked position</li>
             <li><strong>Spacebar</strong>: Play/pause audio</li>
+            <li><strong>Go to Time</strong>: Press <kbd>Alt/Option + G</kbd> to open a dialog for navigating to a specific time (HH:MM format)</li>
           </ul>
         </li>
       </ul>
@@ -786,6 +787,7 @@
         <li><kbd>C</kbd> - Chikari Mode (Sitar only)</li>
         <li><kbd>R</kbd> - Region Selection Mode</li>
         <li><kbd>Alt/Option + M</kbd> - Toggle Meter Magnet mode</li>
+        <li><kbd>Alt/Option + S</kbd> - Toggle Sargam Magnet mode</li>
         <li><kbd>Escape</kbd> - Exit current mode</li>
       </ul>
 
@@ -798,6 +800,7 @@
         <li><kbd>Tab</kbd> - Next phrase division</li>
         <li><kbd>Shift + Tab</kbd> - Previous phrase division</li>
         <li><kbd>Double-click</kbd> - Move playhead to position</li>
+        <li><kbd>Alt/Option + G</kbd> - Open "Go to Time" dialog</li>
       </ul>
 
       <h3>6.3 Playback</h3>
@@ -831,6 +834,7 @@
         <li><kbd>Shift + Drag</kbd> - Box selection</li>
         <li><kbd>Cmd/Ctrl + C</kbd> - Copy selected trajectories</li>
         <li><kbd>Cmd/Ctrl + V</kbd> - Paste trajectories</li>
+        <li><kbd>Cmd/Ctrl + S</kbd> - Save transcription</li>
         <li><kbd>Delete/Backspace</kbd> - Delete selected elements</li>
       </ul>
 
@@ -869,8 +873,8 @@
       </p>
       <ul>
         <li><strong>Email</strong>: JBMYERS [at] UCSC [dot] EDU</li>
-        <li><strong>GitHub Issues</strong>: <a href="https://github.com/UCSC-IDTAP/IDTAP/issues">Report bugs and feature requests</a></li>
-        <li><strong>Documentation</strong>: <a href="https://github.com/UCSC-IDTAP/IDTAP">Visit the project repository</a> for additional resources</li>
+        <li><strong>GitHub Issues</strong>: <a href="https://github.com/UCSC-IDTAP/idtap/issues">Report bugs and feature requests</a></li>
+        <li><strong>Documentation</strong>: <a href="https://github.com/UCSC-IDTAP/idtap">Visit the project repository</a> for additional resources</li>
         <li><strong>ISMIR Paper</strong>: <a href="/papers/ismir-paper.pdf" target="_blank">Read our research paper</a></li>
         <li><strong>NEH Whitepaper</strong>: <a href="/papers/neh-whitepaper.pdf" target="_blank">Read our NEH whitepaper</a></li>
       </ul>
