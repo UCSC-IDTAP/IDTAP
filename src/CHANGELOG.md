@@ -1,6 +1,8 @@
 # Changelog
 
 
+* fix: use e.code instead of e.key for alt+m shortcut [9b89916] (Jon Myers)
+* feat: add alt/option+m shortcut to toggle meter magnet mode [bffd6f4] (Jon Myers)
 * feat: snap playhead double-click to meter pulse [bb2a5ff] (Jon Myers)
 * feat: snap drag dot arrow key nudge to meter pulses [d55645f] (Jon Myers)
 * fix: snap both region start and end in Option+drag [8b0093f] (Jon Myers)
