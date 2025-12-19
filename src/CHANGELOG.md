@@ -1,6 +1,10 @@
 # Changelog
 
 
+* docs: update editor instructions with missing shortcuts and fixes [17f8a25] (Jon Myers)
+* docs: update editor instructions for December 2025 features [dba20a0] (Jon Myers)
+### 2025-12-19
+
 * fix: use e.code instead of e.key for alt+m shortcut [9b89916] (Jon Myers)
 * feat: add alt/option+m shortcut to toggle meter magnet mode [bffd6f4] (Jon Myers)
 * feat: snap playhead double-click to meter pulse [bb2a5ff] (Jon Myers)
