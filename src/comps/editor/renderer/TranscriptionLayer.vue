@@ -6832,6 +6832,10 @@ export default defineComponent({
 
     const handleDoubleClick = (e: MouseEvent) => {
       let time = props.xScale.invert(e.offsetX);
+      // Snap to meter pulse if meter magnet mode is on
+      if (props.meterMagnetMode) {
+        time = meterMagnetize(time);
+      }
       emit('update:currentTime', time);
 
       updatePlayheadPosition(time);
