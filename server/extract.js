@@ -70871,8 +70871,8 @@ var Meter = class _Meter {
       vibhaga: ["X", 2, "O", 3]
     },
     ["Ada Chautal" /* AdaChautal */]: {
-      hierarchy: [[2, 2, 2, 2, 3, 3], 4],
-      vibhaga: ["X", 2, "O", 3, 4, 5]
+      hierarchy: [[2, 2, 2, 2, 2, 2, 2], 4],
+      vibhaga: ["X", "O", 2, "O", 3, 4, "O"]
     },
     ["Dhamar" /* Dhamar */]: {
       hierarchy: [[5, 2, 3, 4], 4],
@@ -71334,6 +71334,32 @@ var Meter = class _Meter {
     if (timePoints[0] < lastRealTime) {
       throw new Error("timePoints must be greater than last realTime");
     }
+    if (Array.isArray(this.hierarchy[0])) {
+      const matraPulses = this.getMatraPulses();
+      const boundaries = this.getSegmentBoundaryIndices();
+      if (boundaries.length > 0 && matraPulses.length > 0) {
+        const lastBoundaryIdx = boundaries[boundaries.length - 1];
+        const lastBoundaryPulse = matraPulses[lastBoundaryIdx];
+        if (lastBoundaryPulse) {
+          const segmentStartTime = lastBoundaryPulse.realTime;
+          const newSegmentEndTime = timePoints[0];
+          const newSegmentDur = newSegmentEndTime - segmentStartTime;
+          const matrasInLastSegment = matraPulses.slice(lastBoundaryIdx + 1);
+          if (matrasInLastSegment.length > 0 && newSegmentDur > 0) {
+            const numPulses = matrasInLastSegment.length + 1;
+            for (let i = 0; i < matrasInLastSegment.length; i++) {
+              const p = matrasInLastSegment[i];
+              const relativePos = (i + 1) / numPulses;
+              const newTime = segmentStartTime + relativePos * newSegmentDur;
+              const offset = newTime - p.realTime;
+              if (Math.abs(offset) > 1e-4) {
+                this._offsetPulseDirect(p, offset, true);
+              }
+            }
+          }
+        }
+      }
+    }
     const curEndTime = this.durTot + this.startTime;
     let summed = this.hierarchy[0] instanceof Array ? sum(this.hierarchy[0]) : this.hierarchy[0];
     if (layer > 0) {
@@ -71344,23 +71370,27 @@ var Meter = class _Meter {
     const beatDur = this.cycleDur / summed;
     const predictedTimes = [];
     let cTime = curEndTime;
-    while (cTime < timePoints[timePoints.length - 1] + beatDur) {
+    while (cTime < timePoints[timePoints.length - 1] + beatDur || predictedTimes.length < timePoints.length) {
       predictedTimes.push(cTime);
       cTime += beatDur;
     }
     const idxs = findClosestIdxs(timePoints, predictedTimes);
-    const cycleNums = idxs.map((idx) => {
+    const lastIdx = idxs[idxs.length - 1];
+    const isLastOnCycleBoundary = lastIdx > 0 && lastIdx % summed === 0;
+    const cycleCalcIdxs = isLastOnCycleBoundary ? idxs.slice(0, -1) : idxs;
+    const cycleNums = cycleCalcIdxs.map((idx) => {
       return Math.floor(idx / summed);
     });
     const prevPLen = this.pulseStructures[layer].map((ps) => ps.pulses).flat().length;
     this.growCycles(Math.max(...cycleNums) + 1);
+    const pulseIdxs = isLastOnCycleBoundary ? idxs.slice(0, -1) : idxs;
     for (let l2 = 0; l2 <= layer; l2++) {
-      idxs.forEach((idx, i) => {
+      pulseIdxs.forEach((idx, i) => {
         const layerPulses = this.pulseStructures[layer].map((ps) => ps.pulses).flat();
         const pulse = layerPulses[prevPLen + idx];
         const offset = timePoints[i] - pulse.realTime;
         if (l2 === pulse.lowestLayer) {
-          this.offsetPulse(pulse, offset);
+          this._offsetPulseDirect(pulse, offset, true);
         }
       });
     }
@@ -71369,7 +71399,8 @@ var Meter = class _Meter {
     timePoints = void 0,
     hierarchy = void 0,
     repetitions = 1,
-    layer = 0
+    layer = 0,
+    talaName = void 0
   } = {}) {
     if (timePoints === void 0) {
       throw new Error("Must provide timePoints to create Meter");
@@ -71388,6 +71419,28 @@ var Meter = class _Meter {
       const avgDiff = (timePoints[timePoints.length - 1] - timePoints[0]) / (timePoints.length - 1);
       while (timePoints.length < layer0Size + 1) {
         timePoints.push(timePoints[timePoints.length - 1] + avgDiff);
+      }
+    }
+    if (layer === 0 && Array.isArray(hierarchy[0])) {
+      const vibhagDivisions = hierarchy[0];
+      const numVibhags = vibhagDivisions.length;
+      if (timePoints.length <= numVibhags + 1) {
+        const avgDiff = (timePoints[timePoints.length - 1] - timePoints[0]) / (timePoints.length - 1);
+        while (timePoints.length < numVibhags + 1) {
+          timePoints.push(timePoints[timePoints.length - 1] + avgDiff);
+        }
+        const matraTimepoints = [];
+        for (let v = 0; v < numVibhags; v++) {
+          const vibhagStart = timePoints[v];
+          const vibhagEnd = timePoints[v + 1];
+          const matrasInVibhag = vibhagDivisions[v];
+          const matraDur = (vibhagEnd - vibhagStart) / matrasInVibhag;
+          for (let m = 0; m < matrasInVibhag; m++) {
+            matraTimepoints.push(vibhagStart + m * matraDur);
+          }
+        }
+        matraTimepoints.push(timePoints[numVibhags]);
+        timePoints = matraTimepoints;
       }
     }
     let diffs = timePoints.slice(0, timePoints.length - 1).map((tp, i) => {
@@ -71426,12 +71479,13 @@ var Meter = class _Meter {
       }
       timePoints = timePoints.filter((_2, i) => i % sum2 === 0);
     }
+    const numPulses = timePoints.length - 1;
     if (typeof hierarchy[0] === "number") {
-      while (hierarchy[0] * repetitions < timePoints.length) {
+      while (hierarchy[0] * repetitions < numPulses) {
         repetitions += 1;
       }
     } else {
-      while (sum(hierarchy[0]) * repetitions < timePoints.length) {
+      while (sum(hierarchy[0]) * repetitions < numPulses) {
         repetitions += 1;
       }
     }
@@ -71441,20 +71495,22 @@ var Meter = class _Meter {
     pulseDur = sum(diffs) / diffs.length;
     const tempo = 60 / pulseDur;
     const startTime = timePoints[0];
+    const vibhaga = talaName && _Meter.talaPresets[talaName] ? _Meter.talaPresets[talaName].vibhaga : void 0;
     const meter = new _Meter({
       hierarchy,
       startTime,
       tempo,
-      repetitions
+      repetitions,
+      talaName,
+      vibhaga
     });
     const metricPulses = meter.allPulses.filter((p) => p.lowestLayer === 0);
     const metricTimes = metricPulses.map((p) => p.realTime);
-    timePoints.forEach((tp, i) => {
-      if (i > 0) {
-        const diff = tp - metricTimes[i];
-        meter.offsetPulse(metricPulses[i], diff);
-      }
-    });
+    const numPulsesToAdjust = Math.min(timePoints.length, metricPulses.length);
+    for (let i = 1; i < numPulsesToAdjust; i++) {
+      const diff = timePoints[i] - metricTimes[i];
+      meter._offsetPulseDirect(metricPulses[i], diff);
+    }
     if (layer === 1) {
       let otpCt = 0;
       meter.pulseStructures[1].forEach((ps) => {
@@ -71466,7 +71522,7 @@ var Meter = class _Meter {
             if (tp !== void 0) {
               const pulse = psMetricPulses[i];
               const diff = tp - mt;
-              meter.offsetPulse(pulse, diff);
+              meter._offsetPulseDirect(pulse, diff);
             }
           }
         });
@@ -71589,6 +71645,16 @@ var Meter = class _Meter {
     });
   }
   offsetPulse(pulse, offset, override = false) {
+    if (this.offsetSegmentBoundary(pulse, offset)) {
+      return;
+    }
+    this._offsetPulseDirect(pulse, offset, override);
+  }
+  /**
+   * Direct pulse offset without segment-aware logic.
+   * Used internally by offsetSegmentBoundary to avoid recursion.
+   */
+  _offsetPulseDirect(pulse, offset, override = false) {
     const psID = pulse.getLowestPSID();
     const layer = pulse.lowestLayer;
     const pulseStructure = this.getPSFromId(psID);
@@ -72024,6 +72090,138 @@ var Meter = class _Meter {
     }
   }
   /**
+   * Trim the meter's end time by re-interpolating from the last visible pulse.
+   * This adjusts the tempo so the meter ends at the last pulse + one pulse duration.
+   *
+   * @param anchor - 'vibhag' to use last vibhag boundary, 'matra' to use last matra pulse
+   */
+  trimEndTime(anchor = "vibhag") {
+    const corpPulses = this.allCorporealPulses;
+    if (corpPulses.length < 2) {
+      return;
+    }
+    const matraPulses = corpPulses.filter((p) => p.lowestLayer === 0);
+    if (matraPulses.length < 2) {
+      return;
+    }
+    let anchorPulses;
+    if (anchor === "vibhag" && Array.isArray(this.hierarchy[0])) {
+      const boundaries = this.getSegmentBoundaryIndices();
+      const allMatraPulses = this.allPulses.filter((p) => p.lowestLayer === 0);
+      anchorPulses = boundaries.map((idx) => allMatraPulses[idx]).filter((p) => p !== void 0 && this.allCorporealPulses.includes(p));
+      if (anchorPulses.length < 2) {
+        anchorPulses = matraPulses;
+      }
+    } else {
+      anchorPulses = matraPulses;
+    }
+    if (anchorPulses.length < 2) {
+      return;
+    }
+    const pulsesPerCycle = anchor === "vibhag" && Array.isArray(this.hierarchy[0]) ? this.hierarchy[0].length : typeof this.hierarchy[0] === "number" ? this.hierarchy[0] : sum(this.hierarchy[0]);
+    const lastCyclePulses = anchorPulses.length > pulsesPerCycle ? anchorPulses.slice(-pulsesPerCycle) : anchorPulses;
+    const times = lastCyclePulses.map((p) => p.realTime);
+    const diffs = [];
+    for (let i = 1; i < times.length; i++) {
+      diffs.push(times[i] - times[i - 1]);
+    }
+    const avgDur = diffs.reduce((a, b) => a + b, 0) / diffs.length;
+    const lastAnchorPulseTime = times[times.length - 1];
+    const targetEndTime = lastAnchorPulseTime + avgDur;
+    if (anchor === "vibhag" && Array.isArray(this.hierarchy[0])) {
+      const allMatraPulses = this.allPulses.filter((p) => p.lowestLayer === 0);
+      const lastAnchorPulse = lastCyclePulses[lastCyclePulses.length - 1];
+      const lastAnchorIdx = allMatraPulses.findIndex((p) => p.uniqueId === lastAnchorPulse.uniqueId);
+      const lastSegmentMatras = allMatraPulses.slice(lastAnchorIdx + 1);
+      if (lastSegmentMatras.length > 0) {
+        const segmentDur = targetEndTime - lastAnchorPulseTime;
+        const matraDur = segmentDur / (lastSegmentMatras.length + 1);
+        lastSegmentMatras.forEach((p, i) => {
+          const newTime = lastAnchorPulseTime + (i + 1) * matraDur;
+          const offset = newTime - p.realTime;
+          if (Math.abs(offset) > 1e-4) {
+            this._offsetPulseDirect(p, offset, true);
+          }
+        });
+        const allPulses = this.allPulses;
+        const lastSegmentSubdivisions = allPulses.filter(
+          (p) => p.lowestLayer > 0 && p.realTime > lastAnchorPulseTime && p.realTime < targetEndTime + 0.5
+          // Add small buffer for pulses near end
+        );
+        if (lastSegmentSubdivisions.length > 0) {
+          const subdivsPerMatra = this.hierarchy.length > 1 ? typeof this.hierarchy[1] === "number" ? this.hierarchy[1] : 1 : 1;
+          const numMatrasInSegment = lastSegmentMatras.length;
+          const sortedSubdivs = [...lastSegmentSubdivisions].sort((a, b) => a.realTime - b.realTime);
+          let subdivIdx = 0;
+          for (let seg = 0; seg <= numMatrasInSegment; seg++) {
+            const segStart = seg === 0 ? lastAnchorPulseTime : lastAnchorPulseTime + seg * matraDur;
+            const segEnd = seg === numMatrasInSegment ? targetEndTime : lastAnchorPulseTime + (seg + 1) * matraDur;
+            const segDur = segEnd - segStart;
+            const subdivDur = segDur / subdivsPerMatra;
+            for (let i = 0; i < subdivsPerMatra - 1 && subdivIdx < sortedSubdivs.length; i++) {
+              const subdiv = sortedSubdivs[subdivIdx];
+              const newTime = segStart + (i + 1) * subdivDur;
+              const offset = newTime - subdiv.realTime;
+              if (Math.abs(offset) > 1e-4) {
+                this._offsetPulseDirect(subdiv, offset, true);
+              }
+              subdivIdx++;
+            }
+          }
+        }
+      }
+    }
+    if (anchor === "matra") {
+      const lastMatraPulse = lastCyclePulses[lastCyclePulses.length - 1];
+      const allPulses = this.allPulses;
+      const lastMatraFullIdx = allPulses.findIndex((p) => p.uniqueId === lastMatraPulse.uniqueId);
+      const lastSegmentSubdivisions = allPulses.slice(lastMatraFullIdx + 1).filter((p) => p.lowestLayer > 0);
+      if (lastSegmentSubdivisions.length > 0) {
+        const segmentDur = targetEndTime - lastAnchorPulseTime;
+        const subdivDur = segmentDur / (lastSegmentSubdivisions.length + 1);
+        lastSegmentSubdivisions.forEach((p, i) => {
+          const newTime = lastAnchorPulseTime + (i + 1) * subdivDur;
+          const offset = newTime - p.realTime;
+          if (Math.abs(offset) > 1e-4) {
+            this._offsetPulseDirect(p, offset, true);
+          }
+        });
+      }
+    }
+    const targetDurTot = targetEndTime - this.startTime;
+    const matrasPerCycle = typeof this.hierarchy[0] === "number" ? this.hierarchy[0] : sum(this.hierarchy[0]);
+    const newTempo = 60 * matrasPerCycle * this.repetitions / targetDurTot;
+    const currentRealTimeMap = /* @__PURE__ */ new Map();
+    this.allPulses.forEach((p) => {
+      currentRealTimeMap.set(p.uniqueId, p.realTime);
+    });
+    this.tempo = newTempo;
+    const newCycleDur = this.cycleDur;
+    const bifurcated = Array.isArray(this.hierarchy[0]);
+    this.pulseStructures.forEach((psLayer, layerIdx) => {
+      psLayer.forEach((ps, psIdx) => {
+        const newPSTempo = 60 * matrasPerCycle / newCycleDur;
+        const newPulseDur = 60 / newPSTempo / (layerIdx === 0 ? 1 : this.hierarchy[layerIdx]);
+        const defaultStartTime = bifurcated ? this.startTime + Math.floor(psIdx / this.hierarchy[0].length) * newCycleDur + newCycleDur * sum(this.hierarchy[0].slice(0, psIdx % this.hierarchy[0].length)) / matrasPerCycle : this.startTime + psIdx * newCycleDur;
+        const newOffsets = ps.pulses.map((pulse) => {
+          const actualTime = currentRealTimeMap.get(pulse.uniqueId);
+          if (actualTime === void 0) {
+            return 0;
+          }
+          const pulseIdx = ps.pulses.indexOf(pulse);
+          const defaultTime = defaultStartTime + pulseIdx * newPulseDur;
+          return actualTime - defaultTime;
+        });
+        ps.tempo = newPSTempo;
+        ps.pulseDur = newPulseDur;
+        ps.startTime = defaultStartTime;
+        ps.linearOffsets = newOffsets;
+        ps.proportionalOffsets = newOffsets.map((o) => o / newPulseDur);
+      });
+    });
+    this.relCorpLims = this.propCorpLims.map((p) => p * this.durTot);
+  }
+  /**
    * Get the multiplier for a given hierarchy layer.
    * Handles both simple numbers and complex arrays like [3, 2] -> 5
    */
@@ -72037,19 +72235,6 @@ var Meter = class _Meter {
     } else {
       return h.reduce((acc, val) => acc + val, 0);
     }
-  }
-  get displayTempo() {
-    if (this.hierarchy.length < 2) {
-      return this.tempo;
-    }
-    return this.tempo * this.getHierarchyMult(1);
-  }
-  set displayTempo(newTempo) {
-    if (this.hierarchy.length < 2) {
-      this.adjustTempo(newTempo);
-      return;
-    }
-    this.adjustTempo(newTempo / this.getHierarchyMult(1));
   }
   // Helper methods for musical time calculation
   getPulsesPerCycle() {
@@ -72237,6 +72422,163 @@ var Meter = class _Meter {
       fractionalBeat
     };
   }
+  // ============================================
+  // Segment-aware offset methods for tala meters
+  // ============================================
+  /**
+   * Get the indices of matra pulses that are at segment (vibhag) boundaries.
+   * For Tintal [[4,4,4,4], 4]: returns [0, 4, 8, 12] per cycle
+   * For Jhoomra [[3,4,3,4], 4]: returns [0, 3, 7, 10] per cycle
+   * Returns empty array if hierarchy[0] is not compound.
+   */
+  getSegmentBoundaryIndices() {
+    if (!Array.isArray(this.hierarchy[0]) || this.hierarchy.length < 2) {
+      return [];
+    }
+    const segmentSizes = this.hierarchy[0];
+    const matrasPerCycle = sum(segmentSizes);
+    const allBoundaries = [];
+    for (let cycle = 0; cycle < this.repetitions; cycle++) {
+      let cumSum = 0;
+      for (let seg = 0; seg < segmentSizes.length; seg++) {
+        allBoundaries.push(cycle * matrasPerCycle + cumSum);
+        cumSum += segmentSizes[seg];
+      }
+    }
+    return allBoundaries;
+  }
+  /**
+   * Get only the matra-level pulses (pulses with lowestLayer === 0).
+   * These are the pulses that correspond to beats in the tala structure.
+   */
+  getMatraPulses() {
+    return this.allPulses.filter((p) => p.lowestLayer === 0);
+  }
+  /**
+   * Check if a pulse is at a segment (vibhag) boundary.
+   */
+  isSegmentBoundary(pulse) {
+    const matraPulses = this.getMatraPulses();
+    const idx = matraPulses.findIndex((p) => p.uniqueId === pulse.uniqueId);
+    if (idx === -1) return false;
+    return this.getSegmentBoundaryIndices().includes(idx);
+  }
+  /**
+   * Get the segment range (start and end matra indices) for a given matra index.
+   * Returns null if the hierarchy doesn't have compound first layer.
+   */
+  getSegmentForMatraIndex(matraIdx) {
+    if (!Array.isArray(this.hierarchy[0])) {
+      return null;
+    }
+    const boundaries = this.getSegmentBoundaryIndices();
+    const matrasPerCycle = sum(this.hierarchy[0]);
+    const totalMatras = matrasPerCycle * this.repetitions;
+    const allBoundaries = [...boundaries, totalMatras];
+    for (let i = 0; i < allBoundaries.length - 1; i++) {
+      if (matraIdx >= allBoundaries[i] && matraIdx < allBoundaries[i + 1]) {
+        return { start: allBoundaries[i], end: allBoundaries[i + 1] };
+      }
+    }
+    return null;
+  }
+  /**
+   * Offset a segment boundary pulse and proportionally adjust all matra pulses
+   * within that segment. This makes nudging a vibhag boundary move all the
+   * matras within that vibhag proportionally.
+   *
+   * @param pulse - The pulse to offset (must be at a segment boundary)
+   * @param offset - The time offset in seconds
+   * @returns true if segment-aware offset was applied, false if regular offset should be used
+   */
+  offsetSegmentBoundary(pulse, offset) {
+    const matraPulses = this.getMatraPulses();
+    const pulseIdx = matraPulses.findIndex((p) => p.uniqueId === pulse.uniqueId);
+    if (pulseIdx === -1) {
+      return false;
+    }
+    const boundaries = this.getSegmentBoundaryIndices();
+    const boundaryIdx = boundaries.indexOf(pulseIdx);
+    if (boundaryIdx === -1) {
+      return false;
+    }
+    if (boundaryIdx === 0) {
+      return false;
+    }
+    const prevBoundaryIdx = boundaries[boundaryIdx - 1];
+    const currentBoundaryIdx = pulseIdx;
+    const prevSegmentPulses = matraPulses.slice(prevBoundaryIdx, currentBoundaryIdx);
+    if (prevSegmentPulses.length < 1) {
+      return false;
+    }
+    const prevSegmentStartTime = prevSegmentPulses[0].realTime;
+    const prevSegmentEndTime = pulse.realTime;
+    const originalPrevSegmentDur = prevSegmentEndTime - prevSegmentStartTime;
+    if (originalPrevSegmentDur <= 0) {
+      return false;
+    }
+    const newPrevSegmentDur = originalPrevSegmentDur + offset;
+    if (newPrevSegmentDur <= 0) {
+      return false;
+    }
+    const nextBoundaryIdx = boundaries[boundaryIdx + 1];
+    const hasNextBoundary = nextBoundaryIdx !== void 0;
+    let nextSegmentPulses = [];
+    let originalNextSegmentDur = 0;
+    let newNextSegmentDur = 0;
+    let nextSegmentEndTime = 0;
+    let originalNextPulseTimes = [];
+    const originalBoundaryTime = pulse.realTime;
+    if (hasNextBoundary) {
+      nextSegmentPulses = matraPulses.slice(currentBoundaryIdx + 1, nextBoundaryIdx);
+      originalNextPulseTimes = nextSegmentPulses.map((p) => p.realTime);
+      nextSegmentEndTime = matraPulses[nextBoundaryIdx].realTime;
+      originalNextSegmentDur = nextSegmentEndTime - pulse.realTime;
+      newNextSegmentDur = originalNextSegmentDur - offset;
+      if (newNextSegmentDur <= 0) {
+        return false;
+      }
+    } else {
+      nextSegmentPulses = matraPulses.slice(currentBoundaryIdx + 1);
+      if (nextSegmentPulses.length > 0) {
+        originalNextPulseTimes = nextSegmentPulses.map((p) => p.realTime);
+        const lastPulse = nextSegmentPulses[nextSegmentPulses.length - 1];
+        const avgPulseDur = (lastPulse.realTime - pulse.realTime) / nextSegmentPulses.length;
+        nextSegmentEndTime = lastPulse.realTime + avgPulseDur;
+        originalNextSegmentDur = nextSegmentEndTime - pulse.realTime;
+        newNextSegmentDur = originalNextSegmentDur - offset;
+        if (newNextSegmentDur <= 0) {
+          return false;
+        }
+      }
+    }
+    const hasNextSegment = nextSegmentPulses.length > 0;
+    this._offsetPulseDirect(pulse, offset, true);
+    const numPrevPulses = prevSegmentPulses.length;
+    for (let i = 1; i < prevSegmentPulses.length; i++) {
+      const p = prevSegmentPulses[i];
+      const defaultRelativePos = i / numPrevPulses;
+      const newRelativeTime = prevSegmentStartTime + defaultRelativePos * newPrevSegmentDur;
+      const pulseOffset = newRelativeTime - p.realTime;
+      if (Math.abs(pulseOffset) > 1e-4) {
+        this._offsetPulseDirect(p, pulseOffset, true);
+      }
+    }
+    if (hasNextSegment && nextSegmentPulses.length > 0) {
+      const newBoundaryTime = originalBoundaryTime + offset;
+      const numNextPulses = nextSegmentPulses.length + 1;
+      for (let i = 0; i < nextSegmentPulses.length; i++) {
+        const p = nextSegmentPulses[i];
+        const defaultRelativePos = (i + 1) / numNextPulses;
+        const newRelativeTime = newBoundaryTime + defaultRelativePos * newNextSegmentDur;
+        const pulseOffset = newRelativeTime - p.realTime;
+        if (Math.abs(pulseOffset) > 1e-4) {
+          this._offsetPulseDirect(p, pulseOffset, true);
+        }
+      }
+    }
+    return true;
+  }
   toJSON() {
     return {
       uniqueId: this.uniqueId,
@@ -72256,7 +72598,7 @@ var findClosestIdxs = (trials, items) => {
   const usedIndexes = /* @__PURE__ */ new Set();
   return trials.map((trial) => {
     let diffs = items.map((item, index) => [Math.abs(trial - item), index]);
-    diffs = diffs.filter((_2, index) => !usedIndexes.has(index));
+    diffs = diffs.filter((d) => !usedIndexes.has(d[1]));
     diffs.sort((a, b) => a[0] - b[0]);
     usedIndexes.add(diffs[0][1]);
     return diffs[0][1];
@@ -72712,10 +73054,12 @@ var Piece = class _Piece {
     } else {
       const start = meter.startTime;
       const end = start + meter.durTot;
+      const tolerance = 0.1;
       this.meters.forEach((m) => {
-        const c1 = m.startTime <= start && m.startTime + m.durTot >= start;
-        const c2 = m.startTime < end && m.startTime + m.durTot > end;
-        const c3 = m.startTime > start && m.startTime + m.durTot < end;
+        const mEnd = m.startTime + m.durTot;
+        const c1 = m.startTime <= start && mEnd - tolerance > start;
+        const c2 = m.startTime < end && mEnd > end;
+        const c3 = m.startTime > start && mEnd < end;
         if (c1 || c2 || c3) {
           throw new Error("meters overlap");
         }
@@ -73049,11 +73393,12 @@ var Piece = class _Piece {
     const starts = this.trajStartTimes(inst);
     const idxs = [];
     const bols = trajs.filter((t, tIdx) => {
-      const c = t.articulations["0.00"] && t.articulations["0.00"].name === "pluck";
-      if (c) {
+      const hasPluck = t.articulations["0.00"] && t.articulations["0.00"].name === "pluck";
+      const hasValidLogFreq = t.logFreqs.length > 0 && isFinite(t.logFreqs[0]);
+      if (hasPluck && hasValidLogFreq) {
         idxs.push(tIdx);
       }
-      return c;
+      return hasPluck && hasValidLogFreq;
     }).map((t, tIdx) => {
       const time = starts[idxs[tIdx]];
       const bol = t.articulations["0.00"].strokeNickname;
