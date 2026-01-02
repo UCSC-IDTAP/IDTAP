@@ -18,6 +18,9 @@ import { $push } from 'mongo-dot-notation';
 import apiRoutes from './apiRoutes';
 import oauthRoutes from './oauthRoutes';
 
+// Python interpreter path - use Python 3.11 with uv-managed venv
+const PYTHON_PATH = '/opt/idtap-python/bin/python';
+
 // Load Google OAuth credentials from environment variables
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
@@ -75,7 +78,7 @@ async function exists (path: string) {
 // Function to run a Python script and return a Promise
 function runPythonScript(scriptPath: string, args: string[] = []): Promise<void> {
   return new Promise<void>((resolve, reject) => {
-	const pythonProcess = spawn('python3', [scriptPath, ...args]);
+	const pythonProcess = spawn(PYTHON_PATH, [scriptPath, ...args]);
 
 	pythonProcess.stdout.on('data', (data) => {
 	  console.log(`stdout from ${scriptPath}: ${data}`);
@@ -143,12 +146,12 @@ const getSuffix = (mimetype: string): string | undefined => {
 };
 
 cron.schedule('0 0 * * *', () => {
-  spawn('python3', ['delete_unlinked_audio.py'])
+  spawn(PYTHON_PATH, ['delete_unlinked_audio.py'])
 })
 
 // schedule a cron job to backup every day
 cron.schedule('0 0 * * *', () => {
-  spawn('python3', ['backups/backup_mongo.py'])
+  spawn(PYTHON_PATH, ['backups/backup_mongo.py'])
 });
 
 app.use(fileUpload({
@@ -1038,9 +1041,9 @@ const runServer = async () => {
 	});
 	
 	app.post('/makeSpectrograms', async (req, res) => {
-	  // generate spectrograms for the given recording ID and tonic estimate  
+	  // generate spectrograms for the given recording ID and tonic estimate
 	  const makingSpecs = spawn(
-		'python3', 
+		PYTHON_PATH,
 		['generate_log_spectrograms.py', req.body.recId, req.body.saEst]
 	  );
 	  try {
@@ -1063,7 +1066,7 @@ const runServer = async () => {
 	app.post('/makeMelograph', async (req, res) => {
 	  res.setTimeout(10 * 60 * 1000); // 10 minutes
 	  const makingMelograph = spawn(
-		'python3', 
+		PYTHON_PATH,
 		['generate_melograph.py', req.body.recId, req.body.saEst]
 	  );
 	  try {
@@ -1781,17 +1784,17 @@ app.post('/handleGoogleAuthCodePythonAPI', async (req, res) => {
       `data/excel/${id}.xlsx`
 	  ];
 	  try {
-      const pythonScript = spawn('python3', argvs);
+      const pythonScript = spawn(PYTHON_PATH, argvs);
       pythonScript.stdout.on('data', data => {
         console.log(`stdout: ${data}`)
       });
-      
+
       pythonScript.stderr.on('data', data => {
         console.error(`stderr: ${data}`)
       });
       await pythonScript.on('close', () => {
         res.download(`data/excel/${id}.xlsx`);
-      }) 
+      })
 	  } catch (err) {
       console.error(err);
       res.status(500).send(err)
@@ -1807,7 +1810,7 @@ app.post('/handleGoogleAuthCodePythonAPI', async (req, res) => {
 		`data/excel/${id}.xlsx`
 	  ];
 	  try {
-		const pythonScript = spawn('python3', argvs);
+		const pythonScript = spawn(PYTHON_PATH, argvs);
 		pythonScript.stdout.on('data', data => {
 		  console.log(`stdout: ${data}`)
 		});
@@ -1963,7 +1966,7 @@ app.post('/handleGoogleAuthCodePythonAPI', async (req, res) => {
 			})
 		  }
 		  const spawns = ['process_audio.py', fn, audioEventID, recIdx, newId];
-		  const processAudio = spawn('python3', spawns);
+		  const processAudio = spawn(PYTHON_PATH, spawns);
 		  processAudio.stderr.on('data', data => {
 			console.error(`stderr: ${data}`)
 		  });

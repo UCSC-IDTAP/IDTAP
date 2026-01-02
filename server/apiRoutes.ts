@@ -3,10 +3,13 @@ import { Collection, ObjectId } from 'mongodb';
 import { spawn } from 'child_process';
 import fileUpload from 'express-fileupload';
 
+// Python interpreter path - use Python 3.11 with uv-managed venv
+const PYTHON_PATH = '/opt/idtap-python/bin/python';
+
 // Function to run a Python script and return a Promise
 function runPythonScript(scriptPath: string, args: string[] = []): Promise<void> {
   return new Promise<void>((resolve, reject) => {
-    const pythonProcess = spawn('python3', [scriptPath, ...args]);
+    const pythonProcess = spawn(PYTHON_PATH, [scriptPath, ...args]);
 
     pythonProcess.stdout.on('data', (data) => {
       console.log(`stdout from ${scriptPath}: ${data}`);
@@ -166,7 +169,7 @@ export default function apiRoutes(collections: Collections) {
         `data/excel/${transcriptionId}.xlsx`
       ];
 
-      const pythonScript = spawn('python3', argvs);
+      const pythonScript = spawn(PYTHON_PATH, argvs);
       
       pythonScript.stdout.on('data', data => {
         console.log(`stdout: ${data}`)
@@ -220,7 +223,7 @@ export default function apiRoutes(collections: Collections) {
         `data/excel/${transcriptionId}.xlsx`
       ];
 
-      const pythonScript = spawn('python3', argvs);
+      const pythonScript = spawn(PYTHON_PATH, argvs);
       
       pythonScript.stdout.on('data', data => {
         console.log(`stdout: ${data}`)
@@ -686,7 +689,7 @@ export default function apiRoutes(collections: Collections) {
 
       // Process audio with Python script and wait for completion
       const processArgs = ['process_audio.py', filename, audioEventID, recIdx.toString(), newId.toString()];
-      const processAudio = spawn('python3', processArgs);
+      const processAudio = spawn(PYTHON_PATH, processArgs);
       
       processAudio.stderr.on('data', data => {
         console.error(`process_audio stderr: ${data}`);

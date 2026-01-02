@@ -1,16 +1,37 @@
+# Core dependencies
 certifi==2025.6.15
 charset-normalizer==3.4.2
 dnspython==2.7.0
-humps==0.2.2
 idna==3.10
-iniconfig==2.1.0
 packaging==25.0
-pluggy==1.6.0
-Pygments==2.19.2
+urllib3>=2.6.0
+
+# Database
 pymongo==4.13.2
-pytest==8.4.1
-PyYAML==6.0.2
+
+# Audio processing (server scripts)
+essentia
+numpy>=1.22.0
+soundfile>=0.10.0
+
+# Visualization (server scripts)
+matplotlib>=3.5.0
+Pillow>=9.0.0
+
+# Data export (server scripts)
+xlsxwriter>=3.0.0
+
+# HTTP/API
 requests==2.32.4
 responses==0.25.7
 google-auth-oauthlib==1.2.0
-urllib3>=2.6.0
+
+# Testing
+pytest==8.4.1
+iniconfig==2.1.0
+pluggy==1.6.0
+
+# Other
+humps==0.2.2
+Pygments==2.19.2
+PyYAML==6.0.2
