@@ -7,7 +7,8 @@ on:
     branches: [main]
 
 jobs:
-  test:
+  test-js:
+    name: JavaScript Tests
     runs-on: ubuntu-latest
 
     steps:
@@ -38,3 +39,31 @@ jobs:
         env:
           VITE_GOOGLE_CLIENT_ID: ${{ secrets.VUE_APP_GOOGLE_CLIENT_ID }}
         run: pnpm run build
+
+  test-python:
+    name: Python Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          lfs: true
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python 3.11
+        run: uv python install 3.11
+
+      - name: Create virtual environment
+        run: uv venv .venv-test --python 3.11
+
+      - name: Install dependencies
+        run: uv pip install -r requirements.txt --python .venv-test/bin/python
+
+      - name: Run Python tests
+        run: |
+          cd python
+          ../.venv-test/bin/python -m pytest tests/ -v
