@@ -1,6 +1,7 @@
 # Changelog
 
 
+* chore: remove legacy Pipfile/Pipfile.lock [4839398] (Jon Myers)
 * feat: use Python 3.11 with uv-managed venv for server scripts [c39e27e] (Jon Myers)
 * chore: update server lockfile for qs override [038bae4] (Jon Myers)
 * chore: update lockfile for qs override [61d7258] (Jon Myers)
