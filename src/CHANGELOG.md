@@ -1,6 +1,7 @@
 # Changelog
 
 
+* chore: update server lockfile for qs override [038bae4] (Jon Myers)
 * chore: update lockfile for qs override [61d7258] (Jon Myers)
 * fix: update urllib3 to >=2.6.0 for security vulnerability [8f165e8] (Jon Myers)
 * fix: add qs security override and improve deploy scripts [2340792] (Jon Myers)
