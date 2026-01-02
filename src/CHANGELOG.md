@@ -1,6 +1,13 @@
 # Changelog
 
 
+* chore: update lockfile for qs override [61d7258] (Jon Myers)
+* fix: update urllib3 to >=2.6.0 for security vulnerability [8f165e8] (Jon Myers)
+* fix: add qs security override and improve deploy scripts [2340792] (Jon Myers)
+### 2026-01-02
+
+## January 2026
+
 * docs: update editor instructions with missing shortcuts and fixes [17f8a25] (Jon Myers)
 * docs: update editor instructions for December 2025 features [dba20a0] (Jon Myers)
 ### 2025-12-19
