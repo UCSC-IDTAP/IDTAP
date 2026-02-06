@@ -46,7 +46,6 @@ class Chikari {
   toJSON() {
         return {
           fundamental: this.fundamental,
-          pitches: this.pitches.map(p => p.toJSON()),
           uniqueId: this.uniqueId
         }
   }

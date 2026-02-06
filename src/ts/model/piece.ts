@@ -505,17 +505,7 @@ class Piece {
   }
 
   chikariFreqs(instIdx: number) {
-    const allChikaris: Chikari[] = [];
-    this.phraseGrid[instIdx].forEach(p => {
-      const chikaris = Object.values(p.chikaris);
-      allChikaris.push(...chikaris)
-    });
-    if (allChikaris.length === 0) {
-      return [this.raga.fundamental * 2, this.raga.fundamental * 4]
-    } else {
-      // console.log(allChikaris[0].pitches)
-      return allChikaris[0].pitches.slice(0, 2).map(p => p.frequency);
-    }
+    return this.raga.chikariPitches.map(p => p ? p.frequency : 0);
   }
 
   updateFundamental(fundamental: number) {

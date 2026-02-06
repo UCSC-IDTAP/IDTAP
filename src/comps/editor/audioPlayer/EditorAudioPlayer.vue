@@ -1189,20 +1189,21 @@ export default defineComponent({
       const newVal = 2 ** (cents / 1200);
       this.rubberBandNode!.setPitch(newVal);
       const raga = this.piece.raga;
-      const freqs = raga.chikariPitches.map((p) => p.frequency);
+      const pitches = raga.chikariPitches;
       const transp = 2 ** (this.transposition / 1200);
       const synthsComp = this.$refs.synths as InstanceType<typeof Synths>;
       this.instTracks.forEach((track, idx) => {
         if (track.inst === Instrument.Sitar) {
           const nodesObj = synthsComp.synths[idx] as SitarSynthType;
           const chikariNode = nodesObj.chikariNode;
-          const curFreq0 = chikariNode.freq0!.value;
-          const curFreq1 = chikariNode.freq1!.value;
-          chikariNode.freq0!.setValueAtTime(curFreq0, this.now());
-          chikariNode.freq1!.setValueAtTime(curFreq1, this.now());
           const et = this.now() + this.lagTime;
-          chikariNode.freq0!.linearRampToValueAtTime(freqs[0] * transp, et);
-          chikariNode.freq1!.linearRampToValueAtTime(freqs[1] * transp, et);
+          const freqParams = [chikariNode.freq0!, chikariNode.freq1!, chikariNode.freq2!, chikariNode.freq3!];
+          freqParams.forEach((param, i) => {
+            if (pitches[i]) {
+              param.setValueAtTime(param.value, this.now());
+              param.linearRampToValueAtTime(pitches[i]!.frequency * transp, et);
+            }
+          });
         }
       })
     },
@@ -1507,6 +1508,8 @@ export default defineComponent({
               extChikariGain: 1,
               chikariFreq0: this.piece.chikariFreqs(i)[0],
               chikariFreq1: this.piece.chikariFreqs(i)[1],
+              chikariFreq2: this.piece.chikariFreqs(i)[2],
+              chikariFreq3: this.piece.chikariFreqs(i)[3],
             }
           });
         } else if (track.inst === Instrument.Sarangi) {

@@ -294,15 +294,32 @@ export default defineComponent({
         chikariLoopSourceNode.loop = true;
         chikariNode.freq0!.value = control.params.chikariFreq0!;
         chikariNode.freq1!.value = control.params.chikariFreq1!;
-        // Set default frequencies for strings 2 and 3 (can be made configurable later)
-        const fundamental = props.piece.raga.fundamental;
-        chikariNode.freq2!.value = fundamental * 2 ** (7/12); // Perfect fifth above fundamental
-        chikariNode.freq3!.value = fundamental * 2 ** (4/12); // Major third above fundamental
-        // All string gains start at 1.0 (full volume)
+        chikariNode.freq2!.value = control.params.chikariFreq2 || 110;
+        chikariNode.freq3!.value = control.params.chikariFreq3 || 110;
         chikariNode.stringGain0!.value = 1.0;
         chikariNode.stringGain1!.value = 1.0;
-        chikariNode.stringGain2!.value = 1.0;
-        chikariNode.stringGain3!.value = 1.0;
+        chikariNode.stringGain2!.value = control.params.chikariFreq2 ? 1.0 : 0;
+        chikariNode.stringGain3!.value = control.params.chikariFreq3 ? 1.0 : 0;
+
+        // Configure strum order: sorted low-to-high by frequency
+        const chikariFreqs = [
+          control.params.chikariFreq0!,
+          control.params.chikariFreq1!,
+          control.params.chikariFreq2 || 0,
+          control.params.chikariFreq3 || 0,
+        ];
+        const strumStep = Math.round(2 ** -9 * props.ac.sampleRate); // ~2ms per string
+        const sortedIndices = chikariFreqs
+          .map((f, i) => ({ freq: f, idx: i }))
+          .filter(e => e.freq > 0)
+          .sort((a, b) => a.freq - b.freq)
+          .map(e => e.idx);
+        const delays = [0, 0, 0, 0];
+        sortedIndices.forEach((strIdx, order) => {
+          delays[strIdx] = strumStep * order;
+        });
+        chikariNode.port.postMessage({ type: 'setStrumDelays', delays });
+
         sonifyNode.gain.value = props.instTracks[control.idx].sounding ? 1 : 0;
 
         // connect nodes - main sitar string
