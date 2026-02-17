@@ -1,6 +1,11 @@
 # Changelog
 
 
+* feat: derive chikari pitches from raga instead of hardcoded intervals [29b99e4] (Jon Myers)
+### 2026-02-05
+
+## February 2026
+
 * chore: remove legacy Pipfile/Pipfile.lock [4839398] (Jon Myers)
 * feat: use Python 3.11 with uv-managed venv for server scripts [c39e27e] (Jon Myers)
 * chore: update server lockfile for qs override [038bae4] (Jon Myers)
