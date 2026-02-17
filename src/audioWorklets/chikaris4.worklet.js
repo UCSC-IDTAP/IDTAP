@@ -84,18 +84,30 @@ class Processor extends AudioWorkletProcessor {
         this.writePtr2 = 0;
         this.writePtr3 = 0;
         
-        // Initial delay pointers for strum timing
+        // Initial delay pointers for strum timing (configured via port message)
         this.initWritePtr0 = 0;
-        this.initWritePtr1 = (2 ** -8 * sampleRate) & 2047;
-        this.initWritePtr2 = (2 ** -7 * sampleRate) & 2047;
-        this.initWritePtr3 = (2 ** -6 * sampleRate) & 2047;
+        this.initWritePtr1 = 0;
+        this.initWritePtr2 = 0;
+        this.initWritePtr3 = 0;
         this.initReadPtr0 = 0;
         this.initReadPtr1 = 0;
         this.initReadPtr2 = 0;
         this.initReadPtr3 = 0;
-        
+
         // Filter states for each string
         this.y1 = [0, 0, 0, 0];
+
+        // Accept strum delay configuration from application
+        this.port.onmessage = (e) => {
+            if (e.data.type === 'setStrumDelays') {
+                // delays: [samples0, samples1, samples2, samples3]
+                const delays = e.data.delays;
+                this.initWritePtr0 = (this.initReadPtr0 + delays[0]) & 2047;
+                this.initWritePtr1 = (this.initReadPtr1 + delays[1]) & 2047;
+                this.initWritePtr2 = (this.initReadPtr2 + delays[2]) & 2047;
+                this.initWritePtr3 = (this.initReadPtr3 + delays[3]) & 2047;
+            }
+        };
     }
 
     setDelayTime(time0, time1, time2, time3) {

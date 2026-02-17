@@ -203,7 +203,7 @@ test('Piece method coverage', () => {
   expect(piece.trajIdxs.length).toBeGreaterThan(0);
   expect(piece.trajIdxsGrid[0]).toEqual(piece.trajIdxs);
 
-  expect(piece.chikariFreqs(0)).toEqual([piece.raga.fundamental * 2, piece.raga.fundamental * 4]);
+  expect(piece.chikariFreqs(0)).toEqual(piece.raga.chikariPitches.map(p => p ? p.frequency : 0));
   piece.updateFundamental(300);
   expect(piece.raga.fundamental).toBe(300);
   expect(p1.trajectories[0].pitches[0].fundamental).toBe(300);
@@ -346,10 +346,10 @@ test('track and group helpers on multiple tracks', () => {
   expect(piece.pIdxFromGroup(group)).toBe(0);
   expect(piece.mostRecentTraj(0.75, 0)).toBe(tA1);
 
-  // add a chikari so frequencies come from it
+  // chikari frequencies now come from the raga, not from chikari objects
   const chikari = new Chikari({ fundamental: piece.raga.fundamental });
   piece.phraseGrid[0][0].chikaris['0.00'] = chikari;
-  expect(piece.chikariFreqs(0)).toEqual(chikari.pitches.slice(0, 2).map(p => p.frequency));
+  expect(piece.chikariFreqs(0)).toEqual(piece.raga.chikariPitches.map(p => p ? p.frequency : 0));
 });
 
 test('meters and instrumentation update duration arrays', () => {
@@ -489,7 +489,7 @@ test('mostRecentTraj and chikariFreqs with chikaris', () => {
   const firstTraj = piece.phraseGrid[0][0].trajectories[0];
   const chikari = piece.phraseGrid[0][0].chikaris['0.25'];
   expect(piece.mostRecentTraj(0.6, 0)).toBe(firstTraj);
-  expect(piece.chikariFreqs(0)).toEqual(chikari.pitches.slice(0, 2).map(p => p.frequency));
+  expect(piece.chikariFreqs(0)).toEqual(piece.raga.chikariPitches.map(p => p ? p.frequency : 0));
 });
 
 test('addMeter overlap detection and removeMeter correctness', () => {

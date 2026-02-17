@@ -340,10 +340,34 @@ class Raga {
 	return ratios
   }
 
-  get chikariPitches() {
+  get chikariPitches(): (Pitch | null)[] {
+	const ratios = this.stratifiedRatios;
+	const f = this.fundamental;
+
+	// String 2: Pa if present in raga, otherwise silent
+	let paPitch: Pitch | null = null;
+	if (this.ruleSet.pa) {
+	  paPitch = new Pitch({ swara: 'pa', oct: 1, fundamental: f, ratios });
+	}
+
+	// String 3: Ga if exactly one variant present, otherwise silent
+	let gaPitch: Pitch | null = null;
+	const gaRule = this.ruleSet.ga;
+	if (typeof gaRule === 'object') {
+	  const hasLowered = gaRule.lowered;
+	  const hasRaised = gaRule.raised;
+	  if (hasLowered && !hasRaised) {
+		gaPitch = new Pitch({ swara: 'ga', oct: 1, raised: false, fundamental: f, ratios });
+	  } else if (hasRaised && !hasLowered) {
+		gaPitch = new Pitch({ swara: 'ga', oct: 1, raised: true, fundamental: f, ratios });
+	  }
+	}
+
 	return [
-	  new Pitch({ swara: 's', oct: 2, fundamental: this.fundamental }),
-	  new Pitch({ swara: 's', oct: 1, fundamental: this.fundamental }),
+	  new Pitch({ swara: 's', oct: 2, fundamental: f, ratios }),
+	  new Pitch({ swara: 's', oct: 1, fundamental: f, ratios }),
+	  paPitch,
+	  gaPitch,
 	]
   }
 

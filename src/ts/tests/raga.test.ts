@@ -189,9 +189,12 @@ test('defaultRaga', () => {
     [2 ** (10 / 12), 2 ** (11 / 12)]
   ];
   expect(r.stratifiedRatios).toEqual(sRatios);
+  const sR = r.stratifiedRatios;
   expect(r.chikariPitches).toEqual([
-    new Pitch({ swara: 0, oct: 2, fundamental: 261.63 }),
-    new Pitch({ swara: 0, oct: 1, fundamental: 261.63 }),
+    new Pitch({ swara: 0, oct: 2, fundamental: 261.63, ratios: sR }),
+    new Pitch({ swara: 0, oct: 1, fundamental: 261.63, ratios: sR }),
+    new Pitch({ swara: 'pa', oct: 1, fundamental: 261.63, ratios: sR }),
+    new Pitch({ swara: 'ga', oct: 1, raised: true, fundamental: 261.63, ratios: sR }),
   ])
   const hardCodedFreqs = [
     110.00186456141468, 123.47291821345574,
@@ -721,9 +724,12 @@ test('model raga core utilities', () => {
   ];
   expect(r.stratifiedRatios).toEqual(expectedRatios);
 
+  const sR2 = r.stratifiedRatios;
   expect(r.chikariPitches).toEqual([
-    new Pitch({ swara: 's', oct: 2, fundamental: r.fundamental }),
-    new Pitch({ swara: 's', oct: 1, fundamental: r.fundamental }),
+    new Pitch({ swara: 's', oct: 2, fundamental: r.fundamental, ratios: sR2 }),
+    new Pitch({ swara: 's', oct: 1, fundamental: r.fundamental, ratios: sR2 }),
+    new Pitch({ swara: 'pa', oct: 1, fundamental: r.fundamental, ratios: sR2 }),
+    new Pitch({ swara: 'ga', oct: 1, raised: true, fundamental: r.fundamental, ratios: sR2 }),
   ]);
 
   const hardCodedFreqs = [
