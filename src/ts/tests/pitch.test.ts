@@ -554,6 +554,19 @@ test('Pitch fromJSON backward compat with legacy ratios/fundamental', () => {
   expect(copy.toJSON()).toEqual(p.toJSON());
 });
 
+test('Pitch.fromJSON without context falls back to 12-TET defaults', () => {
+  // Stripped JSON with no embedded ratios/fundamental, and no context params.
+  // The Pitch constructor has defaults (12-TET ratios, fundamental=261.63),
+  // so it does NOT throw — but the resulting pitch uses defaults, not the
+  // piece's actual raga tuning. This is safe for isolated deserialization
+  // but callers should always thread raga context for correct frequencies.
+  const json = { swara: 1, raised: true, oct: 0, logOffset: 0 };
+  const p = Pitch.fromJSON(json);
+  expect(p.fundamental).toBe(261.63); // constructor default
+  expect(p.swara).toBe(1);
+  expect(p.logOffset).toBe(0);
+});
+
 test('Pitch fromJSON with raga context matches frequency exactly', () => {
   const ratios = [
     1,

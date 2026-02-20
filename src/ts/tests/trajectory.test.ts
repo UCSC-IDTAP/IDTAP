@@ -680,3 +680,36 @@ test('round-trip preserves all trajectory types (id 0-13)', () => {
     });
   }
 });
+
+test('Trajectory.fromJSON without context uses default pitch tuning', () => {
+  // Stripped JSON with no embedded ratios/fundamental, and no context params.
+  // Pitch constructor defaults to 12-TET / 261.63 Hz, so this doesn't throw
+  // but produces pitches with default tuning instead of the piece's raga.
+  const json = {
+    id: 0,
+    pitches: [{ swara: 0, raised: true, oct: 0, logOffset: 0 }],
+    durTot: 1,
+  };
+  const restored = Trajectory.fromJSON(json);
+  expect(restored.id).toBe(0);
+  expect(restored.pitches[0].fundamental).toBe(261.63);
+  expect(restored.durTot).toBe(1);
+});
+
+test('fromJSON normalizes articulation key "0" to "0.00"', () => {
+  const raga = new Raga();
+  const ratios = raga.stratifiedRatios;
+  const fundamental = raga.fundamental;
+  const json = {
+    id: 0,
+    pitches: [{ swara: 0, raised: true, oct: 0, logOffset: 0 }],
+    durTot: 1,
+    articulations: {
+      '0': { name: 'pluck', stroke: 'da' },
+    },
+  };
+  const restored = Trajectory.fromJSON(json, ratios, fundamental);
+  expect(restored.articulations['0.00']).toBeDefined();
+  expect(restored.articulations['0.00'].name).toBe('pluck');
+  expect(restored.articulations['0']).toBeUndefined();
+});
