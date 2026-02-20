@@ -32,8 +32,6 @@ test('defaultPitch', () => {
     swara: 0,
     raised: true,
     oct: 0,
-    ratios: ratios,
-    fundamental: 261.63,
     logOffset: 0,
   })
 });
@@ -439,8 +437,9 @@ test('nonOffsetFrequency and formatted string getters', () => {
 test('serialization round trip', () => {
   const p = new Pitch({ swara: 'ga', raised: false, oct: 1, logOffset: 0.2 });
   const json = p.toJSON();
-  const copy = Pitch.fromJSON(json);
+  const copy = Pitch.fromJSON(json, p.ratios, p.fundamental);
   expect(copy.toJSON()).toEqual(json);
+  expect(copy.frequency).toBeCloseTo(p.frequency);
 });
 
 test('a440CentsDeviation and movableCCentsDeviation edge octaves', () => {
@@ -483,7 +482,7 @@ test('numberedPitch invalid swara values', () => {
 
 test('toJSON/fromJSON preserves logOffset', () => {
   const orig = new Pitch({ swara: 'ni', raised: false, oct: 2, logOffset: -0.3 });
-  const round = Pitch.fromJSON(orig.toJSON());
+  const round = Pitch.fromJSON(orig.toJSON(), orig.ratios, orig.fundamental);
   expect(round.toJSON()).toEqual(orig.toJSON());
   expect(round.frequency).toBeCloseTo(orig.frequency);
 });
@@ -541,6 +540,42 @@ import { Pitch } from '../model';
 test('Pitch model serialization', () => {
   const p = new Pitch({ swara: 'ga', raised: false, oct: 1, logOffset: 0.2 });
   const json = p.toJSON();
-  const copy = Pitch.fromJSON(json);
+  const copy = Pitch.fromJSON(json, p.ratios, p.fundamental);
   expect(copy.toJSON()).toEqual(json);
+  expect(copy.frequency).toBeCloseTo(p.frequency);
+});
+
+test('Pitch fromJSON backward compat with legacy ratios/fundamental', () => {
+  const p = new Pitch({ swara: 'ga', raised: false, oct: 1, logOffset: 0.2 });
+  // Simulate legacy JSON that includes ratios and fundamental
+  const legacyJson = { ...p.toJSON(), ratios: p.ratios, fundamental: p.fundamental };
+  const copy = Pitch.fromJSON(legacyJson);
+  expect(copy.frequency).toBeCloseTo(p.frequency);
+  expect(copy.toJSON()).toEqual(p.toJSON());
+});
+
+test('Pitch fromJSON with raga context matches frequency exactly', () => {
+  const ratios = [
+    1,
+    [2 ** (1 / 12), 2 ** (2 / 12)],
+    [2 ** (3 / 12), 2 ** (4 / 12)],
+    [2 ** (5 / 12), 2 ** (6 / 12)],
+    2 ** (7 / 12),
+    [2 ** (8 / 12), 2 ** (9 / 12)],
+    [2 ** (10 / 12), 2 ** (11 / 12)]
+  ];
+  const fundamental = 240;
+  const swaras: [string, boolean][] = [
+    ['sa', true], ['re', false], ['re', true], ['ga', false], ['ga', true],
+    ['ma', false], ['ma', true], ['pa', true], ['dha', false], ['dha', true],
+    ['ni', false], ['ni', true],
+  ];
+  for (const [swara, raised] of swaras) {
+    for (const oct of [-1, 0, 1]) {
+      const orig = new Pitch({ swara, raised, oct, ratios, fundamental });
+      const json = orig.toJSON();
+      const restored = Pitch.fromJSON(json, ratios, fundamental);
+      expect(restored.frequency).toBeCloseTo(orig.frequency, 10);
+    }
+  }
 });

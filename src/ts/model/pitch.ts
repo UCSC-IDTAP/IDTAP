@@ -487,14 +487,20 @@ class Pitch {
           swara: this.swara,
           raised: this.raised,
           oct: this.oct,
-          ratios: this.ratios,
-          fundamental: this.fundamental,
           logOffset: this.logOffset,
         }
   }
 
-  static fromJSON(obj: any): Pitch {
-        return new Pitch(obj);
+  static fromJSON(
+        obj: any,
+        ratios?: (number | number[])[],
+        fundamental?: number
+  ): Pitch {
+        return new Pitch({
+          ...obj,
+          ratios: ratios ?? obj.ratios,
+          fundamental: fundamental ?? obj.fundamental,
+        });
   }
 }
 

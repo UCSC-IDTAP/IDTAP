@@ -292,8 +292,11 @@ const runServer = async () => {
 	  const update = {
 		'$set': updateObj,
 		'$unset': {
-		  'sectionStartsGrid': '',  // Remove legacy field - now using phrase.isSectionStart
-		  'sectionStarts': ''        // Remove even older legacy field
+		  'sectionStartsGrid': '',      // Remove legacy field - now using phrase.isSectionStart
+		  'sectionStarts': '',           // Remove even older legacy field
+		  'phrases': '',                 // Remove legacy duplicate of phraseGrid[0]
+		  'sectionCategorization': '',   // Remove legacy duplicate of sectionCatGrid[0]
+		  'durArray': '',                // Remove legacy duplicate of durArrayGrid[0]
 		}
 	  };
 	  try {

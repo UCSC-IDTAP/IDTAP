@@ -1351,7 +1351,7 @@ class Piece {
     return {
       raga: this.raga,
       durTot: this.durTot,
-      durArray: this.durArray,
+      // durArray: removed — duplicate of durArrayGrid[0]
       title: this.title,
       dateCreated: this.dateCreated,
       dateModified: this.dateModified,
@@ -1367,7 +1367,7 @@ class Piece {
       instrumentation: this.instrumentation,
       trackTitles: this.trackTitles,
       meters: this.meters,
-      sectionCategorization: this.sectionCategorization,
+      // sectionCategorization: removed — duplicate of sectionCatGrid[0]
       explicitPermissions: this.explicitPermissions,
       soloist: this.soloist,
       soloInstrument: this.soloInstrument,
@@ -1383,6 +1383,8 @@ class Piece {
 
   static fromJSON(obj: any): Piece {
     const raga = obj.raga ? Raga.fromJSON(obj.raga) : new Raga();
+    const ratios = raga.stratifiedRatios;
+    const fundamental = raga.fundamental;
     obj.raga = raga;
 
     if (obj.phraseGrid === undefined && obj.phrases !== undefined) {
@@ -1393,7 +1395,7 @@ class Piece {
     }
 
     obj.phraseGrid = (obj.phraseGrid || []).map((phrases: any[], instIdx: number) => {
-      return phrases.map((p: any) => Phrase.fromJSON(p));
+      return phrases.map((p: any) => Phrase.fromJSON(p, ratios, fundamental));
     });
 
     // Migration: Convert old sectionStartsGrid format to phrase.isSectionStart

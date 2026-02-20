@@ -869,10 +869,10 @@ class Trajectory {
       articulations: this.articulations,
       startTime: this.startTime,
       num: this.num,
-      name: this.name,
+      // name: removed — derived from id
       fundID12: this.fundID12,
       vibObj: this.vibObj,
-      instrumentation: this.instrumentation,
+      // instrumentation: removed — inherited from piece context
       vowel: this.vowel,
       startConsonant: this.startConsonant,
       startConsonantHindi: this.startConsonantHindi,
@@ -885,12 +885,16 @@ class Trajectory {
       groupId: this.groupId,
       automation: this.automation,
       uniqueId: this.uniqueId,
-      tags: this.tags,
+      // tags: removed — defaults to []
     }
   }
 
-  static fromJSON(obj: any): Trajectory {
-    const pitches = (obj.pitches || []).map((p: any) => Pitch.fromJSON(p));
+  static fromJSON(
+    obj: any,
+    ratios?: (number | number[])[],
+    fundamental?: number
+  ): Trajectory {
+    const pitches = (obj.pitches || []).map((p: any) => Pitch.fromJSON(p, ratios, fundamental));
     const articulations: { [key: string]: Articulation } = {};
     if (obj.articulations) {
       Object.keys(obj.articulations).forEach(key => {

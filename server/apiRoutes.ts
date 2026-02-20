@@ -285,7 +285,16 @@ export default function apiRoutes(collections: Collections) {
 
       // Update the transcription
       const query = { '_id': transcriptionId };
-      const update = { '$set': updateObj };
+      const update = {
+        '$set': updateObj,
+        '$unset': {
+          'sectionStartsGrid': '',      // Remove legacy field - now using phrase.isSectionStart
+          'sectionStarts': '',           // Remove even older legacy field
+          'phrases': '',                 // Remove legacy duplicate of phraseGrid[0]
+          'sectionCategorization': '',   // Remove legacy duplicate of sectionCatGrid[0]
+          'durArray': '',                // Remove legacy duplicate of durArrayGrid[0]
+        }
+      };
       const result = await collections.transcriptions.updateOne(query, update);
 
       res.json({ ...result, dateModified: updateObj['dateModified'] });

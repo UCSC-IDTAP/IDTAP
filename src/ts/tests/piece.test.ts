@@ -1068,3 +1068,275 @@ test('multi-track sectionStartsGrid works with phrase.isSectionStart', () => {
   expect(piece.sectionStartsGrid[0]).toEqual([0]);
   expect(piece.sectionStartsGrid[1]).toEqual([0, 1]);
 });
+
+// -------------------------------------------------------
+//  Tests for stripped Pitch serialization (no ratios/fundamental)
+// -------------------------------------------------------
+
+test('Piece round-trip preserves all pitch frequencies with stripped serialization', () => {
+  const raga = new Raga({ fundamental: 240 });
+  const pitches1 = [
+    new Pitch({ swara: 'sa', ratios: raga.stratifiedRatios, fundamental: 240 }),
+    new Pitch({ swara: 're', raised: true, ratios: raga.stratifiedRatios, fundamental: 240 }),
+    new Pitch({ swara: 'ga', raised: false, oct: 1, ratios: raga.stratifiedRatios, fundamental: 240 }),
+  ];
+  const pitches2 = [
+    new Pitch({ swara: 'ma', raised: true, ratios: raga.stratifiedRatios, fundamental: 240 }),
+    new Pitch({ swara: 'pa', ratios: raga.stratifiedRatios, fundamental: 240 }),
+  ];
+  const t1 = new Trajectory({ num: 0, pitches: pitches1, durTot: 1 });
+  const t2 = new Trajectory({ num: 1, pitches: pitches2, durTot: 1 });
+  const phrase = new Phrase({ trajectories: [t1, t2], raga });
+  const piece = new Piece({ phrases: [phrase], raga, instrumentation: [Instrument.Sitar] });
+
+  // Record original frequencies
+  const origFreqs = piece.allPitches().map(p => (p as Pitch).frequency);
+
+  // Serialize (new format: no ratios/fundamental in pitches, no raga in phrases)
+  const json = JSON.parse(JSON.stringify(piece.toJSON()));
+
+  // Verify pitches don't have ratios/fundamental
+  const firstPitchJson = json.phraseGrid[0][0].trajectoryGrid[0][0].pitches[0];
+  expect(firstPitchJson.ratios).toBeUndefined();
+  expect(firstPitchJson.fundamental).toBeUndefined();
+
+  // Verify phrases don't have raga
+  expect(json.phraseGrid[0][0].raga).toBeUndefined();
+
+  // Deserialize and verify frequencies match
+  const restored = Piece.fromJSON(json);
+  const restoredFreqs = restored.allPitches().map(p => (p as Pitch).frequency);
+  expect(restoredFreqs.length).toBe(origFreqs.length);
+  origFreqs.forEach((freq, i) => {
+    expect(restoredFreqs[i]).toBeCloseTo(freq, 10);
+  });
+});
+
+test('Piece round-trip with legacy format (ratios/fundamental in pitches) still works', () => {
+  const raga = new Raga({ fundamental: 240 });
+  const pitch = new Pitch({ swara: 'ga', raised: false, ratios: raga.stratifiedRatios, fundamental: 240 });
+  const t = new Trajectory({ num: 0, pitches: [pitch], durTot: 1 });
+  const phrase = new Phrase({ trajectories: [t], raga });
+  const piece = new Piece({ phrases: [phrase], raga, instrumentation: [Instrument.Sitar] });
+
+  // Simulate legacy JSON that includes ratios/fundamental in pitches and raga in phrases
+  const json = JSON.parse(JSON.stringify(piece.toJSON()));
+  json.phraseGrid[0][0].raga = raga.toJSON();
+  json.phraseGrid[0][0].trajectoryGrid[0][0].pitches[0].ratios = raga.stratifiedRatios;
+  json.phraseGrid[0][0].trajectoryGrid[0][0].pitches[0].fundamental = 240;
+
+  const restored = Piece.fromJSON(json);
+  const origFreq = pitch.frequency;
+  const restoredFreq = (restored.allPitches()[0] as Pitch).frequency;
+  expect(restoredFreq).toBeCloseTo(origFreq, 10);
+});
+
+test('Piece serialization from fixture preserves frequencies after strip', () => {
+  const piece = Piece.fromJSON(pieceData);
+  // Record all frequencies from fixture load (which may have legacy ratios)
+  const origFreqs = piece.allPitches().map(p => (p as Pitch).frequency);
+
+  // Re-serialize (stripped) and re-load
+  const json = piece.toJSON();
+  const restored = Piece.fromJSON(json);
+  const restoredFreqs = restored.allPitches().map(p => (p as Pitch).frequency);
+
+  expect(restoredFreqs.length).toBe(origFreqs.length);
+  origFreqs.forEach((freq, i) => {
+    expect(restoredFreqs[i]).toBeCloseTo(freq, 10);
+  });
+});
+
+// -------------------------------------------------------
+//  Backward compatibility: stripped serialization fields
+// -------------------------------------------------------
+
+test('Piece toJSON omits durArray and sectionCategorization', () => {
+  const raga = new Raga();
+  const p1 = new Phrase({ trajectories: [new Trajectory({ durTot: 1 })], raga, isSectionStart: true });
+  const piece = new Piece({ phrases: [p1], raga, instrumentation: [Instrument.Sitar] });
+  const json = JSON.parse(JSON.stringify(piece.toJSON()));
+
+  expect(json.durArray).toBeUndefined();
+  expect(json.sectionCategorization).toBeUndefined();
+  // Grid versions still present
+  expect(json.durArrayGrid).toBeDefined();
+  expect(json.sectionCatGrid).toBeDefined();
+});
+
+test('Piece fromJSON handles new stripped format (no durArray, no sectionCategorization)', () => {
+  const raga = new Raga();
+  const p1 = new Phrase({ trajectories: [new Trajectory({ durTot: 1 })], raga, isSectionStart: true });
+  const p2 = new Phrase({ trajectories: [new Trajectory({ durTot: 2 })], raga });
+  const piece = new Piece({ phrases: [p1, p2], raga, instrumentation: [Instrument.Sitar] });
+
+  const json = JSON.parse(JSON.stringify(piece.toJSON()));
+  expect(json.durArray).toBeUndefined();
+  expect(json.sectionCategorization).toBeUndefined();
+
+  const restored = Piece.fromJSON(json);
+  expect(restored.durArray.length).toBe(2);
+  expect(restored.durArrayGrid[0].length).toBe(2);
+  expect(restored.sectionCategorization.length).toBeGreaterThan(0);
+  expect(restored.sectionCatGrid[0].length).toBeGreaterThan(0);
+});
+
+test('Piece fromJSON handles legacy format with durArray and sectionCategorization', () => {
+  const raga = new Raga();
+  const p1 = new Phrase({ trajectories: [new Trajectory({ durTot: 1 })], raga, isSectionStart: true });
+  const piece = new Piece({ phrases: [p1], raga, instrumentation: [Instrument.Sitar] });
+
+  // Simulate legacy JSON that includes both flat and grid fields
+  const json = JSON.parse(JSON.stringify(piece.toJSON()));
+  json.durArray = [1];
+  json.sectionCategorization = piece.sectionCategorization;
+  // Also add legacy phrases field
+  json.phrases = json.phraseGrid[0];
+
+  const restored = Piece.fromJSON(json);
+  expect(restored.durArray).toEqual([1]);
+  expect(restored.sectionCategorization).toBeDefined();
+  expect(restored.phrases.length).toBe(1);
+});
+
+test('Piece toJSON strips phrase raga and trajectory name/tags/instrumentation', () => {
+  const raga = new Raga({ fundamental: 240 });
+  const pitch = new Pitch({ swara: 'ga', raised: false, ratios: raga.stratifiedRatios, fundamental: 240 });
+  const t = new Trajectory({ num: 0, pitches: [pitch], durTot: 1, instrumentation: Instrument.Sitar });
+  const phrase = new Phrase({ trajectories: [t], raga });
+  const piece = new Piece({ phrases: [phrase], raga, instrumentation: [Instrument.Sitar] });
+
+  const json = JSON.parse(JSON.stringify(piece.toJSON()));
+  const phraseJson = json.phraseGrid[0][0];
+  const trajJson = phraseJson.trajectoryGrid[0][0];
+  const pitchJson = trajJson.pitches[0];
+
+  // Phrase: no raga
+  expect(phraseJson.raga).toBeUndefined();
+  // Trajectory: no name, tags, instrumentation
+  expect(trajJson.name).toBeUndefined();
+  expect(trajJson.tags).toBeUndefined();
+  expect(trajJson.instrumentation).toBeUndefined();
+  // Pitch: no ratios, fundamental
+  expect(pitchJson.ratios).toBeUndefined();
+  expect(pitchJson.fundamental).toBeUndefined();
+  // Essential fields present
+  expect(trajJson.id).toBeDefined();
+  expect(pitchJson.swara).toBeDefined();
+});
+
+test('Piece full round-trip: new format preserves all musical data', () => {
+  const raga = new Raga({ fundamental: 240 });
+  const ratios = raga.stratifiedRatios;
+  const pitches = [
+    new Pitch({ swara: 'sa', ratios, fundamental: 240 }),
+    new Pitch({ swara: 'ga', raised: false, oct: 1, ratios, fundamental: 240 }),
+  ];
+  const t1 = new Trajectory({
+    id: 0, num: 0, pitches: [pitches[0]], durTot: 0.5,
+    instrumentation: Instrument.Sitar,
+  });
+  const t2 = new Trajectory({
+    id: 1, num: 1, pitches, durTot: 0.5,
+    instrumentation: Instrument.Sitar,
+  });
+  const phrase = new Phrase({ trajectories: [t1, t2], raga, isSectionStart: true });
+  phrase.chikaris['0.25'] = new Chikari({ fundamental: 240 });
+  const group = new Group({ trajectories: [t1, t2] });
+  phrase.groupsGrid[0].push(group);
+
+  const piece = new Piece({
+    phrases: [phrase], raga, instrumentation: [Instrument.Sitar],
+  });
+
+  // Capture original state
+  const origFreqs = piece.allPitches().map(p => (p as Pitch).frequency);
+  const origDurArray = [...piece.durArray];
+  const origSectionStarts = [...piece.sectionStartsGrid[0]];
+
+  // Round-trip through new stripped format
+  const json = JSON.parse(JSON.stringify(piece.toJSON()));
+  const restored = Piece.fromJSON(json);
+
+  // Verify all data preserved
+  const restoredFreqs = restored.allPitches().map(p => (p as Pitch).frequency);
+  expect(restoredFreqs.length).toBe(origFreqs.length);
+  origFreqs.forEach((freq, i) => {
+    expect(restoredFreqs[i]).toBeCloseTo(freq, 10);
+  });
+  expect(restored.durArray).toEqual(origDurArray);
+  expect(restored.sectionStartsGrid[0]).toEqual(origSectionStarts);
+  expect(restored.raga.fundamental).toBe(240);
+  expect(restored.phrases[0].trajectories[0].name).toBe('Fixed');
+  expect(restored.phrases[0].trajectories[0].tags).toEqual([]);
+  expect(Object.keys(restored.phrases[0].chikaris)).toEqual(['0.25']);
+  expect(restored.phrases[0].groupsGrid[0].length).toBe(1);
+});
+
+test('Piece full round-trip: legacy format with all fields still loads', () => {
+  const raga = new Raga({ fundamental: 240 });
+  const ratios = raga.stratifiedRatios;
+  const pitch = new Pitch({ swara: 'ga', raised: false, ratios, fundamental: 240 });
+  const t = new Trajectory({ id: 0, num: 0, pitches: [pitch], durTot: 1 });
+  const phrase = new Phrase({ trajectories: [t], raga, isSectionStart: true });
+  const piece = new Piece({ phrases: [phrase], raga, instrumentation: [Instrument.Sitar] });
+
+  // Build a full legacy JSON with ALL fields present
+  const json = JSON.parse(JSON.stringify(piece.toJSON()));
+  // Re-add all stripped fields to simulate legacy document
+  json.durArray = json.durArrayGrid[0];
+  json.sectionCategorization = json.sectionCatGrid[0];
+  json.sectionStarts = [0];
+  json.sectionStartsGrid = [[0]];
+  json.phrases = json.phraseGrid[0];
+  json.phraseGrid[0][0].raga = JSON.parse(JSON.stringify(raga.toJSON()));
+  const trajJson = json.phraseGrid[0][0].trajectoryGrid[0][0];
+  trajJson.name = 'Fixed';
+  trajJson.tags = ['legacy-tag'];
+  trajJson.instrumentation = 'Sitar';
+  trajJson.pitches[0].ratios = ratios;
+  trajJson.pitches[0].fundamental = 240;
+
+  const restored = Piece.fromJSON(json);
+  expect(restored.phrases.length).toBe(1);
+  expect(restored.durArray).toEqual(json.durArray);
+  expect((restored.allPitches()[0] as Pitch).frequency).toBeCloseTo(pitch.frequency, 10);
+  // Tags from legacy preserved
+  expect(restored.phrases[0].trajectories[0].tags).toEqual(['legacy-tag']);
+});
+
+test('Piece multi-cycle round-trip: save → load → save → load preserves data', () => {
+  const raga = new Raga({ fundamental: 220 });
+  const ratios = raga.stratifiedRatios;
+  const pitches = [
+    new Pitch({ swara: 'pa', ratios, fundamental: 220 }),
+    new Pitch({ swara: 'dha', raised: true, oct: 1, ratios, fundamental: 220, logOffset: 0.05 }),
+  ];
+  const t = new Trajectory({ id: 1, pitches, durTot: 1 });
+  const phrase = new Phrase({ trajectories: [t], raga, isSectionStart: true });
+  const piece = new Piece({ phrases: [phrase], raga, instrumentation: [Instrument.Sitar] });
+
+  const origFreqs = piece.allPitches().map(p => (p as Pitch).frequency);
+
+  // Cycle 1
+  const json1 = JSON.parse(JSON.stringify(piece.toJSON()));
+  const piece2 = Piece.fromJSON(json1);
+
+  // Cycle 2
+  const json2 = JSON.parse(JSON.stringify(piece2.toJSON()));
+  const piece3 = Piece.fromJSON(json2);
+
+  // Cycle 3
+  const json3 = JSON.parse(JSON.stringify(piece3.toJSON()));
+  const piece4 = Piece.fromJSON(json3);
+
+  // Verify frequencies survive all cycles
+  const finalFreqs = piece4.allPitches().map(p => (p as Pitch).frequency);
+  expect(finalFreqs.length).toBe(origFreqs.length);
+  origFreqs.forEach((freq, i) => {
+    expect(finalFreqs[i]).toBeCloseTo(freq, 10);
+  });
+
+  // Verify serialized size stabilizes (doesn't grow or shrink across cycles)
+  expect(JSON.stringify(json2).length).toBe(JSON.stringify(json3).length);
+});
