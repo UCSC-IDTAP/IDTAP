@@ -1,6 +1,7 @@
 # Changelog
 
 
+* fix: address remaining 4 dependabot security alerts [369652d] (Jon Myers)
 * fix: address dependabot security alerts [45b0649] (Jon Myers)
 ### 2026-02-20
 
