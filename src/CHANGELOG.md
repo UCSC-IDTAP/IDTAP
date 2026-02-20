@@ -1,6 +1,9 @@
 # Changelog
 
 
+* fix: address dependabot security alerts [45b0649] (Jon Myers)
+### 2026-02-20
+
 * feat: derive chikari pitches from raga instead of hardcoded intervals [29b99e4] (Jon Myers)
 ### 2026-02-05
 
