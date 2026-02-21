@@ -1,6 +1,7 @@
 # Changelog
 
 
+* fix: handle missing trajectory name in make_excel.py after serialization strip [812a2f4] (Jon Myers)
 * feat: strip redundant data from pitch/trajectory/phrase serialization (#887) [f6bed2e] (Jon Myers)
 * fix: address remaining 4 dependabot security alerts [369652d] (Jon Myers)
 * fix: address dependabot security alerts [45b0649] (Jon Myers)
