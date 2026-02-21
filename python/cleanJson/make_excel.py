@@ -1,4 +1,11 @@
 import xlsxwriter, json, datetime, math, os, sys
+
+TRAJ_NAMES = [
+    'Fixed', 'Bend: Simple', 'Bend: Sloped Start', 'Bend: Sloped End',
+    'Bend: Ladle', 'Bend: Reverse Ladle', 'Bend: Simple Multiple',
+    'Krintin', 'Krintin Slide', 'Krintin Slide Hammer',
+    'Dense Krintin Slide Hammer', 'Slide', 'Silent', 'Vibrato'
+]
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 from bson import json_util
@@ -178,7 +185,7 @@ def add_phrase(phrase, vstart, idx):
             
             worksheet.merge_range(art_start, 3, end, 3, tIdx, format)
             worksheet.merge_range(art_start, 4, end, 4, traj['id'], format)
-            worksheet.merge_range(art_start, 5, end, 5, traj['name'], format)
+            worksheet.merge_range(art_start, 5, end, 5, traj.get('name', TRAJ_NAMES[traj['id']] if traj['id'] < len(TRAJ_NAMES) else ''), format)
             worksheet.merge_range(art_start, 6, end, 6, round(traj['durTot'], 2), format)
             worksheet.merge_range(art_start, 7, end, 7, round(traj['startTime'], 2), format)
             if traj['id'] in [2, 3, 4, 5]:
@@ -196,7 +203,7 @@ def add_phrase(phrase, vstart, idx):
                 format = entryFormat
             worksheet.write(art_start, 3, tIdx, format)
             worksheet.write(art_start, 4, traj['id'], format)
-            worksheet.write(art_start, 5, traj['name'], format)
+            worksheet.write(art_start, 5, traj.get('name', TRAJ_NAMES[traj['id']] if traj['id'] < len(TRAJ_NAMES) else ''), format)
             worksheet.write(art_start, 6, round(traj['durTot'], 2), format)
             worksheet.write(art_start, 7, round(traj['startTime'], 2), format)
             if traj['id'] in ['2', '3', '4', '5']:
