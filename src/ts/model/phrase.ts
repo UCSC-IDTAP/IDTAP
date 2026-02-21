@@ -629,7 +629,6 @@ class Phrase {
       durTot: this.durTot,
       durArray: this.durArray,
       chikaris: this.chikaris,
-      raga: this.raga,
       startTime: this.startTime,
       trajectoryGrid: this.trajectoryGrid,
       instrumentation: this.instrumentation,
@@ -641,12 +640,21 @@ class Phrase {
     }
   }
 
-  static fromJSON(obj: any): Phrase {
+  static fromJSON(
+    obj: any,
+    ratios?: (number | number[])[],
+    fundamental?: number
+  ): Phrase {
+    // Use passed-in raga context, or fall back to phrase's own raga
+    const phraseRaga = obj.raga ? Raga.fromJSON(obj.raga) : undefined;
+    const r = ratios ?? phraseRaga?.stratifiedRatios;
+    const f = fundamental ?? phraseRaga?.fundamental;
+
     const trajectoryGrid = obj.trajectoryGrid
-      ? obj.trajectoryGrid.map((trajs: any[]) => trajs.map((t: any) => Trajectory.fromJSON(t)))
+      ? obj.trajectoryGrid.map((trajs: any[]) => trajs.map((t: any) => Trajectory.fromJSON(t, r, f)))
       : undefined;
     const trajectories = obj.trajectories
-      ? obj.trajectories.map((t: any) => Trajectory.fromJSON(t))
+      ? obj.trajectories.map((t: any) => Trajectory.fromJSON(t, r, f))
       : undefined;
     const chikaris: { [key: string]: Chikari } = {};
     if (obj.chikaris) {

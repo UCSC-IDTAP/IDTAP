@@ -347,6 +347,43 @@ test('constructor pads grids to instrumentation length', () => {
 });
 
 
+test('Phrase.fromJSON with ratios/fundamental threads context to pitches', () => {
+  const raga = new Raga({ fundamental: 240 });
+  const ratios = raga.stratifiedRatios;
+  const fundamental = raga.fundamental;
+  const p1 = new Pitch({ swara: 'pa', ratios, fundamental, logOffset: 0.1 });
+  const t = new Trajectory({ id: 0, pitches: [p1], durTot: 1 });
+  const phrase = new Phrase({ trajectories: [t], raga });
+
+  // Serialize (stripped: no raga in phrase, no ratios/fundamental in pitch)
+  const json = JSON.parse(JSON.stringify(phrase.toJSON()));
+  expect(json.raga).toBeUndefined();
+  expect(json.trajectoryGrid[0][0].pitches[0].ratios).toBeUndefined();
+
+  // Deserialize with context
+  const restored = Phrase.fromJSON(json, ratios, fundamental);
+  expect(restored.trajectories[0].pitches[0].frequency)
+    .toBeCloseTo(p1.frequency, 10);
+});
+
+test('Phrase.fromJSON falls back to embedded raga when no context provided', () => {
+  const raga = new Raga({ fundamental: 240 });
+  const p1 = new Pitch({ swara: 'ga', raised: false, ratios: raga.stratifiedRatios, fundamental: 240 });
+  const t = new Trajectory({ id: 0, pitches: [p1], durTot: 1 });
+  const phrase = new Phrase({ trajectories: [t], raga });
+
+  // Build legacy JSON with embedded raga and pitch ratios
+  const json = JSON.parse(JSON.stringify(phrase.toJSON()));
+  json.raga = JSON.parse(JSON.stringify(raga.toJSON()));
+  json.trajectoryGrid[0][0].pitches[0].ratios = raga.stratifiedRatios;
+  json.trajectoryGrid[0][0].pitches[0].fundamental = 240;
+
+  // Deserialize without context params (legacy path)
+  const restored = Phrase.fromJSON(json);
+  expect(restored.trajectories[0].pitches[0].frequency)
+    .toBeCloseTo(p1.frequency, 10);
+});
+
 test('fromJSON uses fallbacks for missing grids', () => {
   const obj = {
     trajectories: [],

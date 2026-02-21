@@ -597,3 +597,119 @@ test('constructor removes zero-duration segments', () => {
   expect(traj.freqs.length).toBe(2);
   expect(traj.logFreqs.length).toBe(2);
 });
+
+// -------------------------------------------------------
+//  Backward compatibility: stripped serialization fields
+// -------------------------------------------------------
+
+test('toJSON omits name, tags, and instrumentation', () => {
+  const t = new Trajectory({ id: 1, pitches: [new Pitch()], durTot: 1 });
+  const json = JSON.parse(JSON.stringify(t.toJSON()));
+  expect(json.name).toBeUndefined();
+  expect(json.tags).toBeUndefined();
+  expect(json.instrumentation).toBeUndefined();
+  // essential fields still present
+  expect(json.id).toBe(1);
+  expect(json.durTot).toBe(1);
+  expect(json.uniqueId).toBeDefined();
+});
+
+test('fromJSON restores trajectory from new stripped format', () => {
+  const orig = new Trajectory({
+    id: 3,
+    pitches: [new Pitch({ swara: 'ga', raised: false })],
+    durTot: 2,
+    instrumentation: Instrument.Sitar,
+  });
+  const json = JSON.parse(JSON.stringify(orig.toJSON()));
+
+  // Stripped format: no name, tags, instrumentation
+  expect(json.name).toBeUndefined();
+  expect(json.tags).toBeUndefined();
+  expect(json.instrumentation).toBeUndefined();
+
+  const restored = Trajectory.fromJSON(json, orig.pitches[0].ratios, orig.pitches[0].fundamental);
+  expect(restored.id).toBe(3);
+  expect(restored.name).toBe('Bend: Sloped End'); // derived from id
+  expect(restored.tags).toEqual([]); // default
+  expect(restored.pitches[0].frequency).toBeCloseTo(orig.pitches[0].frequency);
+});
+
+test('fromJSON restores trajectory from legacy format with name/tags/instrumentation', () => {
+  const orig = new Trajectory({
+    id: 0,
+    pitches: [new Pitch()],
+    durTot: 1,
+    instrumentation: Instrument.Sitar,
+  });
+  // Simulate legacy JSON that includes name, tags, instrumentation
+  const json = JSON.parse(JSON.stringify(orig.toJSON()));
+  json.name = 'Fixed';
+  json.tags = ['test-tag'];
+  json.instrumentation = 'Sitar';
+  json.pitches[0].ratios = orig.pitches[0].ratios;
+  json.pitches[0].fundamental = orig.pitches[0].fundamental;
+
+  const restored = Trajectory.fromJSON(json);
+  expect(restored.id).toBe(0);
+  expect(restored.name).toBe('Fixed'); // derived from id (overrides stored name)
+  expect(restored.tags).toEqual(['test-tag']); // preserved from legacy
+  expect(restored.pitches[0].frequency).toBeCloseTo(orig.pitches[0].frequency);
+});
+
+test('round-trip preserves all trajectory types (id 0-13)', () => {
+  const raga = new Raga();
+  const ratios = raga.stratifiedRatios;
+  const fundamental = raga.fundamental;
+
+  for (let id = 0; id <= 13; id++) {
+    if (id === 11) continue; // skip, same as id 7
+    const pitchCount = id >= 4 && id <= 10 ? 2 : 1;
+    const pitches = Array.from({ length: pitchCount }, (_, i) =>
+      new Pitch({ swara: i, ratios, fundamental })
+    );
+    const orig = new Trajectory({ id, pitches, durTot: 1 });
+    const json = JSON.parse(JSON.stringify(orig.toJSON()));
+    const restored = Trajectory.fromJSON(json, ratios, fundamental);
+
+    expect(restored.id).toBe(id);
+    expect(restored.durTot).toBe(1);
+    expect(restored.pitches.length).toBe(pitchCount);
+    restored.pitches.forEach((p, i) => {
+      expect(p.frequency).toBeCloseTo(orig.pitches[i].frequency);
+    });
+  }
+});
+
+test('Trajectory.fromJSON without context uses default pitch tuning', () => {
+  // Stripped JSON with no embedded ratios/fundamental, and no context params.
+  // Pitch constructor defaults to 12-TET / 261.63 Hz, so this doesn't throw
+  // but produces pitches with default tuning instead of the piece's raga.
+  const json = {
+    id: 0,
+    pitches: [{ swara: 0, raised: true, oct: 0, logOffset: 0 }],
+    durTot: 1,
+  };
+  const restored = Trajectory.fromJSON(json);
+  expect(restored.id).toBe(0);
+  expect(restored.pitches[0].fundamental).toBe(261.63);
+  expect(restored.durTot).toBe(1);
+});
+
+test('fromJSON normalizes articulation key "0" to "0.00"', () => {
+  const raga = new Raga();
+  const ratios = raga.stratifiedRatios;
+  const fundamental = raga.fundamental;
+  const json = {
+    id: 0,
+    pitches: [{ swara: 0, raised: true, oct: 0, logOffset: 0 }],
+    durTot: 1,
+    articulations: {
+      '0': { name: 'pluck', stroke: 'da' },
+    },
+  };
+  const restored = Trajectory.fromJSON(json, ratios, fundamental);
+  expect(restored.articulations['0.00']).toBeDefined();
+  expect(restored.articulations['0.00'].name).toBe('pluck');
+  expect(restored.articulations['0']).toBeUndefined();
+});
