@@ -1,6 +1,11 @@
 # Changelog
 
 
+* fix: bump fast-xml-parser to >=5.5.7 for CVE-2026-33349 [20f0d46] (Jon Myers)
+### 2026-03-20
+
+## March 2026
+
 * fix: handle missing trajectory name in make_excel.py after serialization strip [812a2f4] (Jon Myers)
 * feat: strip redundant data from pitch/trajectory/phrase serialization (#887) [f6bed2e] (Jon Myers)
 * fix: address remaining 4 dependabot security alerts [369652d] (Jon Myers)
