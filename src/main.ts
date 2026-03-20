@@ -80,7 +80,7 @@ const store = createStore({
 
 // for event bus
 import mitt from 'mitt';
-import { createHead } from '@vueuse/head';
+import { createHead } from '@unhead/vue/legacy';
 const head = createHead();
 const emitter = mitt();
 const app = createApp(App);
