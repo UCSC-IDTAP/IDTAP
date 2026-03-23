@@ -1,6 +1,7 @@
 # Changelog
 
 
+* fix: address 9 dependabot security alerts [f6a6f9a] (Jon Myers)
 * fix: bump fast-xml-parser to >=5.5.7 for CVE-2026-33349 [20f0d46] (Jon Myers)
 ### 2026-03-20
 
