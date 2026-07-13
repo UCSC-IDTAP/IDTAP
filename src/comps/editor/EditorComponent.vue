@@ -377,6 +377,7 @@ import {
   updateTranscriptionViewed
 } from '@/js/serverCalls.ts';
 import { Meter, Pulse } from '@/js/meter.ts';
+import { suppressMotion } from '@/js/motionPrefs.ts';
 import EditorAudioPlayer from '@/comps/editor/audioPlayer/EditorAudioPlayer.vue';
 import TrajSelectPanel from '@/comps/editor/TrajSelectPanel.vue';
 import ContextMenu from'@/comps/ContextMenu.vue';
@@ -892,7 +893,7 @@ export default defineComponent({
     this.throttledAlterVibObj = throttle(this.alterVibObj, 16);
     this.throttledRenderMeter = throttle(this.renderMeter, 100);
     this.throttledRefreshSargamLines = throttle(this.refreshSargamLines, 100);
-    if (this.$store.state.userID === '634d9506a6a3647e543b7641') {
+    if (suppressMotion(this.$store.state.userID)) {
       this.playheadAnimation = PlayheadAnimations.Block;
     }
 
