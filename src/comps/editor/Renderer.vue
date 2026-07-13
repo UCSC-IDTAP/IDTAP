@@ -228,6 +228,7 @@ import {
   toRef
 } from 'vue';
 import { throttle } from 'lodash';
+import { suppressMotion } from '@/js/motionPrefs.ts';
 
 import SpectrogramLayer from '@/comps/editor/renderer/SpectrogramLayer.vue';
 import XAxis from '@/comps/editor/renderer/XAxis.vue';
@@ -872,13 +873,13 @@ export default defineComponent({
     }, 16);
 
     const onWheel = (e: WheelEvent) => {
-      if (store.state.userID === '634d9506a6a3647e543b7641') {
+      if (suppressMotion(store.state.userID)) {
         e.preventDefault();
         e.stopPropagation();
       }
     };
     const onTouchMove = (e: TouchEvent) => {
-      if (store.state.userID === '634d9506a6a3647e543b7641') {
+      if (suppressMotion(store.state.userID)) {
         e.preventDefault();
         e.stopPropagation();
       }

@@ -397,6 +397,7 @@ import {
   updateSavedDisplaySettings,
   deleteSavedDisplaySettings
 } from '@/js/serverCalls.ts'
+import { suppressMotion } from '@/js/motionPrefs.ts';
 import { useStore } from 'vuex';
 import { v4 as uuidv4 } from 'uuid';
 export default defineComponent({
@@ -1202,7 +1203,7 @@ export default defineComponent({
       if (s.playheadAnimationStyle !== undefined) {
         playheadAnimationProxy.value = s.playheadAnimationStyle;
       }
-      if (store.state.userID === '634d9506a6a3647e543b7641') {
+      if (suppressMotion(store.state.userID)) {
         playheadAnimationProxy.value = PlayheadAnimations.DottedLine;
       }
       if (s.highlightTrajs !== undefined) {

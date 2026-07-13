@@ -727,14 +727,12 @@ export default defineComponent({
     },
 
     admin() {
-      const jmId = '634d9506a6a3647e543b7641';
-      const dnId = '63595c60a6a3647e54a62853';
-      const currentId = this.$store.state.userID;
-      if (currentId === jmId || currentId === dnId) {
-        return true;
-      } else {
-        return false;
-      }
+      const adminIds = [
+        '634d9506a6a3647e543b7641', // jbmyers@ucsc.edu
+        '67bcba9496f2cea9ceb736c2', // jon.myers.sound@gmail.com
+        '63595c60a6a3647e54a62853', // Dard Neuman
+      ];
+      return adminIds.includes(this.$store.state.userID);
     },
 
     vocal() {
