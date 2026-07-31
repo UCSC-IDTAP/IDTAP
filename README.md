@@ -1,3 +1,9 @@
+> [!IMPORTANT]
+> **This repository is archived.** IDTAP development has moved to
+> **[jon-myers/idtap](https://github.com/jon-myers/idtap)** — the live platform remains at
+> **[swara.studio](https://swara.studio)**. This copy is kept for historical reference and is
+> no longer deployed or maintained.
+
 # IDTAP
 
 An Interactive Digital Transcription and Analysis Platform (IDTAP) that enables transcription, archiving, sharing, and analysis of audio recordings of oral melodic and improvisation traditions, with a first focus on Hindustani music.
