@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IDTAP Project Documentation</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; display: flex; height: 100vh; color: #24292f; }
+
+    /* Sidebar */
+    #sidebar { width: 280px; min-width: 280px; background: #f6f8fa; border-right: 1px solid #d0d7de; padding: 20px 0; overflow-y: auto; }
+    #sidebar h2 { padding: 0 20px 15px; font-size: 15px; color: #57606a; border-bottom: 1px solid #d0d7de; margin-bottom: 10px; }
+    #sidebar a { display: block; padding: 8px 20px; font-size: 14px; color: #24292f; text-decoration: none; border-left: 3px solid transparent; }
+    #sidebar a:hover { background: #eaeef2; }
+    #sidebar a.active { background: #ddf4ff; border-left-color: #0969da; color: #0969da; font-weight: 600; }
+
+    /* Content */
+    #content { flex: 1; overflow-y: auto; padding: 40px 60px; max-width: 900px; }
+    #content h1 { font-size: 32px; border-bottom: 1px solid #d0d7de; padding-bottom: 12px; margin-bottom: 20px; }
+    #content h2 { font-size: 24px; border-bottom: 1px solid #d0d7de; padding-bottom: 8px; margin: 30px 0 15px; }
+    #content h3 { font-size: 20px; margin: 25px 0 10px; }
+    #content h4 { font-size: 16px; margin: 20px 0 8px; }
+    #content p { line-height: 1.6; margin-bottom: 12px; }
+    #content ul, #content ol { margin: 8px 0 12px 24px; line-height: 1.6; }
+    #content li { margin-bottom: 4px; }
+    #content code { background: #f6f8fa; padding: 2px 6px; border-radius: 4px; font-size: 0.9em; font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace; }
+    #content pre { background: #f6f8fa; padding: 16px; border-radius: 6px; overflow-x: auto; margin: 12px 0; border: 1px solid #d0d7de; }
+    #content pre code { background: none; padding: 0; font-size: 13px; }
+    #content table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+    #content th, #content td { border: 1px solid #d0d7de; padding: 8px 12px; text-align: left; font-size: 14px; }
+    #content th { background: #f6f8fa; font-weight: 600; }
+    #content blockquote { border-left: 4px solid #d0d7de; padding: 8px 16px; margin: 12px 0; color: #57606a; }
+    #content hr { border: none; border-top: 1px solid #d0d7de; margin: 30px 0; }
+    #content strong { font-weight: 600; }
+    #content a { color: #0969da; text-decoration: none; }
+    #content a:hover { text-decoration: underline; }
+
+    #loading { padding: 40px; color: #57606a; font-style: italic; }
+  </style>
+</head>
+<body>
+  <nav id="sidebar">
+    <h2>IDTAP Documentation</h2>
+    <a href="#" data-file="INDEX.md" class="active">Index</a>
+    <a href="#" data-file="01-project-overview.md">1. Project Overview</a>
+    <a href="#" data-file="02-development-history.md">2. Development History</a>
+    <a href="#" data-file="03-system-architecture.md">3. System Architecture</a>
+    <a href="#" data-file="04-domain-model.md">4. Domain Model</a>
+    <a href="#" data-file="05-spectrogram-system.md">5. Spectrogram System</a>
+    <a href="#" data-file="06-audio-synthesis.md">6. Audio Synthesis</a>
+    <a href="#" data-file="07-editor-and-rendering.md">7. Editor & Rendering</a>
+    <a href="#" data-file="08-analysis-and-query.md">8. Analysis & Query</a>
+    <a href="#" data-file="09-database-and-storage.md">9. Database & Storage</a>
+    <a href="#" data-file="10-python-api.md">10. Python API</a>
+    <a href="#" data-file="11-deployment-and-infrastructure.md">11. Deployment</a>
+    <a href="#" data-file="12-known-issues-and-roadmap.md">12. Known Issues & Roadmap</a>
+    <a href="#" data-file="13-onboarding-guide.md">13. Onboarding Guide</a>
+  </nav>
+  <main id="content">
+    <div id="loading">Loading documentation...</div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script>
+    const content = document.getElementById('content');
+    const links = document.querySelectorAll('#sidebar a');
+
+    async function loadDoc(filename) {
+      try {
+        const response = await fetch(filename);
+        if (!response.ok) throw new Error(`Failed to load ${filename}`);
+        const md = await response.text();
+        content.innerHTML = marked.parse(md);
+        content.scrollTop = 0;
+      } catch (err) {
+        content.innerHTML = `<h1>Error</h1><p>Could not load <code>${filename}</code>.</p><p>Make sure you're serving this directory with a local HTTP server, e.g.:</p><pre><code>cd docs/project && python3 -m http.server 8888</code></pre><p>Then open <a href="http://localhost:8888/viewer.html">http://localhost:8888/viewer.html</a></p>`;
+      }
+    }
+
+    links.forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        links.forEach(l => l.classList.remove('active'));
+        link.classList.add('active');
+        loadDoc(link.dataset.file);
+      });
+    });
+
+    // Load index by default
+    loadDoc('INDEX.md');
+  </script>
+</body>
+</html>

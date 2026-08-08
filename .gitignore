@@ -37,7 +37,8 @@ credentials
 /dist_electron
 
 .envrc
-docs
+docs/*
+!docs/project/
 .direnv
 idtp_env
 
